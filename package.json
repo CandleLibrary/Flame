@@ -1,0 +1,20 @@
+{
+  "name": "flame",
+  "version": "0.0.1",
+  "description": "A web based editing app for wick",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+"private":true,
+  "repository": {
+    "type": "git",
+    "url": "https://www.gitlab.com/anthonycweathersby/flame"
+  },
+  "keywords": [
+    "wick",
+    "PWA"
+  ],
+  "author": "Anthony C Weathersby",
+  "license": "ISC"
+}

@@ -1,0 +1,397 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"ma",
+				"margin\tproperty"
+			],
+			[
+				"back",
+				"background-color\tproperty"
+			],
+			[
+				"text",
+				"text-align\tproperty"
+			],
+			[
+				"wid",
+				"width\tproperty"
+			],
+			[
+				"s",
+				"seq"
+			],
+			[
+				"pro",
+				"prop_name"
+			],
+			[
+				"tra",
+				"transform"
+			],
+			[
+				"to",
+				"ToString"
+			],
+			[
+				"Tr",
+				"transform2D"
+			],
+			[
+				"_up",
+				"_update_"
+			],
+			[
+				"_tra",
+				"_transitionOut_"
+			],
+			[
+				"C",
+				"_CAN_FILTER_"
+			],
+			[
+				"_C",
+				"_CAN_SORT_"
+			],
+			[
+				"limi",
+				"limitUpdate"
+			],
+			[
+				"out",
+				"output"
+			],
+			[
+				"new",
+				"new_items"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/D/flame"
+	],
+	"file_history":
+	[
+		"/D/wick/.gitignore",
+		"/D/wick/node_modules/glob/common.js",
+		"/D/wick/source/source/template.js",
+		"/D/wick/source/common/math/cubic_bezier.js",
+		"/D/wick/source/common/math/quadratic_bezier.js",
+		"/D/wick/source/source/io/filter_io.js",
+		"/D/galactrax.github.io/index.html",
+		"/D/wick/source/source/compiler/template/basic_bindings.js",
+		"/D/wick/source/source/package.js",
+		"/D/wick/source/animation/animation.js",
+		"/C/Users/Anthony/Desktop/Notes",
+		"/D/wick/docs/meta/CHANGELOG.md",
+		"/D/wick/source/root/config/library.js",
+		"/D/wick/docs/guide/articles/main_page.html",
+		"/D/wick/source/source/source.js",
+		"/D/wick/source/source/manager.js",
+		"/D/wick/docs/guide/QUICK_GUIDE.md.txt",
+		"/D/wick/source/source/io/io.js",
+		"/D/wick/node_modules/lodash/transform.js",
+		"/D/wick/docs/guide/components/container.html",
+		"/D/wick/node_modules/chai/chai.js",
+		"/D/wick/source/source/io/expression_io.js",
+		"/D/wick/node_modules/lodash/template.js",
+		"/D/wick/docs/guide/TEMPLATE_PATTERNS.md",
+		"/D/wick/node_modules/@babel/traverse/lib/scope/binding.js",
+		"/D/wick/source/source/io/script_io.js",
+		"/D/wick/node_modules/@babel/template/lib/string.js",
+		"/D/wick/source/source/compiler/template/template_evaluator.js",
+		"/D/wick/source/source/compiler/compiler.js",
+		"/D/wick/node_modules/snapdragon/lib/compiler.js",
+		"/D/wick/README.md",
+		"/D/pytrucks/package.json",
+		"/D/pytrucks/Procfile",
+		"/D/wick/source/model/container/multi.js",
+		"/D/wick/source/model/base.js",
+		"/D/wick/source/model/container/array.js",
+		"/D/wick/source/model/container/base.js"
+	],
+	"find":
+	{
+		"height": 29.0
+	},
+	"find_in_files":
+	{
+		"height": 104.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 29.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "flame.sublime-project",
+	"replace":
+	{
+		"height": 54.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"path",
+				"source\\common\\design\\path.js"
+			],
+			[
+				"anima",
+				"source\\animation\\animation.js"
+			],
+			[
+				"animat",
+				"docs\\guide\\articles\\animating_paths.html"
+			],
+			[
+				"comm",
+				"source\\common\\common.js"
+			],
+			[
+				"animation",
+				"source\\animation\\animation.js"
+			],
+			[
+				"trans",
+				"source\\common\\math\\transform.js"
+			],
+			[
+				"tra",
+				"node_modules\\lodash\\transform.js"
+			],
+			[
+				"mana",
+				"source\\source\\manager.js"
+			],
+			[
+				"source",
+				"source\\source\\source.js"
+			],
+			[
+				"sourmanager",
+				"source\\source\\manager.js"
+			],
+			[
+				"sourtempla",
+				"source\\source\\template.js"
+			],
+			[
+				"basicbin",
+				"source\\source\\compiler\\template\\basic_bindings.js"
+			],
+			[
+				"io",
+				"source\\source\\io\\io.js"
+			],
+			[
+				"filterio",
+				"source\\source\\io\\filter_io.js"
+			],
+			[
+				"notempl",
+				"node_modules\\lodash\\template.js"
+			],
+			[
+				"template",
+				"docs\\guide\\TEMPLATE_PATTERNS.md"
+			],
+			[
+				"conta",
+				"docs\\guide\\components\\container.html"
+			],
+			[
+				"bind",
+				"node_modules\\@babel\\traverse\\lib\\scope\\binding.js"
+			],
+			[
+				"io.j",
+				"source\\source\\io\\io.js"
+			],
+			[
+				"templatstring",
+				"node_modules\\@babel\\template\\lib\\string.js"
+			],
+			[
+				"expr",
+				"source\\source\\io\\expression_io.js"
+			],
+			[
+				"sourcsou",
+				"source\\source\\source.js"
+			],
+			[
+				"bindin",
+				"node_modules\\@babel\\traverse\\lib\\scope\\binding.js"
+			],
+			[
+				"temple",
+				"source\\source\\compiler\\template\\template_evaluator.js"
+			],
+			[
+				"filio",
+				"source\\source\\io\\filter_io.js"
+			],
+			[
+				"sourcecompiler",
+				"source\\source\\compiler\\compiler.js"
+			],
+			[
+				"compiler",
+				"node_modules\\snapdragon\\lib\\compiler.js"
+			],
+			[
+				"sourcepackag",
+				"source\\source\\package.js"
+			],
+			[
+				"sourcetempl",
+				"source\\source\\template.js"
+			],
+			[
+				"read",
+				"README.md"
+			],
+			[
+				"libr",
+				"source\\root\\config\\library.js"
+			],
+			[
+				"chang",
+				"docs\\meta\\CHANGELOG.md"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 175.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

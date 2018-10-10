@@ -1,11 +1,50 @@
 <html>
 	<head>
-		<script src="/build/flame-dev.js"></script>
+		<script src="build/flame-dev.js"></script>
+		<style>
+
+			body{
+				position: absolute;
+				width:100vw;
+				height:100vh;
+				top:0;
+				left:0;
+				padding:0;
+				margin: 0;
+			}
+
+			#main_view{
+				position: absolute;
+				top:0;
+				left:0;
+				width:10px;
+				height: 10px;
+				transform: translateZ(0); 
+			}
+
+			#ui_group{
+				position: absolute;
+				width:100%;
+				height:100%;
+				top:0;
+				left:0;
+			}
+
+		</style>
 	</head>
 	<body>
-		Hello World
-		<script>
+		<!-- This element contains all user made component elements. -->
+		<div id="main_view">
 			
+		</div>
+
+		<!-- This element contains all system UI elements. The user will interact with everything through this tree.-->
+		<div id="ui_group">
+			
+		</div>
+		<script>
+			//Start 'er up	
+			flame.init();
 		</script>
 	</body>
 </html>

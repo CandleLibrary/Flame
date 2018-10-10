@@ -41,5 +41,12 @@ class Component{
 	saveFile(){
 
 	}
+
+	/**
+	 * Caches a bitmap image of the component.
+	 */
+	 cacheBitmap(){
+	 	
+	 }
 }
 export Component;

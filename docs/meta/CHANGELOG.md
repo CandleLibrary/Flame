@@ -1,3 +1,7 @@
+10/9/2018
+
+Added component.js, project_view.js
+
 10/8/2018
 
 Added sublime-project file

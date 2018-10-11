@@ -1,52 +1,101 @@
 /**
  * This module is responsible for storing, updating, and caching components. In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  */
+const fs = require("fs");
 
+const wick = require("wick");
 
-class Component{
+class Component {
 
-	constructor(){
-		//Flag for mounted state of component. If a component is accessible anywhare on the main UI, then it is considered mounted. 
-		this.mounted = false;
+    constructor() {
+    	this.element = document.createElement("div");
 
-		//Bounding box info. This is derived from CSS information pulled in from the master css file and any component level css scripts. 
-		//dimensions are defined as [0] = top, [1] = left, [2] = width, [3] = height.
-		this.dimensions = [0,0,0,0];
+        //Flag for mounted state of component. If a component is accessible anywhare on the main UI, then it is considered mounted. 
+        this.mounted = false;
 
-		//Link to local css 
-		this.local_css  = null;
+        //Bounding box info. This is derived from CSS information pulled in from the master css file and any component level css scripts. 
+        //dimensions are defined as [0] = top, [1] = left, [2] = width, [3] = height.
+        this.dimensions = [0, 0, 0, 0];
 
-		//The file path (relative to project directory), of the component file. 
-		this.file_path = "";
+        //Link to local css 
+        this.local_css = null;
 
-		//The file name of the component. 
-		this.file_name = "";
+        //The file path (relative to project directory), of the component file. 
+        this.file_path = "";
 
-		//The source component manager that handles the instantiation and runtime of Wick components. 
-		this.manager = null;
-	}	
+        //The file name of the component. 
+        this.file_name = "";
 
-	/**
-	 * @brief Loads file from the project directory.
-	 * @details [long description]
-	 */
-	loadFile(){
+        //The source component manager that handles the instantiation and runtime of Wick components. 
+        this.manager = null;
+    }
 
-	}
+    /**
+     * @brief Loads file from the project directory.
+     * @details [long description]
+     */
+    loadFile() {
 
-	/**
-	 * @brief Saves file to project directory. 
-	 * @details [long description]
-	 */
-	saveFile(){
+    }
 
-	}
+    /**
+     * @brief Saves file to project directory. 
+     * @details [long description]
+     */
+    saveFile() {
 
-	/**
-	 * Caches a bitmap image of the component.
-	 */
-	 cacheBitmap(){
-	 	
-	 }
+    }
+
+    /**
+     * Caches a bitmap image of the component.
+     */
+    cacheBitmap() {
+
+    }
+
+    load(URI) {
+        fs.open("D:/pytrucks/static/components/buttons/accept_button.html", "r", (err, fd) => {
+            if (err) throw err;
+            fs.readFile(fd, "utf-8", (err, data) => {
+                fs.close(fd, (err)=>{if(err)throw err});
+                if (err) { throw err; };
+
+                this.package = new wick.core.source.package(data, wick.core.presets(), false);
+
+                this.package.mount(this.element, null, false, this);
+
+                document.querySelector("#main_view").appendChild(this.element)
+
+                this.updateDimensions();
+            });
+        });
+    }
+
+    /**
+     * Mounts the element to the document. 
+     */
+    mount() {
+
+    }
+
+    /**
+     * Updates the bounding rect
+     */
+    updateDimensions(){
+    	this.dimensions = this.element.getBoundingClientRect();
+    }
+
+    /**
+     * Determines if point is in bounding box. 
+     */
+     pointInBoundingBox(x,y){
+     	this.updateDimensions();
+     	let min_x = this.dimensions.left;
+     	let max_x = min_x + this.dimensions.width;
+     	let min_y = this.dimensions.top;
+		let max_y = min_y + this.dimensions.height;
+     	return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
+     }
 }
-export Component;
+
+export { Component };

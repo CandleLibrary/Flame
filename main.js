@@ -4,11 +4,9 @@ const {app, BrowserWindow} = require("electron");
 
 //Wait for app to be ready. 
 app.on("ready", ()=>{
-	let win = new BrowserWindow({width: 800, height: 600});
+	let win = new BrowserWindow({width: 1920, height: 1080});
 
 	win.loadFile("./index.html");
 
 	win.webContents.openDevTools();
-
-	console.log(win.devToolsWebContents)
-})
+});

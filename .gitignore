@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -82,8 +82,7 @@ Press h to open a hovercard with more details.
 #Build directory
 
 build/*
-!build/build_config/
-!build/wick.css
+!build/config/
 
 #Api directory
 documents/api/*

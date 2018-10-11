@@ -1,12 +1,12 @@
 {
   "name": "flame",
   "version": "0.0.1",
-  "description": "A web based editing app using wick",
+  "description": "A web based editing app for wick",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "rollup --config ./build/config/main_dev.config.js",
-    "build.watch": "rollup --watch --config ./build/config/main_dev.config.js",
+    "build.watch": "rollup --watch --config ./build/config/node.config.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "private": true,
@@ -22,10 +22,15 @@
   "license": "ISC",
   "dependencies": {
     "electron": "^3.0.3",
-    "wickjs": "file:../wick"
+    "wick": "file:../wick"
   },
   "devDependencies": {
+    "devtron": "^1.4.0",
     "rollup": "^0.66.4",
     "rollup-plugin-node-resolve": "^3.4.0"
+  },
+  "jshintConfig": {
+    "esversion": 6,
+    "unused": true
   }
 }

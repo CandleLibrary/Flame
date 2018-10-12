@@ -3,4 +3,15 @@
  */
 export class DocumentManager{
 
+	constructor(){
+		this.docs = new Map();
+	}
+
+	load(URI){
+
+	}
+
+	save(handle){
+		
+	}
 }

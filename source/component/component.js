@@ -54,7 +54,7 @@ class Component {
     }
 
     load(URI) {
-        fs.open("D:/pytrucks/static/components/buttons/accept_button.html", "r", (err, fd) => {
+        fs.open(URI, "r", (err, fd) => {
             if (err) throw err;
             fs.readFile(fd, "utf-8", (err, data) => {
                 fs.close(fd, (err)=>{if(err)throw err});

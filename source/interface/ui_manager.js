@@ -1,10 +1,13 @@
+import {MOVE} from "./action"
+
 /**
  * @brief Handles user input and rendering of UI elements
  * 
  * @param  [HTMLElement] Element to map UI components to.
  */
 export class UI_Manager {
-    constructor(UIHTMLElement, ViewElement) {
+
+    constructor(UIHTMLElement, ViewElement, system) {
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -15,6 +18,8 @@ export class UI_Manager {
 
         this.position_x = 0;
         this.position_y = 0;
+
+        this.system = system;
 
 
         //Array of components
@@ -63,7 +68,7 @@ export class UI_Manager {
 
 
         if (this.target)
-            this.moveObject(diffx, diffy, this.target);
+            MOVE(this.system, this.target, {dx:diffx, dy:diffy});
         else {
             this.position_x += diffx;
             this.position_y += diffy;

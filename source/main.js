@@ -33,11 +33,11 @@ const flame = {
         		throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         	const ui_man = new UI_Manager(ui_group, view_group, new System());
+            
             for(let i = 0; i<1;i++){
 
-            let c = new Component();
-
-                c.load();
+                let c = new Component();
+                c.load("./test/component/test_comp.html");
                 ui_man.addComponent(c);
             }
     	

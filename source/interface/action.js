@@ -4,18 +4,23 @@
 export function MOVE(system, element, event) {
     let dx = event.dx || 0;
     let dy = event.dy || 0;
+
     // Get CSS information on element and update appropriate records
     let css = system.css.aquireCSS(element);
 
     if(css){
         //Check what type of rules are applicable to this operation.
+        //Position relative with top or bottom and left or right.
+        //Position absolute with top or bottom  and left or right.
+        //Position relative with margin
+        //Position 
         if(dx !== 0){
-            if(css.props.left){
-                css.props.left = css.props.left.copy(3);
-                console.log(css.props.left)
-            }
+            if(css.props.left)
+                css.props.left = css.props.left.copy(css.props.left + dx);
             
-            css.props.background_color.r -= 2;
+            if(css.props.top)
+                css.props.top = css.props.top.copy(css.props.top + dy);
+           
 
             let node = element.wick_node;
             node.setRebuild();
@@ -35,4 +40,32 @@ export function TEXT(system, element, event) {
     let data = event.text_data;
     let text = system.html.aquireTextData(element);
     text.update(pos, data);
+}
+
+export function RESIZE(system, element, event){
+
+}
+
+export function BACKGROUND(system, element, event){
+
+}
+
+export function FONT(system, element, event){
+
+}
+
+export function MARGIN(system, element, event){
+
+}
+
+export function PADDING(system, element, event){
+
+}
+
+export function TRANSFORM(system, element, event){
+
+}
+
+export function SVG(system, element, event){
+
 }

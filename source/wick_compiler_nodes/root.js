@@ -47,11 +47,8 @@ RootNode.prototype.build_existing = function(element, source, presets, taps) {
         if (this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
-            console.log(children, this);
-
             for(let i = 0, node = this.fch; node || i < children.length; i++, node = this.getN(node)){
                 let child = children[i];
-                console.log(child);
                 node.build_existing(child, source, presets, taps);
             }
         }

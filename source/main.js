@@ -4,6 +4,7 @@ import {JSManager} from "./js/js_manager";
 
 //CSS
 import {CSSManager} from "./css/css_manager";
+import {CSSRule} from "./css/wick_css_nodes.js"
 
 //HTML
 import {HTMLManager} from "./html/html_manager";

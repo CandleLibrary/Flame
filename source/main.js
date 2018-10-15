@@ -1,9 +1,22 @@
 import {UI_Manager} from "./interface/ui_manager";
-import {Component} from "./component/component"
-import {JSManager} from "./js/js_manager"
-import {CSSManager} from "./css/css_manager"
-import {HTMLManager} from "./html/html_manager"
-import {DocumentManager} from "./document/doc_manager"
+import {Component} from "./component/component";
+import {JSManager} from "./js/js_manager";
+
+//CSS
+import {CSSManager} from "./css/css_manager";
+
+//HTML
+import {HTMLManager} from "./html/html_manager";
+import {DocumentManager} from "./document/doc_manager";
+
+//SOURCE
+import {Source} from "./source/source.js";
+
+//COMPILER NODES
+import {RootNode} from "./wick_compiler_nodes/root.js";
+import {StyleNode} from "./wick_compiler_nodes/style.js";
+import {RootText} from "./wick_compiler_nodes/text.js";
+
 
 
 class System{
@@ -24,6 +37,12 @@ class System{
 const flame = {
     init: (wick) => {
         //Startup the Main UI system
+
+        console.log(StyleNode, Source);
+
+            let system = new System();
+
+            StyleNode.prototype.flame_system = system;
         	
         	//connect to the ui_group element
         	const ui_group = document.querySelector("#ui_group");
@@ -32,7 +51,7 @@ const flame = {
         	if(!ui_group)
         		throw new Error("`ui_group` element not found in document! Aborting startup.");
 
-        	const ui_man = new UI_Manager(ui_group, view_group, new System());
+        	const ui_man = new UI_Manager(ui_group, view_group, system);
             
             for(let i = 0; i<1;i++){
 

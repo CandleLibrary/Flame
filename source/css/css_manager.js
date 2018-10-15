@@ -12,10 +12,10 @@ export class CSSManager {
 
 	aquireCSS(element){
 
-		let rules = null; //TODO convert to dynamic rule object. 
+		let rules; //TODO convert to dynamic rule object. 
 		
 		for(let i = 0; i < this.css_files.length; i++)
-			rules = this.css_files[i].getApplicableRules(rules);
+			rules = this.css_files[i].getApplicableRules(element, rules);
 		
 
 		return rules;
@@ -26,5 +26,9 @@ export class CSSManager {
 		css_file._parse_(new wick.core.lexer(css_text), true, null, null);
 		this.css_file.push(css_text);
 		css_file.file_id = file_id;
+	}
+
+	addTree(tree){
+		this.css_files.push(tree);
 	}
 }

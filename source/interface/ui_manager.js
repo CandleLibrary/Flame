@@ -1,4 +1,4 @@
-import {MOVE} from "./action"
+import {MOVE} from "./action";
 
 /**
  * @brief Handles user input and rendering of UI elements

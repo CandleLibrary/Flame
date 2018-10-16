@@ -1,13 +1,11 @@
 /**
  * This module is responsible for storing, updating, and caching components. In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  */
-const fs = require("fs");
-
 const wick = require("wick");
 
 class Component {
 
-    constructor() {
+    constructor(document_id, system) {
     	this.element = document.createElement("div");
 
         //Flag for mounted state of component. If a component is accessible anywhare on the main UI, then it is considered mounted. 
@@ -31,14 +29,6 @@ class Component {
     }
 
     /**
-     * @brief Loads file from the project directory.
-     * @details [long description]
-     */
-    loadFile() {
-
-    }
-
-    /**
      * @brief Saves file to project directory. 
      * @details [long description]
      */
@@ -53,22 +43,13 @@ class Component {
 
     }
 
-    load(URI) {
-        fs.open(URI, "r", (err, fd) => {
-            if (err) throw err;
-            fs.readFile(fd, "utf-8", (err, data) => {
-                fs.close(fd, (err)=>{if(err)throw err});
-                if (err) { throw err; };
+    load(document) {
+        document.bind(this);
+    }
 
-                this.package = new wick.core.source.package(data, wick.core.presets(), false);
-
-                this.package.mount(this.element, null, false, this);
-
-                document.querySelector("#main_view").appendChild(this.element)
-
-                this.updateDimensions();
-            });
-        });
+    documentReady(data){
+        this.package = new wick.core.source.package(data, wick.core.presets(), false);
+        this.package.mount(this.element, null, false, this);
     }
 
     /**

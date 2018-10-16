@@ -16,6 +16,12 @@ proto._processTextNodeHook_ = function(lex){
     }).then((css)=>{
     	this.flame_system.css.addTree(css);
     });
+
+    this.css.observer = this;
+};
+
+proto.updatedCSS = function(){
+	this.rebuild();
 };
 
 export {StyleNode};

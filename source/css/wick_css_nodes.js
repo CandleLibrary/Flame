@@ -14,12 +14,14 @@ CSSRule.prototype.merge = function(rule) {
                     },
                     set: (v) => {
                         rule.props[n] = v;
+                        if(rule.root)
+                            rule.root.updated();
                     }
                 });
             })(n);
         }
         this.LOADED = true;
     }
-}
+};
 
 export {CSSRule}

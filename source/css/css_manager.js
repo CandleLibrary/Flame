@@ -1,3 +1,5 @@
+import {CSSComponent} from "./css_component";
+
 /**
  *  This module maintains CSS documents and handles the updating of their contents. 
  */
@@ -8,6 +10,7 @@ export class CSSManager {
 	
 	constructor(){
 		this.css_files = [];
+		this.style_elements = {};
 	}
 
 	aquireCSS(element){
@@ -17,7 +20,6 @@ export class CSSManager {
 		for(let i = 0; i < this.css_files.length; i++)
 			rules = this.css_files[i].getApplicableRules(element, rules);
 		
-
 		return rules;
 	}
 
@@ -30,5 +32,24 @@ export class CSSManager {
 
 	addTree(tree){
 		this.css_files.push(tree);
+	}
+
+	updateStyle(id, text){
+		let style = this.style_elements[id];
+
+		if(!style){
+			style = this.style_elements[id] = document.createElement("style");
+			document.head.appendChild(style);
+		}
+
+		style.innerHTML = text;
+	}
+
+	createComponent(doc){
+		let css_file = new CSS_Root_Constructor();	
+		let component = new CSSComponent(css_file, this);
+		doc.bind(component);
+		this.css_files.push(css_file);
+		return component;
 	}
 }

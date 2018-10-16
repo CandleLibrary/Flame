@@ -1,5 +1,4 @@
 import {UI_Manager} from "./interface/ui_manager";
-import {Component} from "./component/component";
 import {JSManager} from "./js/js_manager";
 
 //CSS
@@ -53,13 +52,6 @@ const flame = {
         		throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         	const ui_man = new UI_Manager(ui_group, view_group, system);
-            
-            for(let i = 0; i<1;i++){
-
-                let c = new Component();
-                c.load("./test/component/test_comp.html");
-                ui_man.addComponent(c);
-            }
     	
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 

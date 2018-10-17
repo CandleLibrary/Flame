@@ -17,8 +17,6 @@ import {RootNode} from "./wick_compiler_nodes/root.js";
 import {StyleNode} from "./wick_compiler_nodes/style.js";
 import {RootText} from "./wick_compiler_nodes/text.js";
 
-
-
 class System{
     constructor(){
         this.doc_man = new DocumentManager();

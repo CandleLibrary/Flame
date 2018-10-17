@@ -8,6 +8,16 @@ class Component {
     constructor(document_id, system) {
     	this.element = document.createElement("div");
 
+        //Label
+        this.name = document.createElement("div")
+        this.name.innerHTML = document_id;
+        this.name.classList.add("flame_component_name")
+
+        this.element.appendChild(this.name);
+
+        //Add the appropriate clas
+        this.element.classList.add("flame_component")
+
         //Flag for mounted state of component. If a component is accessible anywhare on the main UI, then it is considered mounted. 
         this.mounted = false;
 
@@ -28,6 +38,14 @@ class Component {
         this.manager = null;
     }
 
+    cache(){
+        
+    }
+
+    destroy(){
+        this.element = null;
+    }
+
     /**
      * @brief Saves file to project directory. 
      * @details [long description]
@@ -44,6 +62,7 @@ class Component {
     }
 
     load(document) {
+        this.name.innerHTML = document.name;
         document.bind(this);
     }
 

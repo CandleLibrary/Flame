@@ -20,7 +20,7 @@ export class UI_Manager {
         this.system = system;
         //Array of components
         this.components = [];
-
+        this.UI_MOVE = false;
         //Eventing
         window.addEventListener("mouseover", e => {
             if (e.target.tagName == "BUTTON") {
@@ -34,19 +34,23 @@ export class UI_Manager {
         document.body.addEventListener("drop", e => this.handleDocumentDrop(e));
         document.body.addEventListener("dragover", e => {
             e.preventDefault();
-            e.dataTransfer.dropEffect = "move"
+            e.dataTransfer.dropEffect = "copy"
         });
         document.body.addEventListener("dragstart", e => {
             debugger
         });
     }
     handlePointerDownEvent(e) {
-        this.ACTIVE_POINTER_INPUT = true;
         this.origin_x = e.offsetX;
         this.origin_y = e.offsetY;
-        for (let i = 0, l = this.components.length; i < l; i++) {
-            let comp = this.components[i];
-            if (comp.pointInBoundingBox(e.offsetX, e.offsetY)) {}
+        this.ACTIVE_POINTER_INPUT = true;
+        if (e.button == 1) {
+            this.UI_MOVE = true;
+        } else {
+            for (let i = 0, l = this.components.length; i < l; i++) {
+                let comp = this.components[i];
+                if (comp.pointInBoundingBox(e.offsetX, e.offsetY)) {}
+            }
         }
     }
     handlePointerMoveEvent(e) {
@@ -55,18 +59,16 @@ export class UI_Manager {
         let diffy = this.origin_y - e.offsetY;
         this.origin_x -= diffx;
         this.origin_y -= diffy;
-
+        if (this.UI_MOVE) {
+            this.position_x += diffx;
+            this.position_y += diffy;
+            this.view_element.style.transform = `translate(${-this.position_x}px, ${-this.position_y}px)`;
+            return
+        }
         if (this.target) MOVE(this.system, this.target, {
             dx: -diffx,
             dy: -diffy
         });
-        else {
-
-            this.position_x += diffx;
-            this.position_y += diffy;
-            this.view_element.style.transform = `translate(${-this.position_x}px, ${-this.position_y}px)`;
-        }
-
     }
     moveObject(dx, dy, t) {
         console.log(dx, dy, t.style.left, parseInt(t.style.left || 0) + -dx + "px");
@@ -75,27 +77,34 @@ export class UI_Manager {
         //Update the position of the object based on it's css properties.
     }
     handlePointerEndEvent(e) {
+        this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
     }
-
     handleDocumentDrop(e) {
         e.preventDefault();
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
-
-            if (doc)
-                switch (doc.type) {
-                    case "html":
-                        CREATE_COMPONENT(this.system, doc, { x: e.clientLeft, y: e.clientTop });
-                        break;
-
-                    case "css":
-                        CREATE_CSS_DOC(this.system, doc, { x: e.clientLeft, y: e.clientTop });
-                        break;
-
-                    default:
-                        break;
-                }
+            if (doc) switch (doc.type) {
+                case "html":
+                    CREATE_COMPONENT(this.system, doc, {
+                        x: e.clientX + this.position_x,
+                        y: e.clientY + this.position_y
+                    });
+                    break;
+                case "css":
+                    CREATE_CSS_DOC(this.system, doc, {
+                        x: e.clientX + this.position_x,
+                        y: e.clientY + this.position_y
+                    });
+                    break;
+                case "js":
+                case "svg":
+                case "jpg":
+                case "png":
+                case "gif":
+                default:
+                    break;
+            }
         });
     }
     addComponent(component) {

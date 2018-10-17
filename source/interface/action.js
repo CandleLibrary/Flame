@@ -84,8 +84,7 @@ export function CREATE_COMPONENT(system, doc, event) {
 
     document.querySelector("#main_view").appendChild(element);
 
-    element.style.left = -event.x + "px";
-    element.style.top = -event.y + "px";
+    element.style.transform = `translate(${event.x}px,${event.y}px)`
 
     component.updateDimensions();
 }

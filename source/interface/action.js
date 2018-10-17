@@ -76,7 +76,7 @@ export function SVG(system, element, event) {
 import { Component } from "../component/component";
 export function CREATE_COMPONENT(system, doc, event) {
 
-    let component = new Component();
+    let component = new Component(system);
 
     component.load(doc);
 

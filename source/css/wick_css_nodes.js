@@ -24,4 +24,4 @@ CSSRule.prototype.merge = function(rule) {
     }
 };
 
-export {CSSRule}
+export {CSSRule};

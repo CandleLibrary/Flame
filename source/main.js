@@ -1,28 +1,33 @@
-import {UI_Manager} from "./interface/ui_manager";
-import {JSManager} from "./js/js_manager";
+import { UI_Manager } from "./interface/ui_manager";
+import { JSManager } from "./js/js_manager";
 
 //CSS
-import {CSSManager} from "./css/css_manager";
-import {CSSRule} from "./css/wick_css_nodes.js"
+import { CSSManager } from "./css/css_manager";
+import { CSSRule } from "./css/wick_css_nodes.js";
 
 //HTML
-import {HTMLManager} from "./html/html_manager";
-import {DocumentManager} from "./document/doc_manager";
+import { HTMLManager } from "./html/html_manager";
+import { DocumentManager } from "./document/doc_manager";
 
 //SOURCE
-import {Source} from "./source/source.js";
+import { Source } from "./source/source.js";
 
 //COMPILER NODES
-import {RootNode} from "./wick_compiler_nodes/root.js";
-import {StyleNode} from "./wick_compiler_nodes/style.js";
-import {RootText} from "./wick_compiler_nodes/text.js";
+import { RootNode } from "./wick_compiler_nodes/root.js";
+import { StyleNode } from "./wick_compiler_nodes/style.js";
+import { RootText } from "./wick_compiler_nodes/text.js";
 
-class System{
-    constructor(){
-        this.doc_man = new DocumentManager();
-        this.css= new CSSManager(this.doc_man);
-        this.html= new HTMLManager(this.doc_man);
-        this.js= new JSManager(this.doc_man);
+let wick = require("wick");
+
+
+
+class System {
+    constructor() {
+        this.doc_man = new DocumentManager(this);
+        this.css = new CSSManager(this.doc_man);
+        this.html = new HTMLManager(this.doc_man);
+        this.js = new JSManager(this.doc_man);
+        this.presets = wick.core.presets();
     }
 }
 
@@ -38,19 +43,19 @@ const flame = {
 
         console.log(StyleNode, Source);
 
-            let system = new System();
+        let system = new System();
 
-            StyleNode.prototype.flame_system = system;
-        	
-        	//connect to the ui_group element
-        	const ui_group = document.querySelector("#ui_group");
-        	const view_group = document.querySelector("#main_view");
+        StyleNode.prototype.flame_system = system;
 
-        	if(!ui_group)
-        		throw new Error("`ui_group` element not found in document! Aborting startup.");
+        //connect to the ui_group element
+        const ui_group = document.querySelector("#ui_group");
+        const view_group = document.querySelector("#main_view");
 
-        	const ui_man = new UI_Manager(ui_group, view_group, system);
-    	
+        if (!ui_group)
+            throw new Error("`ui_group` element not found in document! Aborting startup.");
+
+        const ui_man = new UI_Manager(ui_group, view_group, system);
+
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
         //Load Poject.

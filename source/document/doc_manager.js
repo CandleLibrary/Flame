@@ -1,21 +1,48 @@
-import { Document } from "./document";
+import { WickDocument } from "./document";
+let path = require("path");
+let fs = require("fs");
+
+/**
+ * Global `fetch` polyfill - basic support
+ */
+global.fetch = (url, data) =>
+    new Promise((res, rej) => {
+
+        let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+        fs.readFile(p, "utf8", (err, data) => {
+            if (err) {
+                rej(err);
+            } else {
+                res({
+                    status: 200,
+                    text: () => {
+                        return {
+                            then: (f) => f(data)
+                        };
+                    }
+                });
+            }
+        });
+    });
 
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
 export class DocumentManager {
 
-    constructor() {
+    constructor(system) {
         this.docs = new Map();
+        this.system = system;
     }
 
     /*
-     * Loads file into workarea 
+     * Loads file into work area 
      */
     load(file) {
         switch (typeof(file)) {
             case "string": // Load from file system or DB
                 break;
+
             case "object": // Load data 
                 if (file.name && file.path) {
                     let path = file.path;
@@ -37,10 +64,8 @@ export class DocumentManager {
 
                     let id = `${path}/${name}`;
                     
-                    if (this.docs.get(id))
-                        return "";
-                    else {
-                        let doc = new Document(name, path, type);
+                    if (!this.docs.get(id)){
+                        let doc = new WickDocument(name, path, type, this.system);
 
                         this.docs.set(id, doc);
 

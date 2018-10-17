@@ -83,7 +83,10 @@ export class UI_Manager {
     handleDocumentDrop(e) {
         e.preventDefault();
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
+            
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
+
+            console.log(doc)
             if (doc) switch (doc.type) {
                 case "html":
                     CREATE_COMPONENT(this.system, doc, {

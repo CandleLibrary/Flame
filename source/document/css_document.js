@@ -1,7 +1,7 @@
 const wick = require("wick");
 const fs = require("fs");
 
-export class WickDocument{
+export class CSSDocument{
 	constructor(file_name, path, type, system){
 		this.name = file_name;
 		this.type = type;
@@ -9,10 +9,14 @@ export class WickDocument{
 		this.data = null;
 		this.LOADED = false;
 		this.UPDATED = true;
+		this.SAVING = false;
+		this.PENDING_SAVE = false;
 
 		this.observers = [];
 		this.ObjectsPendingLoad = [];
+		this.css_docs = [];
 		this.system = system;
+
 
 		this.element = document.createElement("div");
 		document.body.appendChild(this.element)
@@ -24,36 +28,37 @@ export class WickDocument{
             fs.readFile(fd, "utf8", (err, data) => {
                 fs.close(fd, (err)=>{if(err)throw err});
                 if (err) { throw err; }
-
+                
                 this.data = data;
                 this.LOADED = true;
-
-                (new wick.core.source.package(this.data, this.system.presets, true)).then((pkg)=>{
-
-                	this.data = pkg;
-
-                	pkg._skeletons_[0].tree.addObserver(this);
-
-                	for(let i = 0; i < this.ObjectsPendingLoad.length;  i++)
-                		this.ObjectsPendingLoad[i].documentReady(pkg);
-
-                	this.ObjectsPendingLoad = null;	
-                });
+                
+                for(let i = 0; i < this.ObjectsPendingLoad.length;  i++)
+                	this.ObjectsPendingLoad[i].documentReady(data);
             });
         });
 	}
 
 	updatedWickASTTree(tree){
 		this.element.innerText = tree;
+		this.save();
 	}
 
-
 	save(){
-		fs.open(URI, "w", (err, fd) => {
+
+		this.PENDING_SAVE = true;
+		if(this.SAVING) return;
+		this.SAVING = true;
+        this.PENDING_SAVE = false;
+		fs.open(this.path + "/" + this.name, "w", (err, fd) => {
             if (err) throw err;
-            fs.write(fd, this.data, 0, "utf8", (err,written, data) => {
+            fs.write(fd, (this.tree + ""), 0, "utf8", (err,written, data) => {
                 fs.close(fd, (err)=>{if(err)throw err});
                 if (err) { throw err; }
+  
+                if(this.PENDING_SAVE)
+                	this.save();
+                else this.PENDING_SAVE = false;
+                this.SAVING = false;
             });
         });
 	}
@@ -62,5 +67,9 @@ export class WickDocument{
 		if(this.LOADED)
 			object.documentReady(this.data);
 		else this.ObjectsPendingLoad.push(object);
+	}
+
+	updatedCSS(tree){
+		this.save();
 	}
 }

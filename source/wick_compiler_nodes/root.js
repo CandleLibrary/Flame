@@ -33,25 +33,26 @@ RootNode.prototype.rebuild = function() {
         for (let i = 0; i < this.observing_sources.length; i++)
             this.observing_sources[i].rebuild();
         this.resetRebuild();
+        this._linkCSS_();
     } else if (this.par)
         this.par.rebuild();
 };
 
 RootNode.prototype.build_existing = function(element, source, presets, taps) {
-    if (this.CHANGED !== 0) {
+    if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
         if (this._merged_)
             this._merged_.build_existing(element, source, presets, taps);
 
-        if (this.CHANGED & 1) {
+        if (true || this.CHANGED & 1) {
             //redo IOs that have changed (TODO)
             for (let i = 0, l = this._bindings_.length; i < l; i++) {
                 this._bindings_[i].binding._bind_(source, [], taps, element, this._bindings_[i].name);
             }
         }
 
-        if (this.CHANGED & 2) {
+        if (true || this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node || i < children.length; i++, node = this.getN(node)) {

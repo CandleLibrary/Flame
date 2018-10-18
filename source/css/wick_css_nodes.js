@@ -8,6 +8,7 @@ CSSRule.prototype.merge = function(rule) {
         for (let n in rule.props) {
             ((n) => {
                 Object.defineProperty(this.props, n, {
+                    configurable:true,
                     enumerable: true,
                     get: () => {
                         return rule.props[n];

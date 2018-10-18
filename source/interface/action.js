@@ -1,4 +1,5 @@
 let cache = null;
+let CSS_Rule_Constructor = require("wick").core.css.prop;
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
@@ -7,11 +8,18 @@ export function MOVE(system, element, event) {
     let dy = event.dy || 0;
     // Get CSS information on element and update appropriate records
 
+    let rule = new CSS_Rule_Constructor;
+
     if(!cache)
         cache = system.css.aquireCSS(element);
 
-    if (cache) {
-        let css = cache;
+    if (cache.length > 0) {
+        
+        for(let i = 0; i <cache.length; i++)
+            rule.merge(cache[i].r);
+        
+        let css = rule;
+        
         //Check what type of rules are applicable to this operation.
         //Position relative with top or bottom and left or right.
         //Position absolute with top or bottom  and left or right.
@@ -29,9 +37,6 @@ export function MOVE(system, element, event) {
 
         let node = element.wick_node;
         node.setRebuild();
-        node._linkCSS_();
-
-
     } else {
 
     }

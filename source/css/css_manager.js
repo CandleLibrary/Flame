@@ -8,19 +8,24 @@ let CSS_Root_Constructor = require("wick").core.css.root;
 
 export class CSSManager {
 	
-	constructor(){
+	constructor(docs){
 		this.css_files = [];
 		this.style_elements = {};
+		this.docs = docs;
 	}
 
 	aquireCSS(element){
 
-		let rules; //TODO convert to dynamic rule object. 
+		let selectors = []; //TODO convert to dynamic rule object. 
 		
-		for(let i = 0; i < this.css_files.length; i++)
-			rules = this.css_files[i].getApplicableRules(element, rules);
+		for(let i = 0; i < this.css_files.length; i++){
+			let gen = this.css_files[i].getApplicableSelectors(element), sel = null;
+			while(sel = gen.next().value)
+				selectors.push(sel);
+			//rules = this.css_files[i].getApplicableRules(element, rules);
+		}
 		
-		return rules;
+		return selectors;
 	}
 
 	addFile(css_text, scope, file_id){
@@ -30,8 +35,20 @@ export class CSSManager {
 		css_file.file_id = file_id;
 	}
 
-	addTree(tree){
+	addTree(tree, IS_DOCUMENT, url){
+		if(IS_DOCUMENT){
+			let doc = this.docs.get(url);
+			if(!doc.tree){
+				doc.tree = tree;
+				tree.addObserver(doc);
+			}else{
+				tree = doc.tree;
+			}
+		}
+
 		this.css_files.push(tree);
+
+		return tree;
 	}
 
 	updateStyle(id, text){

@@ -20,7 +20,7 @@ export class CSSComponent{
 	}
 
 	updatedCSS(){
-		this.element.innerHTML = this.tree + "";
+		//this.element.innerHTML = this.tree + "";
 		this.manager.updateStyle("zzz", this.tree + "");
 	}
 }

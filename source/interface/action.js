@@ -89,8 +89,8 @@ export function CREATE_COMPONENT(system, doc, event) {
 
     document.querySelector("#main_view").appendChild(element);
 
-    element.style.transform = `translate(${event.x}px,${event.y}px)`
-
+    component.x = event.x;
+    component.y = event.y;
     component.updateDimensions();
 }
 
@@ -101,6 +101,6 @@ export function CREATE_CSS_DOC(system, doc, event) {
 
     document.querySelector("#main_view").appendChild(element);
 
-    element.style.left = -event.x + "px";
-    element.style.top = -event.y + "px";
+    comp.x = -event.x;
+    comp.y = -event.y;
 }

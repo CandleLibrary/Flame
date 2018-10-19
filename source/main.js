@@ -19,8 +19,6 @@ import { RootText } from "./wick_compiler_nodes/text.js";
 
 let wick = require("wick");
 
-
-
 class System {
     constructor() {
         this.doc_man = new DocumentManager(this);
@@ -28,6 +26,25 @@ class System {
         this.html = new HTMLManager(this.doc_man);
         this.js = new JSManager(this.doc_man);
         this.presets = wick.core.presets();
+        this.project = {
+    documents : [],
+    components : [],
+    history:[],
+    data:{},
+    meta:{
+        name:"",
+        creation_date:"",
+        working_directory:"",
+        temp_directory:"",
+        preferences:{
+            indent_style:"    ",
+            interface_scheme :{},
+            default_width:360,
+            default_height:640
+        },
+
+    }
+}
     }
 }
 
@@ -55,6 +72,7 @@ const flame = {
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         const ui_man = new UI_Manager(ui_group, view_group, system);
+        system.ui = ui_man;
 
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 

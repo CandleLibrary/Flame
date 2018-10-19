@@ -1,16 +1,27 @@
 /**
- * This module is responsible for storing, updating, and caching components. In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
+ * This module is responsible for storing, updating, and caching compents. 
+ * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
+ * Any associated stylesheets are managed through this componnent. 
  */
-
-
 class Component {
 
     constructor(system) {
-    	this.element = document.createElement("iframe");
-        this.element.src = "about://blank";
-        this.element.onload = (e)=>{
+        //frame for fancy styling
+        this.style_frame = document.createElement("div")
+        this.style_frame.classList.add("flame_component");
+        this.style_frame.classList.add("style_frame");
+
+        this.iframe = document.createElement("iframe");
+        this.iframe.src = "./component_frame.html";
+
+        this.iframe.width = system.project.meta.preferences.default_width;
+        this.iframe.height = system.project.meta.preferences.default_height;
+
+        this.iframe.onload = (e)=>{
+            system.ui.intergrateIframe(this.iframe, this);
             e.target.contentDocument.body.appendChild(this.data);
         }
+
         //Label
         this.name = document.createElement("div");
         this.name.innerHTML = "unnamed";
@@ -19,11 +30,8 @@ class Component {
         //HTML Data
         this.data = document.createElement("div");
 
-        this.element.appendChild(this.name);
-        this.element.appendChild(this.data);
-
-        //Add the appropriate clas
-        this.element.classList.add("flame_component");
+        this.style_frame.appendChild(this.name);
+        this.style_frame.appendChild(this.iframe);
 
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;
@@ -32,8 +40,8 @@ class Component {
         //dimensions are defined as [0] = top, [1] = left, [2] = width, [3] = height.
         this.dimensions = [0, 0, 0, 0];
 
-        //Link to local CSS 
-        this.local_css = null;
+        //Links to local CSS scripts
+        this.local_css = []
 
         //The file path (relative to project directory), of the component file. 
         this.file_path = "";
@@ -45,6 +53,10 @@ class Component {
         this.manager = null;
 
         this.system = system;
+    }
+
+    get element(){
+        return this.style_frame;
     }
 
     cache(){
@@ -101,6 +113,14 @@ class Component {
      	let min_y = this.dimensions.top;
 		let max_y = min_y + this.dimensions.height;
      	return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
+     }
+
+     set x(x){
+        this.element.style.left = x + "px";
+     }
+
+     set y(y){
+        this.element.style.top = y + "px";
      }
 }
 

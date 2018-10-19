@@ -6,8 +6,11 @@
 class Component {
 
     constructor(system) {
-    	this.element = document.createElement("div");
-
+    	this.element = document.createElement("iframe");
+        this.element.src = "about://blank";
+        this.element.onload = (e)=>{
+            e.target.contentDocument.body.appendChild(this.data);
+        }
         //Label
         this.name = document.createElement("div");
         this.name.innerHTML = "unnamed";
@@ -73,7 +76,7 @@ class Component {
     }
 
     documentReady(pkg){
-        this.manager = pkg.mount(this.element, null, false, this);
+        this.manager = pkg.mount(this.data, null, false, this);
     }
 
     /**

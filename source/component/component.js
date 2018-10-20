@@ -7,7 +7,7 @@ class Component {
 
     constructor(system) {
         //frame for fancy styling
-        this.style_frame = document.createElement("div")
+        this.style_frame = document.createElement("div");
         this.style_frame.classList.add("flame_component");
         this.style_frame.classList.add("style_frame");
 
@@ -20,7 +20,7 @@ class Component {
         this.iframe.onload = (e)=>{
             system.ui.intergrateIframe(this.iframe, this);
             e.target.contentDocument.body.appendChild(this.data);
-        }
+        };
 
         //Label
         this.name = document.createElement("div");
@@ -41,7 +41,7 @@ class Component {
         this.dimensions = [0, 0, 0, 0];
 
         //Links to local CSS scripts
-        this.local_css = []
+        this.local_css = [];
 
         //The file path (relative to project directory), of the component file. 
         this.file_path = "";
@@ -88,6 +88,11 @@ class Component {
     }
 
     documentReady(pkg){
+
+        let css = pkg._skeletons_[0].tree.css;
+        css.forEach(css=>{
+            this.local_css.push(css);
+        });
         this.manager = pkg.mount(this.data, null, false, this);
     }
 
@@ -121,6 +126,14 @@ class Component {
 
      set y(y){
         this.element.style.top = y + "px";
+     }
+
+     get x(){
+        return parseFloat(this.element.style.left);
+     }
+
+     get y(){
+        return parseFloat(this.element.style.top);
      }
 }
 

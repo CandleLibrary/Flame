@@ -3,7 +3,7 @@ let StyleNode = require("wick").core.source.compiler.nodes.style;
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;
 
-const  path = require("path")
+const  path = require("path");
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 proto._processTextNodeHook_ = function(lex) {
     //Feed the lexer to a new CSS Builder
@@ -17,7 +17,7 @@ proto._processTextNodeHook_ = function(lex) {
     let IS_DOCUMENT = !!this.url;
     
     if(this.url){
-        let url =this.url.path
+        let url =this.url.path;
         URL = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url).replace(/\\/g,"/");
     }
 

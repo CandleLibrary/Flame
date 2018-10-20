@@ -30,10 +30,10 @@ RootNode.prototype.rebuild = function() {
         this.updated();
 
     if (this.observing_sources) {
+        this._linkCSS_();
         for (let i = 0; i < this.observing_sources.length; i++)
             this.observing_sources[i].rebuild();
         this.resetRebuild();
-        this._linkCSS_();
     } else if (this.par)
         this.par.rebuild();
 };

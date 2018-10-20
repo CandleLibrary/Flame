@@ -19,7 +19,7 @@ export class CSSDocument{
 
 
 		this.element = document.createElement("div");
-		document.body.appendChild(this.element)
+	//	document.body.appendChild(this.element)
 	}
 
 	load(){
@@ -44,7 +44,6 @@ export class CSSDocument{
 	}
 
 	save(){
-
 		this.PENDING_SAVE = true;
 		if(this.SAVING) return;
 		this.SAVING = true;

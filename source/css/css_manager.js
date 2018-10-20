@@ -14,15 +14,18 @@ export class CSSManager {
 		this.docs = docs;
 	}
 
-	aquireCSS(element){
+	aquireCSS(element, component){
+		if(!component)
+			return [];
+
+		let css_docs = component.local_css;
 
 		let selectors = []; //TODO convert to dynamic rule object. 
 		
-		for(let i = 0; i < this.css_files.length; i++){
-			let gen = this.css_files[i].getApplicableSelectors(element), sel = null;
+		for(let i = 0; i < css_docs.length; i++){
+			let gen = css_docs[i].getApplicableSelectors(element), sel = null;
 			while(sel = gen.next().value)
 				selectors.push(sel);
-			//rules = this.css_files[i].getApplicableRules(element, rules);
 		}
 		
 		return selectors;
@@ -56,7 +59,6 @@ export class CSSManager {
 
 		if(!style){
 			style = this.style_elements[id] = document.createElement("style");
-			document.head.appendChild(style);
 		}
 
 		style.innerHTML = text;

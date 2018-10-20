@@ -58,8 +58,6 @@ const flame = {
     init: (wick) => {
         //Startup the Main UI system
 
-        console.log(StyleNode, Source);
-
         let system = new System();
 
         StyleNode.prototype.flame_system = system;

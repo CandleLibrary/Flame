@@ -1,4 +1,5 @@
 import {
+    COMPLETE,
     MOVE,
     CREATE_COMPONENT,
     CREATE_CSS_DOC
@@ -190,6 +191,7 @@ export class UI_Manager {
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
         this.target = null;
+        COMPLETE(this.system);
     }
 
     handleDocumentDrop(e) {

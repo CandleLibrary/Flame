@@ -59,6 +59,15 @@ class Component {
         return this.style_frame;
     }
 
+    addStyle(style, INLINE = false){
+        if(!INLINE){
+            this.local_css.splice(this.css_split, 0, style)
+            this.css_split++;
+        }else{
+            this.local_css.push(style);
+        }
+    }
+
     cache(){
         
     }

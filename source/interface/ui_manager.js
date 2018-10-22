@@ -2,13 +2,13 @@ import {
     COMPLETE,
     MOVE,
     CREATE_COMPONENT,
-    CREATE_CSS_DOC
+    CREATE_CSS_DOC,
+    TEXTEDITOR
 } from "./action";
-
 import {
     CanvasManager
 } from "./canvas_manager";
-
+var DD_Candidate = false;
 /**
  * @brief Handles user input and rendering of UI elements
  * 
@@ -16,7 +16,6 @@ import {
  */
 export class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
-
         this.transform = new(require("wick").core.common.Transform2D)();
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -31,22 +30,14 @@ export class UI_Manager {
         //Array of components
         this.components = [];
         this.UI_MOVE = false;
-
         //CanvasManager provides onscreen transform visual widgets for components and elements.
         this.canvas = new CanvasManager();
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
-
-
-
         // **************** Eventing *****************
-
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
-
         // // *********** Mouse *********************
-
         window.addEventListener("mouseover", e => {});
-
         window.addEventListener("wheel", e => {
             e.preventDefault();
             let amount = e.deltaY;
@@ -54,40 +45,33 @@ export class UI_Manager {
             let os = this.scale;
             this.scale = Math.max(0.2, Math.min(2, this.scale + -amount * 0.00005));
             this.transform.scale = this.scale;
-
             let px = this.transform.px,
                 s = this.scale,
                 x = e.pageX;
             let py = this.transform.py,
                 y = e.pageY;
-
             this.transform.px -= ((((px - x) * os) - ((px - x) * s))) / (os);
             this.transform.py -= ((((py - y) * os) - ((py - y) * s))) / (os);
-
             this.canvas.render(this.transform);
             this.view_element.style.transform = this.transform;
         });
-
         // // *********** Pointer *********************
-
-        window.addEventListener("pointerdown", e => {this.canvas.clearTargets(this.transform),this.handlePointerDownEvent(e)});
+        window.addEventListener("pointerdown", e => {
+            this.canvas.clearTargets(this.transform), this.handlePointerDownEvent(e)
+        });
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
-
         // // *********** Drag 'n Drop *********************
-
         document.body.addEventListener("drop", e => this.handleDocumentDrop(e));
         document.body.addEventListener("dragover", e => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
         });
-
         document.body.addEventListener("dragstart", e => {});
     }
 
-    setTarget(e,x,y) {
+    setTarget(e, x, y) {
         let target = null;
-
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
             this.target = target;
             return true;
@@ -96,78 +80,62 @@ export class UI_Manager {
     }
 
     intergrateIframe(iframe, component) {
-
         iframe.contentWindow.addEventListener("mousedown", e => {
-            e.preventDefault();
-            e.stopPropagation();
-
+            // /e.preventDefault();
+            // /e.stopPropagation();
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-
             this.last_action = Date.now();
             //test to see if there is a UI element that should be receiving the event. 
-
-            this.handlePointerDownEvent(e,x,y);
-
-            if (e.button == 0 && !this.setTarget(e,x,y)) {
+            this.handlePointerDownEvent(e, x, y);
+            if (e.button == 0 && !this.setTarget(e, x, y)) {
                 this.canvas.setIframeTarget(e.target, component);
                 this.canvas.render(this.transform);
-                this.setTarget(e,x,y);
+                this.setTarget(e, x, y);
             }
-
             return false;
         });
-
         iframe.contentWindow.addEventListener("mousemove", e => {
             //e.preventDefault();
             //e.stopPropagation();
             //  test to see if there is a UI element that should be receiving the event. 
-
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-
-            if(e.button !== 1)
-                this.handlePointerMoveEvent(e,x,y);
-
+            if (e.button !== 1) this.handlePointerMoveEvent(e, x, y);
             return false;
         });
-
         iframe.contentWindow.addEventListener("mouseup", e => {
             let t = Date.now();
-
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-
             if (t - this.last_action < 200) {
-                this.canvas.setIframeTarget(e.target, component);
-                this.canvas.render(this.transform);
-                this.setTarget(e,x,y);
+                if (Date.now() - DD_Candidate < 200) {
+                    DD_Candidate = 0;
+                    this.handleContextMenu(e,x,y);
+                } else {
+                    this.canvas.setIframeTarget(e.target, component);
+                    this.canvas.render(this.transform);
+                    this.setTarget(e, x, y);
+                    DD_Candidate = Date.now();
+                }
             }
-
             this.handlePointerEndEvent(e);
         });
     }
-
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY)) {
         this.origin_x = x;
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
-
         if (e.button == 1) {
             this.UI_MOVE = true;
             return true;
         }
-
         return false;
     }
-
-
     handlePointerMoveEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY)) {
         if (!this.ACTIVE_POINTER_INPUT) return;
-        
         let diffx = this.origin_x - x;
         let diffy = this.origin_y - y;
-
         if (this.UI_MOVE) {
             this.transform.px -= diffx * this.transform.sx;
             this.transform.py -= diffy * this.transform.sy;
@@ -179,27 +147,20 @@ export class UI_Manager {
         } else if (this.target) {
             this.origin_x = x;
             this.origin_y = y;
-            
-            if(this.target.action)
-                this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy);
-            
+            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy);
             this.canvas.render(this.transform);
         }
     }
-
     handlePointerEndEvent(e) {
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
         this.target = null;
         COMPLETE(this.system);
     }
-
     handleDocumentDrop(e) {
         e.preventDefault();
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
-
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
-
             if (doc) switch (doc.type) {
                 case "html":
                     CREATE_COMPONENT(this.system, doc, {
@@ -223,6 +184,12 @@ export class UI_Manager {
             }
         });
     }
+
+    handleContextMenu(e,x,y){
+        //Load text editor in the bar.
+        TEXTEDITOR(this.system, this.target.element, this.target.component, x, y);
+    }
+
     addComponent(component) {
         this.components.push(component);
     }

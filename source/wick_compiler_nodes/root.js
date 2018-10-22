@@ -1,7 +1,7 @@
 let RootNode = require("wick").core.source.compiler.nodes.root;
 let wick = require("wick");
 let id = 0;
-
+let Lexer = require("wick").core.lexer;
 
 RootNode.prototype.createElement = function(presets, source) {
     let element = document.createElement(this.tag);
@@ -23,6 +23,29 @@ RootNode.prototype.setSource = function(source) {
     source.ast = this;
 };
 
+//
+
+RootNode.prototype.reparse = function(text, element){
+    let lex = Lexer(text);
+    let Root = new RootNode();
+
+    let promise = Root._parse_(Lexer(text), false, false, this.par);
+
+    promise.then(node=>{
+        this.insertBefore(node);
+        
+        node.par = this.par;
+
+        if(this.par)
+            this.par.remC(this);
+        node.setRebuild(false, true);
+        node.rebuild();
+        //replace this node with the new one. 
+    });
+
+    return promise
+}
+
 // Rebuild all sources relying on this node
 RootNode.prototype.rebuild = function() {
 
@@ -42,6 +65,19 @@ RootNode.prototype.build_existing = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
+        if(this.CHANGED & 4){
+
+            let span = document.createElement("span");
+
+            this._build_(span, source, presets, [], taps, {});
+
+            let ele = span.firstChild;
+
+            element.parentElement.replaceChild(ele, element);
+            
+            return true;
+        }
+
         if (this._merged_)
             this._merged_.build_existing(element, source, presets, taps);
 
@@ -55,20 +91,25 @@ RootNode.prototype.build_existing = function(element, source, presets, taps) {
         if (true || this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
-            for (let i = 0, node = this.fch; node || i < children.length; i++, node = this.getN(node)) {
+            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                node.build_existing(child, source, presets, taps);
+                if(node.build_existing(child, source, presets, taps)) i++;
             }
         }
     }
+
+    return true;
 };
 
-RootNode.prototype.setRebuild = function(child = false) {
-
+RootNode.prototype.setRebuild = function(child = false, REBUILT = false) {
     if (child) {
         this.CHANGED |= 2;
     } else {
         this.CHANGED |= 1;
+    }
+
+    if(REBUILT) {
+        this.CHANGED |= 4;
     }
 
     if (this.par)

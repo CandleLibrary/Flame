@@ -1,6 +1,10 @@
 let CSS_Rule_Constructor = require("wick").core.css.prop;
 let types = require("wick").core.css.types;
 
+import {TEXTEDITOR} from "./actions/text"
+
+export {TEXTEDITOR};
+
 class ActionCache {
     constructor() {
         this.css_flags_a = 0;

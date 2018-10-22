@@ -44,6 +44,7 @@ export class CSSDocument{
 	}
 
 	save(){
+		
 		this.PENDING_SAVE = true;
 		if(this.SAVING) return;
 		this.SAVING = true;

@@ -1,16 +1,11 @@
-import {
-    MOVE,
-    SCALETL,
-    SCALEBL,
-    SCALETR,
-    SCALEBR
-} from "./action";
+import { MOVE } from "./actions/move";
+import { SCALETL, SCALEBL, SCALETR, SCALEBR } from "./actions/resize";
 
 const pi2 = Math.PI * 2;
 
 function gripPoint(ctx, x, y, r) {
     ctx.beginPath();
-    //ctx.moveTo(x,y);
+    //ctx.moveTo(x,y); 
     ctx.arc(x, y, r, 0, pi2);
     ctx.fill();
     ctx.stroke();
@@ -26,7 +21,7 @@ class BoxElement {
     }
 
     setDimensions() {
-    	let rect = this.target.element.getBoundingClientRect();
+        let rect = this.target.element.getBoundingClientRect();
         this.x = rect.left + this.target.component.x + 4;
         this.y = rect.top + this.target.component.y + 4;
         this.w = rect.width;
@@ -34,7 +29,7 @@ class BoxElement {
     }
 
     render(ctx) {
-    	this.setDimensions();
+        this.setDimensions();
         ctx.strokeStyle = "rgb(0,150,250)";
         ctx.lineWidth = 1;
         ctx.strokeRect(this.x - 1, this.y - 1, this.w + 2, this.h + 2);
@@ -83,8 +78,8 @@ export class CanvasManager {
         if (this.widget) {
             let w = this.widget.w + 20;
             let h = this.widget.h + 20;
-            let dx = x - (this.widget.x - 10); 
-            let dy = y - (this.widget.y - 10); 
+            let dx = x - (this.widget.x - 10);
+            let dy = y - (this.widget.y - 10);
 
             //Widget size
             let ws = 20;
@@ -94,33 +89,33 @@ export class CanvasManager {
                     //Check corners for action;
                     this.widget.target.action = MOVE;
 
-                    if(dx <= ws){
-                        if(dy <= ws)
+                    if (dx <= ws) {
+                        if (dy <= ws)
                             this.widget.target.action = SCALETL;
                         else if (dy >= h - ws)
                             this.widget.target.action = SCALEBL;
                     }
 
-                    if(dx >= w - ws){
-                        if(dy <= ws)
+                    if (dx >= w - ws) {
+                        if (dy <= ws)
                             this.widget.target.action = SCALETR;
                         else if (dy >= h - ws)
                             this.widget.target.action = SCALEBR;
                     }
-                    
+
                     return this.widget.target;
                 }
         }
         return false;
     }
 
-    resize(transform){
+    resize(transform) {
         this.element.width = window.innerWidth;
         this.element.height = window.innerHeight;
         this.render(transform);
     }
 
-    clearTargets(transform){
+    clearTargets(transform) {
         this.widget = null;
         this.render(transform);
     }

@@ -1,13 +1,12 @@
-import {
-    COMPLETE,
-    MOVE,
-    CREATE_COMPONENT,
-    CREATE_CSS_DOC,
-    TEXTEDITOR
-} from "./action";
+//*********** Actions ******************
+import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./actions/create";
+import { COMPLETE } from "./actions/complete";
+import { TEXTEDITOR } from "./actions/text";
+
+//OTHER imports
 import {
     CanvasManager
-} from "./canvas_manager";
+} from "./canvas_manager"; 
 var DD_Candidate = false;
 /**
  * @brief Handles user input and rendering of UI elements
@@ -34,30 +33,18 @@ export class UI_Manager {
         this.canvas = new CanvasManager();
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
+
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
+
         // // *********** Mouse *********************
         window.addEventListener("mouseover", e => {});
-        window.addEventListener("wheel", e => {
-            e.preventDefault();
-            let amount = e.deltaY;
-            let diff = -amount * 0.0001;
-            let os = this.scale;
-            this.scale = Math.max(0.2, Math.min(2, this.scale + -amount * 0.00005));
-            this.transform.scale = this.scale;
-            let px = this.transform.px,
-                s = this.scale,
-                x = e.pageX;
-            let py = this.transform.py,
-                y = e.pageY;
-            this.transform.px -= ((((px - x) * os) - ((px - x) * s))) / (os);
-            this.transform.py -= ((((py - y) * os) - ((py - y) * s))) / (os);
-            this.canvas.render(this.transform);
-            this.view_element.style.transform = this.transform;
-        });
+        window.addEventListener("wheel", e => this.handleScroll(e));
+
         // // *********** Pointer *********************
         window.addEventListener("pointerdown", e => {
-            this.canvas.clearTargets(this.transform), this.handlePointerDownEvent(e)
+            this.canvas.clearTargets(this.transform);
+            this.handlePointerDownEvent(e);
         });
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
@@ -80,6 +67,11 @@ export class UI_Manager {
     }
 
     intergrateIframe(iframe, component) {
+        iframe.contentWindow.addEventListener("wheel", e => {
+            let x = e.pageX + 4 + component.x;
+            let y = e.pageY + 4 + component.y;
+            this.handleScroll(e, x, y)
+        });
         iframe.contentWindow.addEventListener("mousedown", e => {
             // /e.preventDefault();
             // /e.stopPropagation();
@@ -111,7 +103,7 @@ export class UI_Manager {
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
                     DD_Candidate = 0;
-                    this.handleContextMenu(e,x,y);
+                    this.handleContextMenu(e, x, y);
                 } else {
                     this.canvas.setIframeTarget(e.target, component);
                     this.canvas.render(this.transform);
@@ -185,9 +177,25 @@ export class UI_Manager {
         });
     }
 
-    handleContextMenu(e,x,y){
+    handleContextMenu(e, x, y) {
         //Load text editor in the bar.
         TEXTEDITOR(this.system, this.target.element, this.target.component, x, y);
+    }
+
+    handleScroll(e, x = e.pageX, y = e.pageY) {
+        e.preventDefault();
+        let amount = e.deltaY;
+        let diff = -amount * 0.0001;
+        let os = this.scale;
+        this.scale = Math.max(0.2, Math.min(2, this.scale + -amount * 0.00005));
+        this.transform.scale = this.scale;
+        let px = this.transform.px,
+            s = this.scale,
+            py = this.transform.py;
+        this.transform.px -= ((((px - x) * os) - ((px - x) * s))) / (os);
+        this.transform.py -= ((((py - y) * os) - ((py - y) * s))) / (os);
+        this.canvas.render(this.transform);
+        this.view_element.style.transform = this.transform;
     }
 
     addComponent(component) {

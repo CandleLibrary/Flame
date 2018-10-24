@@ -99,9 +99,10 @@ class Component {
     documentReady(pkg){
 
         let css = pkg._skeletons_[0].tree.css;
-        css.forEach(css=>{
-            this.local_css.push(css);
-        });
+        if(css)
+            css.forEach(css=>{
+                this.local_css.push(css);
+            });
         this.manager = pkg.mount(this.data, null, false, this);
     }
 

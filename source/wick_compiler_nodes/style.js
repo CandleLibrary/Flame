@@ -3,7 +3,7 @@ let StyleNode = require("wick").core.source.compiler.nodes.style;
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;
 
-const  path = require("path");
+const path = require("path");
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 proto._processTextNodeHook_ = function(lex) {
     //Feed the lexer to a new CSS Builder
@@ -13,12 +13,13 @@ proto._processTextNodeHook_ = function(lex) {
     lex.n();
 
     let URL = "";
-    
+
     let IS_DOCUMENT = !!this.url;
-    
-    if(this.url){
-        let url =this.url.path;
-        URL = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url).replace(/\\/g,"/");
+
+    if (this.url) {
+        URL = this.url.path;
+        if (!path.isAbsolute(URL))
+            URL = path.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
     }
 
     this.css._parse_(lex).catch((e) => {
@@ -43,11 +44,11 @@ proto.toString = function(off) {
         str += ` ${attr.name}="${attr.value}"`;
     }
 
-    if(!this.url){
+    if (!this.url) {
         str += ">\n";
         str += this.css.toString(off + 1);
         str += `${("    ").repeat(off)}</${this.tag}>\n`;
-    }else{
+    } else {
         str += `></${this.tag}>\n`;
     }
 
@@ -58,6 +59,6 @@ proto.updatedCSS = function() {
     this.rebuild();
 };
 
-proto.build_existing = ()=>{return false}
+proto.build_existing = () => { return false }
 
 export { StyleNode };

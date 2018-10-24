@@ -17,7 +17,9 @@ export class DocumentManager {
          * Global `fetch` polyfill - basic support
          */
         global.fetch = (url, data) => new Promise((res, rej) => {
-            let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+            let p = url;
+            if(!path.isAbsolute(p))
+                p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
             let doc_id = this.load({
                 path: path.dirname(p),
                 name: path.basename(p),
@@ -47,10 +49,15 @@ export class DocumentManager {
                     let type = "";
                     if (file.type) type = file.type.split("/")[1].toLowerCase();
                     else type = name.split(".").pop().toLowerCase();
+                    
                     if (path.includes(name)) path = path.replace(name, "");
+
                     if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
+                    
                     path = path.replace(/\\/g, "/");
+                    
                     let id = `${path}/${name}`;
+                    
                     if (!this.docs.get(id)) {
                         let doc;
                         switch (type) {

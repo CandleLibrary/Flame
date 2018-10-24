@@ -4,8 +4,8 @@ let id = 0;
 let Lexer = require("wick").core.lexer;
 
 RootNode.prototype.createElement = function(presets, source) {
-    let element = document.createElement(this.tag);
 
+    let element = document.createElement(this.tag);
     element.wick_source = source;
     element.wick_node = this;
     element.wick_id = id++;
@@ -22,8 +22,6 @@ RootNode.prototype.setSource = function(source) {
 
     source.ast = this;
 };
-
-//
 
 RootNode.prototype.reparse = function(text, element){
     let lex = Lexer(text);

@@ -3,6 +3,7 @@ const fs = require("fs");
 
 export class CSSDocument{
 	constructor(file_name, path, type, system){
+		
 		this.name = file_name;
 		this.type = type;
 		this.path = path;

@@ -30,7 +30,7 @@ export class WickDocument {
                 }
                 this.data = data;
                 this.LOADED = true;
-                (new wick.core.source.package(this.data, this.system.presets, true)).then((pkg) => {
+                (new wick.core.source.package(this.data, this.system.presets, true, this.path + "/" + this.name)).then((pkg) => {
                     this.data = pkg;
                     pkg._skeletons_[0].tree.addObserver(this);
                     for (let i = 0; i < this.ObjectsPendingLoad.length; i++) this.ObjectsPendingLoad[i].documentReady(pkg);

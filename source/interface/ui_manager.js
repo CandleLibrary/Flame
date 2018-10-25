@@ -137,6 +137,7 @@ export class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.target) {
+            if(this.target.element.tagName == "BODY") return;
             this.origin_x = x;
             this.origin_y = y;
             if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy);

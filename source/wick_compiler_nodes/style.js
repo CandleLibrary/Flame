@@ -59,6 +59,6 @@ proto.updatedCSS = function() {
     this.rebuild();
 };
 
-proto.build_existing = () => { return false }
+proto.buildExisting = () => { return false }
 
 export { StyleNode };

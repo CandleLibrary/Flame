@@ -1,7 +1,16 @@
-let RootNode = require("wick").core.source.compiler.nodes.root;
 let wick = require("wick");
+let RootNode = wick.core.source.compiler.nodes.root;
+let SourceNode = wick.core.source.compiler.nodes.source;
+let Lexer = wick.core.lexer;
 let id = 0;
-let Lexer = require("wick").core.lexer;
+
+SourceNode.prototype.createElement = function(presets, source) {
+    let element = document.createElement(this.getAttribute("element") || "div");
+    element.wick_source = source;
+    element.wick_node = this;
+    element.wick_id = id++;
+    return element;
+};
 
 RootNode.prototype.createElement = function(presets, source) {
 
@@ -23,31 +32,33 @@ RootNode.prototype.setSource = function(source) {
     source.ast = this;
 };
 
-RootNode.prototype.reparse = function(text, element){
+RootNode.prototype.reparse = function(text, element) {
     let lex = Lexer(text);
     let Root = new RootNode();
 
+    Root.par = this.par;
+
     let promise = Root._parse_(Lexer(text), false, false, this.par);
 
-    promise.then(node=>{
-        this.insertBefore(node);
-        
-        node.par = this.par;
+    promise.then(node => {
+
+        node.par = null;
 
         if(this.par)
-            this.par.remC(this);
+            this.par.replace(this, node);
+        
         node.setRebuild(false, true);
         node.rebuild();
         //replace this node with the new one. 
     });
 
-    return promise
-}
+    return promise;
+};
 
 // Rebuild all sources relying on this node
 RootNode.prototype.rebuild = function() {
 
-    if(!this.par)
+    if (!this.par)
         this.updated();
 
     if (this.observing_sources) {
@@ -59,11 +70,11 @@ RootNode.prototype.rebuild = function() {
         this.par.rebuild();
 };
 
-RootNode.prototype.build_existing = function(element, source, presets, taps) {
+RootNode.prototype.buildExisting = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
-        if(this.CHANGED & 4){
+        if (this.CHANGED & 4) {
 
             let span = document.createElement("span");
 
@@ -72,12 +83,12 @@ RootNode.prototype.build_existing = function(element, source, presets, taps) {
             let ele = span.firstChild;
 
             element.parentElement.replaceChild(ele, element);
-            
+
             return true;
         }
 
         if (this._merged_)
-            this._merged_.build_existing(element, source, presets, taps);
+            this._merged_.buildExisting(element, source, presets, taps);
 
         if (true || this.CHANGED & 1) {
             //redo IOs that have changed (TODO)
@@ -91,7 +102,7 @@ RootNode.prototype.build_existing = function(element, source, presets, taps) {
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                if(node.build_existing(child, source, presets, taps)) i++;
+                if (node.buildExisting(child, source, presets, taps)) i++;
             }
         }
     }
@@ -106,7 +117,7 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false) {
         this.CHANGED |= 1;
     }
 
-    if(REBUILT) {
+    if (REBUILT) {
         this.CHANGED |= 4;
     }
 
@@ -173,7 +184,7 @@ RootNode.prototype._mergeComponent_ = function() {
 };
 
 RootNode.prototype.addObserver = function(observer) {
-    if(!this.observers)
+    if (!this.observers)
         this.observers = [];
     this.observers.push(observer);
 };

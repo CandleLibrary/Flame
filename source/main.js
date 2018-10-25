@@ -1,3 +1,6 @@
+let wick = require("wick");
+window.wick = wick;
+
 import { UI_Manager } from "./interface/ui_manager";
 import { JSManager } from "./js/js_manager";
 
@@ -16,8 +19,11 @@ import { Source } from "./source/source.js";
 import { RootNode } from "./wick_compiler_nodes/root.js";
 import { StyleNode } from "./wick_compiler_nodes/style.js";
 import { RootText } from "./wick_compiler_nodes/text.js";
+import { SourceNode } from "./wick_compiler_nodes/source.js";
+import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
+import { PackageNode } from "./wick_compiler_nodes/package.js";
+import { Script } from "./wick_compiler_nodes/script.js";
 
-let wick = require("wick");
 
 class System {
     constructor() {

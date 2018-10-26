@@ -3,6 +3,7 @@ import wick from "wick";
 import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./actions/create";
 import { COMPLETE } from "./actions/complete";
 import { TEXTEDITOR } from "./actions/text";
+import { UIComponent } from "./ui_component";
 
 //OTHER imports
 import {
@@ -41,7 +42,7 @@ export class UI_Manager {
             These can be modified by the user through project system to create and use custom UI
             elements. 
         */
-        this.ui_components = new Map();
+        this.components = new Map();
 
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
@@ -65,6 +66,10 @@ export class UI_Manager {
             e.dataTransfer.dropEffect = "copy";
         });
         document.body.addEventListener("dragstart", e => {});
+    }
+
+    addComponent(name, wick_component){
+        this.components.set(name, new UIComponent(wick_component, system));
     }
 
     setTarget(e, x, y) {

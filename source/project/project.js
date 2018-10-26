@@ -1,4 +1,5 @@
 import wick from "wick";
+
 /**
  * @brief Stores data for the current project.
  * @details The project object is the primary store of user data and preferences. 
@@ -14,14 +15,15 @@ export class Project {
             models:{
                 flame: this.flame_data
             }
-        })
+        });
         this.history = [];
         this.setDefaults();
     }
 
     setDefaults(){
-        debugger
         this.flame_data.creation_date = Date.now();
+        this.flame_data.default.component.width = 360;
+        this.flame_data.default.component.height = 920;
     }
 
     load() {}
@@ -61,10 +63,10 @@ const flame_data = {
         last_modified : EPOCH_Time,
         creation_date : EPOCH_Time,
 	}),
-	default : project : schemed({
-        component : project : schemed({
+	default  : schemed({
+        component  : schemed({
             width: $Number,
             height: $Number
         })
 	})
-}
+};

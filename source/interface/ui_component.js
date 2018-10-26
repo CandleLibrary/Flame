@@ -7,7 +7,7 @@ const wick = require("wick");
  */
 class UIComponent {
 
-    constructor(wick_component, system) {
+    constructor(system) {
         //frame for fancy styling
         this.element = document.createElement("div");
         this.element.classList.add("flame_ui_component");
@@ -18,6 +18,12 @@ class UIComponent {
             this.pkg = pkg;
             this.manager = pkg.mount(this.element, null, false, this);
         });
+
+
+    }
+
+    load(doc) {
+        console.log(doc)
     }
 
     set x(x) {

@@ -1,6 +1,5 @@
 import wick from "wick";
-
-const fs = require("fs");
+import fs from "fs";
 
 const Lexer = wick.core.lexer;
 

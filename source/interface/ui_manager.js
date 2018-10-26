@@ -1,5 +1,6 @@
 //*********** Actions ******************
 import wick from "wick";
+import path from "path";
 import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./actions/create";
 import { COMPLETE } from "./actions/complete";
 import { TEXTEDITOR } from "./actions/text";
@@ -68,8 +69,15 @@ export class UI_Manager {
         document.body.addEventListener("dragstart", e => {});
     }
 
-    addComponent(name, wick_component){
-        this.components.set(name, new UIComponent(wick_component, system));
+    addComponent(wick_component_file_path){
+        
+        let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
+        
+        if(doc){
+            let component = new UIComponent(this.system)
+            component.load(doc)
+            this.components.set(doc.filename, component);
+        }
     }
 
     setTarget(e, x, y) {
@@ -211,9 +219,5 @@ export class UI_Manager {
         this.transform.py -= ((((py - y) * os) - ((py - y) * s))) / (os);
         this.canvas.render(this.transform);
         this.view_element.style.transform = this.transform;
-    }
-
-    addComponent(component) {
-        this.components.push(component);
     }
 }

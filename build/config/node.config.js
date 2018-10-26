@@ -5,6 +5,6 @@ export default {
         file: "./build/flame.node.js",
         format: "cjs",
     },
-    external: ["wick"],
+    external: ["wick", "path", "fs"],
     plugins: []
 }

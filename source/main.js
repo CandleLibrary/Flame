@@ -1,4 +1,5 @@
-let wick = require("wick");
+import wick from "wick";
+
 window.wick = wick;
 
 import { UI_Manager } from "./interface/ui_manager";
@@ -24,6 +25,8 @@ import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
 import { PackageNode } from "./wick_compiler_nodes/package.js";
 import { Script } from "./wick_compiler_nodes/script.js";
 
+//Poject system
+import { Project } from "./project/project"
 
 class System {
     constructor() {
@@ -32,25 +35,7 @@ class System {
         this.html = new HTMLManager(this.doc_man);
         this.js = new JSManager(this.doc_man);
         this.presets = wick.core.presets();
-        this.project = {
-    documents : [],
-    components : [],
-    history:[],
-    data:{},
-    meta:{
-        name:"",
-        creation_date:"",
-        working_directory:"",
-        temp_directory:"",
-        preferences:{
-            indent_style:"    ",
-            interface_scheme :{},
-            default_width:360,
-            default_height:640
-        },
-
-    }
-}
+        this.project = new Project(this);
     }
 }
 

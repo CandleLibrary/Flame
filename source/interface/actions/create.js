@@ -1,3 +1,4 @@
+import wick from "wick";
 import {
     Component
 } from "../../component/component";

@@ -1,3 +1,4 @@
+import wick from "wick";
 export function getFirstPositionedAncestor(ele) {
     let element = null;
 

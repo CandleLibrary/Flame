@@ -1,5 +1,3 @@
-const wick = require("wick");
-
 export class CSSComponent{
 	constructor(tree, manager){
 		this.manager = manager;

@@ -1,6 +1,7 @@
+import wick from "wick";
 import { CacheFactory } from "./cache";
 import { getFirstPositionedAncestor } from "./common";
-let types = require("wick").core.css.types;
+let types = wick.core.css.types;
 /** Set the left position of an Element. Returns calculated ratio if the ratio argument is not defined. */
 export function setLeft(element, dx, rule, ratio = 0) {
     if (rule.props.left instanceof types.percentage) {

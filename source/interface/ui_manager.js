@@ -1,4 +1,5 @@
 //*********** Actions ******************
+import wick from "wick";
 import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./actions/create";
 import { COMPLETE } from "./actions/complete";
 import { TEXTEDITOR } from "./actions/text";
@@ -15,24 +16,32 @@ var DD_Candidate = false;
  */
 export class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
-        this.transform = new(require("wick").core.common.Transform2D)();
+        
+        this.system = system;
+        
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
         this.ACTIVE_POINTER_INPUT = false;
         this.origin_x = 0;
         this.origin_y = 0;
-        this.position_x = 0;
-        this.position_y = 0;
-        this.scale = 1;
+        this.transform = new(wick.core.common.Transform2D)();
         this.last_action = Date.now();
-        this.system = system;
+        
         //Array of components
         this.components = [];
         this.UI_MOVE = false;
+        
         //CanvasManager provides onscreen transform visual widgets for components and elements.
         this.canvas = new CanvasManager();
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
+
+        /* 
+            UI components serve as UX/UI handlers for all tools that comprise flame.
+            These can be modified by the user through project system to create and use custom UI
+            elements. 
+        */
+        this.ui_components = new Map();
 
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
@@ -48,6 +57,7 @@ export class UI_Manager {
         });
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
+        
         // // *********** Drag 'n Drop *********************
         document.body.addEventListener("drop", e => this.handleDocumentDrop(e));
         document.body.addEventListener("dragover", e => {
@@ -187,11 +197,10 @@ export class UI_Manager {
         e.preventDefault();
         let amount = e.deltaY;
         let diff = -amount * 0.0001;
-        let os = this.scale;
-        this.scale = Math.max(0.2, Math.min(2, this.scale + -amount * 0.00005));
-        this.transform.scale = this.scale;
+        let os = this.transform.scale;
+        this.transform.scale = Math.max(0.2, Math.min(2, os + -amount * 0.00005));
         let px = this.transform.px,
-            s = this.scale,
+            s = this.transform.scale,
             py = this.transform.py;
         this.transform.px -= ((((px - x) * os) - ((px - x) * s))) / (os);
         this.transform.py -= ((((py - y) * os) - ((py - y) * s))) / (os);

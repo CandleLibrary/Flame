@@ -1,4 +1,5 @@
-let wick = require("wick");
+import wick from "wick";
+
 let RootNode = wick.core.source.compiler.nodes.root;
 let SourceNode = wick.core.source.compiler.nodes.source;
 let Lexer = wick.core.lexer;

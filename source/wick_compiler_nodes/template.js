@@ -1,5 +1,7 @@
-let wick = require("wick");
+import wick from "wick";
+
 let SourceTemplateNode = wick.core.source.compiler.nodes.template;
+
 let Lexer = wick.core.lexer;
 
 SourceTemplateNode.prototype.buildExisting = function(element, source, presets, taps) {

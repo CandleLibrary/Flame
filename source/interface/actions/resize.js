@@ -1,3 +1,4 @@
+import wick from "wick";
 import { CacheFactory } from "./cache";
 import { getFirstPositionedAncestor } from "./common";
 import {
@@ -6,7 +7,7 @@ import {
     setTop,
     setBottom
 } from "./move";
-let types = require("wick").core.css.types;
+let types = wick.core.css.types;
 
 export function setWidth(element, dx, rule, ratio = 0) {
     if (rule.props.width instanceof types.percentage) {

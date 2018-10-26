@@ -1,3 +1,4 @@
+import wick from "wick";
 export function TEXTEDITOR(system, element, component, x, y){
 	const ui_group = document.querySelector("#ui_group");
 	//Open text editor component in UI view

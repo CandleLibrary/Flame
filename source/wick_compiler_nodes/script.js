@@ -1,4 +1,6 @@
-let Script = require("wick").core.source.compiler.nodes.script;
+import wick from "wick";
+
+let Script = wick.core.source.compiler.nodes.script;
 
 Script.prototype.cssInject = Script.prototype._processTextNodeHook_;
 

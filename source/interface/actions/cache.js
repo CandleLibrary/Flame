@@ -1,4 +1,6 @@
-let CSS_Rule_Constructor = require("wick").core.css.prop;
+import wick from "wick";
+
+let CSS_Rule_Constructor = wick.core.css.prop;
 
 
 let cache_de_cache = null;

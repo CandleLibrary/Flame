@@ -1,4 +1,6 @@
-let CSSRule = require("wick").core.css.prop;
+import wick from "wick";
+
+let CSSRule = wick.core.css.prop;
 
 /**
  * @brief This will replace the default rule.merge with a reactive system that updates the respective selector. 

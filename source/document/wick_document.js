@@ -1,6 +1,9 @@
-const wick = require("wick");
+import wick from "wick";
+
 const fs = require("fs");
+
 const Lexer = wick.core.lexer;
+
 export class WickDocument {
     constructor(file_name, path, type, system) {
         this.name = file_name;

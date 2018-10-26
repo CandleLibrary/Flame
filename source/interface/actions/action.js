@@ -1,3 +1,5 @@
+import wick from "wick";
+
 import { TEXTEDITOR } from "./actions/text";
 
 export { TEXTEDITOR };

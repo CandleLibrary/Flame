@@ -1,4 +1,5 @@
-const wick = require("wick");
+import wick from "wick";
+
 const fs = require("fs");
 
 export class CSSDocument{

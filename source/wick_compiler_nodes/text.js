@@ -1,5 +1,5 @@
-
-let RootText = require("wick").core.source.compiler.nodes.text;
+import wick from "wick";
+let RootText = wick.core.source.compiler.nodes.text;
 import {RootNode} from "./root";
 
 RootText.prototype.createElement = RootNode.prototype.createElement;

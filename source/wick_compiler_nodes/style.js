@@ -1,4 +1,6 @@
-let StyleNode = require("wick").core.source.compiler.nodes.style;
+import wick from "wick";
+
+let StyleNode = wick.core.source.compiler.nodes.style;
 
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;

@@ -1,3 +1,5 @@
+import wick from "wick";
+
 import {
 	CSSComponent
 } from "./css_component";
@@ -6,7 +8,7 @@ import {
  *  This module maintains CSS documents and handles the updating of their contents. 
  */
 
-let CSS_Root_Constructor = require("wick").core.css.root;
+let CSS_Root_Constructor = wick.core.css.root;
 
 export class CSSManager {
 

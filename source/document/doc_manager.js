@@ -5,8 +5,8 @@ import {
 import {
     CSSDocument
 } from "./css_document";
-let path = require("path");
-let fs = require("fs");
+import path from "path";
+import fs from "fs";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -41,7 +41,11 @@ export class DocumentManager {
     load(file) {
         switch (typeof(file)) {
             case "string": // Load from file system or DB
-                break;
+                let p = path.parse(file);
+                file = {
+                    path : p.dir,
+                    name: p.base
+                };
             case "object": // Load data 
                 if (file.name && file.path) {
                     let path = file.path;

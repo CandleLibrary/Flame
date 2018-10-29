@@ -21,8 +21,8 @@ const $Boolean = scheme.bool;
 /**
  * Schema for flame_data model
  */
- const schemed = wick.model.scheme;
-const flame_scheme = {
+const schemed = wick.model.scheme;
+const flame_scheme = schemed({
 	project : schemed({
 		name : $String,
         working_directory : $String,
@@ -35,7 +35,12 @@ const flame_scheme = {
             width: $Number,
             height: $Number
         })
-	})
-};
+	}),
+    settings: schemed({
+        move_type : $String,
+        primary_color: $Number,
+        secondary_color : $Number,
+    })
+});
 
 export {flame_scheme};

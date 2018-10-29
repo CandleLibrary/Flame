@@ -7,23 +7,49 @@ const wick = require("wick");
  */
 class UIComponent {
 
-    constructor(system) {
+    constructor(system, name) {
         //frame for fancy styling
         this.element = document.createElement("div");
         this.element.classList.add("flame_ui_component");
 
         this.pkg = null;
 
-        (new wick.core.source.package(wick_component, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
-            this.pkg = pkg;
-            this.manager = pkg.mount(this.element, null, false, this);
-        });
+        this.name = name;
 
+        this.system = system;
 
+        this.icon = null;
+    }
+
+    documentReady(pkg){
+        this.mgr = pkg.mount(this.element, this.system.project.flame_data);
+        let src = this.mgr.sources[0].ast;
+        if(src._statics_.menu){
+            switch(src._statics_.menu){
+                case "main":
+                    this.system.ui.addToMenu("main", this.name, this.mgr.sources[0].badges.icon);
+                break;
+            }
+        } 
+
+        this.mgr._upImport_ = (prop_name, data, meta)=>{
+            this.system.ui.mountComponent(this);
+        };
+    }
+
+    set(data){
+        this.mgr._update_({target:data});
     }
 
     load(doc) {
-        console.log(doc)
+        doc.bind(this);
+    }
+
+    mount(element){
+        element.appendChild(this.element);
+    }
+
+    unmount(){
     }
 
     set x(x) {

@@ -1,5 +1,4 @@
-import { MOVE } from "./actions/move";
-import { SCALETL, SCALEBL, SCALETR, SCALEBR } from "./actions/resize";
+import {actions} from "./actions/action";
 
 const pi2 = Math.PI * 2;
 
@@ -87,20 +86,20 @@ export class CanvasManager {
             if (dx > 0 && dx < w)
                 if (dy > 0 && dy < h) {
                     //Check corners for action;
-                    this.widget.target.action = MOVE;
+                    this.widget.target.action = actions.MOVE;
 
                     if (dx <= ws) {
                         if (dy <= ws)
-                            this.widget.target.action = SCALETL;
+                            this.widget.target.action = actions.SCALETL;
                         else if (dy >= h - ws)
-                            this.widget.target.action = SCALEBL;
+                            this.widget.target.action = actions.SCALEBL;
                     }
 
                     if (dx >= w - ws) {
                         if (dy <= ws)
-                            this.widget.target.action = SCALETR;
+                            this.widget.target.action = actions.SCALETR;
                         else if (dy >= h - ws)
-                            this.widget.target.action = SCALEBR;
+                            this.widget.target.action = actions.SCALEBR;
                     }
 
                     return this.widget.target;

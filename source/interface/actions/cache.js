@@ -51,6 +51,8 @@ class Cache {
 
     generateMovementCache(system, element, component) {
 
+        let move_type = system.project.settings.move_type;
+
         let unique_rule = getUniqueRule(system, element, component),
             css_r = getApplicableRules(system, element, component),
             css = mergeRules(css_r);
@@ -105,7 +107,7 @@ class Cache {
             ((HL | 0) << 5) | ((HMT | 0) << 6) | ((HMR | 0) << 7) | ((HMB | 0) << 8) | ((HML | 0) << 9) | ((W | 0) << 10) | ((H | 0) << 11);
 
 
-        if ((60 & v) > 0) { // 
+        if ((60 & v) > 0) { //
 
             if ((v & 40) == 0) { // HT + HL
                 //missing left / right position value.
@@ -123,8 +125,23 @@ class Cache {
         } else if ((960 & v) > 0) {
             //using margin
         } else {
+
             //Create left and top positions or us margin depending on current user preferences.
             unique_rule.addProp(`left:0px;top:0px`);
+            v |= 4 | 32;
+
+            if((v & 3) == 0){
+                if(move_type == "absolute"){
+                    v |= 2
+                    unique_rule.addProp('position:absolute');
+                }
+                else if(move_type == "relative"){
+                    v |= 1
+                    unique_rule.addProp('position:relative');
+                }
+                
+            }
+
         }
 
         //Setup move systems. 

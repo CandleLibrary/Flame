@@ -28,6 +28,9 @@ import { Script } from "./wick_compiler_nodes/script.js";
 //Poject system
 import { Project } from "./project/project"
 
+//Actions 
+import {actions} from "./interface/actions/action"
+
 class System {
     constructor() {
         this.doc_man = new DocumentManager(this);
@@ -35,12 +38,13 @@ class System {
         this.html = new HTMLManager(this.doc_man);
         this.js = new JSManager(this.doc_man);
         this.presets = wick.core.presets();
+        this.actions = actions;
         this.project = new Project(this);
     }
 }
 
 /**
- * @brief Flame exposed object.  
+* @brief Flame exposed object.  
  * @details Contains methods necessary to start a flame session.
  * @return Object
  */

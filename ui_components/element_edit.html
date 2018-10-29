@@ -1,0 +1,17 @@
+<w-s model="settings" #menu="main" export="load">
+	
+	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
+		HTML
+	</div>
+
+	<textarea value="((data))" onchange="((change)())"></textarea>
+
+	<script on=((target)) >
+		src.wick_element = target.element.wick_node; 
+		emit("data", target.element.wick_node + "");
+	</script>
+
+	<script on="((change))"> 
+		src.wick_element.reparse(event.target.value).then(n=>src.wick_element = n)
+	</script>
+</w-s>

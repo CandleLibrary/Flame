@@ -22,3 +22,7 @@ Centered move
 		position is defined as absolute
 			adjust left && right to keep width uniform on move. 
 
+Centering:
+relative with percentage;
+absolute left right without width defined.
+

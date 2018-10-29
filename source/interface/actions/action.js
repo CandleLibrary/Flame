@@ -1,58 +1,26 @@
 import wick from "wick";
 
-import { TEXTEDITOR } from "./actions/text";
+import { TEXTEDITOR } from "./text";
+import { SCALETL, SCALEBL, SCALETR, SCALEBR, SCALEL, SCALEB, SCALET, SCALER} from "./resize"
+import { MOVE, CENTER } from "./move"
+import { COMPLETE } from "./complete"
+import {CREATE_COMPONENT, CREATE_CSS_DOC} from "./create"
 
-export { TEXTEDITOR };
-
-class ActionCache {
-    constructor() {
-        this.css_flags_a = 0;
-        this.css_flags_b = 0;
-        this.transform_type = 0;
-        this.css_props = null;
-    }
+const actions = {
+    TEXTEDITOR,
+    MOVE,
+    CENTER,
+    SCALETL, 
+    SCALEBL, 
+    SCALETR, 
+    SCALEBR, 
+    SCALEL, 
+    SCALEB, 
+    SCALET, 
+    SCALER,
+    COMPLETE,
+    CREATE_COMPONENT,
+    CREATE_CSS_DOC,
 }
 
-function getApplicableRules(system, element, component) {
-    return system.css.aquireCSS(element, component);
-}
-
-function getUniqueRule(system, element, component) {
-    return system.css.getUnique(element, component);
-}
-
-function mergeRules(css) {
-    let rule = new CSS_Rule_Constructor();
-    for (let i = 0; i < css.length; i++)
-        rule.merge(css[i].r);
-    return rule;
-}
-
-export function RESIZE(system, element, component, dx, dy) {
-
-}
-
-export function BACKGROUND(system, element, component, dx, dy) {
-
-}
-
-export function FONT(system, element, component, dx, dy) {
-
-}
-
-export function MARGIN(system, element, component, dx, dy) {
-
-}
-
-export function PADDING(system, element, component, dx, dy) {
-
-}
-
-export function TRANSFORM(system, element, component, dx, dy) {
-
-}
-
-export function SVG(system, element, component, dx, dy) {
-
-}
-
+export {actions}

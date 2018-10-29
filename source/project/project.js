@@ -17,11 +17,18 @@ export class Project {
 
         this.system = system;
         
-        this.flame_data = new (wick.model.scheme(flame_scheme));
-        
+        this.flame_data = new flame_scheme;
+
+        let settings = this.flame_data.settings
         this.presets = wick.core.presets({
             models:{
-                flame: this.flame_data
+                flame: this.flame_data,
+                settings: this.flame_data.settings,
+            },
+            custom:{
+                actions : system.actions,
+                ui : system.ui,
+                system
             }
         });
         
@@ -37,26 +44,31 @@ export class Project {
         fs.readdir(dir,(e,d)=>{
             if(e)
                 return console.error(`Could not load UI components: ${e}`);
-            console.log(d)
+
             d.forEach((fn)=>{
-                console.log(fn, path.extname(fn))
                 if(path.extname(fn) == ".html"){
-                    console.log(fn);
-                    this.system.ui.addComponent(fn);
+                    this.system.ui.addComponent(([dir, fn]).join("/"));
                 }
             })
         })
     }
 
     setDefaults(){
+
         this.flame_data.creation_date = Date.now();
         this.flame_data.default.component.width = 360;
         this.flame_data.default.component.height = 920;
+
+        this.flame_data.settings.move_type = "relative";
         this.loadComponents("./ui_components");
     }
 
     load() {}
     save() {}
+
+    get settings(){
+        return this.flame_data.settings;
+    }
 
     importUIComponent(component){
         this.system.iu.addUIComponent(component);

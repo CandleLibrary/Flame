@@ -19,6 +19,35 @@
 				border:solid 0px black;
 			}
 
+			.menu_item{
+				position:relative;
+				display: inline-block;
+				width:38px;
+				height:38px;
+				padding:5px;
+				margin: 1px;
+				background-color: white;
+				box-shadow: 2px 2px 8px black;
+				border-radius: 20px;
+			}
+
+			#main_menu {
+				width: 50vw;
+				position :absolute;
+				left :25vw;
+				right:25vw;
+				height:50px;
+				top:2px;
+				border: 1px solid rgba(0,0,0,0.2);
+				border-radius: 20px;
+			}
+			#main_menu[show=true]{
+				display: block;
+			}
+			#main_menu[show=false]{
+				display: none;
+			}
+
 			#main_view{
 				display: block;
 				position: absolute;

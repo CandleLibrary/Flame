@@ -18,8 +18,8 @@ export class WickDocument {
         this.css_docs = [];
         this.system = system;
         this.element = document.createElement("div");
-        document.body.appendChild(this.element)
     }
+
     load() {
         fs.open(this.path + "/" + this.name, "r", (err, fd) => {
             if (err) throw err;
@@ -32,7 +32,7 @@ export class WickDocument {
                 }
                 this.data = data;
                 this.LOADED = true;
-                (new wick.core.source.package(this.data, this.system.presets, true, this.path + "/" + this.name)).then((pkg) => {
+                (new wick.core.source.package(this.data, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
                     this.data = pkg;
                     pkg._skeletons_[0].tree.addObserver(this);
                     for (let i = 0; i < this.ObjectsPendingLoad.length; i++) this.ObjectsPendingLoad[i].documentReady(pkg);
@@ -41,10 +41,12 @@ export class WickDocument {
             });
         });
     }
+
     updatedWickASTTree(tree) {
         this.element.innerText = tree;
         this.save();
     }
+
     save() {
         return;
         this.PENDING_SAVE = true;
@@ -66,6 +68,7 @@ export class WickDocument {
             });
         });
     }
+
     //*** Generate line differences between two files
     diff(old_str, new_str) {
         let le = Lexer(new_str);
@@ -84,6 +87,7 @@ export class WickDocument {
             }
         }
     }
+
     bind(object) {
         if (this.LOADED) object.documentReady(this.data);
         else this.ObjectsPendingLoad.push(object);

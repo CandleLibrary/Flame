@@ -1,3 +1,21 @@
-<div>
-	Test
-</div>
+<w-s model="settings" #menu="main" export="load">
+	
+	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
+		MOVE
+	</div>
+
+	<input value=((move_type))>((move_type))
+	
+	<button onclick="((center)())">Center</button>
+
+	<script on=((target))>	
+		src.target = target;
+	</script>
+
+	<script on="((center))">
+		if(src.target){
+			presets.custom.actions.CENTER(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.system.ui.
+		}
+	</script>
+</w-s>

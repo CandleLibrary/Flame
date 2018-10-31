@@ -9,7 +9,7 @@ function getApplicableRules(system, element, component) {
     return system.css.aquireCSS(element, component);
 }
 
-function getUniqueRule(system, element, component) {
+export function getUniqueRule(system, element, component) {
     return system.css.getUnique(element, component);
 }
 
@@ -101,7 +101,7 @@ class Cache {
         if (css.props.height)
             H = true;
 
-        //      1                 	  2                   4                 8                 16                
+        //      1                     2                   4                 8                 16                
         let v = ((POS_R | 0) << 0) | ((POS_A | 0) << 1) | ((HT | 0) << 2) | ((HR | 0) << 3) | ((HB | 0) << 4) |
             //32                64                 128                256                512                1024              2048
             ((HL | 0) << 5) | ((HMT | 0) << 6) | ((HMR | 0) << 7) | ((HMB | 0) << 8) | ((HML | 0) << 9) | ((W | 0) << 10) | ((H | 0) << 11);
@@ -129,25 +129,26 @@ class Cache {
             //Create left and top positions or us margin depending on current user preferences.
             unique_rule.addProp(`left:0px;top:0px`);
             v |= 4 | 32;
-
-            if((v & 3) == 0){
-                if(move_type == "absolute"){
-                    v |= 2
-                    unique_rule.addProp('position:absolute');
-                }
-                else if(move_type == "relative"){
-                    v |= 1
-                    unique_rule.addProp('position:relative');
-                }
-                
-            }
-
         }
+
+        console.log(v)
+
+        if ((v & 3) == 0) {
+
+            if (move_type == "absolute") {
+                v |= 2;
+                unique_rule.addProp('position:absolute');
+            } else if (move_type == "relative") {
+                v |= 1;
+                unique_rule.addProp('position:relative');
+            }
+        }
+
 
         //Setup move systems. 
         while (true) {
 
-        	//horizontal types
+            //horizontal types
             if (2 & v) {
                 let p = [];
 
@@ -161,7 +162,7 @@ class Cache {
             }
 
             if (1 & v) {
-            	let p = [];
+                let p = [];
 
                 if ((32 & v))
                     p.push("left");
@@ -198,7 +199,7 @@ class Cache {
             }
 
             if (1 & v) {
-            	let p = [];
+                let p = [];
 
                 if ((4 & v))
                     p.push("top");
@@ -211,8 +212,6 @@ class Cache {
 
             break;
         }
-
-        console.log(this.move_hori_type, this.move_vert_type);
 
         css_r = getApplicableRules(system, element, component);
         this.rules = mergeRules(css_r);

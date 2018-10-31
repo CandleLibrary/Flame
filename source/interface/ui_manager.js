@@ -1,15 +1,13 @@
 //*********** Actions ******************
 import wick from "wick";
-import path from "path";
-import {actions} from "./actions/action"
-import {
-    UIComponent
-} from "./ui_component";
+import { actions } from "./actions/action";
+import { UIComponent } from "./ui_component";
 
 //OTHER imports
 import {
     CanvasManager
 } from "./canvas_manager";
+
 var DD_Candidate = false;
 /**
  * @brief Handles user input and rendering of UI elements
@@ -43,7 +41,7 @@ export class UI_Manager {
         this.main_menu = document.createElement("div");
         this.main_menu.id = "main_menu";
         this.main_menu.map = new Map();
-        this.main_menu.setAttribute("show", "false")
+        this.main_menu.setAttribute("show", "false");
         this.element.appendChild(this.main_menu);
 
         //Array of components
@@ -54,7 +52,6 @@ export class UI_Manager {
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
 
-
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
 
@@ -63,7 +60,7 @@ export class UI_Manager {
         window.addEventListener("wheel", e => this.handleScroll(e));
 
         // // *********** Pointer *********************
-        window.addEventListener("pointerdown", e => this.handlePointerDownEvent(e));
+        window.addEventListener("pointerdown", e => this.handlePointerDownEvent(e, undefined, undefined, !!1));
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
 
@@ -76,7 +73,7 @@ export class UI_Manager {
         document.body.addEventListener("dragstart", e => {});
     }
 
-    mountComponent(component){
+    mountComponent(component) {
         component.mount(this.element);
         this.loadedComponents.push(component);
         component.set(this.target);
@@ -103,19 +100,18 @@ export class UI_Manager {
     setTarget(e, x, y) {
         let target = null;
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
-            console.log(target)
-            
+
             this.target = target;
-            
+
             this.main_menu.setAttribute("show", "true");
 
-            this.loadedComponents.forEach(c=>c.set(this.target));
+            this.loadedComponents.forEach(c => c.set(this.target));
 
             return true;
         }
 
 
-        this.main_menu.setAttribute("show", "false")
+        this.main_menu.setAttribute("show", "false");
         return false;
     }
 
@@ -123,13 +119,11 @@ export class UI_Manager {
         iframe.contentWindow.addEventListener("wheel", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-            this.handleScroll(e, x, y)
+            this.handleScroll(e, x, y);
         });
+
         iframe.contentWindow.addEventListener("mousedown", e => {
 
-
-            // /e.preventDefault();
-            // /e.stopPropagation();
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
@@ -177,23 +171,28 @@ export class UI_Manager {
         });
     }
 
-    handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY)) {
+    handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
+
+        if (e.button == 1) {
+            this.origin_x = x;
+            this.origin_y = y;
+            this.ACTIVE_POINTER_INPUT = true;
+            this.UI_MOVE = true;
+            return true;
+        }
+
+        if (FROM_MAIN) return false;
 
         this.origin_x = x;
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
 
-        if (e.button == 1) {
-            this.UI_MOVE = true;
-            return true;
+        if (e.target !== document.body) {
+            return;
         }
 
-        if (e.target !== document.body) {
-            return
-        };
-
         this.canvas.clearTargets(this.transform);
-        this.main_menu.setAttribute("show", "false")
+        this.main_menu.setAttribute("show", "false");
 
         return false;
     }
@@ -268,7 +267,6 @@ export class UI_Manager {
     handleScroll(e, x = e.pageX, y = e.pageY) {
         e.preventDefault();
         let amount = e.deltaY;
-        let diff = -amount * 0.0001;
         let os = this.transform.scale;
         this.transform.scale = Math.max(0.2, Math.min(2, os + -amount * 0.00005));
         let px = this.transform.px,

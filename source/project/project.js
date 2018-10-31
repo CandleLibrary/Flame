@@ -17,9 +17,8 @@ export class Project {
 
         this.system = system;
         
-        this.flame_data = new flame_scheme;
+        this.flame_data = new flame_scheme();
 
-        let settings = this.flame_data.settings
         this.presets = wick.core.presets({
             models:{
                 flame: this.flame_data,
@@ -49,8 +48,8 @@ export class Project {
                 if(path.extname(fn) == ".html"){
                     this.system.ui.addComponent(([dir, fn]).join("/"));
                 }
-            })
-        })
+            });
+        });
     }
 
     setDefaults(){

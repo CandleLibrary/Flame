@@ -7,15 +7,32 @@
 	<input value=((move_type))>((move_type))
 	
 	<button onclick="((center)())">Center</button>
+	<button onclick="((xtoggle)())">X toggle</button>
+	<button onclick="((ytoggle)())">Y toggle</button>
+	<button onclick="((ptoggle)())">Pos toggle</button>
+	<button onclick="((clear)())">Clear</button>
 
 	<script on=((target))>	
 		src.target = target;
 	</script>
 
 	<script on="((center))">
-		if(src.target){
+		if(src.target)
 			presets.custom.actions.CENTER(presets.custom.system, src.target.element, src.target.component);
-			presets.custom.system.ui.
-		}
+	</script>
+
+	<script on="((xtoggle))">
+		if(src.target)
+			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.element, src.target.component, true);
+	</script>
+
+	<script on="((ytoggle))">
+		if(src.target)
+			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.element, src.target.component, false, true);
+	</script>
+
+	<script on="((ptoggle))">
+		if(src.target)
+			presets.custom.actions.TOGGLEPOSITION(presets.custom.system, src.target.element, src.target.component);
 	</script>
 </w-s>

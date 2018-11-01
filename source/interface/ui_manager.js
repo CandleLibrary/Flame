@@ -28,7 +28,6 @@ export class UI_Manager {
         this.transform = new(wick.core.common.Transform2D)();
         this.last_action = Date.now();
 
-
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
             These can be modified by the user through project system to create and use custom UI
@@ -217,7 +216,6 @@ export class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.target) {
-            console.log(this.target)
             this.origin_x = x;
             this.origin_y = y;
             if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy, this.target.IS_COMPONENT);
@@ -230,7 +228,8 @@ export class UI_Manager {
         this.ACTIVE_POINTER_INPUT = false;
 
         //this.target = null;
-        actions.COMPLETE(this.system);
+        if(this.target)
+            actions.COMPLETE(this.system, this.target.element, this.target.component);
     }
 
     handleDocumentDrop(e) {

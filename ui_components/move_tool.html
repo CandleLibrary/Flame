@@ -9,7 +9,8 @@
 	<button onclick="((center)())">Center</button>
 	<button onclick="((xtoggle)())">X toggle</button>
 	<button onclick="((ytoggle)())">Y toggle</button>
-	<button onclick="((ptoggle)())">Pos toggle</button>
+	<button onclick="((ptoggle)())">To Absolute</button>
+	<button onclick="((rtoggle)())">To Relative</button>
 	<button onclick="((clear)())">Clear</button>
 
 	<input type="radio" name="position" value="one" id="radio-one" class="form-radio">
@@ -17,10 +18,6 @@
 	<label for="absolute">absolute</label>
 	<label for="relative">relative</label>
 	<label for="none">none</label>
-
-
-
-	<radio>
 
 	<script on=((target))>	
 		src.target = target;
@@ -42,7 +39,16 @@
 	</script>
 
 	<script on="((ptoggle))">
-		if(src.target)
-			presets.custom.actions.TOGGLEPOSITION(presets.custom.system, src.target.element, src.target.component);
+		if(src.target){
+			presets.custom.actions.TOPOSITIONABSOLUTE(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.actions.COMPLETE(presets.custom.system, src.target.element, src.target.component);
+		}
+	</script>
+
+	<script on="((rtoggle))">
+		if(src.target){
+			presets.custom.actions.TOPOSITIONRELATIVE(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.actions.COMPLETE(presets.custom.system, src.target.element, src.target.component);
+		}
 	</script>
 </w-s>

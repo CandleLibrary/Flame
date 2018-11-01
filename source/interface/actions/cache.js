@@ -226,3 +226,12 @@ export function CacheFactory(system, element, component) {
 
     return cache;
 }
+
+CacheFactory.clear = function(element){
+    
+    if(element.flame_cache){
+        element.flame_cache.destroy();
+    }
+
+    element.flame_cache = null;
+}

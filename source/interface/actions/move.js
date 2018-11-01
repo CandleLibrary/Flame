@@ -17,7 +17,6 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
         component.y += dy;
     } else {
 
-
         // Get CSS information on element and update appropriate records
         let cache = CacheFactory(system, element, component);
 

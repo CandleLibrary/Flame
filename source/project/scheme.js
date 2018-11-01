@@ -37,9 +37,11 @@ const flame_scheme = schemed({
         })
 	}),
     settings: schemed({
+        KEEP_UNIQUE: $Boolean,
         move_type : $String,
         primary_color: $Number,
         secondary_color : $Number,
+
     })
 });
 

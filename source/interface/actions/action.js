@@ -15,10 +15,14 @@ import {
     TOTOP,
     TOTOPBOTTOM,
     TOGGLE_UNIT,
-    TOGGLEPOSITION
+    TOPOSITIONABSOLUTE,
+    TOPOSITIONRELATIVE,
+    TOPOSITIONFIXED,
+    TOPOSITIONSTICKY,
 } from "./convert";
 
 const actions = {
+    COMPLETE,
     TEXTEDITOR,
     MOVE,
     CENTER,
@@ -30,7 +34,6 @@ const actions = {
     SCALEB,
     SCALET,
     SCALER,
-    COMPLETE,
     CREATE_COMPONENT,
     CREATE_CSS_DOC,
     TOMARGINLEFT,
@@ -42,7 +45,10 @@ const actions = {
     TOTOP,
     TOTOPBOTTOM,
     TOGGLE_UNIT,
-    TOGGLEPOSITION
+    TOPOSITIONABSOLUTE,
+    TOPOSITIONRELATIVE,
+    TOPOSITIONFIXED,
+    TOPOSITIONSTICKY,
 };
 
 export { actions };

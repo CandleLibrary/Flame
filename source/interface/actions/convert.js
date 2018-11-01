@@ -57,6 +57,7 @@ export function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
     if (horizontal) {
         switch (cache.move_hori_type) {
             case "left right":
+            case "left right margin":
                 if (css.props.right instanceof types.length) {
                     css.props.right = new types.percentage((css.props.right / rect.width) * 100);
                 } else {

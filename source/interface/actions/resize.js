@@ -6,45 +6,52 @@ import {
     resizeRight
 } from "./common";
 
-export function SCALETL(system, element, component, dx, dy) {
-    let cache = CacheFactory(system, element, component);
-    let css = cache.rules;
-    resizeLeft(element, css, dx, cache);
-    resizeTop(element, css, dy, cache);
+export function SCALETL(system, element, component, dx, dy, IS_COMPONENT) {
+    if (IS_COMPONENT) {
+        console.log(1)
+        component.x += dx;
+        component.width -= dx;
+        component.y += dy;
+        component.height -= dy;
+    } else {
+        let cache = CacheFactory(system, element, component);
+        resizeLeft(element, cache.rules, dx, cache);
+        resizeTop(system, element, component, cache.rules, dy, cache);
+    }
 }
 
-export function SCALEBL(system, element, component, dx, dy) {
+export function SCALEBL(system, element, component, dx, dy, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     resizeLeft(element, css, dx, cache);
     resizeBottom(element, css, dy, cache);
 }
-export function SCALETR(system, element, component, dx, dy) {
+export function SCALETR(system, element, component, dx, dy, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     resizeRight(element, css, dx, cache);
-    resizeTop(element, css, dy, cache);
+    resizeTop(system, element, component, css, dy, cache);
 }
-export function SCALEBR(system, element, component, dx, dy) {
+export function SCALEBR(system, element, component, dx, dy, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     resizeRight(element, css, dx, cache);
     resizeBottom(element, css, dy, cache);
 }
 
-export function SCALEL(system, element, component, d) {
+export function SCALEL(system, element, component, d, nn, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     resizeLeft(element, cache.rules, d, cache);
 }
-export function SCALER(system, element, component, d) {
+export function SCALER(system, element, component, d, nn, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     resizeRight(element, cache.rules, d, cache);
 }
-export function SCALET(system, element, component, d) {
+export function SCALET(system, element, component, d, nn, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
-    resizeTop(element, cache.rules, d, cache);
+    resizeTop(system, element, component, cache.rules, d, cache);
 }
-export function SCALEB(system, element, component, d) {
+export function SCALEB(system, element, component, d, nn, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     resizeBottom(element, cache.rules, d, cache);
 }

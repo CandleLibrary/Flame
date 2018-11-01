@@ -21,6 +21,7 @@ function mergeRules(css) {
 }
 
 class Cache {
+
     constructor() {
         this.rules = null;
         this.element = null;
@@ -33,6 +34,7 @@ class Cache {
         this.valueD = 0;
         this.move_vert_type = "";
         this.move_hori_type = "";
+        this.unique = null;
     }
 
     destroy() {
@@ -64,6 +66,7 @@ class Cache {
             HL = false,
             HB = false,
             HR = false,
+            HM = false,
             HMR = false,
             HMT = false,
             HMB = false,
@@ -95,6 +98,8 @@ class Cache {
             HMT = true;
         if (css.props.margin_bottom)
             HMB = true;
+        if (css.props.margin)
+            HM = true;
 
         if (css.props.width)
             W = true;
@@ -103,8 +108,8 @@ class Cache {
 
         //      1                     2                   4                 8                 16                
         let v = ((POS_R | 0) << 0) | ((POS_A | 0) << 1) | ((HT | 0) << 2) | ((HR | 0) << 3) | ((HB | 0) << 4) |
-            //32                64                 128                256                512                1024              2048
-            ((HL | 0) << 5) | ((HMT | 0) << 6) | ((HMR | 0) << 7) | ((HMB | 0) << 8) | ((HML | 0) << 9) | ((W | 0) << 10) | ((H | 0) << 11);
+            //32                64                 128                256                512                1024              2048            4096
+            ((HL | 0) << 5) | ((HMT | 0) << 6) | ((HMR | 0) << 7) | ((HMB | 0) << 8) | ((HML | 0) << 9) | ((W | 0) << 10) | ((H | 0) << 11) | ((HM | 0) << 12);
 
 
         if ((60 & v) > 0) { //
@@ -131,8 +136,6 @@ class Cache {
             v |= 4 | 32;
         }
 
-        console.log(v)
-
         if ((v & 3) == 0) {
 
             if (move_type == "absolute") {
@@ -148,42 +151,25 @@ class Cache {
         //Setup move systems. 
         while (true) {
 
-            //horizontal types
-            if (2 & v) {
-                let p = [];
+            let p = [];
 
-                if ((32 & v))
-                    p.push("left");
-                if ((8 & v) && (p.length < 1) || !(v & 1024))
-                    p.push("right");
+            if ((32 & v))
+                p.push("left");
+            if ((8 & v))
+                p.push("right");
 
-                if (p.length > 0)
-                    this.move_hori_type = p.join(" ");
-            }
-
-            if (1 & v) {
-                let p = [];
-
-                if ((32 & v))
-                    p.push("left");
-                if ((8 & v) && (p.length < 1))
-                    p.push("right");
-
-                if (p.length > 0)
-                    this.move_hori_type = p.join(" ");
-                else {
-                    if ((v & (128 + 512) == (128 + 512))) {
-                        if (css.props.margin_left == "auto" && css.props.margin_left == "auto")
-                            this.move_hori_type = "margin centered";
-                        else
-                            this.move_hori_type = "margin";
-                    } else if (v & 128) {
-                        this.move_hori_type = "margin-left";
-                    } else if (v & 512) {
-                        this.move_hori_type = "margin-right";
-                    }
+            if ((v & 1024) && css.props.width !== "auto") {
+                if ((v & (128 + 512 + 4096))) {
+                    if ((css.props.margin_left == "auto" && css.props.margin_left == "auto") || css.props.margin == "auto")
+                        p.push("margin");
                 }
             }
+
+            if (p.length > 0)
+                this.move_hori_type = p.join(" ");
+
+            p = [];
+
 
             //vertical types
             if (2 & v) {
@@ -213,6 +199,7 @@ class Cache {
             break;
         }
 
+        this.unique = unique_rule;
         css_r = getApplicableRules(system, element, component);
         this.rules = mergeRules(css_r);
         this.cssflagsA = v;

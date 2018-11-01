@@ -1,4 +1,4 @@
-import {actions} from "./actions/action";
+import { actions } from "./actions/action";
 
 const pi2 = Math.PI * 2;
 
@@ -17,18 +17,28 @@ class BoxElement {
         this.w = 0;
         this.h = 0;
         this.br = 0;
+        this.IS_COMPONENT = false;
     }
 
-    setDimensions() {
-        let rect = this.target.element.getBoundingClientRect();
-        this.x = rect.left + this.target.component.x + 4;
-        this.y = rect.top + this.target.component.y + 4;
-        this.w = rect.width;
-        this.h = rect.height;
+    setDimensions(IS_COMPONENT = this.IS_COMPONENT) {
+        if (IS_COMPONENT) {
+            this.IS_COMPONENT = true;
+            this.x = this.target.component.x + 4;
+            this.y = this.target.component.y + 4;
+            this.w = this.target.component.width;
+            this.h = this.target.component.height;
+        } else {
+            let rect = this.target.element.getBoundingClientRect();
+            this.x = rect.left + this.target.component.x + 4;
+            this.y = rect.top + this.target.component.y + 4;
+            this.w = rect.width;
+            this.h = rect.height;
+        }
     }
 
     render(ctx) {
         this.setDimensions();
+
         ctx.strokeStyle = "rgb(0,150,250)";
         ctx.lineWidth = 1;
         ctx.strokeRect(this.x - 1, this.y - 1, this.w + 2, this.h + 2);
@@ -53,13 +63,10 @@ export class CanvasManager {
         this.ctx = this.element.getContext("2d");
     }
 
-    setIframeTarget(element, component) {
-        let rect = element.getBoundingClientRect();
-
+    setIframeTarget(element, component, IS_COMPONENT = false) {
         let box = new BoxElement(element);
-        box.target = { element, component };
-        box.rect = rect;
-        box.setDimensions();
+        box.target = { element, component, IS_COMPONENT};
+        box.setDimensions(IS_COMPONENT);
         this.widget = box;
     }
 

@@ -140,6 +140,38 @@ export function setTop(element, dy, rule, ratio = 0) {
 }
 
 /** Set the top position of an Element. Returns calculated ratio if the ratio argument is not defined. */
+export function setMarginTop(element, dy, rule, ratio = 0) {
+    if (rule.props.margin_top instanceof types.percentage) {
+
+        //get the nearest positioned ancestor
+        let height = ratio;
+
+        if (ratio == 0) {
+            let ele = getFirstPositionedAncestor(element);
+            if (ele)
+                height = ele.getBoundingClientRect().height;
+        }
+
+        let np = ((height * 0.01 * rule.props.margin_top) + dy) / height;
+
+        if (Math.abs(np) !== Infinity && !isNaN(np)) {
+            rule.props.margin_top = rule.props.margin_top.copy(np * 100);
+            ratio = height;
+        }
+
+    } else
+    if (ratio > 0) {
+        dy = dy / ratio;
+        rule.props.margin_top = rule.props.margin_top.copy(rule.props.margin_top + dy);
+    } else {
+        let start_margin_top = rule.props.margin_top;
+        rule.props.margin_top = start_margin_top.copy(start_margin_top + dy);
+    }
+
+    return ratio;
+}
+
+/** Set the top position of an Element. Returns calculated ratio if the ratio argument is not defined. */
 export function setBottom(element, dy, rule, ratio = 0) {
     if (rule.props.bottom instanceof types.percentage) {
 
@@ -188,7 +220,7 @@ export function setWidth(element, dx, rule, ratio = 0) {
 
         if (ratio == 0) {
             let ele = getFirstPositionedAncestor(element);
-            if (ele){
+            if (ele) {
                 width = ele.getBoundingClientRect().width;
 
             }
@@ -216,7 +248,7 @@ export function setHeight(element, dx, rule, ratio = 0) {
 
         if (ratio == 0) {
             let ele = getFirstPositionedAncestor(element);
-            if (ele){
+            if (ele) {
                 height = ele.getBoundingClientRect().height;
                 console.log(height);
             }
@@ -235,22 +267,32 @@ export function setHeight(element, dx, rule, ratio = 0) {
     }
 }
 
-export function resizeTop(element, css, dy, cache){
-    switch (cache.move_vert_type) {
-        case "top bottom":
-            cache.valueD = setTop(element, dy, css, cache.valueD);
-        case "top":
-            cache.valueD = setTop(element, dy, css, cache.valueD);
-            setHeight(element, -dy, css, 0);
+export function resizeTop(system, element, component, css, dy, cache) {
+    let pos = css.props.position;
+    if (pos && pos !== "static") {
+        
+        if(pos == "relative" && !cache.unique.r.props.margin && !cache.unique.r.props.margin_top){
+            cache.unique.addProp("margin-top:0px");
+            cache.destroy();
+            cache.generateMovementCache(system, element, component);
+            css = cache.rules;
+        }
 
-            break;
-        case "bottom":
-            setHeight(element, -dy, css, 0);
-            break;
+        switch (cache.move_vert_type) {
+            case "top bottom":
+                cache.valueD = setMarginTop(element, dy, css, cache.valueD);
+            case "top":
+                cache.valueD = setMarginTop(element, dy, css, cache.valueD);
+                setHeight(element, -dy, css, 0);
+                break;
+            case "bottom":
+                setHeight(element, -dy, css, 0);
+                break;
+        }
     }
 }
 
-export function resizeBottom(element, css, dy, cache){
+export function resizeBottom(element, css, dy, cache) {
     switch (cache.move_vert_type) {
         case "top bottom":
             cache.valueC = setBottom(element, -dy, css, cache.valueC);
@@ -264,7 +306,7 @@ export function resizeBottom(element, css, dy, cache){
     }
 }
 
-export function resizeLeft(element, css, dx, cache){
+export function resizeLeft(element, css, dx, cache) {
     switch (cache.move_hori_type) {
         case "left right":
             cache.valueB = setLeft(element, dx, css, cache.valueB);
@@ -279,7 +321,7 @@ export function resizeLeft(element, css, dx, cache){
     }
 }
 
-export function resizeRight(element, css, dx, cache){
+export function resizeRight(element, css, dx, cache) {
     switch (cache.move_hori_type) {
         case "left right":
             cache.valueB = setRight(element, -dx, css, cache.valueB);

@@ -19,8 +19,8 @@ class Component {
         this.iframe.width = system.project.flame_data.default.component.width;
         this.iframe.height = system.project.flame_data.default.component.height;
 
-        this.iframe.onload = (e)=>{
-            system.ui.intergrateIframe(this.iframe, this);
+        this.iframe.onload = (e) => {
+            system.ui.integrateIframe(this.iframe, this);
             e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick;
         };
@@ -56,26 +56,28 @@ class Component {
         this.manager = null;
 
         this.system = system;
+
+        this.action = null;
     }
 
-    get element(){
+    get element() {
         return this.style_frame;
     }
 
-    addStyle(style, INLINE = false){
-        if(!INLINE){
+    addStyle(style, INLINE = false) {
+        if (!INLINE) {
             this.local_css.splice(this.css_split, 0, style)
             this.css_split++;
-        }else{
+        } else {
             this.local_css.push(style);
         }
     }
 
-    cache(){
-        
+    cache() {
+
     }
 
-    destroy(){
+    destroy() {
         this.element = null;
     }
 
@@ -99,11 +101,11 @@ class Component {
         document.bind(this);
     }
 
-    documentReady(pkg){
+    documentReady(pkg) {
 
         let css = pkg._skeletons_[0].tree.css;
-        if(css)
-            css.forEach(css=>{
+        if (css)
+            css.forEach(css => {
                 this.local_css.push(css);
             });
         this.manager = pkg.mount(this.data, null, false, this);
@@ -117,37 +119,57 @@ class Component {
     /**
      * Updates the bounding rectangle
      */
-    updateDimensions(){
-    	this.dimensions = this.element.getBoundingClientRect();
+    updateDimensions() {
+        this.dimensions = this.element.getBoundingClientRect();
     }
 
     /**
      * Determines if point is in bounding box. 
      */
-     pointInBoundingBox(x,y){
-     	this.updateDimensions();
-     	let min_x = this.dimensions.left;
-     	let max_x = min_x + this.dimensions.width;
-     	let min_y = this.dimensions.top;
-		let max_y = min_y + this.dimensions.height;
-     	return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
-     }
+    pointInBoundingBox(x, y) {
+        this.updateDimensions();
+        let min_x = this.dimensions.left;
+        let max_x = min_x + this.dimensions.width;
+        let min_y = this.dimensions.top;
+        let max_y = min_y + this.dimensions.height;
+        return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
+    }
 
-     set x(x){
+    set x(x) {
         this.element.style.left = x + "px";
-     }
+    }
 
-     set y(y){
+    set y(y) {
         this.element.style.top = y + "px";
-     }
+    }
 
-     get x(){
+    set width(w) {
+        this.iframe.width = w;
+    }
+
+    set height(h) {
+        this.iframe.height = h;
+    }
+
+    get x() {
         return parseFloat(this.element.style.left);
-     }
+    }
 
-     get y(){
+    get y() {
         return parseFloat(this.element.style.top);
-     }
+    }
+
+    get width() {
+        return parseFloat(this.iframe.width);
+    }
+
+    get height() {
+        return parseFloat(this.iframe.height);
+    }
+
+    get target() {
+        return this.element;
+    }
 }
 
 export { Component };

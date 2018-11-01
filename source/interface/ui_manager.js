@@ -93,7 +93,6 @@ export class UI_Manager {
             let component = new UIComponent(this.system, doc.name);
             component.load(doc);
             this.components.set(doc.name, component);
-
         }
     }
 
@@ -115,7 +114,7 @@ export class UI_Manager {
         return false;
     }
 
-    intergrateIframe(iframe, component) {
+    integrateIframe(iframe, component) {
         iframe.contentWindow.addEventListener("wheel", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
@@ -123,18 +122,21 @@ export class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
-
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
-            //test to see if there is a UI element that should be receiving the event. 
-
-
             this.handlePointerDownEvent(e, x, y);
-            if (e.button == 0 && !this.setTarget(e, x, y)) {
-                this.canvas.setIframeTarget(e.target, component);
-                this.canvas.render(this.transform);
-                this.setTarget(e, x, y);
+
+            if (e.button == 0) {
+                if (e.target.tagName == "BODY") {
+                    this.canvas.setIframeTarget(component.element, component, true);
+                    this.canvas.render(this.transform);
+                    this.setTarget(e, x, y);
+                } else if (!this.setTarget(e, x, y)) {
+                    this.canvas.setIframeTarget(e.target, component);
+                    this.canvas.render(this.transform);
+                    this.setTarget(e, x, y);
+                }
             }
 
 
@@ -142,9 +144,6 @@ export class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousemove", e => {
-            //e.preventDefault();
-            //e.stopPropagation();
-            //  test to see if there is a UI element that should be receiving the event. 
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
             if (e.button !== 1) this.handlePointerMoveEvent(e, x, y);
@@ -161,9 +160,15 @@ export class UI_Manager {
                     DD_Candidate = 0;
                     this.handleContextMenu(e, x, y);
                 } else {
-                    this.canvas.setIframeTarget(e.target, component);
-                    this.canvas.render(this.transform);
-                    this.setTarget(e, x, y);
+                    if (e.target.tagName == "BODY") {
+                        this.canvas.setIframeTarget(component.element, component, true);
+                        this.canvas.render(this.transform);
+                        this.setTarget(e, x, y);
+                    } else if (!this.setTarget(e, x, y)) {
+                        this.canvas.setIframeTarget(e.target, component);
+                        this.canvas.render(this.transform);
+                        this.setTarget(e, x, y);
+                    }
                     DD_Candidate = Date.now();
                 }
             }
@@ -212,10 +217,10 @@ export class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.target) {
-            if (this.target.element.tagName == "BODY") return;
+            console.log(this.target)
             this.origin_x = x;
             this.origin_y = y;
-            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy);
+            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy, this.target.IS_COMPONENT);
             this.canvas.render(this.transform);
         }
     }

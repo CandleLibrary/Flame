@@ -78,4 +78,8 @@ export class DocumentManager {
     get(id) {
         return this.docs.get(id);
     }
+    /** Updates all changes to files and records diffs resulting from user actions */
+    seal(){
+
+    }
 }

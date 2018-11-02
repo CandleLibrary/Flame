@@ -4,4 +4,6 @@ export function COMPLETE(system, element, component) {
 	//Diff changed documents, clear caches, close opened dialogs if necessary
 	if(element)
 		CacheFactory.clear(element);
+
+	system.doc_man.seal();
 }

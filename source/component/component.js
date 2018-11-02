@@ -23,6 +23,7 @@ class Component {
             system.ui.integrateIframe(this.iframe, this);
             e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick;
+            this.window = e.target.contentWindow;
         };
 
         //Label

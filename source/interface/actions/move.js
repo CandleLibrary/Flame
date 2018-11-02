@@ -3,10 +3,12 @@ import { CacheFactory } from "./cache";
 import {
     getFirstPositionedAncestor,
     setRight,
-    setDeltaLeft,
     setBottom,
     setDeltaTop,
 } from "./common";
+import {
+    SETDELTALEFT
+} from "./position"
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
@@ -16,7 +18,6 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
         component.x += dx;
         component.y += dy;
     } else {
-
 
         // Get CSS information on element and update appropriate records
         let cache = CacheFactory(system, element, component);
@@ -29,12 +30,12 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
                     //in cases of absolute
                     console.log(cache.valueB, cache.valueA)
                     cache.valueB = setRight(element, -dx, css, 0);
-                    cache.valueA = setDeltaLeft(element, dx, css, 0);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
                     break;
                 case "left right":
                     cache.valueB = setRight(element, -dx, css, 0);
                 case "left":
-                    cache.valueA = setDeltaLeft(element, dx, css, 0);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
                     break;
                 case "right":
                     cache.valueB = setRight(element, -dx, css, cache.valueB);
@@ -89,6 +90,7 @@ export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL =
         case "margin":
             break;
     }
+
     /*
     switch (cache.move_vert_type) {
         case "top bottom":

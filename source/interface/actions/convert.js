@@ -1,4 +1,5 @@
 import wick from "wick";
+import * as clear from "./clear";
 import {
     CacheFactory
 } from "./cache";
@@ -25,7 +26,7 @@ export function TOTOPBOTTOM() {}
 /**
  * @brief Convert position to absolute
  */
-export function TOPOSITIONABSOLUTE(system, element, component) {
+export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
@@ -39,19 +40,8 @@ export function TOPOSITIONABSOLUTE(system, element, component) {
 
             if (css.props.margin) {}
             
-            if (css.props.margin_top) {
-            	if(KEEP_UNIQUE)
-            		cache.unique.addProp(`margin-top:0`);
-                else 
-                	css.props.margin_top = 0;
-            }
-
-            if (css.props.margin_left) {
-            	if(KEEP_UNIQUE)
-            		cache.unique.addProp(`margin-left:0`);
-                else 
-                	css.props.margin_left = 0;
-            }
+            clear.CLEARMARGINTOP(system, element, component, true);
+            clear.CLEARMARGINLEFT(system, element, component, true);
 
             if(!KEEP_UNIQUE && css.props.left)
             	setLeft(element, x, css);
@@ -83,7 +73,8 @@ export function TOPOSITIONABSOLUTE(system, element, component) {
         else cache.unique.addProp("position:absolute");
     }
 
-    element.wick_node.setRebuild();
+    if(!LINKED)
+        element.wick_node.setRebuild();
 }
 
 /**
@@ -112,19 +103,8 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             	}
             }
 
-            if (css.props.left) {
-            	if(KEEP_UNIQUE)
-            		cache.unique.addProp(`left:auto`);
-                else 
-                	css.props.left = "auto";
-            }
-
-            if (css.props.top) {
-            	if(KEEP_UNIQUE)
-            		cache.unique.addProp(`top:auto`);
-                else 
-                	css.props.top = "auto";
-            }
+            clear.CLEARLEFT(system, element, component, true);
+            clear.CLEARTOP(system, element, component, true);
 
             if(!KEEP_UNIQUE && css.props.margin_left)
             	css.props.margin_left = css.props.margin_left.copy(x);
@@ -156,6 +136,30 @@ export function TOPOSITIONRELATIVE(system, element, component) {
 
     element.wick_node.setRebuild();
 }
+
+//Converting from unit types
+//left
+export function LEFTTOPX(){}
+export function LEFTTOEM(){}
+export function LEFTTOPERCENTAGE(){}
+export function LEFTTOVH(){}
+export function LEFTTOVW(){}
+//right
+//top
+//bottom
+//margin top
+//margin bottom
+//margin right
+//margin left
+//border top
+//border bottom
+//border left
+//border right
+//padding top
+//padding bottom
+//padding right
+//padding left
+
 
 export function TOPOSITIONFIXED() {}
 export function TOPOSITIONSTICKY() { /* NO OP */ }

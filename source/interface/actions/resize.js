@@ -37,7 +37,6 @@ export function SCALEBR(system, element, component, dx, dy, IS_COMPONENT) {
     resizeRight(element, css, dx, cache);
     resizeBottom(element, css, dy, cache);
 }
-
 export function SCALEL(system, element, component, d, nn, IS_COMPONENT) {
     let cache = CacheFactory(system, element, component);
     resizeLeft(element, cache.rules, d, cache);

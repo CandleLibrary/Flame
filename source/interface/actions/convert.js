@@ -3,7 +3,11 @@ import {
     CacheFactory
 } from "./cache";
 import {
-    getFirstPositionedAncestor
+    getFirstPositionedAncestor,
+    setRight,
+    setLeft,
+    setBottom,
+    setTop
 } from "./common";
 let types = wick.core.css.types;
 /**
@@ -17,6 +21,7 @@ export function TORIGHT() {}
 export function TOLEFTRIGHT() {}
 export function TOTOP() {}
 export function TOTOPBOTTOM() {}
+
 /**
  * @brief Convert position to absolute
  */
@@ -29,26 +34,35 @@ export function TOPOSITIONABSOLUTE(system, element, component) {
             /** 
                 Need to take margin offset into account when converting to absolute
             */
-            let x = 0;
-            let y = 0;
-            let mgt = 0;
-            let mgl = 0;
+            let x = element.offsetLeft;
+            let y = element.offsetTop;
+
             if (css.props.margin) {}
-            if (css.props.margin_left) {
-                mgl = css.props.margin_left;
-                if (KEEP_UNIQUE) cache.unique.addProp("margin-left:0")
-                else css.props.margin_left = 0;
-            }
+            
             if (css.props.margin_top) {
-                mgt = css.props.margin_top;
-                if (KEEP_UNIQUE) cache.unique.addProp("margin-top:0")
-                else css.props.margin_top = 0;
+            	if(KEEP_UNIQUE)
+            		cache.unique.addProp(`margin-top:0`);
+                else 
+                	css.props.margin_top = 0;
             }
-            if (css.props.top) {
-                y = css.props.top + element.offsetTop;
-                css.props.top = css.props.top.copy(y + mgt);
+
+            if (css.props.margin_left) {
+            	if(KEEP_UNIQUE)
+            		cache.unique.addProp(`margin-left:0`);
+                else 
+                	css.props.margin_left = 0;
             }
-            if (css.props.left) {}
+
+            if(!KEEP_UNIQUE && css.props.left)
+            	setLeft(element, x, css);
+            else
+            	cache.unique.addProp(`left:${x}`);
+            
+            if(!KEEP_UNIQUE && css.props.top)
+            	setTop(element, y, css);
+            else
+            	cache.unique.addProp(`top:${y}`);
+            
             break;
         case "absolute":
             /*no op*/
@@ -72,39 +86,57 @@ export function TOPOSITIONABSOLUTE(system, element, component) {
     element.wick_node.setRebuild();
 }
 
-export function TOPOSITIONRELATIVE() {
+/**
+ * Convert position to relative
+ */
+export function TOPOSITIONRELATIVE(system, element, component) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     switch (css.props.position) {
         case "relative":
+            /*no op*/
             break;
         case "absolute":
-            /** 
-                Get margin offset to element
-            */
-            
-            let x = 0;
-            let y = 0;
-            let mgt = 0;
-            let mgl = 0;
-            if (css.props.margin) {}
-            if (css.props.margin_left) {
-                mgl = css.props.margin_left;
-                if (KEEP_UNIQUE) cache.unique.addProp("margin-left:0")
-                else css.props.margin_left = 0;
+
+            let x = element.offsetLeft;
+            let y = element.offsetTop;
+
+            let sib = element.previousSibling;
+
+            if(sib){
+            	while(sib && (sib.style.position !== "relative" && sib.style.position !== ""))
+            		sib = sib.previousSibling;
+            	if(sib){
+            		y -= sib.offsetTop + sib.offsetHeight;
+            	}
             }
-            if (css.props.margin_top) {
-                mgt = css.props.margin_top;
-                if (KEEP_UNIQUE) cache.unique.addProp("margin-top:0")
-                else css.props.margin_top = 0;
+
+            if (css.props.left) {
+            	if(KEEP_UNIQUE)
+            		cache.unique.addProp(`left:auto`);
+                else 
+                	css.props.left = "auto";
             }
+
             if (css.props.top) {
-                y = css.props.top + element.offsetTop;
-                css.props.top = css.props.top.copy(y + mgt);
+            	if(KEEP_UNIQUE)
+            		cache.unique.addProp(`top:auto`);
+                else 
+                	css.props.top = "auto";
             }
-            if (css.props.left) {}
-            /*no op*/
+
+            if(!KEEP_UNIQUE && css.props.margin_left)
+            	css.props.margin_left = css.props.margin_left.copy(x);
+            else
+            	cache.unique.addProp(`margin-left:${x}px`);
+            
+            if(!KEEP_UNIQUE && css.props.margin_top)
+            	css.props.margin_top = css.props.margin_top.copy(y);
+            else
+            	cache.unique.addProp(`margin-top:${y}px`);
+
+
             break;
         case "fixed":
             //add parent offset values to current position to keep it predictably in place. 
@@ -113,6 +145,7 @@ export function TOPOSITIONRELATIVE() {
             //Manually add required data
             break;
     }
+
     if (KEEP_UNIQUE) {
         if (cache.unique.rules.props.position) cache.unique.rules.props.position = "relative";
         else cache.unique.addProp("position:relative");
@@ -120,6 +153,7 @@ export function TOPOSITIONRELATIVE() {
         if (css.props.position) css.props.position = "relative";
         else cache.unique.addProp("position:relative");
     }
+
     element.wick_node.setRebuild();
 }
 

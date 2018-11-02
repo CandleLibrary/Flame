@@ -114,6 +114,7 @@ export class UI_Manager {
     }
 
     integrateIframe(iframe, component) {
+        
         iframe.contentWindow.addEventListener("wheel", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;

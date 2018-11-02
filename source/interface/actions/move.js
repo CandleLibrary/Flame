@@ -3,9 +3,9 @@ import { CacheFactory } from "./cache";
 import {
     getFirstPositionedAncestor,
     setRight,
-    setLeft,
+    setDeltaLeft,
     setBottom,
-    setTop,
+    setDeltaTop,
 } from "./common";
 
 /**
@@ -16,6 +16,7 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
         component.x += dx;
         component.y += dy;
     } else {
+
 
         // Get CSS information on element and update appropriate records
         let cache = CacheFactory(system, element, component);
@@ -28,12 +29,12 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
                     //in cases of absolute
                     console.log(cache.valueB, cache.valueA)
                     cache.valueB = setRight(element, -dx, css, 0);
-                    cache.valueA = setLeft(element, dx, css, 0);
+                    cache.valueA = setDeltaLeft(element, dx, css, 0);
                     break;
                 case "left right":
                     cache.valueB = setRight(element, -dx, css, 0);
                 case "left":
-                    cache.valueA = setLeft(element, dx, css, 0);
+                    cache.valueA = setDeltaLeft(element, dx, css, 0);
                     break;
                 case "right":
                     cache.valueB = setRight(element, -dx, css, cache.valueB);
@@ -44,7 +45,7 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
                 case "top bottom":
                     cache.valueC = setBottom(element, -dy, css, cache.valueC)
                 case "top":
-                    cache.valueD = setTop(element, dy, css, cache.valueD);
+                    cache.valueD = setDeltaTop(element, dy, css, cache.valueD);
                     break;
                 case "bottom":
                     cache.valueC = setBottom(element, -dy, css, cache.valueC);
@@ -93,7 +94,7 @@ export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL =
         case "top bottom":
             cache.valueC = setBottom(element, -dy, css, cache.valueC);
         case "top":
-            cache.valueD = setTop(element, dy, css, cache.valueD);
+            cache.valueD = setDeltaTop(element, dy, css, cache.valueD);
             break;
         case "bottom":
             cache.valueC = setBottom(element, -dy, css, cache.valueC);

@@ -7,6 +7,7 @@ import {
 } from "./css_document";
 import path from "path";
 import fs from "fs";
+import {DocumentDifferentiator} from "./differ"
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -14,6 +15,8 @@ export class DocumentManager {
     constructor(system) {
         this.docs = new Map();
         this.system = system;
+        this.differ = new DocumentDifferentiator();
+        this.diffs = [];
         /**
          * Global `fetch` polyfill - basic support
          */
@@ -75,11 +78,25 @@ export class DocumentManager {
         }
         return "";
     }
+    
     get(id) {
         return this.docs.get(id);
     }
+
     /** Updates all changes to files and records diffs resulting from user actions */
     seal(){
+        let diffs = [];
+        this.docs.forEach(d=>{
 
+            let diff = d.seal(this.differ);
+
+            if(diff)
+                diffs.push(diff)
+        })
+
+        if(diffs.length > 0)
+            this.diffs.push({v:version++,diffs});
     }
 }
+
+var version = 0;

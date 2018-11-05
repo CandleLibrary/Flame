@@ -21,6 +21,7 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
+    "diff": "^3.5.0",
     "electron": "^3.0.3",
     "wick": "file:../wick"
   },

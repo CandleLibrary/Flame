@@ -19,8 +19,9 @@ export class CSSDocument{
 		this.css_docs = [];
 		this.system = system;
 
-
 		this.element = document.createElement("div");
+
+		this.old_data = "";
 	//	document.body.appendChild(this.element)
 	}
 
@@ -46,8 +47,8 @@ export class CSSDocument{
 	}
 
 	save(){
-		return
 		this.PENDING_SAVE = true;
+		return
 		if(this.SAVING) return;
 		this.SAVING = true;
         this.PENDING_SAVE = false;
@@ -73,5 +74,25 @@ export class CSSDocument{
 
 	updatedCSS(tree){
 		this.save();
+	}
+
+	seal(differ){
+		if(this.PENDING_SAVE){
+			this.PENDING_SAVE = false;
+			
+			let new_data = this + "";
+
+			let diff = differ.createDiff(this.old_data, new_data);
+
+			this.old_data = new_data;
+
+			return (diff) ? {name:this.name, diff} : null;
+		}
+
+		return null;
+	}
+
+	toString(){
+		return this.tree + "";
 	}
 }

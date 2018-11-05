@@ -17,6 +17,7 @@ export class WickDocument {
         this.ObjectsPendingLoad = [];
         this.css_docs = [];
         this.system = system;
+        this.old_data = "";
         this.element = document.createElement("div");
     }
 
@@ -48,8 +49,8 @@ export class WickDocument {
     }
 
     save() {
-        return;
         this.PENDING_SAVE = true;
+        return;
         if (this.SAVING) return;
         this.SAVING = true;
         this.PENDING_SAVE = false;
@@ -69,27 +70,28 @@ export class WickDocument {
         });
     }
 
-    //*** Generate line differences between two files
-    diff(old_str, new_str) {
-        let le = Lexer(new_str);
-        let ln = Lexer(old_str);
-        let changes = [];
-        while (!lo.END) {
-            while (!ln.END) {
-                if (ln.txt == lo.txt) {
-                	ln.n();
-                	lo.n();
-                }else{
-                	while(lo.txt !== ln.txt){
-                		
-                	}
-                }
-            }
-        }
-    }
-
     bind(object) {
         if (this.LOADED) object.documentReady(this.data);
         else this.ObjectsPendingLoad.push(object);
+    }
+
+    seal(differ){
+        if(this.PENDING_SAVE){
+            this.PENDING_SAVE = false;
+            
+            let new_data = this + "";
+
+            let diff = differ.createDiff(this.old_data, new_data);
+
+            this.old_data = new_data;
+
+            return (diff) ? {name:this.name, diff} : null;
+        }
+
+        return null;
+    }
+
+    toString(){
+        return this.data._skeletons_[0].tree + "";
     }
 }

@@ -1,3 +1,5 @@
+import { CacheFactory } from "./cache";
+
 export function CLEARLEFT(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;

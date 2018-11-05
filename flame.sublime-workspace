@@ -4,16 +4,100 @@
 		"selected_items":
 		[
 			[
+				"pr",
+				"percentage"
+			],
+			[
+				"p",
+				"percentage"
+			],
+			[
+				"CSS",
+				"CSS_Percentage"
+			],
+			[
+				"st",
+				"stops"
+			],
+			[
+				"de",
+				"direction"
+			],
+			[
+				"value",
+				"value_name"
+			],
+			[
+				"back",
+				"background_color"
+			],
+			[
+				"SETD",
+				"SETDELTAHEIGHT"
+			],
+			[
+				"s",
+				"system"
+			],
+			[
+				"pad",
+				"padding-top"
+			],
+			[
+				"pa",
+				"padding"
+			],
+			[
+				"SET",
+				"SETDELTAPADDINGLEFT"
+			],
+			[
+				"e",
+				"ele"
+			],
+			[
+				"un",
+				"unique"
+			],
+			[
+				"pare",
+				"parent_width"
+			],
+			[
+				"set",
+				"setNumericalValue"
+			],
+			[
+				"css",
+				"css_name"
+			],
+			[
+				"prop",
+				"propname"
+			],
+			[
+				"can",
+				"canvas"
+			],
+			[
+				"bo",
+				"border_t"
+			],
+			[
+				"bor",
+				"border_r"
+			],
+			[
+				"border",
+				"border_l"
+			],
+			[
 				"add",
 				"addProp"
 			],
 			[
 				"mar",
 				"margin_top"
-			],
-			[
-				"set",
-				"setLeft"
 			],
 			[
 				"Cah",
@@ -42,10 +126,6 @@
 			[
 				"fal",
 				"flame_data"
-			],
-			[
-				"s",
-				"string"
 			],
 			[
 				"flam",
@@ -112,10 +192,6 @@
 				"createElement"
 			],
 			[
-				"back",
-				"background-color\tproperty"
-			],
-			[
 				"ui",
 				"ui_man"
 			],
@@ -146,10 +222,6 @@
 			[
 				"P",
 				"PENDING_SAVE"
-			],
-			[
-				"CSS",
-				"CSS_Rule_Constructor"
 			],
 			[
 				"get",
@@ -208,72 +280,63 @@
 	"buffers":
 	[
 		{
-			"file": "source/interface/actions/convert.js",
+			"file": "node_modules/wick/source/common/css/types/gradient.js",
 			"settings":
 			{
-				"buffer_size": 5685,
+				"buffer_size": 1956,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "/D/wick/.git/COMMIT_EDITMSG",
+			"file": "ui_components/color_picker.html",
 			"settings":
 			{
-				"buffer_size": 398,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "source/interface/actions/resize.js",
-			"settings":
-			{
-				"buffer_size": 5419,
+				"buffer_size": 2364,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "components/css/test.css",
+			"file": "source/interface/actions/color.js",
 			"settings":
 			{
-				"buffer_size": 222,
+				"buffer_size": 595,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "source/interface/actions/complete.js",
+			"file": "node_modules/wick/source/common/css/types/length.js",
 			"settings":
 			{
-				"buffer_size": 240,
+				"buffer_size": 3678,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "source/project/project.js",
+			"file": "node_modules/wick/source/common/css/types/percentage.js",
 			"settings":
 			{
-				"buffer_size": 1939,
+				"buffer_size": 1326,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "source/project/scheme.js",
+			"file": "node_modules/wick/source/common/css/types/color.js",
 			"settings":
 			{
-				"buffer_size": 1206,
+				"buffer_size": 8275,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/actions/border.js",
+			"settings":
+			{
+				"buffer_size": 6533,
 				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "source/interface/actions/move.js",
-			"settings":
-			{
-				"buffer_size": 3422,
 				"line_ending": "Windows"
 			}
 		},
@@ -281,16 +344,25 @@
 			"file": "ui_components/move_tool.html",
 			"settings":
 			{
-				"buffer_size": 1898,
+				"buffer_size": 2102,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "source/interface/ui_manager.js",
+			"file": "node_modules/wick/source/common/css/properties/property_and_type_definitions.js",
 			"settings":
 			{
-				"buffer_size": 9951,
+				"buffer_size": 12079,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/actions/common.js",
+			"settings":
+			{
+				"buffer_size": 4900,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -299,16 +371,85 @@
 			"file": "source/interface/actions/action.js",
 			"settings":
 			{
-				"buffer_size": 1038,
+				"buffer_size": 3765,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "source/interface/actions/cache.js",
+			"file": "ui_components/element_edit.html",
 			"settings":
 			{
-				"buffer_size": 6324,
+				"buffer_size": 482,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "Positioning:\n\n\n> Illustrate Margin, Border, Padding, and Width/Height in canvas system.\n> Handle positional transforms in all directions\nAllow center, left, right alignment sets.\nAllow multi selection\nAllow distribution alignment.\nAllow background color handler, text color\nMake border handler.\nMake font handler.\n\nAdd auto align with sibling elements. \n\nMake div and layer (z-index) handler. \n\nAllow import of images. \nAllow linking of css documents. \n\nShow the dimensions of the component\nShow a pixel grid in WebGL.\n\n",
+			"settings":
+			{
+				"buffer_size": 520,
+				"line_ending": "Windows",
+				"name": "Positioning:"
+			}
+		},
+		{
+			"file": "node_modules/wick/source/common/design/color.js",
+			"settings":
+			{
+				"buffer_size": 2152,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/actions/position.js",
+			"settings":
+			{
+				"buffer_size": 7248,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/actions/margin.js",
+			"settings":
+			{
+				"buffer_size": 5592,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/ui_manager.js",
+			"settings":
+			{
+				"buffer_size": 10065,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/canvas_manager.js",
+			"settings":
+			{
+				"buffer_size": 10775,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "build/flame.node.js",
+			"settings":
+			{
+				"buffer_size": 106556,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "source/interface/actions/padding.js",
+			"settings":
+			{
+				"buffer_size": 5374,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -346,14 +487,35 @@
 	},
 	"expanded_folders":
 	[
-		"/D/flame",
-		"/D/flame/source",
-		"/D/flame/source/component",
-		"/D/flame/source/css",
-		"/D/flame/source/wick_compiler_nodes"
 	],
 	"file_history":
 	[
+		"/D/Work/flame/node_modules/wick/source/common/common.js",
+		"/D/Work/flame/ui_components/color_picker.html",
+		"/D/Work/flame/source/interface/actions/dimensions.js",
+		"/D/Work/flame/source/interface/actions/common.js",
+		"/D/Work/flame/source/interface/canvas_manager.js",
+		"/D/Work/flame/source/interface/actions/action.js",
+		"/D/Work/flame/source/interface/actions/color.js",
+		"/D/Work/flame/source/interface/actions/convert.js",
+		"/D/Work/flame/source/interface/actions/move.js",
+		"/D/Work/flame/source/interface/actions/resize.js",
+		"/D/Work/flame/source/interface/ui_manager.js",
+		"/D/Work/flame/source/interface/actions/cache.js",
+		"/D/Work/flame/node_modules/wick/source/source/compiler/nodes/root.js",
+		"/D/Work/flame/node_modules/wick/source/common/css/nodes.js",
+		"/D/Work/flame/source/interface/actions/position.js",
+		"/D/Work/flame/node_modules/wick/source/source/compiler/template/template_bindings.js",
+		"/D/Work/flame/node_modules/wick/source/source/template.js",
+		"/D/Work/flame/docs/guide/movement.md",
+		"/D/Work/flame/ui_components/move_tool.html",
+		"/D/Work/flame/source/project/scheme.js",
+		"/D/Work/flame/source/project/project.js",
+		"/D/Work/flame/source/interface/actions/complete.js",
+		"/D/Work/flame/components/css/test.css",
+		"/D/Work/flame/source/interface/actions/clear.js",
+		"/D/Work/flame/node_modules/wick/source/common/css/types/length.js",
+		"/D/wick/.git/COMMIT_EDITMSG",
 		"/D/flame/source/document/wick_document.js",
 		"/D/flame/source/project/project.js",
 		"/D/flame/node_modules/wick/source/common/css/nodes.js",
@@ -455,22 +617,7 @@
 		"/D/wick/node_modules/lodash/transform.js",
 		"/D/wick/docs/guide/components/container.html",
 		"/D/wick/node_modules/chai/chai.js",
-		"/D/wick/source/source/io/expression_io.js",
-		"/D/wick/node_modules/lodash/template.js",
-		"/D/wick/docs/guide/TEMPLATE_PATTERNS.md",
-		"/D/wick/node_modules/@babel/traverse/lib/scope/binding.js",
-		"/D/wick/source/source/io/script_io.js",
-		"/D/wick/node_modules/@babel/template/lib/string.js",
-		"/D/wick/source/source/compiler/template/template_evaluator.js",
-		"/D/wick/source/source/compiler/compiler.js",
-		"/D/wick/node_modules/snapdragon/lib/compiler.js",
-		"/D/wick/README.md",
-		"/D/pytrucks/package.json",
-		"/D/pytrucks/Procfile",
-		"/D/wick/source/model/container/multi.js",
-		"/D/wick/source/model/base.js",
-		"/D/wick/source/model/container/array.js",
-		"/D/wick/source/model/container/base.js"
+		"/D/wick/source/source/io/expression_io.js"
 	],
 	"find":
 	{
@@ -478,101 +625,148 @@
 	},
 	"find_in_files":
 	{
-		"height": 104.0,
+		"height": 106.0,
 		"where_history":
 		[
+			"D:\\Work\\flame\\source",
+			"D:\\flame\\source\\*",
+			"D:\\flame\\source\\",
 			"D:\\flame\\source"
 		]
 	},
 	"find_state":
 	{
-		"case_sensitive": false,
+		"case_sensitive": true,
 		"find_history":
 		[
-			"margin_top",
-			"x",
-			"rules",
-			"css",
-			"d",
-			"Switch",
-			"componenet",
-			"Lexer",
-			"path",
-			"view_element",
-			"ACTIVE_POINTER_INPUT",
-			"origin_x",
-			"this.scale",
-			"scale",
-			"origin_y",
-			"position_x",
-			"wick.model.scheme",
-			"CSS_Rule",
-			"let",
-			"wick",
-			"require(\"wick\")",
-			"width",
-			":",
-			"model",
-			"_parseR",
-			"_parse",
-			"complete",
-			"parseText",
-			"_parse_",
-			"_parseRunner_",
-			"_processFetchHook_",
-			"_parseRunner_",
-			"_parseOpenTag_",
-			"wurl_or_url_original",
-			"WURL",
-			"toS",
-			"root",
-			"par =",
-			"this.par =",
-			"this.par",
-			".rebuild",
-			"rebuild",
-			"this",
-			"RootNode",
-			"CreateHTMLNode",
-			"_create_html",
-			"HTMLParser",
-			"parent",
+			"bg_image",
 			"lex",
-			"top",
-			"old",
-			"new",
-			"component",
-			"compoennt",
-			"component",
-			"offsetY",
-			"offsetX",
-			"offsetY",
-			"x",
-			"Common",
-			"Element",
-			"element",
-			"comp",
+			"cubic_bezier",
+			"num",
+			"deg",
+			"VMAXLength",
+			"RESIZEBORDERBR",
+			"resetMargin",
+			"margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"Margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"Margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"MARGIN",
+			"margin",
+			"Margin",
+			"MARGIN",
+			"margin",
 			"left",
-			"absolute",
-			"Project",
-			"class",
-			"_attributes_",
-			"_matchCriteria_",
-			"ss",
-			"__parseSelector__",
-			"data",
-			"doc",
-			"path",
-			"dirname",
-			"toStr",
-			"toString",
-			"/n",
-			"off",
-			"toString",
-			"too string",
-			"WickDocument",
-			"rules",
-			"selector"
+			"right",
+			"left",
+			"background_",
+			"top",
+			"par_prop",
+			"left",
+			"500",
+			"css",
+			"width",
+			"WIDTH",
+			"setHeight",
+			"setWidth",
+			"setHeight",
+			"SETDELTATOP",
+			"SETDELTARIGHT",
+			"SETDELTALEFT",
+			"CALE",
+			"top",
+			"height",
+			"width",
+			"left",
+			"IS_COMPONENT",
+			"dx",
+			"RESIZEPADDINGBR",
+			"console",
+			"break",
+			"PADDING",
+			"MARGIN",
+			"margin-",
+			"margin_",
+			"resetMargin",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"Padding",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"padding",
+			"Padding",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"padding",
+			"Padding",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"padding",
+			"PADDING",
+			"padding",
+			"Padding",
+			"PADDING",
+			"padding",
+			"Padding",
+			"SETPADDINGTOP",
+			"RESIZEPADDINGB",
+			" SETPADDINGLEFT\nSETDELTAPADDINGLEFT\nSETPADDINGTOP\nSETDELTAPADDINGTOP\nSETPADDINGRIGHT\nSETDELTAPADDINGRIGHT\nSETPADDINGBOTTOM\nSETDELTAPADDINGBOTTOM\nRESIZEPADDINGTL\nRESIZEPADDINGTR\nRESIZEPADDINGBL\nRESIZEPADDINGBR",
+			"RESIZEPADDINGBR",
+			"SETDELTAPADDINGTOP",
+			"top",
+			"//x is always in pixels",
+			"let cache = CacheFactory(system, element, component);\n    let css = cache.rules;\n    if (css.props.padding) {\n        //Convert padding value into \n        css.props.padding = null;\n    }",
+			"top",
+			"PADDINGTOP",
+			"SETPADDINGTOP",
+			"PADDINGTOP",
+			"left",
+			"_wick_type",
+			"setMarginTop",
+			"CALE",
+			"SETLEFT",
+			"getFirstPositionedAncestor",
+			"let",
+			"setNumericalValue",
+			"width",
+			"left",
+			"parent_height",
+			"left",
+			"height",
+			"setTarget",
+			"pointerDown",
+			"handlePointerDownEvent",
+			"this",
+			"m",
+			"CB",
+			"cb",
+			"CB",
+			"cb",
+			"CB",
+			"cb",
+			"CB",
+			"cb"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -591,146 +785,114 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 8,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "source/interface/actions/convert.js",
+					"file": "node_modules/wick/source/common/css/types/gradient.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5685,
+						"buffer_size": 1956,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1631,
-								1631
+								1636,
+								1636
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 195.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/D/wick/.git/COMMIT_EDITMSG",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 398,
-						"regions":
-						{
-						},
-						"selection":
-						[
+							"SL.270.region_keys":
 							[
-								69,
-								69
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Git Formats/Git Commit.sublime-syntax"
+								"SL.jshint.Highlights.|9cf9848a168a0c222b982ac08e73e0383305d99314bb205ba3e4dfb17014f7df|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|1fd27c05ef469a49ada852903650f890884e05360fccfec668dc13a84de45b68|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|5ff731348201ce3b0dc7ed7fe1a8862e1076be82eb4645cfdc0d2a991279cb87|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|5964bfe5dd011c44189776b8315ba1d541aeb5ef3e9dae92e486e6a5af6e800d|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "source/interface/actions/resize.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 5419,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1076,
-								1170
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 195.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "components/css/test.css",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 222,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								95,
-								95
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CSS/CSS.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 702.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
-					"file": "source/interface/actions/complete.js",
+					"buffer": 1,
+					"file": "ui_components/color_picker.html",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 240,
+						"buffer_size": 2364,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								240,
-								240
+								1171,
+								1171
 							]
 						],
 						"settings":
 						{
+							"SL.217.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.234.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1351.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "source/interface/actions/color.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 595,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								24,
+								24
+							]
+						],
+						"settings":
+						{
+							"SL.244.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.255.region_keys":
+							[
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
 						},
 						"translation.x": 0.0,
@@ -741,12 +903,51 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
-					"file": "source/project/project.js",
+					"buffer": 3,
+					"file": "node_modules/wick/source/common/css/types/length.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1939,
+						"buffer_size": 3678,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								102,
+								620
+							]
+						],
+						"settings":
+						{
+							"SL.269.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|77194e97392fd56ee7ee9aba7df1cf9b4c2d0754f11f512242cf5d446c45be5e|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|ca000bb400e7402927896014075373f0b93ef9474748bb7ccfc54b0177537c72|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|96b508eeaa0ee530d2271436a980d07df6b431fa5fb8ba4438ee0d5d8bd0fbb3|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "node_modules/wick/source/common/css/types/percentage.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1326,
 						"regions":
 						{
 						},
@@ -759,39 +960,130 @@
 						],
 						"settings":
 						{
+							"SL.272.region_keys":
+							[
+								"SL.jshint.Highlights.|b950930df4d8d5f84ec97da667fdac84448c92f89c41fdc6ddc92186765157e7|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|66ab76de358c0c03a2a4400fe9013fd373b6a8e534f7b571c74a1494cac4cd75|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 378.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
-					"file": "source/project/scheme.js",
+					"buffer": 5,
+					"file": "node_modules/wick/source/common/css/types/color.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1206,
+						"buffer_size": 8275,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1074,
-								1074
+								441,
+								450
 							]
 						],
 						"settings":
 						{
+							"SL.271.region_keys":
+							[
+								"SL.jshint.Highlights.|6d1eb00bf030f55261380c64af05c94437ba968941cf948e1a586ae5ca5c60d7|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|e2be97a9adea178251fe70be07fe8f314e18e0accc633b219803b7e37b1d096a|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|8e9f93d9bccbfe7853200c57f66515c171657e785abec02256520892c451ecc0|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|3b420784b9942e79dfae46d1b858863dba40e67015e15f1daa24ac1f956336a2|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|aa2e1a0b72d50f2dc71cc2e2836949f6715865ffe819d5e94a0d57af4804126d|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|ecbec9b2050ea17bca32bd289fed4dd5bbf1d48676ae057cf09d301266863f2c|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "source/interface/actions/border.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6533,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1899,
+								1899
+							]
+						],
+						"settings":
+						{
+							"SL.252.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "ui_components/move_tool.html",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2102,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1927,
+								1927
+							]
+						],
+						"settings":
+						{
+							"SL.241.region_keys":
+							[
+							],
+							"SL.264.region_keys":
+							[
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -801,12 +1093,307 @@
 					"type": "text"
 				},
 				{
-					"buffer": 7,
-					"file": "source/interface/actions/move.js",
+					"buffer": 8,
+					"file": "node_modules/wick/source/common/css/properties/property_and_type_definitions.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3422,
+						"buffer_size": 12079,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8439,
+								8439
+							]
+						],
+						"settings":
+						{
+							"SL.263.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3483.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "source/interface/actions/common.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4900,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4594,
+								4602
+							]
+						],
+						"settings":
+						{
+							"SL.121.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.211.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.251.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.98.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|251c98b052ecffa7e2ddfc55aabc613a91ff935a8070ba4eef0e73368bdb20a7|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|63a44abe216107009aee08fe241ac6a55f84baa9c972ba175c4b3bec4424d997|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|1ba8d0c48654b2f345801387dee33bf2472ac2773498ed064222662605b539fd|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1782.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "source/interface/actions/action.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3765,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3409,
+								3409
+							]
+						],
+						"settings":
+						{
+							"SL.183.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.203.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.245.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.82.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|6f08fe911542e1e646526cdf8ba388fdcefa92a570e35ac916a2d1e19d3a8fcf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.99.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|6f08fe911542e1e646526cdf8ba388fdcefa92a570e35ac916a2d1e19d3a8fcf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2862.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 11,
+					"file": "ui_components/element_edit.html",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 482,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								482,
+								482
+							]
+						],
+						"settings":
+						{
+							"SL.240.region_keys":
+							[
+								"SL.jshint.Highlights.|692735636d98169d7194fd5748d2178085dbc68eb941670fb19f5fb3ca51869c|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 12,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "source/interface/actions/color.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 595,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								595,
+								595
+							]
+						],
+						"settings":
+						{
+							"SL.244.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.255.region_keys":
+							[
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "ui_components/move_tool.html",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2102,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1376,
+								1376
+							]
+						],
+						"settings":
+						{
+							"SL.241.region_keys":
+							[
+							],
+							"SL.264.region_keys":
+							[
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 520,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								354,
+								354
+							]
+						],
+						"settings":
+						{
+							"SL.60.region_keys":
+							[
+							],
+							"auto_name": "Positioning:",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 18,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "node_modules/wick/source/common/design/color.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2152,
 						"regions":
 						{
 						},
@@ -819,96 +1406,10 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1170.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "ui_components/move_tool.html",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1898,
-						"regions":
-						{
-						},
-						"selection":
-						[
+							"SL.239.region_keys":
 							[
-								1794,
-								1794
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/HTML/HTML.sublime-syntax",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 105.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "source/interface/ui_manager.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 9951,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								7482,
-								7482
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 2523.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 10,
-					"file": "source/interface/actions/action.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1038,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								698,
-								698
-							]
-						],
-						"settings":
-						{
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
 							"history_list_is_closing": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
@@ -918,37 +1419,449 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 17,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
-					"file": "source/interface/actions/cache.js",
+					"buffer": 14,
+					"file": "source/interface/actions/position.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6324,
+						"buffer_size": 7248,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6220,
-								6220
+								562,
+								562
 							]
 						],
 						"settings":
 						{
+							"SL.195.region_keys":
+							[
+								"SL.jshint.Highlights.|5752503375b3b010e04a70408d4c1166b6525315326a29f9b8c6c0c1f9561f6a|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|6bd4cfd9ef0ec66d6cd9dda81406a6113ca15d3339a7d649cf87aae44a4258ed|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|695f7f18c7f8a2694503bc5538ac4b23e257b1924c7daa333da84ff1949932d9|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|1bce52b9820f06826f77156c8e3ec7aa7b88fb9b1f15607896962716e58d521b|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|8c786003a3192eb59a3846c114bf83e91a73e2a6167921ff2784db9265045f09|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|94acfd9efc99b0cb179516d0f91771526699dc5ce7fcc8b90f48689f49ea4d73|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|76cd25f99e2d4937e280b591cd588d6cd063ad78ff603d6c230e1805011ed593|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|cdf8d194bf8140d54a823b7236cfd1ab76d9cd370b535b13606d19358878cb62|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|109c904de4004bd3f64e66e4854ef5d757c085d6482aa3e6b0df942e49b0b053|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|d1e9a840ae3209dfd7bdfc5bce45570e1ffb9e04e6eea0caa9a1cef5afc19b79|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|76c63c2e6f23fc59e23d86d4bad03a425dc456a154db43e238628f08a35c2c6b|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|db9b793bf99d449297c4ef2d6627a455b70a674f909f5b428d638bb01e1be077|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|d7c244ebb22f3b610acfc679b823e0a150920b3bead4958c67623fa7cd08fa77|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|3c9496a93dd4072c27a37503b0eeb965ef440627ae2c94c32346ec84966cb4db|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|c189bdd0bd8b7009e6528a063c5fa3fc604f74065502a60a9e9f1baf1da526eb|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|14b43a5df861eb5534ca2d1b4f40eb3a98f7e621d2866c52c4308e207a2c8d02|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|5805032d13be7f91fecde448af357ae339ff66c643c98196783b8a389a03bbd6|region.redish markup.error.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|36d42b2db2e28aa6d1ce0eb028d65f99f18dc1c765d8d76e848843266d243ea5|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|cc2f93600c7b6474042b310345ad187b63ac47ed23aa4694e59da7ea4fd3097d|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|a97e31d10ed29341a700ed55a332257ff9dbd148254ac7e3e1f51fc4edbc3cc9|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|80caddfefd0bdc9ee5389d544f98ee0ea8cce00c2e62c48ee7f5866ba41578da|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|982593c46d6272988cb6a4f9b9c4a9cc69da974d108752e445e33f449bc1ceb3|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|5ff8f05fbd33df3cf3241c08ce14b82248b4412279929ebf39a97a6d7c960477|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|e62dc7fef9397ce54bf098938579d08b35a7fecd935d45a067541325868342d9|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|bcda11ccafcaef5910b61bd2c4f7fa3bff4149c3ce941aabb2e7c0d2b4abadfe|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|43d0aee7bcb35ab77ed7b083d2e53f40a1966fb7784a154b463e4497d3b1d7e4|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|051480492379f12ff9aedc83756a907c0ad6cd50e6400cbb8cca87762f5dcd75|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"SL.jshint.Highlights.|e5bc8cada824c278cfa899479e7dd43368a524d2ecfa958df9be34580ceeb9ef|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|7708c8af8a0fa573e96f8bcc5faa4ed0781d0bebe88d7c427cd2f29a2466b97b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|3d8d2958ec6a8c3b1f0a19c05184e4922d3e0d5a86a9371b72183254fd5592af|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|663d628f40ce6fb5994607bd3c0c90c6a5bc535e988239c12eeb5a73dd5141a7|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|fd0599b086cbd5cb41ab4254a07505887b3c1c24d4238f6044a4f906d05fa900|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|222bd0651228a1aa49de3aca724245ed1e3883d497ec0761c5632d847c18d08d|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|766d7a9e8805ee92b40b34ab7dfd3d878be24bf92b8862f870a6e7ef9c8c0bb9|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|8898532909c2b922a8317fe887eb23772bd1e0d97f28374dcce979d92e31ede5|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|c93de5c43366dc92cd2e88467f07b10d9ec8c3c03239458ec609902a08ce7fa9|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|383d8ed5b4c9f6183877b12345c6f5e4925ea874a97ce5773db4775ee2c60312|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"SL.91.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2562.0,
+						"translation.y": 54.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 16,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "source/interface/actions/margin.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5592,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								5592
+							]
+						],
+						"settings":
+						{
+							"SL.86.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 14,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
+					"file": "source/interface/ui_manager.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10065,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								28,
+								41
+							]
+						],
+						"settings":
+						{
+							"SL.78.region_keys":
+							[
+								"SL.jshint.Highlights.|34e21b2f6cf52459b40597254bcc6da210c960aefdf91fc04bbc0112496f20fd|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|b3d824c436aaa8ae50f81ab8fa6657b83ed956efb2c1cc67f4ee1f8c4fa3b858|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|04c8b016cfef854435fde6efd71110add8e1f09c5a501bd44ae68389a67c0e39|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|e289cbbd06e93a33a3673dcfcb394ab83467059df29b77564bda10477ee09ede|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|88cbdb38f3e93b903cdb1af23110cfbe6d6be5b0c78aace81d5e782d949ad167|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|76d58caf008dd166d5c017342f8248b3b1914de1145db10af5651a9a9c15b573|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|2d0e8579205682925d910858ef529cf116b781a712eb6fd718bde964f85497b2|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|319595a62452531e15018a8accdbcf775c812727ea496a96ee3d6a1a11b18c67|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|118a48324da0f3a2a92742fffe78244157a24d8316b52ad6a5f1d6265e93de0c|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 19,
+					"type": "text"
+				},
+				{
+					"buffer": 17,
+					"file": "source/interface/canvas_manager.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10775,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3021,
+								3021
+							]
+						],
+						"settings":
+						{
+							"SL.119.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|eb2a7d4ed9bce4edde9deba57d7d729f8c572f267113d4a39965f78a69d7591b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|c0c994e499a0ec125b2a26f89b0a73d8618e1a381cb1306cafb5d2573da823e4|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"SL.56.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|eb2a7d4ed9bce4edde9deba57d7d729f8c572f267113d4a39965f78a69d7591b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|c0c994e499a0ec125b2a26f89b0a73d8618e1a381cb1306cafb5d2573da823e4|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 15,
+					"type": "text"
+				},
+				{
+					"buffer": 18,
+					"file": "build/flame.node.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 106556,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"SL.193.region_keys":
+							[
+								"SL.jshint.Highlights.|2764c673eeae3e0e16b6fbeff01a56d7be7b7508810be6d280d442edabca7e9c|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|ae1fcffccd7bdbcc670d0148ad561eda9bd7deacdcba670d6ff997b43bcb4b06|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|003dca066c837d074ef097c3469da339985e14abfe6cf4e325b3db0d0ca3e278|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|f61a0268ce644f8e77bf815fa0b93d6b4a949e9f8175cfbe198f01f9c093a88a|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|8adc771b78153f239d63b9e4085e739b832c4592c07445d3d1b72ff94f62a17e|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|84e1c17d4193446b81933c7b8665d701e3097e54b2b8b02368c479de3f833ebd|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|0dc1e0c648ea855e7a6eccd08827c52af434d11e34e88e26440667ce22afe9b2|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|9d21f9458828800b6dc5861a81ffb9de7764d6873b9241d4327e5dc5c41fc449|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|5cc3089e2af3df0791498a7d0186658374a3194d68e00388b35003414ed87d40|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|d951f018f812ecd02de2a6f27c826dba6764003b43eded21fb4ab63f219164a3|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|514e237fea223cf16aac8a502ea992ba8d9c7f670c549fa100439e21d1487898|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|bb84ace787d7904c0692d1963018cca454aa821fd3d8f8888369320d086452e9|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|12c917a345472ea114543f6eb001c304d8b8daf8c51c910df6b2afa1535a14ce|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|2addbfed0e6cedd4171727e12c93e5e05a2da325ede1d3c7a55c4044e615c68c|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|ea611ae3feabba4f5b870924d5974e63e60e6cb0df7270b3563067a50a66ad3e|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|5aa0dc30850786e01eb34caf113e4132b3baec767bb0b6a2f5edf2373b6ef355|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|2f807419fdc4f9e510f682ce422cd675451fae0bc6a86fd670b372e22b4507c4|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|3fb8119c8436cb46ef6922cc9e7d6263ee15094bf3e231215f94cf4f32a5c397|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|3276405ffb37b4e39c64a79c34fcb487147db2b984db61ef6d0cbd0fe8cd9b17|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|31cb24cd18d0f485b2dd318896bf6ba1b68e2c71a4eb57e455cdc07bc7d3838b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|2033435f4a910653bf3b00d6753804bcbcf2ac5ff2dcbafc5eb5db3d41906a13|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|e5705038c100d0caa46f714707d4492e2c4c061426ab29a9621e8bae1dd4f315|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|34b7a3a2b7f334116466fd61ba36aa4b0156a0a843c4967b4363b0741afd157e|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|b0b23651640bdf93e5c135f875b3c9c4117e2b2b78a8930ae8c196b3fcd85ebf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|ccd8ae43f7112aba5520d072b4c5147ee1ab733cb7f0bf432200820c355afd04|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|0e78f689d1423a0b9b654bacec1ed104f26d2dc2846ef92f29fd4774285415b1|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|9ad92eb235e727315ce288b278c5e46284f8043bb462413d6d359a2bf5c1d572|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|d9b18cd7e4ffdada682cd9061288a91029019a983364ba9c2c0f45e20c8c8788|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|3bff9339546a1e8f299d204f8146eda6f5bfc4868144818b456538cfd6ead5f1|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|c65d8233df648a3a3c47f4d84a04c6d86b2d92ecdf4e94c239b2a7aab829be62|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|574498e07ec9513ce5d38c9732ecbf1878fea84e79443aa9966de99b2410be06|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|33204b10fb283bfe6be5c7a6189ec8d5786b56c0076930f99a2ac63289772d53|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|a1750e22032efaa27c40f30388de52ef107195a85e521613542c51e200d21a82|region.redish markup.error.sublime_linter|32",
+								"SL.jshint.Highlights.|6619f1bf40aab2af5d338024ff0f87fe9798e6789f821b31ffdc66c2a4481627|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|52150f7ebaf262bcf45696dcfb4eeea245b7484d044d0645e2a640adfb9e1828|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|9b2bde4aa5af38ae40071ce833eab12d447307f8b0a3472b777283524b31f1ef|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|40545bbc2ce4d5a60b09052b6edf46e884037fc581560b323c4fca6ed0f7f273|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|1e45613f64b44094a397823595db1740bac9e169091b191e595e65a7d859e300|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|e6d10f7e9d19d8e12ab1a2ff093ffe918b7ea8a0f2a697a5dcdba43b00eb383a|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|334e888b55379412a448c0ec7513cb5d4f61272f9c81e6037fd7a929bf2d1777|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.redish markup.error.sublime_linter|dot",
+								"SL.jshint.Highlights.|751d1b69571af43e3e9aec8f7da46ab95669f7f0b890dbc46b590d6e6161b513|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|35a4fea7e9f96dfe78153f3c017a90af4e25a914858030f754defac283ffb44e|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|f14a531e5230fbf8cbedfe7151a8b1b3d66a954370a73c9b381683d1ccb77f44|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|716f049408eef1fb9921ce30a892fff46c25c2126a12b8233840b289f7d6fb36|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|f626840b04111bb7abbfdd6a2d0a64543d3a8b12190c32c5d8437d3d98f93836|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|aeacd920baf209e2b467b9081dcb34ea975d745486c074139b678d8d2d0a846d|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|7c5e06238e6c9edfad790722a09f0b82637c8bc874e81e1c5619b09b0cc1de1b|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|f738a23d01cc487194a92021aa8113eb385198aed8f57afb5d5c26d98b1a901c|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|1e6420ae2befac600f879ac6b6711a08505d0b887b89b6a594a7f616e69e5eb7|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|8de80683668e98f3e48d54b1b254f888e793e3b0ed583486f71d2267430b47dd|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 10394.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 23,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "source/interface/actions/common.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4900,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1112,
+								1112
+							]
+						],
+						"settings":
+						{
+							"SL.121.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.211.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.251.region_keys":
+							[
+								"SL.jshint.Highlights.|97039e6efda77e8aef3ad6f3db467974d87487135571b0eb2054db80c5c6cb32|region.yellowish markup.warning.sublime_linter|32",
+								"sublime_linter.protected_regions",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.98.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|251c98b052ecffa7e2ddfc55aabc613a91ff935a8070ba4eef0e73368bdb20a7|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Highlights.|63a44abe216107009aee08fe241ac6a55f84baa9c972ba175c4b3bec4424d997|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot",
+								"SL.jshint.Highlights.|1ba8d0c48654b2f345801387dee33bf2472ac2773498ed064222662605b539fd|region.yellowish markup.warning.sublime_linter|32"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 22,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "source/interface/actions/action.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3765,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2016,
+								2016
+							]
+						],
+						"settings":
+						{
+							"SL.183.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.203.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.245.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"SL.82.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|6f08fe911542e1e646526cdf8ba388fdcefa92a570e35ac916a2d1e19d3a8fcf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"SL.99.region_keys":
+							[
+								"sublime_linter.protected_regions",
+								"SL.jshint.Highlights.|6f08fe911542e1e646526cdf8ba388fdcefa92a570e35ac916a2d1e19d3a8fcf|region.yellowish markup.warning.sublime_linter|32",
+								"SL.jshint.Gutter.|region.yellowish markup.warning.sublime_linter|dot"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"history_list_is_closing": true,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1891.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 21,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "source/interface/actions/padding.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5374,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								343,
+								343
+							]
+						],
+						"settings":
+						{
+							"SL.186.region_keys":
+							[
+								"sublime_linter.protected_regions"
+							],
+							"git_savvy.repo_path": "D:\\Work\\flame",
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1512.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 20,
 					"type": "text"
 				}
 			]
@@ -956,7 +1869,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 22.0
+		"height": 27.0
 	},
 	"input":
 	{
@@ -971,11 +1884,18 @@
 				0,
 				1,
 				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
 			]
 		],
 		"cols":
 		[
 			0.0,
+			0.872486288848,
 			1.0
 		],
 		"rows":
@@ -985,6 +1905,10 @@
 		]
 	},
 	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
 	"output.find_results":
 	{
 		"height": 0.0
@@ -993,7 +1917,7 @@
 	"project": "flame.sublime-project",
 	"replace":
 	{
-		"height": 42.0
+		"height": 50.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1003,8 +1927,136 @@
 		"selected_items":
 		[
 			[
+				".css",
+				"flame\\components\\css\\test.css"
+			],
+			[
+				"css len",
+				"wick\\source\\common\\css\\types\\length.js"
+			],
+			[
+				"mov",
+				"flame\\ui_components\\move_tool.html"
+			],
+			[
+				"cssdef",
+				"wick\\source\\common\\css\\properties\\property_and_type_definitions.js"
+			],
+			[
+				"color",
+				"flame\\source\\interface\\actions\\color.js"
+			],
+			[
+				"common",
+				"flame\\source\\interface\\actions\\common.js"
+			],
+			[
+				"act",
+				"flame\\source\\interface\\actions\\action.js"
+			],
+			[
+				"conver",
+				"flame\\source\\interface\\actions\\convert.js"
+			],
+			[
+				"COMM",
+				"flame\\source\\interface\\actions\\common.js"
+			],
+			[
+				"RESI",
+				"flame\\source\\interface\\actions\\resize.js"
+			],
+			[
+				"CANV",
+				"flame\\source\\interface\\canvas_manager.js"
+			],
+			[
+				"ACTIO",
+				"flame\\source\\interface\\actions\\action.js"
+			],
+			[
+				"move",
+				"flame\\source\\interface\\actions\\move.js"
+			],
+			[
+				"posi",
+				"flame\\source\\interface\\actions\\position.js"
+			],
+			[
+				"ui",
+				"flame\\source\\interface\\ui_manager.js"
+			],
+			[
+				"comm",
+				"flame\\source\\interface\\actions\\common.js"
+			],
+			[
+				"padd",
+				"flame\\source\\interface\\actions\\padding.js"
+			],
+			[
+				"ac",
+				"flame\\source\\interface\\actions\\action.js"
+			],
+			[
+				"template b",
+				"wick\\source\\source\\compiler\\template\\template_bindings.js"
+			],
+			[
+				"template io",
+				"wick\\source\\source\\template.js"
+			],
+			[
+				"noderoo",
+				"wick\\source\\source\\compiler\\nodes\\root.js"
+			],
+			[
+				"cssnode",
+				"wick\\source\\common\\css\\nodes.js"
+			],
+			[
+				"cache",
+				"flame\\source\\interface\\actions\\cache.js"
+			],
+			[
+				"canv",
+				"flame\\source\\interface\\canvas_manager.js"
+			],
+			[
+				"commo",
+				"wick\\source\\common\\common.js"
+			],
+			[
+				"res",
+				"flame\\source\\interface\\actions\\resize.js"
+			],
+			[
+				"pos",
+				"flame\\source\\interface\\actions\\position.js"
+			],
+			[
+				"action",
+				"flame\\source\\interface\\actions\\action.js"
+			],
+			[
 				"uima",
 				"flame\\source\\interface\\ui_manager.js"
+			],
+			[
+				"canvase",
+				"flame\\source\\interface\\canvas_manager.js"
+			],
+			[
+				"clear",
+				"flame\\source\\interface\\actions\\clear.js"
+			],
+			[
+				"canva",
+				"flame\\source\\interface\\canvas_manager.js"
+			],
+			[
+				"lengh",
+				"wick\\source\\common\\css\\types\\length.js"
 			],
 			[
 				"resize",
@@ -1015,20 +2067,12 @@
 				"flame\\source\\interface\\actions\\complete.js"
 			],
 			[
-				".css",
-				"flame\\components\\css\\test.css"
-			],
-			[
 				"pro",
 				"flame\\source\\project\\project.js"
 			],
 			[
 				"mo",
 				"flame\\ui_components\\move_tool.html"
-			],
-			[
-				"move",
-				"flame\\source\\interface\\actions\\move.js"
 			],
 			[
 				"cach",
@@ -1043,20 +2087,8 @@
 				"flame\\source\\interface\\actions\\move.js"
 			],
 			[
-				"ui",
-				"flame\\source\\interface\\ui_manager.js"
-			],
-			[
-				"mov",
-				"flame\\ui_components\\move_tool.html"
-			],
-			[
 				"scrip",
 				"wick\\source\\source\\io\\script_io.js"
-			],
-			[
-				"action",
-				"flame\\source\\interface\\actions\\action.js"
 			],
 			[
 				"com",
@@ -1191,10 +2223,6 @@
 				"wick\\source\\source\\compiler\\compiler.js"
 			],
 			[
-				"noderoo",
-				"wick\\source\\source\\compiler\\nodes\\root.js"
-			],
-			[
 				"html root",
 				"wick\\source\\root\\html.js"
 			],
@@ -1279,10 +2307,6 @@
 				"wick\\source\\common\\css\\root.js"
 			],
 			[
-				"act",
-				"flame\\source\\interface\\action.js"
-			],
-			[
 				"style",
 				"flame\\source\\wick_compiler_nodes\\style.js"
 			],
@@ -1313,10 +2337,6 @@
 			[
 				"cssroot",
 				"wick\\source\\common\\css\\root.js"
-			],
-			[
-				"cssnode",
-				"wick\\source\\common\\css\\nodes.js"
 			],
 			[
 				"url",
@@ -1357,10 +2377,6 @@
 			[
 				"animat",
 				"docs\\guide\\articles\\animating_paths.html"
-			],
-			[
-				"comm",
-				"source\\common\\common.js"
 			],
 			[
 				"animation",
@@ -1421,42 +2437,6 @@
 			[
 				"sourcsou",
 				"source\\source\\source.js"
-			],
-			[
-				"bindin",
-				"node_modules\\@babel\\traverse\\lib\\scope\\binding.js"
-			],
-			[
-				"temple",
-				"source\\source\\compiler\\template\\template_evaluator.js"
-			],
-			[
-				"filio",
-				"source\\source\\io\\filter_io.js"
-			],
-			[
-				"sourcecompiler",
-				"source\\source\\compiler\\compiler.js"
-			],
-			[
-				"sourcepackag",
-				"source\\source\\package.js"
-			],
-			[
-				"sourcetempl",
-				"source\\source\\template.js"
-			],
-			[
-				"read",
-				"README.md"
-			],
-			[
-				"libr",
-				"source\\root\\config\\library.js"
-			],
-			[
-				"chang",
-				"docs\\meta\\CHANGELOG.md"
 			]
 		],
 		"width": 0.0

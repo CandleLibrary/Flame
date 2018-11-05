@@ -97,6 +97,7 @@ export class UI_Manager {
 
     setTarget(e, x, y) {
         let target = null;
+        
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
 
             this.target = target;
@@ -114,7 +115,7 @@ export class UI_Manager {
     }
 
     integrateIframe(iframe, component) {
-        
+
         iframe.contentWindow.addEventListener("wheel", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
@@ -128,14 +129,17 @@ export class UI_Manager {
             this.handlePointerDownEvent(e, x, y);
 
             if (e.button == 0) {
-                if (e.target.tagName == "BODY") {
-                    this.canvas.setIframeTarget(component.element, component, true);
-                    this.canvas.render(this.transform);
-                    this.setTarget(e, x, y);
-                } else if (!this.setTarget(e, x, y)) {
-                    this.canvas.setIframeTarget(e.target, component);
-                    this.canvas.render(this.transform);
-                    this.setTarget(e, x, y);
+                if (!this.setTarget(e, x, y)) {
+
+                    if (e.target.tagName == "BODY") {
+                        this.canvas.setIframeTarget(component.element, component, true);
+                        this.canvas.render(this.transform);
+                        this.setTarget(e, x, y);
+                    } else if (!this.setTarget(e, x, y)) {
+                        this.canvas.setIframeTarget(e.target, component);
+                        this.canvas.render(this.transform);
+                        this.setTarget(e, x, y);
+                    }
                 }
             }
 
@@ -229,7 +233,7 @@ export class UI_Manager {
         this.ACTIVE_POINTER_INPUT = false;
 
         //this.target = null;
-        if(this.target)
+        if (this.target)
             actions.COMPLETE(this.system, this.target.element, this.target.component);
     }
 

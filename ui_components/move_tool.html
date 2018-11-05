@@ -13,6 +13,8 @@
 	<button onclick="((rtoggle)())">To Relative</button>
 	<button onclick="((clear)())">Clear</button>
 
+	<input type="number" value="((brl))">
+
 	<input type="radio" name="position" value="one" id="radio-one" class="form-radio">
 	<input type="radio" name="position" value="one" id="radio-one" class="form-radio">
 	<label for="absolute">absolute</label>
@@ -21,6 +23,11 @@
 
 	<script on=((target))>	
 		src.target = target;
+	</script>
+
+	<script on="((brl))">
+		if(src.target)
+			presets.custom.actions.BORDERRADIUSTL(presets.custom.system, src.target.element, src.target.component, brl);
 	</script>
 
 	<script on="((center))">

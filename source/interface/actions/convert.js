@@ -1,15 +1,9 @@
 import wick from "wick";
 import * as clear from "./clear";
-import {
-    CacheFactory
-} from "./cache";
-import {
-    getFirstPositionedAncestor,
-    setRight,
-    setLeft,
-    setBottom,
-    setTop
-} from "./common";
+import { CacheFactory } from "./cache";
+import { getFirstPositionedAncestor } from "./common";
+import { SETLEFT, SETTOP } from "./position";
+import { SETMARGINLEFT, SETMARGINTOP } from "./margin";
 let types = wick.core.css.types;
 /**
  * Actions for converting position and layout to different forms. 
@@ -35,24 +29,20 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             /** 
                 Need to take margin offset into account when converting to absolute
             */
-            let x = element.offsetLeft;
-            let y = element.offsetTop;
+            let rect = element.getBoundingClientRect();
+            let par_prop = component.window.getComputedStyle(element);
+            
+            let x = rect.x;
+            let y = rect.y - parseFloat(par_prop["margin-top"]);
 
             if (css.props.margin) {}
-            
+
             clear.CLEARMARGINTOP(system, element, component, true);
             clear.CLEARMARGINLEFT(system, element, component, true);
 
-            if(!KEEP_UNIQUE && css.props.left)
-            	setLeft(element, x, css);
-            else
-            	cache.unique.addProp(`left:${x}`);
-            
-            if(!KEEP_UNIQUE && css.props.top)
-            	setTop(element, y, css);
-            else
-            	cache.unique.addProp(`top:${y}`);
-            
+            SETLEFT(system, element, component, x, true);
+            SETTOP(system, element, component, y, true);
+
             break;
         case "absolute":
             /*no op*/
@@ -73,7 +63,7 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
         else cache.unique.addProp("position:absolute");
     }
 
-    if(!LINKED)
+    if (!LINKED)
         element.wick_node.setRebuild();
 }
 
@@ -90,33 +80,27 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             break;
         case "absolute":
 
-            let x = element.offsetLeft;
-            let y = element.offsetTop;
+            let rect = element.getBoundingClientRect();
+            let par_prop = component.window.getComputedStyle(element);
+            
+            let x = rect.x - parseFloat(par_prop["border-left-width"]) + 2;
+            let y = rect.y;
+
 
             let sib = element.previousSibling;
 
-            if(sib){
-            	while(sib && (sib.style.position !== "relative" && sib.style.position !== ""))
-            		sib = sib.previousSibling;
-            	if(sib){
-            		y -= sib.offsetTop + sib.offsetHeight;
-            	}
+            if (sib) {
+                while (sib && (sib.style.position !== "relative" && sib.style.position !== ""))
+                    sib = sib.previousSibling;
+                if (sib) {
+                    y -= sib.offsetTop + sib.offsetHeight;
+                }
             }
 
             clear.CLEARLEFT(system, element, component, true);
             clear.CLEARTOP(system, element, component, true);
-
-            if(!KEEP_UNIQUE && css.props.margin_left)
-            	css.props.margin_left = css.props.margin_left.copy(x);
-            else
-            	cache.unique.addProp(`margin-left:${x}px`);
-            
-            if(!KEEP_UNIQUE && css.props.margin_top)
-            	css.props.margin_top = css.props.margin_top.copy(y);
-            else
-            	cache.unique.addProp(`margin-top:${y}px`);
-
-
+            SETMARGINLEFT(system, element, component, x, true);
+            SETMARGINTOP(system, element, component, y, true);
             break;
         case "fixed":
             //add parent offset values to current position to keep it predictably in place. 
@@ -139,11 +123,11 @@ export function TOPOSITIONRELATIVE(system, element, component) {
 
 //Converting from unit types
 //left
-export function LEFTTOPX(){}
-export function LEFTTOEM(){}
-export function LEFTTOPERCENTAGE(){}
-export function LEFTTOVH(){}
-export function LEFTTOVW(){}
+export function LEFTTOPX() {}
+export function LEFTTOEM() {}
+export function LEFTTOPERCENTAGE() {}
+export function LEFTTOVH() {}
+export function LEFTTOVW() {}
 //right
 //top
 //bottom
@@ -176,7 +160,7 @@ export function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
                     css.props.right = new types.percentage((css.props.right / rect.width) * 100);
                 } else {
                     css.props.right = new types.length(rect.width * (css.props.right / 100), "px");
-                }
+                } /** Intentional fall through **/
             case "left":
                 if (css.props.left instanceof types.length) {
                     css.props.left = new types.percentage((css.props.left / rect.width) * 100);

@@ -1,14 +1,12 @@
 import wick from "wick";
 import { CacheFactory } from "./cache";
+import { getFirstPositionedAncestor } from "./common";
 import {
-    getFirstPositionedAncestor,
-    setRight,
-    setBottom,
-    setDeltaTop,
-} from "./common";
-import {
-    SETDELTALEFT
-} from "./position"
+    SETDELTALEFT,
+    SETDELTATOP,
+    SETDELTARIGHT,
+    SETDELTABOTTOM
+} from "./position";
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
@@ -28,28 +26,27 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
-                    console.log(cache.valueB, cache.valueA)
-                    cache.valueB = setRight(element, -dx, css, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
                     cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
                     break;
                 case "left right":
-                    cache.valueB = setRight(element, -dx, css, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
                 case "left":
                     cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
                     break;
                 case "right":
-                    cache.valueB = setRight(element, -dx, css, cache.valueB);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
                     break;
             }
 
             switch (cache.move_vert_type) {
                 case "top bottom":
-                    cache.valueC = setBottom(element, -dy, css, cache.valueC)
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
                 case "top":
-                    cache.valueD = setDeltaTop(element, dy, css, cache.valueD);
+                    cache.valueD = SETDELTATOP(system, element, component, dy, 0);
                     break;
                 case "bottom":
-                    cache.valueC = setBottom(element, -dy, css, cache.valueC);
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
                     break;
             }
         }
@@ -105,8 +102,4 @@ export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL =
     */
 
     element.wick_node.setRebuild();
-}
-
-export function CLEAR() {
-
 }

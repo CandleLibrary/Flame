@@ -4,6 +4,9 @@
     height:500px;
     width:200px;
     left:10%;
+    border: 5px solid white;
+    padding:  5px;
+    background-image: linear-gradient(1deg, red, blue);
 }
 .n8088360 {
     left:4px;

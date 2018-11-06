@@ -13,11 +13,14 @@ class Component {
         this.style_frame.classList.add("flame_component");
         this.style_frame.classList.add("style_frame");
 
+        this.dimensions = document.createElement("div");
+        this.dimensions.classList.add("flame_component_dimensions")
+
         this.iframe = document.createElement("iframe");
         this.iframe.src = "./component_frame.html";
 
-        this.iframe.width = system.project.flame_data.default.component.width;
-        this.iframe.height = system.project.flame_data.default.component.height;
+        this.width = system.project.flame_data.default.component.width;
+        this.height = system.project.flame_data.default.component.height;
 
         this.iframe.onload = (e) => {
             system.ui.integrateIframe(this.iframe, this);
@@ -31,18 +34,16 @@ class Component {
         this.name.innerHTML = "unnamed";
         this.name.classList.add("flame_component_name");
 
+
         //HTML Data
         this.data = document.createElement("div");
 
+        this.style_frame.appendChild(this.dimensions);
         this.style_frame.appendChild(this.name);
         this.style_frame.appendChild(this.iframe);
 
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;
-
-        //Bounding box info. This is derived from CSS information pulled in from the master CSS file and any component level CSS scripts. 
-        //dimensions are defined as [0] = top, [1] = left, [2] = width, [3] = height.
-        this.dimensions = [0, 0, 0, 0];
 
         //Links to local CSS scripts
         this.local_css = [];
@@ -118,13 +119,6 @@ class Component {
     mount() {}
 
     /**
-     * Updates the bounding rectangle
-     */
-    updateDimensions() {
-        this.dimensions = this.element.getBoundingClientRect();
-    }
-
-    /**
      * Determines if point is in bounding box. 
      */
     pointInBoundingBox(x, y) {
@@ -142,14 +136,17 @@ class Component {
 
     set y(y) {
         this.element.style.top = y + "px";
+
     }
 
     set width(w) {
         this.iframe.width = w;
+        this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
     }
 
     set height(h) {
         this.iframe.height = h;
+        this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
     }
 
     get x() {

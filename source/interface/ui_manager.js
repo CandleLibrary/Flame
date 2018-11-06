@@ -59,7 +59,16 @@ export class UI_Manager {
         window.addEventListener("wheel", e => this.handleScroll(e));
 
         // // *********** Pointer *********************
-        window.addEventListener("pointerdown", e => this.handlePointerDownEvent(e, undefined, undefined, !!1));
+        window.addEventListener("pointerdown", e => {
+            let x = this.transform.getLocalX(e.pageX); 
+            let y = this.transform.getLocalY(e.pageY);
+            if(this.setTarget(e, x, y, false)){
+                this.origin_x = x;
+                this.origin_y = y;
+                this.ACTIVE_POINTER_INPUT = true;
+            }else
+                this.handlePointerDownEvent(e, undefined, undefined, !!1);
+        });
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
 
@@ -95,14 +104,14 @@ export class UI_Manager {
         }
     }
 
-    setTarget(e, x, y) {
+    setTarget(e, x, y, SET_MENU = true) {
         let target = null;
         
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
 
             this.target = target;
 
-            this.main_menu.setAttribute("show", "true");
+            if(SET_MENU)this.main_menu.setAttribute("show", "true");
 
             this.loadedComponents.forEach(c => c.set(this.target));
 
@@ -110,7 +119,7 @@ export class UI_Manager {
         }
 
 
-        this.main_menu.setAttribute("show", "false");
+        if(SET_MENU)this.main_menu.setAttribute("show", "false");
         return false;
     }
 

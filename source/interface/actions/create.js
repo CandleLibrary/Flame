@@ -15,7 +15,6 @@ export function CREATE_COMPONENT(system, doc, event) {
 
     component.x = event.x;
     component.y = event.y;
-    component.updateDimensions();
 }
 
 export function CREATE_CSS_DOC(system, doc, event) {

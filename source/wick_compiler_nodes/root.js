@@ -71,7 +71,7 @@ RootNode.prototype.rebuild = function() {
         this.par.rebuild();
 };
 
-RootNode.prototype.buildExisting = function(element, source, presets, taps) {
+RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
@@ -79,13 +79,23 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps) {
 
             let span = document.createElement("span");
 
+            let BUILT = this.BUILT;
+
             this._build_(span, source, presets, [], taps, {});
 
             let ele = span.firstChild;
+            console.log(BUILT)
+            if(BUILT){
+                element.parentElement.replaceChild(ele, element);
+                return true;
+            }else{
+                if(element){
+                    element.parentElement.insertBefore(ele, element);
+                }else
+                    parent_element.appendChild(ele);
+                return true;
+            }
 
-            element.parentElement.replaceChild(ele, element);
-
-            return true;
         }
 
         if (this._merged_)
@@ -103,7 +113,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps) {
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                if (node.buildExisting(child, source, presets, taps)) i++;
+                if (node.buildExisting(child, source, presets, taps, element)) i++;
             }
         }
     }
@@ -139,6 +149,7 @@ RootNode.prototype.resetRebuild = function() {
 
 RootNode.prototype.build = RootNode.prototype._build_;
 RootNode.prototype._build_ = function(element, source, presets, errors, taps, statics) {
+    this.BUILT = true;
     return this.build(element, source, presets, errors, taps, statics);
 };
 
@@ -184,10 +195,19 @@ RootNode.prototype._mergeComponent_ = function() {
     }
 };
 
+
+
 RootNode.prototype.addObserver = function(observer) {
     if (!this.observers)
         this.observers = [];
     this.observers.push(observer);
+};
+
+RootNode.prototype.addView = function(view) {
+    if (!this.views)
+        this.views = [];
+    this.views.push(view);
+    view._model_ = this;
 };
 
 RootNode.prototype.removeObserver = function(observer) {
@@ -195,9 +215,23 @@ RootNode.prototype.removeObserver = function(observer) {
         if (this.observers[i] == observer) return this.observers.splice(i, 1);
 };
 
+RootNode.prototype.removeView = function(view) {
+    for (let i = 0; i < this.views.length; i++)
+        if (this.views[i] == view) return this.views.splice(i, 1);
+};
+
+RootNode.prototype.removeView = RootNode.prototype.removeObserver;
+
 RootNode.prototype.updated = function() {
     if (this.observers.length > 0)
         for (let i = 0; i < this.observers.length; i++)
             this.observers[i].updatedWickASTTree(this);
+
+    if (this.views)
+        for (let i = 0; i < this.views.length; i++)
+            this.views[i]._update_(this);
+      
 };
+
+RootNode.prototype.BUILT = false;
 export { RootNode };

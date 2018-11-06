@@ -206,7 +206,7 @@ export class CanvasManager {
                             }
                         } else if (x >= cbr - tr) {
                             if (y <= cbt + tr) {
-                                this.widget.target.action = actions.RESIZEBR; break;
+                                this.widget.target.action = actions.RESIZETR; break;
                             } else if (y >= cbb - tr) {
                                 this.widget.target.action = actions.RESIZEBR; break;
                             }

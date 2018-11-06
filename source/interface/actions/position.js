@@ -99,7 +99,7 @@ export function SETDELTABOTTOM(system, element, component, dx, ratio = 0, LINKED
 }
 
 export function RESIZET(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
+    if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
     let cache = CacheFactory(system, element, component);
     switch (cache.move_vert_type) {
         case "top bottom":
@@ -116,14 +116,14 @@ export function RESIZET(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZER(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
+    if (IS_COMPONENT) return (component.width += dx);
     let cache = CacheFactory(system, element, component);
     switch (cache.move_hori_type) {
         case "left right":
             SETDELTARIGHT(system, element, component, -dx, 0, true);
             break;
         case "left":
-            SETDELTAWIDTH(system, element, component, -dx, 0, true);
+            SETDELTAWIDTH(system, element, component, dx, 0, true);
             break;
         case "right":
             SETDELTARIGHT(system, element, component, -dx, 0, true);
@@ -134,7 +134,7 @@ export function RESIZER(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZEL(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
+    if (IS_COMPONENT) return (component.x += dx, component.width -= dx);
     let cache = CacheFactory(system, element, component);
     switch (cache.move_hori_type) {
         case "left right":
@@ -152,7 +152,7 @@ export function RESIZEL(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
+    if (IS_COMPONENT) return (component.height += dy);
     let cache = CacheFactory(system, element, component);
     switch (cache.move_vert_type) {
         case "top bottom":
@@ -169,29 +169,29 @@ export function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZETL(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
     RESIZEL(system, element, component, dx, dy, IS_COMPONENT);
     RESIZET(system, element, component, dx, dy, IS_COMPONENT);
+    if (IS_COMPONENT) return;
     element.wick_node.setRebuild();
 }
 
 export function RESIZETR(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
     RESIZER(system, element, component, dx, dy, IS_COMPONENT);
     RESIZET(system, element, component, dx, dy, IS_COMPONENT);
+    if (IS_COMPONENT) return;
     element.wick_node.setRebuild();
 }
 
 export function RESIZEBL(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
     RESIZEL(system, element, component, dx, dy, IS_COMPONENT);
     RESIZEB(system, element, component, dx, dy, IS_COMPONENT);
+    if (IS_COMPONENT) return;
     element.wick_node.setRebuild();
 }
 
 export function RESIZEBR(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
     RESIZER(system, element, component, dx, dy, IS_COMPONENT);
     RESIZEB(system, element, component, dx, dy, IS_COMPONENT);
+    if (IS_COMPONENT) return;
     element.wick_node.setRebuild();
 }

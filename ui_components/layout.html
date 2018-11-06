@@ -27,7 +27,7 @@
 		node._parse_(wick.core.lexer("<span>Testing</span>")).then(n=>{
 			node.par = null;
 			sib_node.insertAfter(node);
-			node.setRebuild(false, true);
+			node.setRebuild(false, true, true);
         	node.rebuild();
 
         	emit("target", src.target);

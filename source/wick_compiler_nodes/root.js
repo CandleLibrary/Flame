@@ -19,7 +19,6 @@ RootNode.prototype.createElement = function(presets, source) {
     element.wick_source = source;
     element.wick_node = this;
     element.wick_id = id++;
-
     return element;
 };
 
@@ -47,7 +46,7 @@ RootNode.prototype.reparse = function(text, element) {
 
         if(this.par)
             this.par.replace(this, node);
-        
+        node.BUILT = true;
         node.setRebuild(false, true);
         node.rebuild();
         //replace this node with the new one. 
@@ -79,20 +78,19 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 
             let span = document.createElement("span");
 
-            let BUILT = this.BUILT;
-
             this._build_(span, source, presets, [], taps, {});
 
             let ele = span.firstChild;
-            console.log(BUILT)
-            if(BUILT){
-                element.parentElement.replaceChild(ele, element);
-                return true;
-            }else{
+
+            if(this.CHANGED & 8){
                 if(element){
                     element.parentElement.insertBefore(ele, element);
                 }else
                     parent_element.appendChild(ele);
+                return true;
+            }else{
+                
+                element.parentElement.replaceChild(ele, element);
                 return true;
             }
 
@@ -121,7 +119,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
     return true;
 };
 
-RootNode.prototype.setRebuild = function(child = false, REBUILT = false) {
+RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTED = false) {
     if (child) {
         this.CHANGED |= 2;
     } else {
@@ -130,6 +128,10 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false) {
 
     if (REBUILT) {
         this.CHANGED |= 4;
+    }
+
+    if(INSERTED){
+        this.changed |= 8;
     }
 
     if (this.par)
@@ -219,8 +221,6 @@ RootNode.prototype.removeView = function(view) {
     for (let i = 0; i < this.views.length; i++)
         if (this.views[i] == view) return this.views.splice(i, 1);
 };
-
-RootNode.prototype.removeView = RootNode.prototype.removeObserver;
 
 RootNode.prototype.updated = function() {
     if (this.observers.length > 0)

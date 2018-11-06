@@ -6,6 +6,7 @@ import {
     SETBACKGROUNDCOLOR,
     SETCOLOR
 } from "./color";
+import { UNDO , REDO} from "./history"
 import {
     SETLEFT,
     SETDELTALEFT,
@@ -192,7 +193,10 @@ const actions = {
     BORDERRADIUSBR,
     //color
     SETBACKGROUNDCOLOR,
-    SETCOLOR
+    SETCOLOR,
+    //History
+    UNDO,
+    REDO
 };
 
 export { actions };

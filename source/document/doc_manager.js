@@ -78,7 +78,7 @@ export class DocumentManager {
         }
         return "";
     }
-    
+
     get(id) {
         return this.docs.get(id);
     }
@@ -96,6 +96,14 @@ export class DocumentManager {
 
         if(diffs.length > 0)
             this.diffs.push({v:version++,diffs});
+    }
+
+    stepBack(){
+
+    }
+
+    stepForward(){
+        
     }
 }
 

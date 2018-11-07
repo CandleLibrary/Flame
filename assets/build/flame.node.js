@@ -2063,6 +2063,76 @@ class colorPicker {
 	}
 }
 
+class SVGPath{}
+class SVGRect{
+	static parse(element, rect = new SVGRect()){
+		let ele = wick$1.core.html(element).then(ele=>{
+			rect.height = ele.getAttribute("height");
+			rect.width = ele.getAttribute("width");
+		});
+	}
+
+	constructor(element, canvas){
+		this.width = 0;
+		this.height = 0;
+		this.x = 0;
+		this.y = 0;
+		this.rx = 0;
+		this.ry = 0;
+		this.pathLength = 0;
+		this.style = null;
+		this.class = "";
+		this.id = "";
+		this.canvas = canvas;
+		if(element) SVGRect.parse(element.outerHTML, this);
+	}
+
+	toString(){
+
+	}
+}
+
+/**
+ * @brief Provides interface tools for manipulating SVG elements
+ */
+class SVGManager{
+	constructor(){
+		this.target = null;
+		this.canvas = document.createElement("canvas");
+		this.ctx = this.canvas.getContext("2d");
+		this.elements = [];
+	}
+
+	render(){
+
+	}
+
+	mount(target_element, transform){
+		while(target_element && target_element.tagName.toUpperCase() !== "SVG"){
+			target_element = target_element.parentElement;
+		}
+
+		if(!target_element) return;
+
+		//parse svg elements and build objects from them. 
+		let children = target_element.children;
+
+		for(let i = 0; i < children.length; i++){
+			let child = children[i];
+
+			switch(child.tagName.toUpperCase()){
+				case "RECT":
+					this.elements.push(new SVGRect(child));
+				break;
+				case "PATH":
+					this.elements.push(new SVGPath(child));
+				break;
+
+			}
+		}
+	}
+}
+
 const pi2 = Math.PI * 2;
 
 function gripPoint(ctx, x, y, r) {
@@ -2374,6 +2444,7 @@ class UI_Manager {
         this.system = system;
 
         this.color_picker = new colorPicker();
+        this.svg_manager = new SVGManager();
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -2631,10 +2702,17 @@ class UI_Manager {
 
     handleContextMenu(e, x, y) {
         //Load text editor in the bar.
-        let element_editor = this.components.get("element_edit.html");
-        element_editor.mount(this.element);
-        //element_editor.set(this.target);
-        //actions.TEXTEDITOR(this.system, this.target.element, this.target.component, x, y);
+        console.log(e.target.tagName);
+        switch(e.target.tagName.toUpperCase()){
+            case "SVG":
+            case "RECT":
+            case "PATH":
+                this.svg_manager.mount(e.target, this.transform);
+                break;
+            default:
+                let element_editor = this.components.get("element_edit.html");
+                element_editor.mount(this.element);
+        }
     }
 
     handleScroll(e, x = e.pageX, y = e.pageY) {

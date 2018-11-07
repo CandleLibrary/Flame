@@ -3,6 +3,7 @@ import wick from "wick";
 import { actions } from "./actions/action";
 import { UIComponent } from "./ui_component";
 import { colorPicker } from "./system/color_picker";
+import {SVGManager} from "./system/svg_manager"
 
 //OTHER imports
 import { CanvasManager } from "./canvas_manager";
@@ -20,6 +21,7 @@ export class UI_Manager {
         this.system = system;
 
         this.color_picker = new colorPicker();
+        this.svg_manager = new SVGManager();
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -277,10 +279,17 @@ export class UI_Manager {
 
     handleContextMenu(e, x, y) {
         //Load text editor in the bar.
-        let element_editor = this.components.get("element_edit.html");
-        element_editor.mount(this.element);
-        //element_editor.set(this.target);
-        //actions.TEXTEDITOR(this.system, this.target.element, this.target.component, x, y);
+        console.log(e.target.tagName)
+        switch(e.target.tagName.toUpperCase()){
+            case "SVG":
+            case "RECT":
+            case "PATH":
+                this.svg_manager.mount(e.target, this.transform)
+                break;
+            default:
+                let element_editor = this.components.get("element_edit.html");
+                element_editor.mount(this.element);
+        }
     }
 
     handleScroll(e, x = e.pageX, y = e.pageY) {

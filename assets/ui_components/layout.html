@@ -1,0 +1,87 @@
+<link src="./element_entry.html">
+<div component="layout">
+    <w-c element="div">
+        ((elements))
+        <f sort="(( m1.id_ - m2.id_ ))">
+            <element-entry></element-entry>
+    </w-c>
+    <script on="((droppee))">
+    src.droppee = droppee;
+    </script>
+    <script on="((dropper))">
+    let droppee = src.droppee;
+
+    if (droppee) {
+        //insert droppee alongside dropper
+        droppee.extract();
+        dropper.insertAfter(droppee);
+        droppee.setRebuild(false, true, true);
+        droppee.rebuild();
+        //emit("target", src.target);
+        let count = 0;
+        function toOut(src, level) {
+            if (src.type == 1) return;
+
+            src.id_ = count++;
+            src.lvl_ = level;
+            src.updated();
+
+            let children = src.children;
+
+            if (children)
+                for (let i = 0; i < children.length; i++)
+                    toOut(children[i], level + 1);
+        }
+        toOut(droppee.eve(), 0);
+        src.templates[0].filterUpdate();
+        presets.custom.system.ui.render();
+    }
+    </script>
+    <script on="((insert))">
+    let sib_node = insert;
+
+    let root = wick.core.source.compiler.nodes.root;
+
+    let node = new root();
+    node.par = sib_node.par;
+    node._presets_ = presets;
+
+    node._parse_(wick.core.lexer("<span>Testing</span>")).then(n => {
+        node.par = null;
+        sib_node.insertAfter(node);
+        node.setRebuild(false, true, true);
+        node.rebuild();
+
+        emit("target", src.target);
+
+
+        presets.custom.system.ui.render();
+
+    });
+    </script>
+    <script on="((target))">
+    let elements = [];
+    //extract all elements and present on a grid
+
+    let ast = target.component.sources[0].ast;
+    let count = 0;
+
+    function toOut(src, level) {
+        if (src.type == 1) return;
+
+        src.id_ = count++;
+        src.lvl_ = level;
+
+        elements.push(src);
+
+        let children = src.children;
+
+        if (children)
+            for (let i = 0; i < children.length; i++)
+                toOut(children[i], level + 1);
+    }
+    toOut(ast, 0);
+
+    emit("elements", elements);
+    </script>
+</div>

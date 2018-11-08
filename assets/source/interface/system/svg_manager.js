@@ -1,70 +1,121 @@
-import wick from "wick"
-class SVGPath{}
-class SVGRect{
-	static parse(element, rect = new SVGRect()){
-		let ele = wick.core.html(element).then(ele=>{
-			rect.height = ele.getAttribute("height");
-			rect.width = ele.getAttribute("width");
-		})
-	}
-
-	constructor(element, canvas){
-		this.width = 0;
-		this.height = 0;
-		this.x = 0;
-		this.y = 0;
-		this.rx = 0;
-		this.ry = 0;
-		this.pathLength = 0;
-		this.style = null;
-		this.class = "";
-		this.id = "";
-		this.canvas = canvas;
-		if(element) SVGRect.parse(element.outerHTML, this);
-	}
-
-	toString(){
-
-	}
-}
+const paper  = require("paper");
+const Point = paper.Point;
+const Size = paper.Size;
 
 /**
  * @brief Provides interface tools for manipulating SVG elements
  */
 export class SVGManager{
-	constructor(){
+	constructor(system){
+		this.system =  system;
+
 		this.target = null;
+
 		this.canvas = document.createElement("canvas");
+		this.canvas.style.position = "absolute";
+		paper.setup(this.canvas);
+		this.proj = paper.project;
+		let point = new Point(0, 0);
+
+		this.selection = null;
+
+		let dx = 0;
+		let dy = 0;
+		let POINTER_DOWN = false;
+
+		this.canvas.addEventListener("pointerdown",(e)=>{
+			let x = e.offsetX;
+			let y = e.offsetY;
+			dx = x;
+			dy = y;
+			point.x = x;
+			point.y = y;
+
+			POINTER_DOWN = true;
+
+			console.log(x,y)
+			
+			this.selection = this.proj.hitTest(point,
+				{fill:true, stroke:true}
+			);
+
+			console.log(this.selection)
+
+			if(this.selection){
+				this.selection.item.selected = true;
+				this.proj.view.update();
+			}
+
+		});
+
+		this.canvas.addEventListener("pointermove", (e)=>{
+			if(!POINTER_DOWN) return;
+			let x = dx - e.offsetX;
+			let y = dy - e.offsetY;
+			console.log(x,y, this.selection)
+			dx = e.offsetX;
+			dy = e.offsetY;
+			let selection = this.selection;
+			if(selection){
+				let item = selection.item;
+				switch(selection.type){
+					case "fill":
+					case "stroke":
+						item.translate(new Point(-x,-y));
+					break;
+				}
+
+				this.proj.view.update();
+			}
+		});
+
+		this.canvas.addEventListener("pointerup", (e)=>{
+			POINTER_DOWN = false;
+			this.export();
+		});
+
+
 		this.ctx = this.canvas.getContext("2d");
 		this.elements = [];
 	}
 
-	render(){
-
+	export(){
+		paper.project.view.viewSize.set(this.width, this.height);
+		paper.project.view.translate(new Point(-20, -20));
+		let output = paper.project.exportSVG({asString:true});
+		console.log(output)
+		this.wick_node.reparse(output).then(n=>this.wick_node = n);
+		paper.project.view.translate(new Point(20, 20));
+		paper.project.view.viewSize.set(this.width+40, this.height+40);
 	}
 
-	mount(target_element, transform){
+	mount(ui, target_element, component, x,y){
+
+
 		while(target_element && target_element.tagName.toUpperCase() !== "SVG"){
 			target_element = target_element.parentElement;
 		}
 
 		if(!target_element) return;
 
+		this.wick_node = target_element.wick_node;
+
 		//parse svg elements and build objects from them. 
 		let children = target_element.children;
 
-		for(let i = 0; i < children.length; i++){
-			let child = children[i];
 
-			switch(child.tagName.toUpperCase()){
-				case "RECT":
-					this.elements.push(new SVGRect(child));
-				break;
-				case "PATH":
-					this.elements.push(new SVGPath(child));
-				break;
+		let rect = target_element.getBoundingClientRect();
+		x = component.x + rect.x + 4 - 20;
+		y = component.y + rect.y + 4 - 20;
+		this.width = rect.width;
+		this.height = rect.width;
+		paper.project.view.viewSize.set(rect.width + 40, rect.height + 40);
+		paper.project.view.translate(new Point(20, 20));
+		paper.project.importSVG(target_element.outerHTML);
 
-			}
-		}
+		this.canvas.style.left = `${x}px`;
+		this.canvas.style.top = `${y}px`;
+
+		ui.view_element.appendChild(this.canvas);
 	}
 }

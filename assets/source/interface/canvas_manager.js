@@ -120,8 +120,8 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2;
-        let r = 5;
+        ctx.lineWidth = 2 /scale;
+        let r = 5 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
         gripPoint(ctx, cbr, cbt, r);
@@ -168,12 +168,12 @@ export class CanvasManager {
     }
 
     pointerDown(e, x, y, transform) {
-        let widget = this.widget
+        let widget = this.widget;
         if (widget) {
 
             widget.target.action = null;
 
-            let tr = 5; //touch radius
+            let tr = 5 / transform.scale; //touch radius
 
             //Margin box
             let ml = widget.x - widget.ml - widget.posl;

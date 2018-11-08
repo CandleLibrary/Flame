@@ -48,6 +48,10 @@ Show the dimensions of the component
 Show a pixel grid in made in WebGL.
 
 Arranging:
+Centering
+Absolute / Fixed
+
+margin left auto. margin right auto
 
 
 

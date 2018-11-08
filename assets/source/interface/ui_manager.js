@@ -21,7 +21,7 @@ export class UI_Manager {
         this.system = system;
 
         this.color_picker = new colorPicker();
-        this.svg_manager = new SVGManager();
+        this.svg_manager = new SVGManager(system);
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -174,7 +174,7 @@ export class UI_Manager {
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
                     DD_Candidate = 0;
-                    this.handleContextMenu(e, x, y);
+                    this.handleContextMenu(e, x, y, component);
                 } else {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
@@ -277,14 +277,14 @@ export class UI_Manager {
         });
     }
 
-    handleContextMenu(e, x, y) {
+    handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
         console.log(e.target.tagName)
         switch(e.target.tagName.toUpperCase()){
             case "SVG":
             case "RECT":
             case "PATH":
-                this.svg_manager.mount(e.target, this.transform)
+                this.svg_manager.mount(this, e.target, component, x, y);
                 break;
             default:
                 let element_editor = this.components.get("element_edit.html");

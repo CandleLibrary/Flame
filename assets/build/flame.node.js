@@ -2063,73 +2063,125 @@ class colorPicker {
 	}
 }
 
-class SVGPath{}
-class SVGRect{
-	static parse(element, rect = new SVGRect()){
-		let ele = wick$1.core.html(element).then(ele=>{
-			rect.height = ele.getAttribute("height");
-			rect.width = ele.getAttribute("width");
-		});
-	}
-
-	constructor(element, canvas){
-		this.width = 0;
-		this.height = 0;
-		this.x = 0;
-		this.y = 0;
-		this.rx = 0;
-		this.ry = 0;
-		this.pathLength = 0;
-		this.style = null;
-		this.class = "";
-		this.id = "";
-		this.canvas = canvas;
-		if(element) SVGRect.parse(element.outerHTML, this);
-	}
-
-	toString(){
-
-	}
-}
+const paper  = require("paper");
+const Point = paper.Point;
+const Size = paper.Size;
 
 /**
  * @brief Provides interface tools for manipulating SVG elements
  */
 class SVGManager{
-	constructor(){
+	constructor(system){
+		this.system =  system;
+
 		this.target = null;
+
 		this.canvas = document.createElement("canvas");
+		this.canvas.style.position = "absolute";
+		paper.setup(this.canvas);
+		this.proj = paper.project;
+		let point = new Point(0, 0);
+
+		this.selection = null;
+
+		let dx = 0;
+		let dy = 0;
+		let POINTER_DOWN = false;
+
+		this.canvas.addEventListener("pointerdown",(e)=>{
+			let x = e.offsetX;
+			let y = e.offsetY;
+			dx = x;
+			dy = y;
+			point.x = x;
+			point.y = y;
+
+			POINTER_DOWN = true;
+
+			console.log(x,y);
+			
+			this.selection = this.proj.hitTest(point,
+				{fill:true, stroke:true}
+			);
+
+			console.log(this.selection);
+
+			if(this.selection){
+				this.selection.item.selected = true;
+				this.proj.view.update();
+			}
+
+		});
+
+		this.canvas.addEventListener("pointermove", (e)=>{
+			if(!POINTER_DOWN) return;
+			let x = dx - e.offsetX;
+			let y = dy - e.offsetY;
+			console.log(x,y, this.selection);
+			dx = e.offsetX;
+			dy = e.offsetY;
+			let selection = this.selection;
+			if(selection){
+				let item = selection.item;
+				switch(selection.type){
+					case "fill":
+					case "stroke":
+						item.translate(new Point(-x,-y));
+					break;
+				}
+
+				this.proj.view.update();
+			}
+		});
+
+		this.canvas.addEventListener("pointerup", (e)=>{
+			POINTER_DOWN = false;
+			this.export();
+		});
+
+
 		this.ctx = this.canvas.getContext("2d");
 		this.elements = [];
 	}
 
-	render(){
-
+	export(){
+		paper.project.view.viewSize.set(this.width, this.height);
+		paper.project.view.translate(new Point(-20, -20));
+		let output = paper.project.exportSVG({asString:true});
+		console.log(output);
+		this.wick_node.reparse(output).then(n=>this.wick_node = n);
+		paper.project.view.translate(new Point(20, 20));
+		paper.project.view.viewSize.set(this.width+40, this.height+40);
 	}
 
-	mount(target_element, transform){
+	mount(ui, target_element, component, x,y){
+
+
 		while(target_element && target_element.tagName.toUpperCase() !== "SVG"){
 			target_element = target_element.parentElement;
 		}
 
 		if(!target_element) return;
 
+		this.wick_node = target_element.wick_node;
+
 		//parse svg elements and build objects from them. 
 		let children = target_element.children;
 
-		for(let i = 0; i < children.length; i++){
-			let child = children[i];
 
-			switch(child.tagName.toUpperCase()){
-				case "RECT":
-					this.elements.push(new SVGRect(child));
-				break;
-				case "PATH":
-					this.elements.push(new SVGPath(child));
-				break;
+		let rect = target_element.getBoundingClientRect();
+		x = component.x + rect.x + 4 - 20;
+		y = component.y + rect.y + 4 - 20;
+		this.width = rect.width;
+		this.height = rect.width;
+		paper.project.view.viewSize.set(rect.width + 40, rect.height + 40);
+		paper.project.view.translate(new Point(20, 20));
+		paper.project.importSVG(target_element.outerHTML);
 
-			}
-		}
+		this.canvas.style.left = `${x}px`;
+		this.canvas.style.top = `${y}px`;
+
+		ui.view_element.appendChild(this.canvas);
 	}
 }
 
@@ -2253,8 +2305,8 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2;
-        let r = 5;
+        ctx.lineWidth = 2 /scale;
+        let r = 5 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
         gripPoint(ctx, cbr, cbt, r);
@@ -2306,7 +2358,7 @@ class CanvasManager {
 
             widget.target.action = null;
 
-            let tr = 5; //touch radius
+            let tr = 5 / transform.scale; //touch radius
 
             //Margin box
             let ml = widget.x - widget.ml - widget.posl;
@@ -2444,7 +2496,7 @@ class UI_Manager {
         this.system = system;
 
         this.color_picker = new colorPicker();
-        this.svg_manager = new SVGManager();
+        this.svg_manager = new SVGManager(system);
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -2597,7 +2649,7 @@ class UI_Manager {
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
                     DD_Candidate = 0;
-                    this.handleContextMenu(e, x, y);
+                    this.handleContextMenu(e, x, y, component);
                 } else {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
@@ -2700,14 +2752,14 @@ class UI_Manager {
         });
     }
 
-    handleContextMenu(e, x, y) {
+    handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
         console.log(e.target.tagName);
         switch(e.target.tagName.toUpperCase()){
             case "SVG":
             case "RECT":
             case "PATH":
-                this.svg_manager.mount(e.target, this.transform);
+                this.svg_manager.mount(this, e.target, component, x, y);
                 break;
             default:
                 let element_editor = this.components.get("element_edit.html");
@@ -3308,6 +3360,7 @@ let SourceNode = wick$1.core.source.compiler.nodes.source;
 let Lexer$1 = wick$1.core.lexer;
 let id = 0;
 
+RootNode.id = 0;
 
 
 SourceNode.prototype.createElement = function(presets, source) {
@@ -3318,12 +3371,13 @@ SourceNode.prototype.createElement = function(presets, source) {
     return element;
 };
 
-RootNode.prototype.createElement = function(presets, source) {
+RootNode.prototype.reparse_type = RootNode;
 
+RootNode.prototype.createElement = function(presets, source) {
     let element = document.createElement(this.tag);
     element.wick_source = source;
     element.wick_node = this;
-    element.wick_id = id++;
+    element.wick_id = RootNode.id++;
     return element;
 };
 
@@ -3339,7 +3393,7 @@ RootNode.prototype.setSource = function(source) {
 
 RootNode.prototype.reparse = function(text, element) {
     let lex = Lexer$1(text);
-    let Root = new RootNode();
+    let Root = new this.reparse_type();
 
     Root.par = this.par;
 
@@ -3566,6 +3620,26 @@ class DeleteNode extends SourceNode{
         this.nxt = nxt;
     }
 }
+
+let SVGNode = wick$1.core.source.compiler.nodes.svg;
+
+SVGNode.prototype.createElement = function(presets, source){
+	let element = document.createElementNS("http://www.w3.org/2000/svg", this.tag);
+	element.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+    element.wick_source = source;
+    element.wick_node = this;
+    element.wick_id = RootNode.id++;
+    return element;
+};
+
+SVGNode.prototype.setSource = RootNode.prototype.setSource;
+// Rebuild all sources relying on this node
+SVGNode.prototype.rebuild = RootNode.prototype.rebuild;
+SVGNode.prototype.buildExisting = RootNode.prototype.buildExisting;
+SVGNode.prototype.setRebuild = RootNode.prototype.setRebuild;
+SVGNode.prototype.resetRebuild = RootNode.prototype.resetRebuild;
+SVGNode.prototype.updated = RootNode.prototype.updated;
+SVGNode.prototype.reparse_type = SVGNode;
 
 let StyleNode = wick$1.core.source.compiler.nodes.style;
 
@@ -3892,6 +3966,9 @@ class Project {
         this.system.iu.addUIComponent(component);
     }
 }
+
+//Amend the prototype of the HTML
+HTMLElement.prototype.wick_node = null;
 
 window.wick = wick$1;
 

@@ -5,6 +5,7 @@ let SourceNode = wick.core.source.compiler.nodes.source;
 let Lexer = wick.core.lexer;
 let id = 0;
 
+RootNode.id = 0;
 
 
 SourceNode.prototype.createElement = function(presets, source) {
@@ -15,12 +16,13 @@ SourceNode.prototype.createElement = function(presets, source) {
     return element;
 };
 
-RootNode.prototype.createElement = function(presets, source) {
+RootNode.prototype.reparse_type = RootNode;
 
+RootNode.prototype.createElement = function(presets, source) {
     let element = document.createElement(this.tag);
     element.wick_source = source;
     element.wick_node = this;
-    element.wick_id = id++;
+    element.wick_id = RootNode.id++;
     return element;
 };
 
@@ -36,7 +38,7 @@ RootNode.prototype.setSource = function(source) {
 
 RootNode.prototype.reparse = function(text, element) {
     let lex = Lexer(text);
-    let Root = new RootNode();
+    let Root = new this.reparse_type();
 
     Root.par = this.par;
 

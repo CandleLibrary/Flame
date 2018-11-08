@@ -21,7 +21,11 @@
     <script on="((down))">
         let cp = presets.custom.system.ui.color_picker;
         let col = cp.getColor(event.offsetX, event.offsetY, 150, 150, "square", "hsl");
-        emit("primary_color", (col.r) | (col.g << 8) | (col.b << 16) | (col.a << 24));
+        emit.r = col.r;
+        emit.g = col.g;
+        emit.b = col.b;
+        emit.a = col.a / 255;
+        emit.primary_color = (col.r) | (col.g << 8) | (col.b << 16) | (col.a << 24);
     </script>
 
     <span>R<input type="number" value="((r))"></span>
@@ -30,7 +34,6 @@
     <span>A<input type="number" value="((a))" min=0 max=1></span>
     <button onclick="((bg)())">background</button>
     <button onclick="((col)())">color</button>
-    ((primary_color))
 
     <script on=((target))>	
 		src.target = target;
@@ -67,35 +70,27 @@
 
     src.color = out;
 
-    let r = out & 0xFF;
-    let g = (out >> 8) & 0xFF;
-    let b = (out >> 16) & 0xFF;
-    let a = ((out >> 24) & 0xFF);
-
-    emit("r", r);
-    emit("g", g);
-    emit("b", b);
-    emit("a", a);
+    emit.r = out & 0xFF;
+    emit.g = (out >> 8) & 0xFF;
+    emit.b = (out >> 16) & 0xFF;
+    emit.a = ((out >> 24) & 0xFF);
     </script>
     <script on="((r))">
     let color = src.color;
-    color = (color & 0xFFFFFF00) | ((r | 0) & 0xFF);
-    emit("primary_color", color);
+    emit.primary_color = (color & 0xFFFFFF00) | ((r | 0) & 0xFF);
+    emit.primary_color = color;
     </script>
     <script on="((g))">
     let color = src.color;
-    color = (color & 0xFFFF00FF) | (((g | 0) & 0xFF) << 8);
-    emit("primary_color", color);
+    emit.primary_color = (color & 0xFFFF00FF) | (((g | 0) & 0xFF) << 8);
     </script>
     <script on="((b))">
     let color = src.color;
-    color = (color & 0xFF00FFFF) | (((b | 0) & 0xFF) << 16);
-    emit("primary_color", color);
+    emit.primary_color = (color & 0xFF00FFFF) | (((b | 0) & 0xFF) << 16);
     </script>
     <script on="((a))">
     let v = Math.max(Math.min((255 * a) | 0, 255), 0);
     let color = src.color;
-    color = (color & 0xFFFFFF) | (((v | 0) & 0xFF) << 24);
-    emit("primary_color", color);
+    emit.primary_color = (color & 0xFFFFFF) | (((v | 0) & 0xFF) << 24);
     </script>
 </w-s>

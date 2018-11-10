@@ -8,7 +8,7 @@ app.on("ready", ()=>{
 
 	win.loadFile("./assets/html/index.html");
 
-	win.webContents.openDevTools();
+	//win.webContents.openDevTools();
 
 	globalShortcut.register('f5', function() {
 		console.log('f5 is pressed');

@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"SVG",
+				"SVGRect"
+			],
+			[
+				"SV",
+				"SVGRect"
+			],
+			[
+				"to",
+				"toUpperCase"
+			],
+			[
+				"ta",
+				"target_element"
+			],
+			[
+				"targ",
+				"target_element"
+			],
+			[
 				"diff",
 				"diffs"
 			],
@@ -196,10 +216,6 @@
 				"transform"
 			],
 			[
-				"to",
-				"ToString"
-			],
-			[
 				"Tr",
 				"transform2D"
 			],
@@ -232,28 +248,65 @@
 	"buffers":
 	[
 		{
-			"file": "/C/Users/Anthony/Downloads/live.cshrc",
+			"file": "assets/source/interface/system/svg_manager.js",
 			"settings":
 			{
-				"buffer_size": 1321,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/C/Users/Anthony/Desktop/.cshrc",
-			"settings":
-			{
-				"buffer_size": 1480,
+				"buffer_size": 1389,
 				"encoding": "UTF-8",
-				"line_ending": "Windows",
-				"name": "# Steve's .cshrc based on"
+				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "package.json",
+			"contents": "Conference Closet: Switch + Wap\n\tHP \n\n\tAPC ES 350 - UPS backup for WAP and Switch\n\t\tReplacement Battery: RBC35\n\nServer Closet \n\tContains Firewall + Voip + Server + Fiber to Network\n\n\tSonicwal TZ400\n\t\tDevices connected to it: \n\t\t\tX0 - HP switch\n\t\t\tX1 - Ciena 3916\n\t\t\tX2 - Edgewater 4550\n\n\tEdgewater 4550 - VoIP server. \n\t\tNote: Connected to inteface X2 on firewall\n\n\tCiena 3916 Service Delivery Switch - Comcast Demarc Device\n\t\tNote: Contains redundant power supply. Both cables plugged into ES350 UPS\n\t\t\t  Connected to interface X1 on firewall\n\t\n\tPoweredge T110 2 - TWCSERVER host  \n\t\tNote: Monitor and Server connected to SmartUPS 1000\n\nPower:\n\tAPC ES 550 - UPS Backup for Firewall, Comcast Switch, VOIP \n\n\tAPC SmartUPS - UPS Backup\n\n\n\n\nFirewall Ports:\nX0 - switch\nX1 - siena\nX2 - voip\n\nSwitch Ports\nP2 Wap\nD10 P19 - Firewall\nD11 P20 - Server\n\nSewell USB for Large Conference touch screen and webcam\n",
 			"settings":
 			{
-				"buffer_size": 885,
+				"buffer_size": 901,
+				"line_ending": "Windows",
+				"name": "Conference Closet: Switch + Wap"
+			}
+		},
+		{
+			"file": "assets/source/interface/canvas_manager.js",
+			"settings":
+			{
+				"buffer_size": 10775,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "node_modules/wick/source/source/compiler/nodes/svg.js",
+			"settings":
+			{
+				"buffer_size": 330,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "assets/source/wick_compiler_nodes/style.js",
+			"settings":
+			{
+				"buffer_size": 1532,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "assets/source/interface/ui_manager.js",
+			"settings":
+			{
+				"buffer_size": 10698,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "<div class=\"n4377436\">\n    <div>\n        <div>\n            <div>test b</div>\n            <div class=\"n2751884\" style=\"font-family:'comic sans ms'; color:white; font-weight:100\">\n                Thez bes button\n            </div>\n            <div>test a</div>\n        </div>\n    </div>\n    <svg version=\"1.1\" width=\"40\" height=\"40\">\n        <rect width=\"40\" height=\"40\" fill=\"#cc0000\"></rect> \n    </svg>\n    <style>\n        button, div {\n            border: 1px solid black;\n            background-color:rgba(0,128,0,1);\n            height:50px;\n        }\n        .n2751884 {\n            display:block;\n        }\n    </style>\n    <style url=\"./css/test.css\"></style>\n    <div class=\"n8088360\">\n        text ((test1))\n        <input type=\"text\" value=\"((test1))\" class=\"n702606 n7013584 n1271045 n594049 n6581743\">\n    </div>\n</div>\n",
+			"file": "assets/components/test(2).html",
+			"file_size": 860,
+			"file_write_time": 131860862449427574,
+			"settings":
+			{
+				"buffer_size": 832,
 				"line_ending": "Windows"
 			}
 		},
@@ -265,6 +318,14 @@
 			"settings":
 			{
 				"buffer_size": 5206,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "main.js",
+			"settings":
+			{
+				"buffer_size": 570,
 				"line_ending": "Windows"
 			}
 		},
@@ -287,12 +348,20 @@
 			}
 		},
 		{
-			"file": ".git/COMMIT_EDITMSG",
+			"file": "node_modules/wick/source/root/config/library.js",
 			"settings":
 			{
-				"buffer_size": 563,
+				"buffer_size": 4263,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "node_modules/wick/source/common/html/root.js",
+			"settings":
+			{
+				"buffer_size": 25160,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
+				"line_ending": "Windows"
 			}
 		},
 		{
@@ -341,6 +410,10 @@
 	],
 	"file_history":
 	[
+		"/D/flame/.git/COMMIT_EDITMSG",
+		"/D/flame/package.json",
+		"/C/Users/Anthony/Downloads/live.cshrc",
+		"/C/Users/Anthony/Desktop/.cshrc",
 		"/D/flame/source/interface/actions/color.js",
 		"/D/flame/source/interface/actions/convert.js",
 		"/D/flame/source/interface/actions/resize.js",
@@ -358,8 +431,6 @@
 		"/D/flame/build/flame.node.js",
 		"/D/flame/node_modules/wick/build/wick.node.js",
 		"/C/Users/Anthony/Downloads/live (1).cshrc",
-		"/D/flame/.git/COMMIT_EDITMSG",
-		"/D/flame/package.json",
 		"/D/flame/source/interface/actions/move.js",
 		"/D/flame/node_modules/wick/source/common/css/types/length.js",
 		"/D/flame/source/component/component.js",
@@ -466,9 +537,7 @@
 		"/D/wick/source/source/compiler/template/template_evaluator.js",
 		"/D/wick/source/source/compiler/compiler.js",
 		"/D/wick/node_modules/snapdragon/lib/compiler.js",
-		"/D/wick/README.md",
-		"/D/pytrucks/package.json",
-		"/D/pytrucks/Procfile"
+		"/D/wick/README.md"
 	],
 	"find":
 	{
@@ -487,6 +556,9 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"cdase",
+			"handleContextMenu",
+			"handling",
 			"SHAREPOINT01",
 			"DC02",
 			"diff",
@@ -612,31 +684,57 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "/C/Users/Anthony/Downloads/live.cshrc",
+					"file": "assets/source/interface/system/svg_manager.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1321,
+						"buffer_size": 1389,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								474,
+								474
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 901,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								36,
+								36
+							]
+						],
+						"settings":
+						{
+							"auto_name": "Conference Closet: Switch + Wap",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -646,43 +744,12 @@
 					"type": "text"
 				},
 				{
-					"buffer": 1,
-					"file": "/C/Users/Anthony/Desktop/.cshrc",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1480,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								18,
-								18
-							]
-						],
-						"settings":
-						{
-							"auto_name": "# Steve's .cshrc based on",
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
 					"buffer": 2,
-					"file": "package.json",
+					"file": "assets/source/interface/canvas_manager.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 885,
+						"buffer_size": 10775,
 						"regions":
 						{
 						},
@@ -695,8 +762,126 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 2,
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 675.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "node_modules/wick/source/source/compiler/nodes/svg.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 330,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "assets/source/wick_compiler_nodes/style.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1532,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								461,
+								461
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "assets/source/interface/ui_manager.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10698,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								670,
+								680
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 30.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "assets/components/test(2).html",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 832,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								832,
+								832
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.sublime-syntax",
+							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
@@ -707,7 +892,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 7,
 					"file": "source/document/wick_document.js",
 					"semi_transient": false,
 					"settings":
@@ -734,17 +919,46 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 9,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "main.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 570,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
 					"type": "text"
 				}
 			]
 		},
 		{
-			"selected": 2,
+			"selected": 3,
 			"sheets":
 			[
 				{
-					"buffer": 4,
+					"buffer": 9,
 					"semi_transient": false,
 					"settings":
 					{
@@ -768,11 +982,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 13,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 10,
 					"semi_transient": false,
 					"settings":
 					{
@@ -783,8 +997,8 @@
 						"selection":
 						[
 							[
-								0,
-								1406
+								361,
+								361
 							]
 						],
 						"settings":
@@ -793,42 +1007,74 @@
 							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 694.0,
+						"translation.y": 289.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 11,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
-					"file": ".git/COMMIT_EDITMSG",
+					"buffer": 11,
+					"file": "node_modules/wick/source/root/config/library.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 563,
+						"buffer_size": 4263,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								105,
-								105
+								3273,
+								3273
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Git Formats/Git Commit.sublime-syntax"
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1141.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 12,
+					"file": "node_modules/wick/source/common/html/root.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 25160,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								24510,
+								24510
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 11517.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
 					"file": "build/flame.node.js",
 					"semi_transient": false,
 					"settings":
@@ -855,7 +1101,7 @@
 						"translation.y": 15300.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 12,
 					"type": "text"
 				}
 			]
@@ -889,7 +1135,7 @@
 		"cols":
 		[
 			0.0,
-			0.575291880226,
+			0.697150219906,
 			1.0
 		],
 		"rows":
@@ -916,6 +1162,38 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"htmlroot",
+				"wick\\source\\common\\html\\root.js"
+			],
+			[
+				"library",
+				"wick\\source\\root\\config\\library.js"
+			],
+			[
+				"canva",
+				"flame\\assets\\source\\interface\\canvas_manager.js"
+			],
+			[
+				"styl",
+				"flame\\assets\\source\\wick_compiler_nodes\\style.js"
+			],
+			[
+				"svg",
+				"wick\\source\\source\\compiler\\nodes\\svg.js"
+			],
+			[
+				"test",
+				"flame\\assets\\components\\test(2).html"
+			],
+			[
+				"ui",
+				"flame\\assets\\source\\interface\\ui_manager.js"
+			],
+			[
+				"main",
+				"flame\\main.js"
+			],
 			[
 				"flame root",
 				"flame\\source\\wick_compiler_nodes\\root.js"
@@ -981,10 +1259,6 @@
 				"flame\\source\\document\\doc_manager.js"
 			],
 			[
-				"main",
-				"flame\\source\\main.js"
-			],
-			[
 				"leng",
 				"wick\\source\\common\\css\\types\\length.js"
 			],
@@ -1015,10 +1289,6 @@
 			[
 				"",
 				"flame\\source\\interface\\actions\\move.js"
-			],
-			[
-				"ui",
-				"flame\\source\\interface\\ui_manager.js"
 			],
 			[
 				"mov",
@@ -1093,10 +1363,6 @@
 				"wick\\source\\source\\compiler\\compiler.js"
 			],
 			[
-				"htmlroot",
-				"wick\\source\\common\\html\\root.js"
-			],
-			[
 				"wurl",
 				"wick\\source\\network\\wurl.js"
 			],
@@ -1107,10 +1373,6 @@
 			[
 				"root node",
 				"wick\\source\\source\\compiler\\nodes\\root.js"
-			],
-			[
-				"test",
-				"flame\\test.css"
 			],
 			[
 				"bind",
@@ -1195,10 +1457,6 @@
 			[
 				"cssdo",
 				"flame\\source\\document\\css_document.js"
-			],
-			[
-				"styl",
-				"flame\\source\\wick_compiler_nodes\\style.js"
 			],
 			[
 				"sty",
@@ -1433,7 +1691,7 @@
 		],
 		"width": 0.0
 	},
-	"selected_group": 1,
+	"selected_group": 0,
 	"settings":
 	{
 	},
@@ -1441,7 +1699,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 268.0,
+	"side_bar_width": 53.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

@@ -7,7 +7,7 @@
     "start": "electron .",
     "build": "rollup --config ./assets/build/config/main_dev.config.js",
     "build.watch": "rollup --watch --config ./assets/build/config/node.config.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "private": true,
   "repository": {
@@ -27,9 +27,12 @@
     "wick": "file:../wick"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
     "devtron": "^1.4.0",
+    "mocha": "^5.2.0",
     "rollup": "^0.66.4",
-    "rollup-plugin-node-resolve": "^3.4.0"
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "spectron": "^5.0.0"
   },
   "jshintConfig": {
     "esversion": 6,

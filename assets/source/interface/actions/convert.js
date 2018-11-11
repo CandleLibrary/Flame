@@ -1,9 +1,19 @@
 import wick from "wick";
 import * as clear from "./clear";
-import { CacheFactory } from "./cache";
-import { getFirstPositionedAncestor } from "./common";
-import { SETLEFT, SETTOP } from "./position";
-import { SETMARGINLEFT, SETMARGINTOP } from "./margin";
+import {
+    CacheFactory
+} from "./cache";
+import {
+    getFirstPositionedAncestor
+} from "./common";
+import {
+    SETLEFT,
+    SETTOP
+} from "./position";
+import {
+    SETMARGINLEFT,
+    SETMARGINTOP
+} from "./margin";
 let types = wick.core.css.types;
 /**
  * Actions for converting position and layout to different forms. 
@@ -31,7 +41,7 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             */
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
-            
+
             let x = rect.x;
             let y = rect.y - parseFloat(par_prop["margin-top"]);
 
@@ -82,7 +92,7 @@ export function TOPOSITIONRELATIVE(system, element, component) {
 
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
-            
+
             let x = rect.x - parseFloat(par_prop["border-left-width"]) + 2;
             let y = rect.y;
 
@@ -117,6 +127,71 @@ export function TOPOSITIONRELATIVE(system, element, component) {
         if (css.props.position) css.props.position = "relative";
         else cache.unique.addProp("position:relative");
     }
+
+    element.wick_node.setRebuild();
+}
+
+
+export function CONVERT_TOP(system, element, component, type) {
+    let cache = CacheFactory(system, element, component);
+    let position = parseFloat(component.window.getComputedStyle(element).top);
+    
+    switch (type) {
+        case "%":
+            cache.rules.props.top = new types.percentage(1);
+            break;
+        case "em":
+            cache.rules.props.top = new types.length(1, "em");
+            break;
+        case "vh":
+            cache.rules.props.top = new types.length(1, "vh");
+            break;
+        case "vw":
+            cache.rules.props.top = new types.length(1, "vw");
+            break;
+        case "vmin":
+            cache.rules.props.top = new types.length(1, "vmin");
+            break;
+        case "vmax":
+            cache.rules.props.top = new types.length(1, "vmax");
+            break;
+        default:
+            cache.rules.props.top = new types.length(1, 'px');
+            break;
+    }
+    SETTOP(system, element, component, position);
+
+    element.wick_node.setRebuild();
+}
+
+export function CONVERT_LEFT(system, element, component, type) {
+    let cache = CacheFactory(system, element, component);
+    let position = parseFloat(component.window.getComputedStyle(element).left);
+
+    switch (type) {
+        case "%":
+            cache.rules.props.left = new types.percentage(1);
+            break;
+        case "em":
+            cache.rules.props.left = new types.length(1, "em");
+            break;
+        case "vh":
+            cache.rules.props.left = new types.length(1, "vh");
+            break;
+        case "vw":
+            cache.rules.props.left = new types.length(1, "vw");
+            break;
+        case "vmin":
+            cache.rules.props.left = new types.length(1, "vmin");
+            break;
+        case "vmax":
+            cache.rules.props.left = new types.length(1, "vmax");
+            break;
+        default:
+            cache.rules.props.left = new types.length(1, 'px');
+            break;
+    }
+    SETLEFT(system, element, component, position);
 
     element.wick_node.setRebuild();
 }

@@ -26,32 +26,33 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
                     break;
                 case "left right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
                 case "left":
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
                     break;
                 case "right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
                     break;
             }
 
             switch (cache.move_vert_type) {
                 case "top bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
                 case "top":
-                    cache.valueD = SETDELTATOP(system, element, component, dy, 0);
+                    cache.valueD = SETDELTATOP(system, element, component, dy, cache.valueD);
                     break;
                 case "bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
                     break;
             }
         }
 
         element.wick_node.setRebuild();
+        element.wick_node.rebuild();
     }
 }
 

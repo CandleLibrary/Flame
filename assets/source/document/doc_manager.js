@@ -17,6 +17,7 @@ export class DocumentManager {
         this.system = system;
         this.differ = new DocumentDifferentiator();
         this.diffs = [];
+        this.diff_step = 0;
         /**
          * Global `fetch` polyfill - basic support
          */
@@ -64,10 +65,10 @@ export class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path, type, this.system);
+                                doc = new WickDocument(name, path, this.system);
                                 break
                             default:
-                                doc = new CSSDocument(name, path, type, this.system);
+                                doc = new CSSDocument(name, path, this.system);
                         }
                         this.docs.set(id, doc);
                         doc.load();
@@ -92,23 +93,38 @@ export class DocumentManager {
                 diffs.push(diff);
         });
 
-        if(diffs.length > 0)
+        if(diffs.length > 0){
             this.diffs.push({v:version++,diffs});
+            this.diff_step++;
+        }
+
     }
 
     stepBack(){
-        let diffs = this.diffs.pop();
+        if(this.diff_step == 0) return;
+        debugger
+        let diffs = this.diffs[--this.diff_step].diffs;
 
         if(diffs){
             for(let i = 0; i < diffs.length; i++){
                 let diff = diffs[i];
-                let doc = this.docs.get(diff.diffs.id);
+                let doc = this.docs.get(diff.id);
+                this.differ.revert(doc, diff.diff)
             }
         }
     }
 
     stepForward(){
-        
+        if(this.diff_step == this.diffs.length-1) return;
+        let diffs = this.diffs[this.diff_step++];
+
+        if(diffs){
+            for(let i = 0; i < diffs.length; i++){
+                let diff = diffs[i];
+                let doc = this.docs.get(diff.diffs.id);
+                this.differ.convert(doc, diff)
+            }
+        }   
     }
 }
 

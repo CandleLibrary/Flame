@@ -1,3 +1,4 @@
+import {CacheFactory} from "./cache"
 import { TEXTEDITOR } from "./text";
 import { MOVE, CENTER } from "./move";
 import { COMPLETE } from "./complete";
@@ -75,6 +76,8 @@ import {
     TOPOSITIONRELATIVE,
     TOPOSITIONFIXED,
     TOPOSITIONSTICKY,
+    CONVERT_LEFT,
+    CONVERT_TOP
 } from "./convert";
 import {
     SETBORDERLEFT,
@@ -99,6 +102,7 @@ import {
     BORDERRADIUSBR,
 } from "./border";
 const actions = {
+    CacheFactory,
     COMPLETE,
     TEXTEDITOR,
     MOVE,
@@ -194,6 +198,9 @@ const actions = {
     //color
     SETBACKGROUNDCOLOR,
     SETCOLOR,
+    //convert
+    CONVERT_LEFT,
+    CONVERT_TOP,
     //History
     UNDO,
     REDO

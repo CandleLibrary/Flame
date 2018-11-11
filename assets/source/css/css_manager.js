@@ -115,7 +115,6 @@ export class CSSManager {
 			if (css_docs.length == 0) {
 				//create new css tree.
 				tree = new CSS_Root_Constructor();
-
 				component.addStyle(tree);
 			}
 
@@ -129,10 +128,12 @@ export class CSSManager {
 				else
 					classes.value.txt += ` ${class_name}`
 			}else{
-				element.wick_node._attributes_.push({
+				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", wick.core.lexer(class_name)));
+/*				element.wick_node._attributes_.push({
 					name:"class",
-					value:class_name
-				})
+					value:class_name,
+				})*/
+				console.log(element.wick_node.classList)
 			}
 
 			element.classList.add(class_name);

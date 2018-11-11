@@ -42,7 +42,7 @@ export function setNumericalValue(propname, system, element, component, value, r
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     let props = css.props;
-    let prop = props[propname];
+    let prop = props[propname] || cache.unique.r.props[propname];
     let css_name = propname.replace(/_/g, "-");
 
     if (!prop) {
@@ -118,10 +118,12 @@ export function getRatio(system, element, component, funct, original_value, delt
     funct(system, element, component, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
-    if (diff_x !== delta_value && delta_value !== 0) {
+    if (diff_x !== delta_value && delta_value !== 0) {        
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
-        // if (diff !== 0) funct(system, element, component, original_value + diff, true);
+        if (diff !== 0) {
+            funct(system, element, component, original_value + diff, true);
+        }
     }
     return ratio;
 }

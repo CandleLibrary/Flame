@@ -54,5 +54,6 @@ Absolute / Fixed
 margin left auto. margin right auto
 
 
+Set env variable FLAME_DEV = true for DEVELOPMENT MODE
 
 

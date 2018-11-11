@@ -1,11 +1,53 @@
-import { setNumericalValue, getRatio } from "./common";
+import {
+    setNumericalValue,
+    getRatio
+} from "./common";
 
-import { CacheFactory } from "./cache";
+import {
+    CacheFactory
+} from "./cache";
 
 function resetPadding(system, element, component) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     if (css.props.padding) {
+        let val = css.props.padding;
+
+        if (!Array.isArray(val)) {
+            cache.unique.addProp(`
+                padding-top:${val};
+                padding-right:${val};
+                padding-bottom:${val};
+                padding-left:${val};
+            `)
+        } else {
+            switch (val.length) {
+                case 2:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[1]};
+                        padding-bottom:${val[0]};
+                        padding-left:${val[1]};
+                    `)
+                    break;
+                case 3:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[2]};
+                        padding-bottom:${val[1]};
+                        padding-left:${val[2]};
+                    `)
+                    break;
+                case 4:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[1]};
+                        padding-bottom:${val[2]};
+                        padding-left:${val[3]};
+                    `)
+                    break;
+            }
+        }
         //Convert padding value into 
         css.props.padding = null;
     }

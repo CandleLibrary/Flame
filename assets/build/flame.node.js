@@ -6,17 +6,6 @@ var wick$1 = _interopDefault(require('wick'));
 var fs = _interopDefault(require('fs'));
 var path = _interopDefault(require('path'));
 
-function TEXTEDITOR(system, element, component, x, y){}
-
-
-
-function TEXT(system, element, component, dx, dy) {
-    let pos = event.cursor;
-    let data = event.text_data;
-    let text = system.html.aquireTextData(element);
-    text.update(pos, data);
-}
-
 let CSS_Rule_Constructor = wick$1.core.css.prop;
 
 
@@ -160,7 +149,7 @@ class Cache {
                 unique_rule.addProp('position:absolute');
             } else if (move_type == "relative") {
                 v |= 1;
-                unique_rule.addProp('position:relative');
+                unique_rule.addProp('position:relative;top:0px;left:0px');
             }
         }
 
@@ -222,7 +211,20 @@ class Cache {
         this.cssflagsA = v;
         //calculate horizontal and vertical rations. also width and height ratios.  
     }
+
+    get position(){
+        if(this.cssflagsA & Cache.relative)
+            return "relative";
+        if(this.cssflagsA & Cache.absolute)
+            return "absolute";
+        return "auto";
+
+    }
 }
+
+//Flags
+Cache.relative = 1;
+Cache.absolute = 2;
 
 function CacheFactory(system, element, component) {
 
@@ -252,6 +254,17 @@ CacheFactory.clear = function(element){
 
     element.flame_cache = null;
 };
+
+function TEXTEDITOR(system, element, component, x, y){}
+
+
+
+function TEXT(system, element, component, dx, dy) {
+    let pos = event.cursor;
+    let data = event.text_data;
+    let text = system.html.aquireTextData(element);
+    text.update(pos, data);
+}
 
 let types = wick$1.core.css.types;
 
@@ -293,7 +306,7 @@ function setNumericalValue(propname, system, element, component, value, relative
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     let props = css.props;
-    let prop = props[propname];
+    let prop = props[propname] || cache.unique.r.props[propname];
     let css_name = propname.replace(/_/g, "-");
 
     if (!prop) {
@@ -369,10 +382,12 @@ function getRatio(system, element, component, funct, original_value, delta_value
     funct(system, element, component, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
-    if (diff_x !== delta_value && delta_value !== 0) {
+    if (diff_x !== delta_value && delta_value !== 0) {        
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
-        // if (diff !== 0) funct(system, element, component, original_value + diff, true);
+        if (diff !== 0) {
+            funct(system, element, component, original_value + diff, true);
+        }
     }
     return ratio;
 }
@@ -413,7 +428,7 @@ function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED = false
 
 function SETDELTAHEIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).height);
-
+    
     if (ratio > 0)
         SETHEIGHT(system, element, component, start_x + dx / ratio, true);
     else
@@ -424,14 +439,19 @@ function SETDELTAHEIGHT(system, element, component, dx, ratio = 0, LINKED = fals
     return ratio;
 }
 
-function SETLEFT(system, element, component, x, LINKED = false) {
+const types$1 = wick$1.core.css.types;
+
+function SETLEFT(system, element, component, x, LINKED = false, type = "") {
     let cache = CacheFactory(system, element, component);
 
-    if (cache.cssflagsA & 1)
-        setNumericalValue("left", system, element, component, x, setNumericalValue.parent_width);
-    else
-        setNumericalValue("left", system, element, component, x, setNumericalValue.positioned_ancestor_width);
-
+    if (x.type) {
+        cache.rules.props.left = x;
+    } else {
+        if (cache.cssflagsA & 1)
+            setNumericalValue("left", system, element, component, x, setNumericalValue.parent_width);
+        else
+            setNumericalValue("left", system, element, component, x, setNumericalValue.positioned_ancestor_width);
+    }
 
     if (!LINKED) element.wick_node.setRebuild();
 }
@@ -439,10 +459,14 @@ function SETLEFT(system, element, component, x, LINKED = false) {
 function SETTOP(system, element, component, x, LINKED = false) {
     let cache = CacheFactory(system, element, component);
 
-    if (cache.cssflagsA & 1)
-        setNumericalValue("top", system, element, component, x, setNumericalValue.parent_height);
-    else
-        setNumericalValue("top", system, element, component, x, setNumericalValue.positioned_ancestor_height);
+    if (x.type) {
+        cache.rules.props.top = x;
+    } else {
+        if (cache.cssflagsA & 1)
+            setNumericalValue("top", system, element, component, x, setNumericalValue.parent_height);
+        else
+            setNumericalValue("top", system, element, component, x, setNumericalValue.positioned_ancestor_height);
+    }
 
     if (!LINKED) element.wick_node.setRebuild();
 }
@@ -515,6 +539,7 @@ function SETDELTABOTTOM(system, element, component, dx, ratio = 0, LINKED = fals
     else
         ratio = getRatio(system, element, component, SETBOTTOM, start_x, dx, "bottom");
 
+
     if (!LINKED) element.wick_node.setRebuild();
 
     return ratio;
@@ -573,21 +598,47 @@ function RESIZEL(system, element, component, dx, dy, IS_COMPONENT) {
     element.wick_node.setRebuild();
 }
 
-function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return (component.height += dy);
+function SUBRESIZEB(system, element, component, dx, dy, ratio){
     let cache = CacheFactory(system, element, component);
     switch (cache.move_vert_type) {
         case "top bottom":
-            SETDELTABOTTOM(system, element, component, -dy, 0, true);
+            SETDELTABOTTOM(system, element, component, -dy, ratio * 0.5, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio * 0.5, true);
+            break;
         case "top":
-            SETDELTAHEIGHT(system, element, component, dy, 0, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio, true);
             break;
         case "bottom":
-            SETDELTABOTTOM(system, element, component, -dy, 0, true);
-            SETDELTAHEIGHT(system, element, component, dy, 0, true);
+            SETDELTABOTTOM(system, element, component, -dy, ratio * 0.5, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio * 0.5, true);
             break;
     }
+
     element.wick_node.setRebuild();
+    element.wick_node.rebuild();
+}
+
+function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
+    if (IS_COMPONENT) return (component.height += dy);
+    let cache = CacheFactory(system, element, component);
+    //get the bottom value of the element;
+
+    if (cache.valueB == 0) {
+        let rect = element.getBoundingClientRect();
+        let bottom = rect.y + rect.height;
+        SUBRESIZEB(system, element, component, dx, dy, 1);
+        rect = element.getBoundingClientRect();
+        let bottom2 = rect.y + rect.height;
+        if (bottom2 - bottom !== dy) {
+            let ratio = ((bottom2 - bottom) / dy);
+            let diff = dy / ratio;
+            if (diff !== 0) {
+                SUBRESIZEB(system, element, component, dx, -diff, ratio);
+                cache.valueB = ratio;
+            }
+        }
+    } else
+        SUBRESIZEB(system, element, component, dx, dy, cache.valueB);
 }
 
 function RESIZETL(system, element, component, dx, dy, IS_COMPONENT) {
@@ -636,32 +687,33 @@ function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
                     break;
                 case "left right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
                 case "left":
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, 0);
+                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
                     break;
                 case "right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, 0);
+                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
                     break;
             }
 
             switch (cache.move_vert_type) {
                 case "top bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
                 case "top":
-                    cache.valueD = SETDELTATOP(system, element, component, dy, 0);
+                    cache.valueD = SETDELTATOP(system, element, component, dy, cache.valueD);
                     break;
                 case "bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, 0);
+                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
                     break;
             }
         }
 
         element.wick_node.setRebuild();
+        element.wick_node.rebuild();
     }
 }
 
@@ -921,18 +973,18 @@ function CREATE_CSS_DOC(system, doc, event) {
     comp.y = -event.y;
 }
 
-let types$1 = wick$1.core.css.types;
+let types$2 = wick$1.core.css.types;
 
 //set background color
 function SETBACKGROUNDCOLOR(system, element, component, r, g, b, a = 1){
-	let color = new types$1.color(r,g,b,a);
+	let color = new types$2.color(r,g,b,a);
 	setValue(system, element, component, "background_color", color);
 	element.wick_node.setRebuild();
 }
 //set background image
 //set font color
 function SETCOLOR(system, element, component, r, g, b, a = 1){
-	let color = new types$1.color(r,g,b,a);
+	let color = new types$2.color(r,g,b,a);
 	setValue(system, element, component, "color", color);
 	element.wick_node.setRebuild();
 }
@@ -950,6 +1002,43 @@ function resetPadding(system, element, component) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
     if (css.props.padding) {
+        let val = css.props.padding;
+
+        if (!Array.isArray(val)) {
+            cache.unique.addProp(`
+                padding-top:${val};
+                padding-right:${val};
+                padding-bottom:${val};
+                padding-left:${val};
+            `);
+        } else {
+            switch (val.length) {
+                case 2:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[1]};
+                        padding-bottom:${val[0]};
+                        padding-left:${val[1]};
+                    `);
+                    break;
+                case 3:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[2]};
+                        padding-bottom:${val[1]};
+                        padding-left:${val[2]};
+                    `);
+                    break;
+                case 4:
+                    cache.unique.addProp(`
+                        padding-top:${val[0]};
+                        padding-right:${val[1]};
+                        padding-bottom:${val[2]};
+                        padding-left:${val[3]};
+                    `);
+                    break;
+            }
+        }
         //Convert padding value into 
         css.props.padding = null;
     }
@@ -1288,7 +1377,7 @@ function CLEARMARGINLEFT(system, element, component, LINKED = false) {
 //clear border-bottom
 //clear border-top
 
-let types$2 = wick$1.core.css.types;
+let types$3 = wick$1.core.css.types;
 /**
  * Actions for converting position and layout to different forms. 
  */
@@ -1315,7 +1404,7 @@ function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             */
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
-            
+
             let x = rect.x;
             let y = rect.y - parseFloat(par_prop["margin-top"]);
 
@@ -1366,7 +1455,7 @@ function TOPOSITIONRELATIVE(system, element, component) {
 
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
-            
+
             let x = rect.x - parseFloat(par_prop["border-left-width"]) + 2;
             let y = rect.y;
 
@@ -1401,6 +1490,71 @@ function TOPOSITIONRELATIVE(system, element, component) {
         if (css.props.position) css.props.position = "relative";
         else cache.unique.addProp("position:relative");
     }
+
+    element.wick_node.setRebuild();
+}
+
+
+function CONVERT_TOP(system, element, component, type) {
+    let cache = CacheFactory(system, element, component);
+    let position = parseFloat(component.window.getComputedStyle(element).top);
+    
+    switch (type) {
+        case "%":
+            cache.rules.props.top = new types$3.percentage(1);
+            break;
+        case "em":
+            cache.rules.props.top = new types$3.length(1, "em");
+            break;
+        case "vh":
+            cache.rules.props.top = new types$3.length(1, "vh");
+            break;
+        case "vw":
+            cache.rules.props.top = new types$3.length(1, "vw");
+            break;
+        case "vmin":
+            cache.rules.props.top = new types$3.length(1, "vmin");
+            break;
+        case "vmax":
+            cache.rules.props.top = new types$3.length(1, "vmax");
+            break;
+        default:
+            cache.rules.props.top = new types$3.length(1, 'px');
+            break;
+    }
+    SETTOP(system, element, component, position);
+
+    element.wick_node.setRebuild();
+}
+
+function CONVERT_LEFT(system, element, component, type) {
+    let cache = CacheFactory(system, element, component);
+    let position = parseFloat(component.window.getComputedStyle(element).left);
+
+    switch (type) {
+        case "%":
+            cache.rules.props.left = new types$3.percentage(1);
+            break;
+        case "em":
+            cache.rules.props.left = new types$3.length(1, "em");
+            break;
+        case "vh":
+            cache.rules.props.left = new types$3.length(1, "vh");
+            break;
+        case "vw":
+            cache.rules.props.left = new types$3.length(1, "vw");
+            break;
+        case "vmin":
+            cache.rules.props.left = new types$3.length(1, "vmin");
+            break;
+        case "vmax":
+            cache.rules.props.left = new types$3.length(1, "vmax");
+            break;
+        default:
+            cache.rules.props.left = new types$3.length(1, 'px');
+            break;
+    }
+    SETLEFT(system, element, component, position);
 
     element.wick_node.setRebuild();
 }
@@ -1440,23 +1594,23 @@ function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
         switch (cache.move_hori_type) {
             case "left right":
             case "left right margin":
-                if (css.props.right instanceof types$2.length) {
-                    css.props.right = new types$2.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$3.length) {
+                    css.props.right = new types$3.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$2.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$3.length(rect.width * (css.props.right / 100), "px");
                 } /** Intentional fall through **/
             case "left":
-                if (css.props.left instanceof types$2.length) {
-                    css.props.left = new types$2.percentage((css.props.left / rect.width) * 100);
+                if (css.props.left instanceof types$3.length) {
+                    css.props.left = new types$3.percentage((css.props.left / rect.width) * 100);
                 } else {
-                    css.props.left = new types$2.length(rect.width * (css.props.left / 100), "px");
+                    css.props.left = new types$3.length(rect.width * (css.props.left / 100), "px");
                 }
                 break;
             case "right":
-                if (css.props.right instanceof types$2.length) {
-                    css.props.right = new types$2.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$3.length) {
+                    css.props.right = new types$3.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$2.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$3.length(rect.width * (css.props.right / 100), "px");
                 }
                 break;
         }
@@ -1464,7 +1618,7 @@ function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
     element.wick_node.setRebuild();
 }
 
-let types$3 = wick$1.core.css.types;
+let types$4 = wick$1.core.css.types;
 
 function resetBorder(system, element, component) {
     let cache = CacheFactory(system, element, component);
@@ -1613,26 +1767,27 @@ function RESIZEBORDERBR(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 function BORDERRADIUSTL(system, element, component, d){
-    setValue(system, element, component, "border_top_left_radius", new types$3.length(d, "px"));
+    setValue(system, element, component, "border_top_left_radius", new types$4.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSTR(system, element, component, d){
-    setValue(system, element, component, "border_top_right_radius", new types$3.length(d, "px"));
+    setValue(system, element, component, "border_top_right_radius", new types$4.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSBL(system, element, component, d){
-    setValue(system, element, component, "border_bottom_left_radius", new types$3.length(d, "px"));
+    setValue(system, element, component, "border_bottom_left_radius", new types$4.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSBR(system, element, component, d){
-    setValue(system, element, component, "border_bottom_right_radius", new types$3.length(d, "px"));
+    setValue(system, element, component, "border_bottom_right_radius", new types$4.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 const actions = {
+    CacheFactory,
     COMPLETE,
     TEXTEDITOR,
     MOVE,
@@ -1728,6 +1883,9 @@ const actions = {
     //color
     SETBACKGROUNDCOLOR,
     SETCOLOR,
+    //convert
+    CONVERT_LEFT,
+    CONVERT_TOP,
     //History
     UNDO,
     REDO
@@ -2626,6 +2784,7 @@ class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
+            
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
@@ -2798,8 +2957,13 @@ class UI_Manager {
         this.view_element.style.transform = this.transform;
     }
 
+    update(){
+        this.render();
+    }
+
     render() {
         this.canvas.render(this.transform);
+        this.loadedComponents.forEach(c => c.set(this.target));
     }
 }
 
@@ -2809,6 +2973,7 @@ class JSManager{
 
 class CSSComponent{
 	constructor(tree, manager){
+		debugger
 		this.manager = manager;
 		this.tree = tree;
 		this.doc = null;
@@ -2943,7 +3108,6 @@ class CSSManager {
 			if (css_docs.length == 0) {
 				//create new css tree.
 				tree = new CSS_Root_Constructor();
-
 				component.addStyle(tree);
 			}
 
@@ -2957,10 +3121,12 @@ class CSSManager {
 				else
 					classes.value.txt += ` ${class_name}`;
 			}else{
-				element.wick_node._attributes_.push({
+				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", wick$1.core.lexer(class_name)));
+/*				element.wick_node._attributes_.push({
 					name:"class",
-					value:class_name
-				});
+					value:class_name,
+				})*/
+				console.log(element.wick_node.classList);
 			}
 
 			element.classList.add(class_name);
@@ -3048,52 +3214,56 @@ CSSRule.prototype.merge = function(rule) {
 
  class HTMLManager {}
 
-const Lexer = wick$1.core.lexer;
+class Document {
 
-class WickDocument {
-    constructor(file_name, path$$1, type, system) {
-        this.name = file_name;
-        this.type = type;
+    constructor(file_name, path$$1, system) {
         this.path = path$$1;
-        this.id = `${path$$1}/${name}`;
+        this.name = file_name;
         this.data = null;
         this.LOADED = false;
         this.UPDATED = true;
         this.SAVING = false;
         this.PENDING_SAVE = false;
+        this.INITIAL_HISTORY = false;
         this.observers = [];
-        this.ObjectsPendingLoad = [];
-        this.css_docs = [];
         this.system = system;
-        this.old_data = "";
         this.element = document.createElement("div");
+        this.old_data = "";
+    }
+
+    seal(differ) {
+        if (this.PENDING_SAVE) {
+            this.PENDING_SAVE = false;
+
+            let new_data = this + "";
+
+            let diff = differ.createDiff(this.old_data, new_data);
+
+            this.old_data = new_data;
+
+            return (diff) ? {
+                id: this.id,
+                diff
+            } : null;
+        }
+
+        return null;
     }
 
     load() {
         fs.open(this.path + "/" + this.name, "r", (err, fd) => {
             if (err) throw err;
             fs.readFile(fd, "utf8", (err, data) => {
-                fs.close(fd, (err) => {
-                    if (err) throw err
-                });
-                if (err) {
+                
+                fs.close(fd, (err) => {if (err) throw err});
+                
+                if (err) 
                     throw err;
-                }
-                this.data = data;
+                
                 this.LOADED = true;
-                (new wick$1.core.source.package(this.data, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
-                    this.data = pkg;
-                    pkg._skeletons_[0].tree.addObserver(this);
-                    for (let i = 0; i < this.ObjectsPendingLoad.length; i++) this.ObjectsPendingLoad[i].documentReady(pkg);
-                    this.ObjectsPendingLoad = null;
-                });
+                this.fromString(data);    
             });
         });
-    }
-
-    updatedWickASTTree(tree) {
-        this.element.innerText = tree;
-        this.save();
     }
 
     save() {
@@ -3118,145 +3288,122 @@ class WickDocument {
         });
     }
 
+    toString(){
+        return "[Document]";
+    }
+
     bind(object) {
         if (this.LOADED) object.documentReady(this.data);
-        else this.ObjectsPendingLoad.push(object);
+        this.observers.push(object);
     }
 
-    seal(differ){
-        if(this.PENDING_SAVE){
-            this.PENDING_SAVE = false;
+    get type(){
+        return "";
+    }
+
+    get id(){
+        return `${this.path}/${this.name}`;
+    }
+
+
+}
+
+class WickDocument extends Document{
+
+    updatedWickASTTree(tree) {
+        this.element.innerText = tree;
+        this.save();
+    }
+
+    fromString(string, ALLOW_SEAL = true) {
+
+        (new wick$1.core.source.package(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
+
+            if(this.data)
+                this.data.removeObserver(this);
+
+            this.data = pkg;
+
+            pkg._skeletons_[0].tree.addObserver(this);
             
-            let new_data = this + "";
+            for (let i = 0; i < this.observers.length; i++) this.observers[i].documentReady(pkg);
 
-            let diff = differ.createDiff(this.old_data, new_data);
-
-            this.old_data = new_data;
-
-            return (diff) ? {id:this.id, diff} : null;
-        }
-
-        return null;
+            if(ALLOW_SEAL){
+                this.PENDING_SAVE = true;
+                this.system.doc_man.seal();
+            }
+        });
     }
 
-    toString(){
+    toString() {
         return this.data._skeletons_[0].tree + "";
     }
+
+    get type(){
+        return "wick";
+    }
 }
 
-const fs$1 = require("fs");
+class CSSDocument extends Document {
 
-class CSSDocument{
-	constructor(file_name, path$$1, type, system){
-		
-		this.name = file_name;
-		this.type = type;
-		this.path = path$$1;
-		this.data = null;
-		this.LOADED = false;
-		this.UPDATED = true;
-		this.SAVING = false;
-		this.PENDING_SAVE = false;
-
-		this.observers = [];
-		this.ObjectsPendingLoad = [];
-		this.css_docs = [];
-		this.system = system;
-
-		this.element = document.createElement("div");
-
-		this.old_data = "";
-	//	document.body.appendChild(this.element)
-	}
-
-	load(){
-        fs$1.open(this.path + "/" + this.name, "r", (err, fd) => {
-            if (err) throw err;
-            fs$1.readFile(fd, "utf8", (err, data) => {
-                fs$1.close(fd, (err)=>{if(err)throw err});
-                if (err) { throw err; }
-                
-                this.data = data;
-                this.LOADED = true;
-                
-                for(let i = 0; i < this.ObjectsPendingLoad.length;  i++)
-                	this.ObjectsPendingLoad[i].documentReady(data);
-            });
-        });
-	}
-
-	updatedWickASTTree(tree){
-		this.element.innerText = tree;
+	updatedCSS(tree) {
 		this.save();
 	}
 
-	save(){
-		this.PENDING_SAVE = true;
-		return
-		if(this.SAVING) return;
-		this.SAVING = true;
-        this.PENDING_SAVE = false;
-		fs$1.open(this.path + "/" + this.name, "w", (err, fd) => {
-            if (err) throw err;
-            fs$1.write(fd, (this.tree + ""), 0, "utf8", (err,written, data) => {
-                fs$1.close(fd, (err)=>{if(err)throw err});
-                if (err) { throw err; }
-  
-                if(this.PENDING_SAVE)
-                	this.save();
-                else this.PENDING_SAVE = false;
-                this.SAVING = false;
-            });
-        });
-	}
+	fromString(string, ALLOW_SEAL = true) {
 
-	bind(object){
-		if(this.LOADED)
-			object.documentReady(this.data);
-		else this.ObjectsPendingLoad.push(object);
-	}
+		this.data = string;
 
-	updatedCSS(tree){
-		this.save();
-	}
+		if(this.tree){
+			this.tree._parse_(wick$1.core.lexer(string)).catch((e) => {
+		        throw e;
+		    }).then((css) => {
+		    	this.old = string;
+		        this.tree.updated();
+		    });
+		}else{
 
-	seal(differ){
-		if(this.PENDING_SAVE){
-			this.PENDING_SAVE = false;
-			
-			let new_data = this + "";
+			for (let i = 0; i < this.observers.length; i++)
+				this.observers[i].documentReady(this.data);
 
-			let diff = differ.createDiff(this.old_data, new_data);
-
-			this.old_data = new_data;
-
-			return (diff) ? {name:this.name, diff} : null;
+			if (ALLOW_SEAL){
+				this.PENDING_SAVE = true;
+				this.system.doc_man.seal();
+			}
 		}
-
-		return null;
 	}
 
-	toString(){
-		return this.tree + "";
+	toString() {
+		if(this.tree)
+			return this.tree + "";
+		return this.data;
+	}
+
+	get type() {
+		return "css";
 	}
 }
-
-let diff = require("diff");
 
 /**
  * Uses a diff algorithm to create a change map from one document version to another. Vesions are stored in the project as a change history. 
  */
 class DocumentDifferentiator{
-	constructor(){
-
-	}
-
 	createDiff(old, new_){
 		if(old == new_) return;
-		return diff.diffChars(old, new_);
+
+		return {
+			old,
+			new:new_
+		}
 	}
 
-	
+	convert(doc, diff){
+		doc.fromString(diff.new, false);
+	}	
+
+	revert(doc, diff){
+		doc.fromString(diff.old, false);
+	}
 }
 
 /**
@@ -3268,6 +3415,7 @@ class DocumentManager {
         this.system = system;
         this.differ = new DocumentDifferentiator();
         this.diffs = [];
+        this.diff_step = 0;
         /**
          * Global `fetch` polyfill - basic support
          */
@@ -3315,10 +3463,10 @@ class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path$$1, type, this.system);
+                                doc = new WickDocument(name, path$$1, this.system);
                                 break
                             default:
-                                doc = new CSSDocument(name, path$$1, type, this.system);
+                                doc = new CSSDocument(name, path$$1, this.system);
                         }
                         this.docs.set(id, doc);
                         doc.load();
@@ -3343,23 +3491,38 @@ class DocumentManager {
                 diffs.push(diff);
         });
 
-        if(diffs.length > 0)
+        if(diffs.length > 0){
             this.diffs.push({v:version++,diffs});
+            this.diff_step++;
+        }
+
     }
 
     stepBack(){
-        let diffs = this.diffs.pop();
+        if(this.diff_step == 0) return;
+        debugger
+        let diffs = this.diffs[--this.diff_step].diffs;
 
         if(diffs){
             for(let i = 0; i < diffs.length; i++){
                 let diff = diffs[i];
-                let doc = this.docs.get(diff.diffs.id);
+                let doc = this.docs.get(diff.id);
+                this.differ.revert(doc, diff.diff);
             }
         }
     }
 
     stepForward(){
-        
+        if(this.diff_step == this.diffs.length-1) return;
+        let diffs = this.diffs[this.diff_step++];
+
+        if(diffs){
+            for(let i = 0; i < diffs.length; i++){
+                let diff = diffs[i];
+                let doc = this.docs.get(diff.diffs.id);
+                this.differ.convert(doc, diff);
+            }
+        }   
     }
 }
 
@@ -3373,7 +3536,7 @@ Source.prototype.rebuild = function (){
 
 let RootNode = wick$1.core.source.compiler.nodes.root;
 let SourceNode = wick$1.core.source.compiler.nodes.source;
-let Lexer$1 = wick$1.core.lexer;
+let Lexer = wick$1.core.lexer;
 let id = 0;
 
 RootNode.id = 0;
@@ -3408,12 +3571,12 @@ RootNode.prototype.setSource = function(source) {
 };
 
 RootNode.prototype.reparse = function(text, element) {
-    let lex = Lexer$1(text);
+    let lex = Lexer(text);
     let Root = new this.reparse_type();
 
     Root.par = this.par;
 
-    let promise = Root._parse_(Lexer$1(text), false, false, this.par);
+    let promise = Root._parse_(Lexer(text), false, false, this.par);
 
     promise.then(node => {
 
@@ -3703,7 +3866,7 @@ proto.toString = function(off) {
         str += ` ${attr.name}="${attr.value}"`;
     }
 
-    if (!this.url) {
+    if (!this.url && this.css) {
         str += ">\n";
         str += this.css.toString(off + 1);
         str += `${("    ").repeat(off)}</${this.tag}>\n`;
@@ -3732,7 +3895,7 @@ RootText.prototype.resetRebuild = RootNode.prototype.resetRebuild;
 RootText.prototype.updated = function(){};
 
 let SourceNode$1 = wick$1.core.source.compiler.nodes.source;
-let Lexer$2 = wick$1.core.lexer;
+let Lexer$1 = wick$1.core.lexer;
 
 SourceNode$1.prototype.buildExisting = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {
@@ -3776,7 +3939,7 @@ SourceNode$1.prototype.buildExisting = function(element, source, presets, taps) 
 
 let SourceTemplateNode = wick$1.core.source.compiler.nodes.template;
 
-let Lexer$3 = wick$1.core.lexer;
+let Lexer$2 = wick$1.core.lexer;
 
 SourceTemplateNode.prototype.buildExisting = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {
@@ -3820,7 +3983,7 @@ SourceTemplateNode.prototype.buildExisting = function(element, source, presets, 
 
 let PackageNode = wick$1.core.source.compiler.nodes.package;
 
-let Lexer$4 = wick$1.core.lexer;
+let Lexer$3 = wick$1.core.lexer;
 
 PackageNode.prototype.buildExisting = function(element, source, presets, taps) {
     return false;
@@ -4009,6 +4172,7 @@ class System {
 const flame = {
     init: (wick) => {
         //Startup the Main UI system
+        const DEV = !!require('electron').remote.process.env.FLAME_DEV;
 
         let system = new System();
 
@@ -4022,11 +4186,20 @@ const flame = {
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         const ui_man = new UI_Manager(ui_group, view_group, system);
+        
         system.ui = ui_man;
 
+
+        if(DEV){
+            //Load in the development component.
+            let path$$1 = require("path").join(process.cwd(),"assets/components/test.html");
+            let doc = system.doc_man.get(system.doc_man.load(path$$1));
+            actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
+            window.flame = flame;
+        }
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
-        //Load Poject.
+          //Load Poject.
         //If user preference allows, open the Splash screen modal. 
     },
 };

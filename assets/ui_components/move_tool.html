@@ -1,6 +1,9 @@
 <link src="./layout.html">
+<link src="./element_positioning.html">
 <w-s model="settings" #menu="main" export="load">
 	
+	((TAG))
+
 	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
 		MOVE
 	</div>
@@ -18,13 +21,13 @@
 
 	<input type="radio" name="position" value="one" id="radio-one" class="form-radio">
 	<input type="radio" name="position" value="one" id="radio-one" class="form-radio">
-	<label for="absolute">absolute</label>
-	<label for="relative">relative</label>
 	<label for="none">none</label>
 
+	<positioning></positioning>
 	<layout></layout>
 
-	<script on=((target))>	
+	<script on=((target))>
+		emit.TAG = target.element.tagName;	
 		src.target = target;
 	</script>
 

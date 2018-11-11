@@ -1,15 +1,28 @@
-import { setNumericalValue, getRatio } from "./common";
-import { CacheFactory } from "./cache";
-import { SETDELTAWIDTH, SETDELTAHEIGHT } from "./dimensions";
+import {
+    setNumericalValue,
+    getRatio
+} from "./common";
+import {
+    CacheFactory
+} from "./cache";
+import {
+    SETDELTAWIDTH,
+    SETDELTAHEIGHT
+} from "./dimensions";
+import wick from "wick";
+const types = wick.core.css.types;
 
-export function SETLEFT(system, element, component, x, LINKED = false) {
+export function SETLEFT(system, element, component, x, LINKED = false, type = "") {
     let cache = CacheFactory(system, element, component);
 
-    if (cache.cssflagsA & 1)
-        setNumericalValue("left", system, element, component, x, setNumericalValue.parent_width);
-    else
-        setNumericalValue("left", system, element, component, x, setNumericalValue.positioned_ancestor_width);
-
+    if (x.type) {
+        cache.rules.props.left = x;
+    } else {
+        if (cache.cssflagsA & 1)
+            setNumericalValue("left", system, element, component, x, setNumericalValue.parent_width);
+        else
+            setNumericalValue("left", system, element, component, x, setNumericalValue.positioned_ancestor_width);
+    }
 
     if (!LINKED) element.wick_node.setRebuild();
 }
@@ -17,10 +30,14 @@ export function SETLEFT(system, element, component, x, LINKED = false) {
 export function SETTOP(system, element, component, x, LINKED = false) {
     let cache = CacheFactory(system, element, component);
 
-    if (cache.cssflagsA & 1)
-        setNumericalValue("top", system, element, component, x, setNumericalValue.parent_height);
-    else
-        setNumericalValue("top", system, element, component, x, setNumericalValue.positioned_ancestor_height);
+    if (x.type) {
+        cache.rules.props.top = x;
+    } else {
+        if (cache.cssflagsA & 1)
+            setNumericalValue("top", system, element, component, x, setNumericalValue.parent_height);
+        else
+            setNumericalValue("top", system, element, component, x, setNumericalValue.positioned_ancestor_height);
+    }
 
     if (!LINKED) element.wick_node.setRebuild();
 }
@@ -93,6 +110,7 @@ export function SETDELTABOTTOM(system, element, component, dx, ratio = 0, LINKED
     else
         ratio = getRatio(system, element, component, SETBOTTOM, start_x, dx, "bottom");
 
+
     if (!LINKED) element.wick_node.setRebuild();
 
     return ratio;
@@ -151,21 +169,47 @@ export function RESIZEL(system, element, component, dx, dy, IS_COMPONENT) {
     element.wick_node.setRebuild();
 }
 
-export function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return (component.height += dy);
+function SUBRESIZEB(system, element, component, dx, dy, ratio){
     let cache = CacheFactory(system, element, component);
     switch (cache.move_vert_type) {
         case "top bottom":
-            SETDELTABOTTOM(system, element, component, -dy, 0, true);
+            SETDELTABOTTOM(system, element, component, -dy, ratio * 0.5, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio * 0.5, true);
+            break;
         case "top":
-            SETDELTAHEIGHT(system, element, component, dy, 0, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio, true);
             break;
         case "bottom":
-            SETDELTABOTTOM(system, element, component, -dy, 0, true);
-            SETDELTAHEIGHT(system, element, component, dy, 0, true);
+            SETDELTABOTTOM(system, element, component, -dy, ratio * 0.5, true);
+            SETDELTAHEIGHT(system, element, component, dy, ratio * 0.5, true);
             break;
     }
+
     element.wick_node.setRebuild();
+    element.wick_node.rebuild();
+}
+
+export function RESIZEB(system, element, component, dx, dy, IS_COMPONENT) {
+    if (IS_COMPONENT) return (component.height += dy);
+    let cache = CacheFactory(system, element, component);
+    //get the bottom value of the element;
+
+    if (cache.valueB == 0) {
+        let rect = element.getBoundingClientRect();
+        let bottom = rect.y + rect.height;
+        SUBRESIZEB(system, element, component, dx, dy, 1)
+        rect = element.getBoundingClientRect();
+        let bottom2 = rect.y + rect.height;
+        if (bottom2 - bottom !== dy) {
+            let ratio = ((bottom2 - bottom) / dy);
+            let diff = dy / ratio;
+            if (diff !== 0) {
+                SUBRESIZEB(system, element, component, dx, -diff, ratio);
+                cache.valueB = ratio;
+            }
+        }
+    } else
+        SUBRESIZEB(system, element, component, dx, dy, cache.valueB);
 }
 
 export function RESIZETL(system, element, component, dx, dy, IS_COMPONENT) {

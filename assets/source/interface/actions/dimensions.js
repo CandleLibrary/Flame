@@ -25,7 +25,7 @@ export function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED 
 
 export function SETDELTAHEIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).height);
-
+    
     if (ratio > 0)
         SETHEIGHT(system, element, component, start_x + dx / ratio, true);
     else

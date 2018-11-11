@@ -135,6 +135,7 @@ export class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
+            
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
@@ -307,7 +308,12 @@ export class UI_Manager {
         this.view_element.style.transform = this.transform;
     }
 
+    update(){
+        this.render();
+    }
+
     render() {
         this.canvas.render(this.transform);
+        this.loadedComponents.forEach(c => c.set(this.target));
     }
 }

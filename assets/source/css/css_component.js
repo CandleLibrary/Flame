@@ -1,5 +1,6 @@
 export class CSSComponent{
 	constructor(tree, manager){
+		debugger
 		this.manager = manager;
 		this.tree = tree;
 		this.doc = null;

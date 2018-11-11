@@ -46,7 +46,7 @@ proto.toString = function(off) {
         str += ` ${attr.name}="${attr.value}"`;
     }
 
-    if (!this.url) {
+    if (!this.url && this.css) {
         str += ">\n";
         str += this.css.toString(off + 1);
         str += `${("    ").repeat(off)}</${this.tag}>\n`;

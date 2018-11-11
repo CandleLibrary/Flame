@@ -143,7 +143,7 @@ class Cache {
                 unique_rule.addProp('position:absolute');
             } else if (move_type == "relative") {
                 v |= 1;
-                unique_rule.addProp('position:relative');
+                unique_rule.addProp('position:relative;top:0px;left:0px');
             }
         }
 
@@ -205,7 +205,20 @@ class Cache {
         this.cssflagsA = v;
         //calculate horizontal and vertical rations. also width and height ratios.  
     }
+
+    get position(){
+        if(this.cssflagsA & Cache.relative)
+            return "relative";
+        if(this.cssflagsA & Cache.absolute)
+            return "absolute";
+        return "auto";
+
+    }
 }
+
+//Flags
+Cache.relative = 1;
+Cache.absolute = 2;
 
 export function CacheFactory(system, element, component) {
 

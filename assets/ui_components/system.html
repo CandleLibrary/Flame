@@ -1,0 +1,23 @@
+<w-s model="settings" #menu="main" export="load">
+	
+	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
+		SETTINGS
+	</div>
+
+	<button onclick="((undo)())">undo</button>
+	<button onclick="((redo)())">redo</button>
+
+	<script on=((target))>	
+		src.target = target;
+	</script>
+
+	<script on="((undo))">
+		if(src.target)
+			presets.custom.actions.UNDO(presets.custom.system);
+	</script>
+
+	<script on="((redo))">
+		if(src.target)
+			presets.custom.actions.REDO(presets.custom.system);
+	</script>
+</w-s>

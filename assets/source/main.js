@@ -56,6 +56,7 @@ class System {
 const flame = {
     init: (wick) => {
         //Startup the Main UI system
+        const DEV = !!require('electron').remote.process.env.FLAME_DEV;
 
         let system = new System();
 
@@ -69,11 +70,20 @@ const flame = {
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         const ui_man = new UI_Manager(ui_group, view_group, system);
+        
         system.ui = ui_man;
 
+
+        if(DEV){
+            //Load in the development component.
+            let path = require("path").join(process.cwd(),"assets/components/test.html");
+            let doc = system.doc_man.get(system.doc_man.load(path));
+            actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
+            window.flame = flame;
+        }
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
-        //Load Poject.
+          //Load Poject.
         //If user preference allows, open the Splash screen modal. 
     },
 };

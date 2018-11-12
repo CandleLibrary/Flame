@@ -7,6 +7,11 @@ import {
     CacheFactory
 } from "./cache";
 
+import {
+    SETDELTAHEIGHT,
+    SETDELTAWIDTH
+} from "./dimensions";
+
 function resetPadding(system, element, component) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
@@ -126,8 +131,10 @@ export function SETDELTAPADDINGBOTTOM(system, element, component, dx, ratio = 0,
     else
         ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_x, dx, "padding-bottom");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAHEIGHT(system, element, component, -dx, true);
 
+    if (!LINKED) element.wick_node.setRebuild();
+    
     return ratio;
 }
 

@@ -795,7 +795,7 @@ class Component {
         this.dimensions.classList.add("flame_component_dimensions");
 
         this.iframe = document.createElement("iframe");
-        this.iframe.src = "./assets/html/component_frame.html";
+        this.iframe.src = "component_frame.html";
 
         this.width = system.project.flame_data.default.component.width;
         this.height = system.project.flame_data.default.component.height;
@@ -1127,8 +1127,10 @@ function SETDELTAPADDINGBOTTOM(system, element, component, dx, ratio = 0, LINKED
     else
         ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_x, dx, "padding-bottom");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAHEIGHT(system, element, component, -dx, true);
 
+    if (!LINKED) element.wick_node.setRebuild();
+    
     return ratio;
 }
 
@@ -1970,263 +1972,169 @@ class UIComponent extends Component {
     unmount() {};
 }
 
-class colorPicker {
-	constructor() {
-		this.r = 0;
-		this.g = 0;
-		this.b = 0;
-		this.a = 0;
+class LineBox {
+    constructor(element, component) {
+        this.rect = element.getBoundingClientRect();
+        this.component = component;
+    }
 
-		this.last_x = 0;
-		this.last_y = 0;
+    get left() {
+        return this.rect.x + this.component.x + 4;
+    }
 
-		this.alpha = 255;
+    get top() {
+        return this.rect.y + this.component.y + 4;
+    }
 
-		this.h = 0;
-		this.s = 0;
-		this.v = 0;
+    get bottom() {
+        return this.rect.y + this.rect.height + this.component.x + 4;
+    }
 
-		this.hex = "#000000";
+    get right() {
+        return this.rect.x + this.rect.width + this.component.y + 4;
+    }
+}
 
-		this.color_width = 150;
-		this.color_height = 150;
+function CreateBoxes(ele, c, LineMachine, target) {
 
-		this.draw_type = "doughnut";
-		this.draw_mode = "hsl";
+    LineMachine.boxes.push(new LineBox(ele, c));
 
-		this.saturation = 1;
-	}
+    let children = ele.children;
+    for (let i = 0; i < children.length; i++){
+    	if(target == children[i]) continue;
+        CreateBoxes(children[i], c, LineMachine, target);
+    }
+}
 
-	rgbToString(r, g, b) {
-		r = r || this.r;
-		g = g || this.g;
-		b = b || this.b;
-		return "rgb(" + r + "," + g + "," + b + ")";
-	}
+class LineMachine {
+    constructor() {
+        this.boxes = [];
+        this.tolerance = 15;
 
-	draw(ctx, x, y, w, h, type, mode) {
-		var pi = Math.PI;
+        this.activex = {id:-1, l:false};
+        this.activey = {id:-1, t:false};
+    }
 
-		var width = w;
-		var height = h;
+    setPotentialBoxes(element, component, components) {
+        //get tree from component and create boxes from all elements inside the component. 
+        this.boxes.length = 0;
+        let tree = component.window.document.body;
 
-		var id = ctx.getImageData(x || 0, y || 0, width, height);
+        let ele = tree;
 
-		var data = id.data;
+        CreateBoxes(ele, component, this, element);
 
-		for (var i = 0; i < height; i++) {
-			for (var j = 0; j < width; j++) {
-				var index = (i* width + j) * 4;
-				this.getColor(j, i, width, height, type, mode);
-				if(this.a === 0) continue;
-				data[index + 0] = this.r;
-				data[index + 1] = this.g;
-				data[index + 2] = this.b;
-				data[index + 3] = this.a;
-			}
-		}
+    }
 
-		ctx.putImageData(id, 0, 0);
+    getSuggestedLine(box, dx, dy) {
+        let mx = Infinity;
+        let my = Infinity;
+        let id = 0;
 
-		//Extras
-		switch (type) {
-			case "doughnut":
-				ctx.strokeStyle = "black";
-				ctx.lineWidth = width * 0.02;
+        let l = box.left;
+        let r = box.right;
+        let t = box.top;
+        let b = box.bottom;
 
-				ctx.beginPath();
-				ctx.arc(width * 0.5, height * 0.5, width * 0.475, Math.PI * 2, false);
-				ctx.stroke();
+        for (let i = 0; i < this.boxes.length; i++) {
+            let box = this.boxes[i];
 
-				ctx.strokeStyle = this.draw_mode === "hsl" ? "white" : "black";
-				ctx.beginPath();
-				ctx.arc(width * 0.5, height * 0.5, width * 0.295, Math.PI * 2, false);
-				ctx.stroke();
+            //Vertical
+            if (Math.abs(l - box.left) < Math.abs(mx)) {
+                mx = l - box.left;
+                this.activex.id = i;
+                this.activex.l = true;
+            }
 
-				break;
-			case "wheel":
-				ctx.strokeStyle = "black";
-				ctx.lineWidth = width * 0.01;
-				ctx.beginPath();
-				ctx.arc(width * 0.5, height * 0.5, width * 0.475, Math.PI * 2, false);
-				ctx.stroke();
-				break;
-			default:
-				ctx.strokeStyle = "rgb(220,220,220)";
-				ctx.lineWidth = 2;
-				ctx.strokeRect(0, 0, width, height);
-			break;
-		}
-	}
+            if (Math.abs(l - box.right) < Math.abs(mx)) {
+                mx = l - box.right;
+                this.activex.id = i;
+                this.activex.l = false;
+            }
 
-	HSLtoRGB(h, s, l) {
-		var h_ = h / 60;
-		var c = (1 - Math.abs(2 * l - 1)) * s;
+            //right
+            if (Math.abs(r - box.left) < Math.abs(mx)) {
+                mx = r - box.left;
+                this.activex.id = i;
+                this.activex.l = true;
+            }
 
-		var x = c * (1 - Math.abs((h_ % 2) - 1));
+            if (Math.abs(r - box.right) < Math.abs(mx)) {
+                mx = r - box.left;
+                this.activex.id = i;
+                this.activex.l = false;
+            }
 
-		var rgb = [0, 0, 0];
+            //horizontal
 
-		if (h_ < 1 && h_ >= 0) {
-			rgb[0] = c;
-			rgb[1] = x;
-		} else if (h_ < 2) {
-			rgb[1] += c;
-			rgb[0] += x;
-		} else if (h_ < 3) {
-			rgb[1] += c;
-			rgb[2] += x;
-		} else if (h_ < 4) {
-			rgb[2] += c;
-			rgb[1] += x;
-		} else if (h_ < 5) {
-			rgb[2] += c;
-			rgb[0] += x;
-		} else if (h_ < 6) {
-			rgb[0] += c;
-			rgb[2] += x;
-		}
+            if (Math.abs(t - box.top) < Math.abs(my)) {
+                my = t - box.top;
+                this.activey.id = i;
+                this.activey.t = true;
+            }
 
-		var m = l - 0.5 * c;
+            if (Math.abs(t - box.bottom) < Math.abs(my)) {
+                my = t - box.bottom;
+                this.activey.id = i;
+                this.activey.t = false;
+            }
 
-		rgb[0] += m;
-		rgb[1] += m;
-		rgb[2] += m;
+            //bottom
+            if (Math.abs(b - box.top) < Math.abs(my)) {
+                my = b - box.top;
+                this.activey.id = i;
+                this.activey.t = true;
+            }
 
-		rgb[0] *= 255;
-		rgb[1] *= 255;
-		rgb[2] *= 255;
+            if (Math.abs(b - box.bottom) < Math.abs(my)) {
+                my = b - box.top;
+                this.activey.id = i;
+                this.activey.t = false;
+            }
+        }
+
+        if (Math.abs(mx) < this.tolerance && Math.abs(dx) < this.tolerance) {
+            dx = mx;
+        }else{
+        	this.activex.id = -1;
+        }
+
+        if (Math.abs(my) < this.tolerance && Math.abs(dy) < this.tolerance) {
+            dy = my;
+        }else{
+        	this.activey.id = -1;
+        }
+
+        return { dx, dy };
+    }
+
+    render(ctx, transform) {
+    	ctx.save();
+    	transform.setCTX(ctx);
+
+    	if(this.activex.id > -1){
+    		ctx.strokeStyle="red";
+    		let box = this.boxes[this.activex.id];
+    		let x = this.activex.l ? box.left : box.right;
+    		ctx.beginPath();
+    		ctx.moveTo(x, box.top);
+    		ctx.lineTo(x, box.top+1000);
+    		ctx.stroke();
+    	}
+
+    	if(this.activey.id > -1){
+    		ctx.strokeStyle="green";
+    		let box = this.boxes[this.activey.id];
+    		let y = this.activey.t ? box.top : box.bottom;
+    		ctx.beginPath();
+    		ctx.moveTo(box.left,y);
+    		ctx.lineTo(box.left+1000,y);
+    		ctx.stroke();
+    	}
 
 
-		return rgb;
-	}
-
-	HSVtoRGB(h, s, v) {
-		var h_ = h / 60;
-		var c = v * s;
-		var m = v - c;
-
-		var x = c * (1 - Math.abs((h_ % 2) - 1));
-
-		var rgb = [m, m, m];
-
-		if (h_ < 1 && h_ >= 0) {
-			rgb[0] += c;
-			rgb[1] += x;
-		} else if (h_ < 2) {
-			rgb[1] += c;
-			rgb[0] += x;
-		} else if (h_ < 3) {
-			rgb[1] += c;
-			rgb[2] += x;
-		} else if (h_ < 4) {
-			rgb[2] += c;
-			rgb[1] += x;
-		} else if (h_ < 5) {
-			rgb[2] += c;
-			rgb[0] += x;
-		} else if (h_ < 6) {
-			rgb[0] += c;
-			rgb[2] += x;
-		}
-
-		rgb[0] *= 255;
-		rgb[1] *= 255;
-		rgb[2] *= 255;
-
-		return rgb;
-	}
-
-	RGBtoHSV(r, g, b) {
-		var h = 0;
-		var h_ = 0;
-		var v = 0;
-		var s = 0;
-		// hue
-		var M = Math.max(r, g, b);
-		var m = Math.min(r, g, b);
-		var c = M - m;
-
-		if (M === r) h_ = ((g - b) / c) % 6;
-		else if (M === g) h_ = ((b - r) / c) + 2;
-		else h_ = ((r - g) / c) + 4;
-
-		h = ((Math.PI / 180) * 60) * h_;
-
-		//value
-		v = M;
-
-		//saturation
-		s = (c == 0) ? 0 : c / v;
-
-		return [h, s, v];
-	}
-
-	RGBtoHSL(r, g, b) {
-		var hsl = this.RGBtoHSV(r, g, b);
-		hsl[2] = (r * 0.3 + g * 0.59 + b * 0.11);
-		return hsl;
-	}
-
-	getColor(x, y, width, height, type, mode, color_array) {
-		var color;
-
-		mode = mode || this.draw_mode;
-		type = type || this.draw_type;
-		//square types
-
-		if (type === "doughnut" || type === "wheel") { //wheel or doughnut
-			//vector from center to xy
-			x = width * 0.5 - x;
-			y = height * 0.5 - y;
-
-			//normalize
-			var l = Math.sqrt(x * x + y * y); // l becomes a useful value
-
-			x /= l;
-			y /= l;
-			l /= width * 0.5; //now even more useful
-
-			if (l > 0.95) { // discard points outside and inside circle
-				this.r = 0;
-				this.g = 0;
-				this.b = 0;
-				this.a = 0;
-				return this;
-			} else {
-				//calculate angle and convert degrees
-				var angle = ((Math.atan2(0, 1) - Math.atan2(y, x)) * 180 / Math.PI) + 180;
-				if (type === "doughnut") {
-					if (mode == "hsl") {
-						color = this.HSLtoRGB(angle, this.saturation, (1 - (l * 2.5 - 1.5)));
-					} else {
-						color = this.HSVtoRGB(angle, this.saturation, (1 - (l * 2.5 - 1.5)));
-					}
-				} else {
-					if (mode == "hsl") {
-						color = this.HSLtoRGB(angle, this.saturation, (1 - l));
-					} else {
-						color = this.HSVtoRGB(angle, this.saturation, l);
-					}
-				}
-			}
-		} else { //square
-			if (mode === "hsl") {
-				color = this.HSLtoRGB(x / width * 360, this.saturation, 1 - y / height);
-			} else {
-				color = this.HSVtoRGB(x / width * 360, this.saturation, 1 - y / height);
-			}
-		}
-
-		if(!color_array){
-			this.r = (color[0] | 0);
-			this.g = (color[1] | 0);
-			this.b = (color[2] | 0);
-			this.a = this.alpha;
-		}
-
-		return this;
-	}
+    	ctx.restore();
+    }
 }
 
 const paper = require("paper");
@@ -2447,6 +2355,18 @@ class BoxElement {
             this.y = rect.top + component.y + 4;
             this.w = rect.width;
             this.h = rect.height;
+
+            let cbl = this.x + this.bl;
+            let cbt = this.y + this.bt;
+            let cbr = this.w - this.br - this.bl + cbl;
+            let cbb = this.h - this.bb - this.bt + cbt;
+
+            this.target.box = {
+                left: cbl,
+                right: cbr,
+                bottom: cbb,
+                top: cbt
+            };
         }
     }
 
@@ -2487,7 +2407,7 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2 /scale;
+        ctx.lineWidth = 2 / scale;
         let r = 5 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
@@ -2567,15 +2487,19 @@ class CanvasManager {
                     if (y >= cbt - tr && y <= cbb + tr) {
                         if (x <= cbl + tr) {
                             if (y <= cbt + tr) {
-                                this.widget.target.action = actions.RESIZETL; break;
+                                this.widget.target.action = actions.RESIZETL;
+                                break;
                             } else if (y >= cbb - tr) {
-                                this.widget.target.action = actions.RESIZEBL; break;
+                                this.widget.target.action = actions.RESIZEBL;
+                                break;
                             }
                         } else if (x >= cbr - tr) {
                             if (y <= cbt + tr) {
-                                this.widget.target.action = actions.RESIZETR; break;
+                                this.widget.target.action = actions.RESIZETR;
+                                break;
                             } else if (y >= cbb - tr) {
-                                this.widget.target.action = actions.RESIZEBR; break;
+                                this.widget.target.action = actions.RESIZEBR;
+                                break;
                             }
                         } else {
                             widget.target.action = actions.MOVE;
@@ -2588,15 +2512,19 @@ class CanvasManager {
                     if (y >= mt - tr && y <= mb + tr) {
                         if (x <= ml + tr) {
                             if (y <= mt + tr) {
-                                this.widget.target.action = actions.RESIZEMARGINTL; break;
+                                this.widget.target.action = actions.RESIZEMARGINTL;
+                                break;
                             } else if (y >= mb - tr) {
-                                this.widget.target.action = actions.RESIZEMARGINBL; break;
+                                this.widget.target.action = actions.RESIZEMARGINBL;
+                                break;
                             }
                         } else if (x >= mr - tr) {
                             if (y <= mt + tr) {
-                                this.widget.target.action = actions.RESIZEMARGINTR; break;
+                                this.widget.target.action = actions.RESIZEMARGINTR;
+                                break;
                             } else if (y >= mb - tr) {
-                                this.widget.target.action = actions.RESIZEMARGINBR; break;
+                                this.widget.target.action = actions.RESIZEMARGINBR;
+                                break;
                             }
                         }
                     }
@@ -2607,15 +2535,19 @@ class CanvasManager {
                     if (y >= pt - tr && y <= pb + tr) {
                         if (x <= pl + tr) {
                             if (y <= pt + tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGTL; break;
+                                this.widget.target.action = actions.RESIZEPADDINGTL;
+                                break;
                             } else if (y >= pb - tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGBL; break;
+                                this.widget.target.action = actions.RESIZEPADDINGBL;
+                                break;
                             }
                         } else if (x >= pr - tr) {
                             if (y <= pt + tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGTR; break;
+                                this.widget.target.action = actions.RESIZEPADDINGTR;
+                                break;
                             } else if (y >= pb - tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGBR; break;
+                                this.widget.target.action = actions.RESIZEPADDINGBR;
+                                break;
                             }
                         }
                     }
@@ -2677,8 +2609,6 @@ class UI_Manager {
 
         this.system = system;
 
-        this.color_picker = new colorPicker();
-        this.svg_manager = new SVGManager(system);
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -2711,6 +2641,10 @@ class UI_Manager {
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
 
+        /** SYSTEMS *******************************/
+        this.svg_manager = new SVGManager(system);
+        this.line_machine = new LineMachine();
+
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
 
@@ -2722,7 +2656,7 @@ class UI_Manager {
         window.addEventListener("pointerdown", e => {
             let x = this.transform.getLocalX(e.pageX);
             let y = this.transform.getLocalY(e.pageY);
-            if (this.setTarget(e, x, y, false)) {
+            if (this.setTarget(e, null, x, y, false)) {
                 this.origin_x = x;
                 this.origin_y = y;
                 this.ACTIVE_POINTER_INPUT = true;
@@ -2769,7 +2703,7 @@ class UI_Manager {
         }
     }
 
-    setTarget(e, x, y, SET_MENU = true) {
+    setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
@@ -2779,6 +2713,10 @@ class UI_Manager {
             if (SET_MENU) this.main_menu.setAttribute("show", "true");
 
             this.loadedComponents.forEach(c => c.set(this.target));
+
+            if(component){
+                this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+            }
 
             return true;
         }
@@ -2791,29 +2729,28 @@ class UI_Manager {
     integrateIframe(iframe, component) {
 
         iframe.contentWindow.addEventListener("wheel", e => {
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            let x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px;
+            let y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
             this.handleScroll(e, x, y);
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
             
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            let x = e.pageX + 4 + component.x ;
+            let y = e.pageY + 4 + component.y ;
             this.last_action = Date.now();
             this.handlePointerDownEvent(e, x, y);
 
             if (e.button == 0) {
-                if (!this.setTarget(e, x, y)) {
-
+                if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
                         this.render();
-                        this.setTarget(e, x, y);
-                    } else if (!this.setTarget(e, x, y)) {
+                        this.setTarget(e, component, x, y);
+                    } else {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, x, y);
+                        this.setTarget(e, component,  x, y);
                     }
                 }
             }
@@ -2842,11 +2779,11 @@ class UI_Manager {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
                         this.render();
-                        this.setTarget(e, x, y);
-                    } else if (!this.setTarget(e, x, y)) {
+                        this.setTarget(e, component, x, y);
+                    } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, x, y);
+                        this.setTarget(e, component, x, y);
                     }
                     DD_Candidate = Date.now();
                 }
@@ -2858,6 +2795,9 @@ class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
+            if(x === NaN || y === NaN){
+                debugger;
+            }
             this.origin_x = x;
             this.origin_y = y;
             this.ACTIVE_POINTER_INPUT = true;
@@ -2896,9 +2836,13 @@ class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.target) {
-            this.origin_x = x;
-            this.origin_y = y;
-            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy, this.target.IS_COMPONENT);
+            let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+
+
+            this.origin_x -= dx;
+            this.origin_y -= dy;
+
+            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -dx, -dy, this.target.IS_COMPONENT);
             this.render();
         }
     }
@@ -2979,6 +2923,7 @@ class UI_Manager {
 
     render() {
         this.canvas.render(this.transform);
+        this.line_machine.render(this.canvas.ctx, this.transform);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 }
@@ -3618,7 +3563,6 @@ RootNode.prototype.rebuild = function() {
     if (this.observing_sources) {
         this._linkCSS_();
         for (let i = 0; i < this.observing_sources.length; i++) {
-            console.log(i, this.observing_sources[i].ele);
             try {
 
                 this.observing_sources[i].rebuild();

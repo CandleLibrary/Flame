@@ -2,8 +2,8 @@
 import wick from "wick";
 import { actions } from "./actions/action";
 import { UIComponent } from "./ui_component";
-import { colorPicker } from "./system/color_picker";
-import {SVGManager} from "./system/svg_manager"
+import {LineMachine} from "./system/line_machine";
+import {SVGManager} from "./system/svg_manager";
 
 //OTHER imports
 import { CanvasManager } from "./canvas_manager";
@@ -20,8 +20,6 @@ export class UI_Manager {
 
         this.system = system;
 
-        this.color_picker = new colorPicker();
-        this.svg_manager = new SVGManager(system);
 
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
@@ -54,6 +52,10 @@ export class UI_Manager {
         this.canvas.resize(this.transform);
         this.element.appendChild(this.canvas.element);
 
+        /** SYSTEMS *******************************/
+        this.svg_manager = new SVGManager(system);
+        this.line_machine = new LineMachine();
+
         // **************** Eventing *****************
         window.addEventListener("resize", e => this.canvas.resize(this.transform));
 
@@ -65,7 +67,7 @@ export class UI_Manager {
         window.addEventListener("pointerdown", e => {
             let x = this.transform.getLocalX(e.pageX);
             let y = this.transform.getLocalY(e.pageY);
-            if (this.setTarget(e, x, y, false)) {
+            if (this.setTarget(e, null, x, y, false)) {
                 this.origin_x = x;
                 this.origin_y = y;
                 this.ACTIVE_POINTER_INPUT = true;
@@ -112,7 +114,7 @@ export class UI_Manager {
         }
     }
 
-    setTarget(e, x, y, SET_MENU = true) {
+    setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
         if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
@@ -122,6 +124,10 @@ export class UI_Manager {
             if (SET_MENU) this.main_menu.setAttribute("show", "true");
 
             this.loadedComponents.forEach(c => c.set(this.target));
+
+            if(component){
+                this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+            }
 
             return true;
         }
@@ -134,29 +140,28 @@ export class UI_Manager {
     integrateIframe(iframe, component) {
 
         iframe.contentWindow.addEventListener("wheel", e => {
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            let x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px;
+            let y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
             this.handleScroll(e, x, y);
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
             
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            let x = e.pageX + 4 + component.x ;
+            let y = e.pageY + 4 + component.y ;
             this.last_action = Date.now();
             this.handlePointerDownEvent(e, x, y);
 
             if (e.button == 0) {
-                if (!this.setTarget(e, x, y)) {
-
+                if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
                         this.render();
-                        this.setTarget(e, x, y);
-                    } else if (!this.setTarget(e, x, y)) {
+                        this.setTarget(e, component, x, y);
+                    } else {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, x, y);
+                        this.setTarget(e, component,  x, y);
                     }
                 }
             }
@@ -185,11 +190,11 @@ export class UI_Manager {
                     if (e.target.tagName == "BODY") {
                         this.canvas.setIframeTarget(component.element, component, true);
                         this.render();
-                        this.setTarget(e, x, y);
-                    } else if (!this.setTarget(e, x, y)) {
+                        this.setTarget(e, component, x, y);
+                    } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, x, y);
+                        this.setTarget(e, component, x, y);
                     }
                     DD_Candidate = Date.now();
                 }
@@ -201,6 +206,9 @@ export class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
+            if(x === NaN || y === NaN){
+                debugger;
+            }
             this.origin_x = x;
             this.origin_y = y;
             this.ACTIVE_POINTER_INPUT = true;
@@ -239,9 +247,13 @@ export class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.target) {
-            this.origin_x = x;
-            this.origin_y = y;
-            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -diffx, -diffy, this.target.IS_COMPONENT);
+            let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+
+
+            this.origin_x -= dx;
+            this.origin_y -= dy;
+
+            if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -dx, -dy, this.target.IS_COMPONENT);
             this.render();
         }
     }
@@ -322,6 +334,7 @@ export class UI_Manager {
 
     render() {
         this.canvas.render(this.transform);
+        this.line_machine.render(this.canvas.ctx, this.transform);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 }

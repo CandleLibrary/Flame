@@ -17,7 +17,7 @@ class Component {
         this.dimensions.classList.add("flame_component_dimensions")
 
         this.iframe = document.createElement("iframe");
-        this.iframe.src = "./assets/html/component_frame.html";
+        this.iframe.src = "component_frame.html";
 
         this.width = system.project.flame_data.default.component.width;
         this.height = system.project.flame_data.default.component.height;

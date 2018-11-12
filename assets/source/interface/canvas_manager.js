@@ -80,6 +80,18 @@ class BoxElement {
             this.y = rect.top + component.y + 4;
             this.w = rect.width;
             this.h = rect.height;
+
+            let cbl = this.x + this.bl;
+            let cbt = this.y + this.bt;
+            let cbr = this.w - this.br - this.bl + cbl;
+            let cbb = this.h - this.bb - this.bt + cbt;
+
+            this.target.box = {
+                left: cbl,
+                right: cbr,
+                bottom: cbb,
+                top: cbt
+            }
         }
     }
 
@@ -120,7 +132,7 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2 /scale;
+        ctx.lineWidth = 2 / scale;
         let r = 5 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
@@ -200,15 +212,19 @@ export class CanvasManager {
                     if (y >= cbt - tr && y <= cbb + tr) {
                         if (x <= cbl + tr) {
                             if (y <= cbt + tr) {
-                                this.widget.target.action = actions.RESIZETL; break;
+                                this.widget.target.action = actions.RESIZETL;
+                                break;
                             } else if (y >= cbb - tr) {
-                                this.widget.target.action = actions.RESIZEBL; break;
+                                this.widget.target.action = actions.RESIZEBL;
+                                break;
                             }
                         } else if (x >= cbr - tr) {
                             if (y <= cbt + tr) {
-                                this.widget.target.action = actions.RESIZETR; break;
+                                this.widget.target.action = actions.RESIZETR;
+                                break;
                             } else if (y >= cbb - tr) {
-                                this.widget.target.action = actions.RESIZEBR; break;
+                                this.widget.target.action = actions.RESIZEBR;
+                                break;
                             }
                         } else {
                             widget.target.action = actions.MOVE;
@@ -221,15 +237,19 @@ export class CanvasManager {
                     if (y >= mt - tr && y <= mb + tr) {
                         if (x <= ml + tr) {
                             if (y <= mt + tr) {
-                                this.widget.target.action = actions.RESIZEMARGINTL; break;
+                                this.widget.target.action = actions.RESIZEMARGINTL;
+                                break;
                             } else if (y >= mb - tr) {
-                                this.widget.target.action = actions.RESIZEMARGINBL; break;
+                                this.widget.target.action = actions.RESIZEMARGINBL;
+                                break;
                             }
                         } else if (x >= mr - tr) {
                             if (y <= mt + tr) {
-                                this.widget.target.action = actions.RESIZEMARGINTR; break;
+                                this.widget.target.action = actions.RESIZEMARGINTR;
+                                break;
                             } else if (y >= mb - tr) {
-                                this.widget.target.action = actions.RESIZEMARGINBR; break;
+                                this.widget.target.action = actions.RESIZEMARGINBR;
+                                break;
                             }
                         }
                     }
@@ -240,15 +260,19 @@ export class CanvasManager {
                     if (y >= pt - tr && y <= pb + tr) {
                         if (x <= pl + tr) {
                             if (y <= pt + tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGTL; break;
+                                this.widget.target.action = actions.RESIZEPADDINGTL;
+                                break;
                             } else if (y >= pb - tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGBL; break;
+                                this.widget.target.action = actions.RESIZEPADDINGBL;
+                                break;
                             }
                         } else if (x >= pr - tr) {
                             if (y <= pt + tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGTR; break;
+                                this.widget.target.action = actions.RESIZEPADDINGTR;
+                                break;
                             } else if (y >= pb - tr) {
-                                this.widget.target.action = actions.RESIZEPADDINGBR; break;
+                                this.widget.target.action = actions.RESIZEPADDINGBR;
+                                break;
                             }
                         }
                     }

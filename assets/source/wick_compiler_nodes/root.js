@@ -68,7 +68,6 @@ RootNode.prototype.rebuild = function() {
     if (this.observing_sources) {
         this._linkCSS_();
         for (let i = 0; i < this.observing_sources.length; i++) {
-            console.log(i, this.observing_sources[i].ele)
             try {
 
                 this.observing_sources[i].rebuild();

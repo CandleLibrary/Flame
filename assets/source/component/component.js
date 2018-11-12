@@ -23,7 +23,7 @@ class Component {
         this.height = system.project.flame_data.default.component.height;
 
         this.iframe.onload = (e) => {
-            system.ui.integrateIframe(this.iframe, this);
+            this.mountListeners()
             e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick;
             this.window = e.target.contentWindow;
@@ -60,6 +60,10 @@ class Component {
         this.system = system;
 
         this.action = null;
+    }
+
+    mountListeners(){
+        this.system.ui.integrateIframe(this.iframe, this);
     }
 
     get element() {
@@ -106,11 +110,17 @@ class Component {
     documentReady(pkg) {
 
         let css = pkg._skeletons_[0].tree.css;
+        
         if (css)
             css.forEach(css => {
                 this.local_css.push(css);
             });
         this.manager = pkg.mount(this.data, null, false, this);
+
+    }
+
+    _upImport_(){
+
     }
 
     /**

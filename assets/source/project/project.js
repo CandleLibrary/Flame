@@ -59,7 +59,7 @@ export class Project {
         this.flame_data.default.component.height = 920;
 
         this.flame_data.settings.move_type = "relative";
-        this.loadComponents("./assets/ui_components");
+        this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
     load() {}

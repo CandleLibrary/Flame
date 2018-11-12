@@ -801,7 +801,7 @@ class Component {
         this.height = system.project.flame_data.default.component.height;
 
         this.iframe.onload = (e) => {
-            system.ui.integrateIframe(this.iframe, this);
+            this.mountListeners();
             e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick$2;
             this.window = e.target.contentWindow;
@@ -838,6 +838,10 @@ class Component {
         this.system = system;
 
         this.action = null;
+    }
+
+    mountListeners(){
+        this.system.ui.integrateIframe(this.iframe, this);
     }
 
     get element() {
@@ -884,11 +888,17 @@ class Component {
     documentReady(pkg) {
 
         let css = pkg._skeletons_[0].tree.css;
+        
         if (css)
             css.forEach(css => {
                 this.local_css.push(css);
             });
         this.manager = pkg.mount(this.data, null, false, this);
+
+    }
+
+    _upImport_(){
+
     }
 
     /**
@@ -1892,18 +1902,19 @@ const actions = {
 };
 
 const wick$3 = require("wick");
-
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  * Any associated stylesheets are managed through this componnent. 
  */
-class UIComponent {
+class UIComponent extends Component {
 
     constructor(system, name) {
+
+        super(system);
+
         //frame for fancy styling
-        this.element = document.createElement("div");
-        this.element.classList.add("flame_ui_component");
+        this.iframe.classList.add("flame_ui_component");
 
         this.pkg = null;
 
@@ -1911,55 +1922,52 @@ class UIComponent {
 
         this.system = system;
 
+        this.width = 180;
+        this.height =300;
+
+
         this.icon = null;
     }
 
-    documentReady(pkg){
-        this.mgr = pkg.mount(this.element, this.system.project.flame_data);
+    documentReady(pkg) {
+        this.mgr = pkg.mount(this.data, this.system.project.flame_data);
+        
         let src = this.mgr.sources[0].ast;
-        if(src._statics_.menu){
-            switch(src._statics_.menu){
+        
+        if (src._statics_.menu) {
+            switch (src._statics_.menu) {
                 case "main":
-                    this.system.ui.addToMenu("main", this.name, this.mgr.sources[0].badges.icon);
-                break;
+                    this.system.ui.addToMenu("main", this.name, this.mgr.sources[0].badges.icon, this);
+                    break;
             }
-        } 
+        }
 
-        this.mgr._upImport_ = (prop_name, data, meta)=>{
+        let css = pkg._skeletons_[0].tree.css;
+        if (css)
+            css.forEach(css => {
+                this.local_css.push(css);
+            });
+
+        this.mgr._upImport_ = (prop_name, data, meta) => {
             this.system.ui.mountComponent(this);
         };
     }
 
-    set(data){
-        this.mgr._update_({target:data});
+    set(data) {
+        this.mgr._update_({
+            target: data
+        });
     }
 
     load(doc) {
         doc.bind(this);
     }
 
-    mount(element){
+    mount(element) {
         element.appendChild(this.element);
     }
 
-    unmount(){
-    }
-
-    set x(x) {
-        this.element.style.left = x + "px";
-    }
-
-    set y(y) {
-        this.element.style.top = y + "px";
-    }
-
-    get x() {
-        return parseFloat(this.element.style.left);
-    }
-
-    get y() {
-        return parseFloat(this.element.style.top);
-    }
+    unmount() {};
 }
 
 class colorPicker {
@@ -2739,9 +2747,13 @@ class UI_Manager {
         component.set(this.target);
     }
 
-    addToMenu(menu_name, item_name, icon_element) {
+    addToMenu(menu_name, item_name, icon_element, menu) {
         if (menu_name == "main") {
-            this.main_menu.appendChild(icon_element);
+            let element = icon_element.cloneNode(true);
+            element.onclick = ()=>{
+                this.mountComponent(menu);
+            };
+            this.main_menu.appendChild(element);
             this.main_menu.map.set(name, icon_element);
         }
     }
@@ -2749,6 +2761,7 @@ class UI_Manager {
     addComponent(wick_component_file_path) {
 
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
+
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
             component.load(doc);
@@ -2901,9 +2914,12 @@ class UI_Manager {
 
     handleDocumentDrop(e) {
         e.preventDefault();
+        
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
+            console.log(this.system.doc_man);
             if (doc) switch (doc.type) {
+                case "wick":
                 case "html":
                     actions.CREATE_COMPONENT(this.system, doc, {
                         x: this.transform.getLocalX(e.clientX),
@@ -3582,7 +3598,7 @@ RootNode.prototype.reparse = function(text, element) {
 
         node.par = null;
 
-        if(this.par)
+        if (this.par)
             this.par.replace(this, node);
         node.BUILT = true;
         node.setRebuild(false, true);
@@ -3601,15 +3617,22 @@ RootNode.prototype.rebuild = function() {
 
     if (this.observing_sources) {
         this._linkCSS_();
-        for (let i = 0; i < this.observing_sources.length; i++)
-            this.observing_sources[i].rebuild();
+        for (let i = 0; i < this.observing_sources.length; i++) {
+            console.log(i, this.observing_sources[i].ele);
+            try {
+
+                this.observing_sources[i].rebuild();
+            } catch (e) {
+                console.error(e);
+            }
+        }
         this.resetRebuild();
     } else if (this.par)
         this.par.rebuild();
 };
 
-RootNode.prototype.extract = function(){
-    if(this.par)
+RootNode.prototype.extract = function() {
+    if (this.par)
         this.par.replace(this, new DeleteNode());
 };
 
@@ -3626,14 +3649,14 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 
             let ele = span.firstChild;
 
-            if(this.CHANGED & 8){
-                if(element){
+            if (this.CHANGED & 8) {
+                if (element) {
                     element.parentElement.insertBefore(ele, element);
-                }else
+                } else
                     parent_element.appendChild(ele);
                 return true;
-            }else{
-                
+            } else {
+
                 element.parentElement.replaceChild(ele, element);
                 return true;
             }
@@ -3674,7 +3697,7 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTE
         this.CHANGED |= 4;
     }
 
-    if(INSERTED){
+    if (INSERTED) {
         this.CHANGED |= 8;
     }
 
@@ -3688,8 +3711,8 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTE
 
 RootNode.prototype.resetRebuild = function() {
     this.CHANGED = 0;
-    
-    if(!this.parent)
+
+    if (!this.parent)
         this.updated();
 
     for (let node = this.fch; node; node = this.getN(node))
@@ -3777,7 +3800,7 @@ RootNode.prototype.updated = function() {
     if (this.views)
         for (let i = 0; i < this.views.length; i++)
             this.views[i]._update_(this);
-      
+
 };
 
 RootNode.prototype.BUILT = false;
@@ -3785,16 +3808,16 @@ RootNode.prototype.BUILT = false;
 /**
  * This node allows an existing element to be removed from DOM trees that were created from the Wick AST. 
  */
-class DeleteNode extends SourceNode{
-    buildExisting(element){
+class DeleteNode extends SourceNode {
+    buildExisting(element) {
         element.parentElement.removeChild(element);
         return false;
     }
 
-    resetRebuild(){
+    resetRebuild() {
 
         let nxt = this.nxt;
-        if(this.par)
+        if (this.par)
             this.par.remC(this);
         this.nxt = nxt;
     }
@@ -4131,7 +4154,7 @@ class Project {
         this.flame_data.default.component.height = 920;
 
         this.flame_data.settings.move_type = "relative";
-        this.loadComponents("./assets/ui_components");
+        this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
     load() {}

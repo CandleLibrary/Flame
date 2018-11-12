@@ -90,9 +90,13 @@ export class UI_Manager {
         component.set(this.target);
     }
 
-    addToMenu(menu_name, item_name, icon_element) {
+    addToMenu(menu_name, item_name, icon_element, menu) {
         if (menu_name == "main") {
-            this.main_menu.appendChild(icon_element);
+            let element = icon_element.cloneNode(true);
+            element.onclick = ()=>{
+                this.mountComponent(menu);
+            }
+            this.main_menu.appendChild(element);
             this.main_menu.map.set(name, icon_element);
         }
     }
@@ -100,6 +104,7 @@ export class UI_Manager {
     addComponent(wick_component_file_path) {
 
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
+
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
             component.load(doc);
@@ -252,9 +257,12 @@ export class UI_Manager {
 
     handleDocumentDrop(e) {
         e.preventDefault();
+        
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
+            console.log(this.system.doc_man)
             if (doc) switch (doc.type) {
+                case "wick":
                 case "html":
                     actions.CREATE_COMPONENT(this.system, doc, {
                         x: this.transform.getLocalX(e.clientX),

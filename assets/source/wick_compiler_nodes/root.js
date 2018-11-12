@@ -48,7 +48,7 @@ RootNode.prototype.reparse = function(text, element) {
 
         node.par = null;
 
-        if(this.par)
+        if (this.par)
             this.par.replace(this, node);
         node.BUILT = true;
         node.setRebuild(false, true);
@@ -67,15 +67,22 @@ RootNode.prototype.rebuild = function() {
 
     if (this.observing_sources) {
         this._linkCSS_();
-        for (let i = 0; i < this.observing_sources.length; i++)
-            this.observing_sources[i].rebuild();
+        for (let i = 0; i < this.observing_sources.length; i++) {
+            console.log(i, this.observing_sources[i].ele)
+            try {
+
+                this.observing_sources[i].rebuild();
+            } catch (e) {
+                console.error(e);
+            }
+        }
         this.resetRebuild();
     } else if (this.par)
         this.par.rebuild();
 };
 
-RootNode.prototype.extract = function(){
-    if(this.par)
+RootNode.prototype.extract = function() {
+    if (this.par)
         this.par.replace(this, new DeleteNode());
 };
 
@@ -92,14 +99,14 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 
             let ele = span.firstChild;
 
-            if(this.CHANGED & 8){
-                if(element){
+            if (this.CHANGED & 8) {
+                if (element) {
                     element.parentElement.insertBefore(ele, element);
-                }else
+                } else
                     parent_element.appendChild(ele);
                 return true;
-            }else{
-                
+            } else {
+
                 element.parentElement.replaceChild(ele, element);
                 return true;
             }
@@ -140,7 +147,7 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTE
         this.CHANGED |= 4;
     }
 
-    if(INSERTED){
+    if (INSERTED) {
         this.CHANGED |= 8;
     }
 
@@ -154,8 +161,8 @@ RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTE
 
 RootNode.prototype.resetRebuild = function() {
     this.CHANGED = 0;
-    
-    if(!this.parent)
+
+    if (!this.parent)
         this.updated();
 
     for (let node = this.fch; node; node = this.getN(node))
@@ -243,26 +250,28 @@ RootNode.prototype.updated = function() {
     if (this.views)
         for (let i = 0; i < this.views.length; i++)
             this.views[i]._update_(this);
-      
+
 };
 
 RootNode.prototype.BUILT = false;
 
-export { RootNode };
+export {
+    RootNode
+};
 
 /**
  * This node allows an existing element to be removed from DOM trees that were created from the Wick AST. 
  */
-class DeleteNode extends SourceNode{
-    buildExisting(element){
+class DeleteNode extends SourceNode {
+    buildExisting(element) {
         element.parentElement.removeChild(element);
         return false;
     }
 
-    resetRebuild(){
+    resetRebuild() {
 
         let nxt = this.nxt;
-        if(this.par)
+        if (this.par)
             this.par.remC(this);
         this.nxt = nxt;
     }

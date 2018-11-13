@@ -118,7 +118,7 @@ export function getRatio(system, element, component, funct, original_value, delt
     funct(system, element, component, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
-    if (diff_x !== delta_value && delta_value !== 0) {        
+    if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {        
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0) {

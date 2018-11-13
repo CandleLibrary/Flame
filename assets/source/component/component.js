@@ -14,7 +14,7 @@ class Component {
         this.style_frame.classList.add("style_frame");
 
         this.dimensions = document.createElement("div");
-        this.dimensions.classList.add("flame_component_dimensions")
+        this.dimensions.classList.add("flame_component_dimensions");
 
         this.iframe = document.createElement("iframe");
         this.iframe.src = "component_frame.html";
@@ -23,7 +23,7 @@ class Component {
         this.height = system.project.flame_data.default.component.height;
 
         this.iframe.onload = (e) => {
-            this.mountListeners()
+            this.mountListeners();
             e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick;
             this.window = e.target.contentWindow;

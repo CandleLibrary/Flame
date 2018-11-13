@@ -382,7 +382,7 @@ function getRatio(system, element, component, funct, original_value, delta_value
     funct(system, element, component, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
-    if (diff_x !== delta_value && delta_value !== 0) {        
+    if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {        
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0) {
@@ -1313,6 +1313,7 @@ function RESIZEMARGINTL(system, element, component, dx, dy, IS_COMPONENT) {
 
 function RESIZEMARGINTR(system, element, component, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return;
+    console.log({dx,dy});
     SETDELTAMARGINRIGHT(system, element, component, dx, 0, true);
     SETDELTAMARGINTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
@@ -1973,167 +1974,223 @@ class UIComponent extends Component {
 }
 
 class LineBox {
-    constructor(element, component) {
-        this.rect = element.getBoundingClientRect();
-        this.component = component;
-    }
-
-    get left() {
+    get l() {
         return this.rect.x + this.component.x + 4;
     }
 
-    get top() {
+    get t() {
         return this.rect.y + this.component.y + 4;
     }
 
-    get bottom() {
-        return this.rect.y + this.rect.height + this.component.x + 4;
+    get b() {
+        return this.rect.y + this.rect.height + this.component.y + 4;
     }
 
-    get right() {
-        return this.rect.x + this.rect.width + this.component.y + 4;
+    get r() {
+        return this.rect.x + this.rect.width + this.component.x + 4;
     }
 }
 
+class ElementLineBox extends LineBox {
+    constructor(element, component) {
+        super();
+        this.rect = element.getBoundingClientRect();
+        this.component = component;
+    }
+}
+
+class ComponentLineBox extends LineBox {
+    constructor(component) {
+    	super();
+        this.component = component;
+    }
+
+    get l() {
+        return this.component.x;
+    }
+
+    get t() {
+        return this.component.y;
+    }
+
+    get b() {
+        return this.component.height + this.component.y;
+    }
+
+    get r() {
+        return this.component.width + this.component.x;
+    }
+}
+
+
+
 function CreateBoxes(ele, c, LineMachine, target) {
 
-    LineMachine.boxes.push(new LineBox(ele, c));
+    LineMachine.boxes.push(new ElementLineBox(ele, c));
 
     let children = ele.children;
-    for (let i = 0; i < children.length; i++){
-    	if(target == children[i]) continue;
+    for (let i = 0; i < children.length; i++) {
+        if (target == children[i]) continue;
         CreateBoxes(children[i], c, LineMachine, target);
     }
+}
+
+function CreateComponentBoxes(c, LineMachine, target) {
+    if (c == target) return;
+    LineMachine.boxes.push(new ComponentLineBox(c));
 }
 
 class LineMachine {
     constructor() {
         this.boxes = [];
-        this.tolerance = 15;
+        this.tolerance = 10;
 
-        this.activex = {id:-1, l:false};
-        this.activey = {id:-1, t:false};
+        this.activex = { id: -1, ot: 0, tt: 0 };
+        this.activey = { id: -1, ot: 0, tt: 0 };
     }
 
     setPotentialBoxes(element, component, components) {
-        //get tree from component and create boxes from all elements inside the component. 
         this.boxes.length = 0;
-        let tree = component.window.document.body;
 
-        let ele = tree;
+        if (!element) {
+            components.forEach(c => CreateComponentBoxes(c, this, component));
+        } else {
+            //get tree from component and create boxes from all elements inside the component. 
+            let tree = component.window.document.body;
 
-        CreateBoxes(ele, component, this, element);
+            let ele = tree;
+
+            CreateBoxes(ele, component, this, element);
+        }
 
     }
 
     getSuggestedLine(box, dx, dy) {
-        let mx = Infinity;
-        let my = Infinity;
-        let id = 0;
 
-        let l = box.left;
-        let r = box.right;
-        let t = box.top;
-        let b = box.bottom;
+        if (!box) return { dx, dy };
+
+        let mx = this.tolerance;
+        let my = this.tolerance;
+        let x_set = false;
+        let y_set = false;
+        const l = box.l;
+        const r = box.r;
+
+        const LO = (l - r == 0);
+
+        const t = box.t;
+        const b = box.b;
+        const ch = (l + r) / 2;
+        const cv = (t + b) / 2;
+        const tol = this.tolerance;
+
 
         for (let i = 0; i < this.boxes.length; i++) {
             let box = this.boxes[i];
 
+            //Make sure the ranges overlap
+
             //Vertical
-            if (Math.abs(l - box.left) < Math.abs(mx)) {
-                mx = l - box.left;
-                this.activex.id = i;
-                this.activex.l = true;
+            if (!x_set && l <= (box.r + tol + 1) && r >= (box.l - tol - 1)) {
+                //There is overlap; find the best alignment
+                let c = (box.l + box.r) * 0.5;
+                let tol = Math.abs(mx);
+                let array = [
+                    //left
+                    l - box.l, l - box.r, l - c,
+                    //right
+                    r - box.l, r - box.r, r - c,
+                    //center
+                    ch - box.l, ch - box.r, ch - c
+                ];
+
+                let length = LO ? 3 : 9;
+
+                for (let j = 0; j < length; j++)
+                    if (Math.abs(array[j]) < tol) {
+                        mx = array[j];
+                        this.activex.id = i;
+                        this.activex.tt = (j % 3);
+                        this.activex.ot = (j / 3) | 0;
+                        //x_set = true;
+                        //break;
+                    }
             }
 
-            if (Math.abs(l - box.right) < Math.abs(mx)) {
-                mx = l - box.right;
-                this.activex.id = i;
-                this.activex.l = false;
+            //Horizontal
+            if (!y_set && t < (box.b + tol + 1) && b > (box.t - tol - 1)) {
+                //There is overlap; find the best alignment
+                let c = (box.t + box.b) * 0.5;
+                let tol = Math.abs(my);
+                let array = [
+                    /*top*/
+                    t - box.t, t - box.b, t - c,
+                    /*bottom*/
+                    b - box.t, b - box.b, b - c,
+                    /*center*/
+                    cv - box.t, cv - box.b, cv - c
+                ];
+                for (let j = 0; j < 9; j++)
+                    if (Math.abs(array[j]) < tol) {
+                        my = array[j];
+                        this.activey.id = i;
+                        this.activey.tt = (j % 3);
+                        this.activey.ot = (j / 3) | 0;
+                        //y_set = true;
+                        break;
+                    }
             }
 
-            //right
-            if (Math.abs(r - box.left) < Math.abs(mx)) {
-                mx = r - box.left;
-                this.activex.id = i;
-                this.activex.l = true;
-            }
-
-            if (Math.abs(r - box.right) < Math.abs(mx)) {
-                mx = r - box.left;
-                this.activex.id = i;
-                this.activex.l = false;
-            }
-
-            //horizontal
-
-            if (Math.abs(t - box.top) < Math.abs(my)) {
-                my = t - box.top;
-                this.activey.id = i;
-                this.activey.t = true;
-            }
-
-            if (Math.abs(t - box.bottom) < Math.abs(my)) {
-                my = t - box.bottom;
-                this.activey.id = i;
-                this.activey.t = false;
-            }
-
-            //bottom
-            if (Math.abs(b - box.top) < Math.abs(my)) {
-                my = b - box.top;
-                this.activey.id = i;
-                this.activey.t = true;
-            }
-
-            if (Math.abs(b - box.bottom) < Math.abs(my)) {
-                my = b - box.top;
-                this.activey.id = i;
-                this.activey.t = false;
-            }
+            if (x_set && y_set) break;
         }
 
-        if (Math.abs(mx) < this.tolerance && Math.abs(dx) < this.tolerance) {
+        if (Math.abs(mx) < tol && Math.abs(dx) < tol)
             dx = mx;
-        }else{
-        	this.activex.id = -1;
-        }
+        else
+            this.activex.id = -1;
 
-        if (Math.abs(my) < this.tolerance && Math.abs(dy) < this.tolerance) {
+        if (Math.abs(my) < tol && Math.abs(dy) < tol)
             dy = my;
-        }else{
-        	this.activey.id = -1;
-        }
+        else
+            this.activey.id = -1;
 
         return { dx, dy };
     }
 
-    render(ctx, transform) {
-    	ctx.save();
-    	transform.setCTX(ctx);
+    render(ctx, transform, boxc) {
 
-    	if(this.activex.id > -1){
-    		ctx.strokeStyle="red";
-    		let box = this.boxes[this.activex.id];
-    		let x = this.activex.l ? box.left : box.right;
-    		ctx.beginPath();
-    		ctx.moveTo(x, box.top);
-    		ctx.lineTo(x, box.top+1000);
-    		ctx.stroke();
-    	}
+        if (!boxc) return;
 
-    	if(this.activey.id > -1){
-    		ctx.strokeStyle="green";
-    		let box = this.boxes[this.activey.id];
-    		let y = this.activey.t ? box.top : box.bottom;
-    		ctx.beginPath();
-    		ctx.moveTo(box.left,y);
-    		ctx.lineTo(box.left+1000,y);
-    		ctx.stroke();
-    	}
+        ctx.save();
+        transform.setCTX(ctx);
 
+        if (this.activex.id > -1) {
+            //0 = l, 1 = r, 2 = c 
+            ctx.strokeStyle = "red";
+            let box = this.boxes[this.activex.id];
+            let x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
+            let y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt];
+            let y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+            ctx.beginPath();
+            ctx.moveTo(x, y1);
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+        }
 
-    	ctx.restore();
+        if (this.activey.id > -1) {
+            //0 = t, 1 = b, 2 = c 
+            ctx.strokeStyle = "green";
+            let box = this.boxes[this.activey.id];
+            let y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
+            let x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt];
+            let x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+            ctx.beginPath();
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x2, y);
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 }
 
@@ -2287,15 +2344,15 @@ function gripPoint(ctx, x, y, r) {
 
 class BoxElement {
     constructor() {
-        this.ml = 0;
-        this.mr = 0;
-        this.mt = 0;
-        this.mb = 0;
+        this._ml = 0;
+        this._mr = 0;
+        this._mt = 0;
+        this._mb = 0;
 
-        this.padl = 0;
-        this.padr = 0;
-        this.padt = 0;
-        this.padb = 0;
+        this._pl = 0;
+        this._pr = 0;
+        this._pt = 0;
+        this._pb = 0;
 
         this.bl = 0;
         this.br = 0;
@@ -2313,62 +2370,148 @@ class BoxElement {
         this.h = 0; //height of border box
         this.br = 0;
         this.IS_COMPONENT = false;
+
+        this.target = {
+            IS_COMPONENT: false,
+            component: null,
+            element: null,
+            action: null,
+            box: { l: 0, r: 0, t: 0, b: 0 }
+        };
+    }
+
+    setBox() {
+
+        const box = (this.target.box) ? this.target.box : { l: 0, r: 0, t: 0, b: 0 };
+        this.target.box = box;
+        switch (this.target.action) {
+            case actions.MOVE:
+                box.l = this.cbl;
+                box.r = this.cbr;
+                box.b = this.cbb;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZETL:
+                box.l = this.cbl;
+                box.r = this.cbl;
+                box.b = this.cbt;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZEBL:
+                box.l = this.cbl;
+                box.r = this.cbl;
+                box.b = this.cbb;
+                box.t = this.cbb;
+                break;
+            case actions.RESIZETR:
+                box.l = this.cbr;
+                box.r = this.cbr;
+                box.b = this.cbt;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZEBR:
+                box.l = this.cbr;
+                box.r = this.cbr;
+                box.b = this.cbb;
+                box.t = this.cbb;
+                break;
+            case actions.RESIZEMARGINTL:
+                box.l = this.ml;
+                box.r = this.ml;
+                box.b = this.mt;
+                box.t = this.mt;
+                break;
+            case actions.RESIZEMARGINBL:
+                box.l = this.ml;
+                box.r = this.ml;
+                box.b = this.mb;
+                box.t = this.mb;
+                break;
+            case actions.RESIZEMARGINTR:
+                box.l = this.mr;
+                box.r = this.mr;
+                box.b = this.mt;
+                box.t = this.mt;
+                break;
+            case actions.RESIZEMARGINBR:
+                box.l = this.mr;
+                box.r = this.mr;
+                box.b = this.mb;
+                box.t = this.mb;
+                break;
+            case actions.RESIZEPADDINGTL:
+                break;
+            case actions.RESIZEPADDINGBL:
+                break;
+            case actions.RESIZEPADDINGTR:
+                break;
+            case actions.RESIZEPADDINGBR:
+                break;
+        }
     }
 
     setDimensions(IS_COMPONENT = this.IS_COMPONENT) {
+        let component = this.target.component;
 
         if (IS_COMPONENT) {
             this.IS_COMPONENT = true;
-            this.x = this.target.component.x + 4;
-            this.y = this.target.component.y + 4;
-            this.w = this.target.component.width;
-            this.h = this.target.component.height;
+            this.x = component.x + 4;
+            this.y = component.y + 4;
+            this.w = component.width;
+            this.h = component.height;
         } else {
-            let component = this.target.component;
             let rect = this.target.element.getBoundingClientRect();
-            let par_prop = component.window.getComputedStyle(this.target.element);
-
-            //margin
-            this.ml = parseFloat(par_prop.getPropertyValue("margin-left"));
-            this.mr = parseFloat(par_prop.getPropertyValue("margin-right"));
-            this.mt = parseFloat(par_prop.getPropertyValue("margin-top"));
-            this.mb = parseFloat(par_prop.getPropertyValue("margin-bottom"));
-
-            //border
-            this.bl = parseFloat(par_prop.getPropertyValue("border-left"));
-            this.br = parseFloat(par_prop.getPropertyValue("border-right"));
-            this.bt = parseFloat(par_prop.getPropertyValue("border-top"));
-            this.bb = parseFloat(par_prop.getPropertyValue("border-bottom"));
-
-            //padding
-            this.pl = parseFloat(par_prop.getPropertyValue("padding-left"));
-            this.pr = parseFloat(par_prop.getPropertyValue("padding-right"));
-            this.pt = parseFloat(par_prop.getPropertyValue("padding-top"));
-            this.pb = parseFloat(par_prop.getPropertyValue("padding-bottom"));
-
-            this.posl = parseFloat(par_prop.getPropertyValue("left"));
-            this.posr = parseFloat(par_prop.getPropertyValue("right"));
-            this.post = parseFloat(par_prop.getPropertyValue("top"));
-            this.posb = parseFloat(par_prop.getPropertyValue("bottom"));
-
             this.x = rect.left + component.x + 4;
             this.y = rect.top + component.y + 4;
             this.w = rect.width;
             this.h = rect.height;
-
-            let cbl = this.x + this.bl;
-            let cbt = this.y + this.bt;
-            let cbr = this.w - this.br - this.bl + cbl;
-            let cbb = this.h - this.bb - this.bt + cbt;
-
-            this.target.box = {
-                left: cbl,
-                right: cbr,
-                bottom: cbb,
-                top: cbt
-            };
         }
+        
+        let par_prop = component.window.getComputedStyle(this.target.element);
+
+        //margin
+        this._ml = parseFloat(par_prop.getPropertyValue("margin-left"));
+        this._mr = parseFloat(par_prop.getPropertyValue("margin-right"));
+        this._mt = parseFloat(par_prop.getPropertyValue("margin-top"));
+        this._mb = parseFloat(par_prop.getPropertyValue("margin-bottom"));
+
+        //border
+        this.bl = parseFloat(par_prop.getPropertyValue("border-left"));
+        this.br = parseFloat(par_prop.getPropertyValue("border-right"));
+        this.bt = parseFloat(par_prop.getPropertyValue("border-top"));
+        this.bb = parseFloat(par_prop.getPropertyValue("border-bottom"));
+
+        //padding
+        this._pl = parseFloat(par_prop.getPropertyValue("padding-left"));
+        this._pr = parseFloat(par_prop.getPropertyValue("padding-right"));
+        this._pt = parseFloat(par_prop.getPropertyValue("padding-top"));
+        this._pb = parseFloat(par_prop.getPropertyValue("padding-bottom"));
+
+        this.posl = parseFloat(par_prop.getPropertyValue("left"));
+        this.posr = parseFloat(par_prop.getPropertyValue("right"));
+        this.post = parseFloat(par_prop.getPropertyValue("top"));
+        this.posb = parseFloat(par_prop.getPropertyValue("bottom"));
+
+        this.setBox();
     }
+
+    //Margin box
+    get ml() { return this.x - this._ml - this.posl; }
+    get mt() { return this.y - this._mt - this.post; }
+    get mr() { return this.w + this._mr + this._ml + this.ml; }
+    get mb() { return this.h + this._mb + this._mt + this.mt; }
+
+    //Padding box
+    get pl() { return this.x + this._pl + this.bl; }
+    get pt() { return this.y + this._pt + this.bt; }
+    get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl; }
+    get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt; }
+
+    //Content box
+    get cbl() { return this.x + this.bl; }
+    get cbt() { return this.y + this.bt; }
+    get cbr() { return this.w - this.br - this.bl + this.cbl; }
+    get cbb() { return this.h - this.bb - this.bt + this.cbt; }
 
     render(ctx, scale) {
         this.setDimensions();
@@ -2380,23 +2523,22 @@ class BoxElement {
         ctx.strokeRect(this.x, this.y, this.w, this.h);
 
         //Margin box
-        let ml = this.x - this.ml - this.posl;
-        let mt = this.y - this.mt - this.post;
-        let mr = this.w + this.mr + this.ml + ml;
-        let mb = this.h + this.mb + this.mt + mt;
+        let ml = this.ml;
+        let mt = this.mt;
+        let mr = this.mr;
+        let mb = this.mb;
 
         //Padding box
-        let pl = this.x + this.pl + this.bl;
-        let pt = this.y + this.pt + this.bt;
-        let pr = this.w - this.pr - this.pl - this.br - this.bl + pl;
-        let pb = this.h - this.pb - this.pt - this.bb - this.bt + pt;
+        let pl = this.pl;
+        let pt = this.pt;
+        let pr = this.pr;
+        let pb = this.pb;
 
         //Content box
-        let cbl = this.x + this.bl;
-        let cbt = this.y + this.bt;
-        let cbr = this.w - this.br - this.bl + cbl;
-        let cbb = this.h - this.bb - this.bt + cbt;
-
+        let cbl = this.cbl;
+        let cbt = this.cbt;
+        let cbr = this.cbr;
+        let cbb = this.cbb;
 
         ctx.strokeRect(ml, mt, mr - ml, mb - mt);
         ctx.strokeRect(pl, pt, pr - pl, pb - pt);
@@ -2427,6 +2569,12 @@ class BoxElement {
         gripPoint(ctx, pl, pb, r);
         gripPoint(ctx, pr, pb, r);
     }
+
+    setTarget(element, component, IS_COMPONENT) {
+        this.target.element = element;
+        this.target.component = component;
+        this.target.IS_COMPONENT = IS_COMPONENT;
+    }
 }
 
 class CanvasManager {
@@ -2439,7 +2587,7 @@ class CanvasManager {
 
     setIframeTarget(element, component, IS_COMPONENT = false) {
         let box = new BoxElement(element);
-        box.target = { element, component, IS_COMPONENT };
+        box.setTarget(element, component, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
     }
@@ -2463,22 +2611,22 @@ class CanvasManager {
             let tr = 5 / transform.scale; //touch radius
 
             //Margin box
-            let ml = widget.x - widget.ml - widget.posl;
-            let mt = widget.y - widget.mt - widget.post;
-            let mr = widget.w + widget.mr + widget.ml + ml;
-            let mb = widget.h + widget.mb + widget.mt + mt;
+            let ml = widget.ml; // widget.x - widget.ml - widget.posl;
+            let mt = widget.mt; // widget.y - widget.mt - widget.post;
+            let mr = widget.mr; // widget.w + widget.mr + widget.ml + ml;
+            let mb = widget.mb; // widget.h + widget.mb + widget.mt + mt;
 
             //Padding box
-            let pl = widget.x + widget.pl + widget.bl;
-            let pt = widget.y + widget.pt + widget.bt;
-            let pr = widget.w - widget.pr - widget.pl - widget.br - widget.bl + pl;
-            let pb = widget.h - widget.pb - widget.pt - widget.bb - widget.bt + pt;
+            let pl = widget.pl; // widget.x + widget.pl + widget.bl;
+            let pt = widget.pt; // widget.y + widget.pt + widget.bt;
+            let pr = widget.pr; // widget.w - widget.pr - widget.pl - widget.br - widget.bl + pl;
+            let pb = widget.pb; // widget.h - widget.pb - widget.pt - widget.bb - widget.bt + pt;
 
             //Content box
-            let cbl = widget.x + widget.bl;
-            let cbt = widget.y + widget.bt;
-            let cbr = widget.w - widget.br - widget.bl + cbl;
-            let cbb = widget.h - widget.bb - widget.bt + cbt;
+            let cbl = widget.cbl; // widget.x + widget.bl;
+            let cbt = widget.cbt; // widget.y + widget.bt;
+            let cbr = widget.cbr; // widget.w - widget.br - widget.bl + cbl;
+            let cbb = widget.cbb; // widget.h - widget.bb - widget.bt + cbt;
             //Widget size
             while (true) {
 
@@ -2554,8 +2702,11 @@ class CanvasManager {
                 }
                 break;
             }
-            if (widget.target.action)
+            if (widget.target.action) {
+
+                widget.setBox();
                 return widget.target;
+            }
             /*
                         if (dx > 0 && dx < w)
                             if (dy > 0 && dy < h) {
@@ -2623,7 +2774,8 @@ class UI_Manager {
             These can be modified by the user through project system to create and use custom UI
             elements. 
         */
-        this.components = new Map();
+        this.components = [];
+        this.ui_components = new Map();
         this.loadedComponents = [];
 
         //Menu array
@@ -2693,13 +2845,13 @@ class UI_Manager {
     }
 
     addComponent(wick_component_file_path) {
-
+        
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
 
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
             component.load(doc);
-            this.components.set(doc.name, component);
+            this.ui_components.set(doc.name, component);
         }
     }
 
@@ -2715,7 +2867,11 @@ class UI_Manager {
             this.loadedComponents.forEach(c => c.set(this.target));
 
             if(component){
-                this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                if(this.target.IS_COMPONENT){
+                    this.line_machine.setPotentialBoxes(null, component, this.components);
+                }else{
+                    this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                }
             }
 
             return true;
@@ -2790,6 +2946,8 @@ class UI_Manager {
             }
             this.handlePointerEndEvent(e);
         });
+
+        this.components.push(component);
     }
 
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
@@ -2837,11 +2995,9 @@ class UI_Manager {
             return;
         } else if (this.target) {
             let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
-
-
             this.origin_x -= dx;
             this.origin_y -= dy;
-
+            //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -dx, -dy, this.target.IS_COMPONENT);
             this.render();
         }
@@ -2861,7 +3017,7 @@ class UI_Manager {
         
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
-            console.log(this.system.doc_man);
+
             if (doc) switch (doc.type) {
                 case "wick":
                 case "html":
@@ -2889,7 +3045,7 @@ class UI_Manager {
 
     handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
-        console.log(e.target.tagName);
+
         switch(e.target.tagName.toUpperCase()){
             case "SVG":
             case "RECT":
@@ -2897,7 +3053,7 @@ class UI_Manager {
                 this.svg_manager.mount(this, e.target, component, x, y);
                 break;
             default:
-                let element_editor = this.components.get("element_edit.html");
+                let element_editor = this.ui_components.get("element_edit.html");
                 element_editor.mount(this.element);
         }
     }
@@ -2923,7 +3079,8 @@ class UI_Manager {
 
     render() {
         this.canvas.render(this.transform);
-        this.line_machine.render(this.canvas.ctx, this.transform);
+        if(this.target)
+            this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 }

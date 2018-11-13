@@ -12,15 +12,15 @@ function gripPoint(ctx, x, y, r) {
 
 class BoxElement {
     constructor() {
-        this.ml = 0;
-        this.mr = 0;
-        this.mt = 0;
-        this.mb = 0;
+        this._ml = 0;
+        this._mr = 0;
+        this._mt = 0;
+        this._mb = 0;
 
-        this.padl = 0;
-        this.padr = 0;
-        this.padt = 0;
-        this.padb = 0;
+        this._pl = 0;
+        this._pr = 0;
+        this._pt = 0;
+        this._pb = 0;
 
         this.bl = 0;
         this.br = 0;
@@ -38,62 +38,148 @@ class BoxElement {
         this.h = 0; //height of border box
         this.br = 0;
         this.IS_COMPONENT = false;
+
+        this.target = {
+            IS_COMPONENT: false,
+            component: null,
+            element: null,
+            action: null,
+            box: { l: 0, r: 0, t: 0, b: 0 }
+        };
+    }
+
+    setBox() {
+
+        const box = (this.target.box) ? this.target.box : { l: 0, r: 0, t: 0, b: 0 };
+        this.target.box = box;
+        switch (this.target.action) {
+            case actions.MOVE:
+                box.l = this.cbl;
+                box.r = this.cbr;
+                box.b = this.cbb;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZETL:
+                box.l = this.cbl;
+                box.r = this.cbl;
+                box.b = this.cbt;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZEBL:
+                box.l = this.cbl;
+                box.r = this.cbl;
+                box.b = this.cbb;
+                box.t = this.cbb;
+                break;
+            case actions.RESIZETR:
+                box.l = this.cbr;
+                box.r = this.cbr;
+                box.b = this.cbt;
+                box.t = this.cbt;
+                break;
+            case actions.RESIZEBR:
+                box.l = this.cbr;
+                box.r = this.cbr;
+                box.b = this.cbb;
+                box.t = this.cbb;
+                break;
+            case actions.RESIZEMARGINTL:
+                box.l = this.ml;
+                box.r = this.ml;
+                box.b = this.mt;
+                box.t = this.mt;
+                break;
+            case actions.RESIZEMARGINBL:
+                box.l = this.ml;
+                box.r = this.ml;
+                box.b = this.mb;
+                box.t = this.mb;
+                break;
+            case actions.RESIZEMARGINTR:
+                box.l = this.mr;
+                box.r = this.mr;
+                box.b = this.mt;
+                box.t = this.mt;
+                break;
+            case actions.RESIZEMARGINBR:
+                box.l = this.mr;
+                box.r = this.mr;
+                box.b = this.mb;
+                box.t = this.mb;
+                break;
+            case actions.RESIZEPADDINGTL:
+                break;
+            case actions.RESIZEPADDINGBL:
+                break;
+            case actions.RESIZEPADDINGTR:
+                break;
+            case actions.RESIZEPADDINGBR:
+                break;
+        }
     }
 
     setDimensions(IS_COMPONENT = this.IS_COMPONENT) {
+        let component = this.target.component;
 
         if (IS_COMPONENT) {
             this.IS_COMPONENT = true;
-            this.x = this.target.component.x + 4;
-            this.y = this.target.component.y + 4;
-            this.w = this.target.component.width;
-            this.h = this.target.component.height;
+            this.x = component.x + 4;
+            this.y = component.y + 4;
+            this.w = component.width;
+            this.h = component.height;
         } else {
-            let component = this.target.component;
             let rect = this.target.element.getBoundingClientRect();
-            let par_prop = component.window.getComputedStyle(this.target.element);
-
-            //margin
-            this.ml = parseFloat(par_prop.getPropertyValue("margin-left"));
-            this.mr = parseFloat(par_prop.getPropertyValue("margin-right"));
-            this.mt = parseFloat(par_prop.getPropertyValue("margin-top"));
-            this.mb = parseFloat(par_prop.getPropertyValue("margin-bottom"));
-
-            //border
-            this.bl = parseFloat(par_prop.getPropertyValue("border-left"));
-            this.br = parseFloat(par_prop.getPropertyValue("border-right"));
-            this.bt = parseFloat(par_prop.getPropertyValue("border-top"));
-            this.bb = parseFloat(par_prop.getPropertyValue("border-bottom"));
-
-            //padding
-            this.pl = parseFloat(par_prop.getPropertyValue("padding-left"));
-            this.pr = parseFloat(par_prop.getPropertyValue("padding-right"));
-            this.pt = parseFloat(par_prop.getPropertyValue("padding-top"));
-            this.pb = parseFloat(par_prop.getPropertyValue("padding-bottom"));
-
-            this.posl = parseFloat(par_prop.getPropertyValue("left"));
-            this.posr = parseFloat(par_prop.getPropertyValue("right"));
-            this.post = parseFloat(par_prop.getPropertyValue("top"));
-            this.posb = parseFloat(par_prop.getPropertyValue("bottom"));
-
             this.x = rect.left + component.x + 4;
             this.y = rect.top + component.y + 4;
             this.w = rect.width;
             this.h = rect.height;
-
-            let cbl = this.x + this.bl;
-            let cbt = this.y + this.bt;
-            let cbr = this.w - this.br - this.bl + cbl;
-            let cbb = this.h - this.bb - this.bt + cbt;
-
-            this.target.box = {
-                left: cbl,
-                right: cbr,
-                bottom: cbb,
-                top: cbt
-            }
         }
+        
+        let par_prop = component.window.getComputedStyle(this.target.element);
+
+        //margin
+        this._ml = parseFloat(par_prop.getPropertyValue("margin-left"));
+        this._mr = parseFloat(par_prop.getPropertyValue("margin-right"));
+        this._mt = parseFloat(par_prop.getPropertyValue("margin-top"));
+        this._mb = parseFloat(par_prop.getPropertyValue("margin-bottom"));
+
+        //border
+        this.bl = parseFloat(par_prop.getPropertyValue("border-left"));
+        this.br = parseFloat(par_prop.getPropertyValue("border-right"));
+        this.bt = parseFloat(par_prop.getPropertyValue("border-top"));
+        this.bb = parseFloat(par_prop.getPropertyValue("border-bottom"));
+
+        //padding
+        this._pl = parseFloat(par_prop.getPropertyValue("padding-left"));
+        this._pr = parseFloat(par_prop.getPropertyValue("padding-right"));
+        this._pt = parseFloat(par_prop.getPropertyValue("padding-top"));
+        this._pb = parseFloat(par_prop.getPropertyValue("padding-bottom"));
+
+        this.posl = parseFloat(par_prop.getPropertyValue("left"));
+        this.posr = parseFloat(par_prop.getPropertyValue("right"));
+        this.post = parseFloat(par_prop.getPropertyValue("top"));
+        this.posb = parseFloat(par_prop.getPropertyValue("bottom"));
+
+        this.setBox();
     }
+
+    //Margin box
+    get ml() { return this.x - this._ml - this.posl; }
+    get mt() { return this.y - this._mt - this.post; }
+    get mr() { return this.w + this._mr + this._ml + this.ml; }
+    get mb() { return this.h + this._mb + this._mt + this.mt; }
+
+    //Padding box
+    get pl() { return this.x + this._pl + this.bl; }
+    get pt() { return this.y + this._pt + this.bt; }
+    get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl; }
+    get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt; }
+
+    //Content box
+    get cbl() { return this.x + this.bl; }
+    get cbt() { return this.y + this.bt; }
+    get cbr() { return this.w - this.br - this.bl + this.cbl; }
+    get cbb() { return this.h - this.bb - this.bt + this.cbt; }
 
     render(ctx, scale) {
         this.setDimensions();
@@ -105,23 +191,22 @@ class BoxElement {
         ctx.strokeRect(this.x, this.y, this.w, this.h);
 
         //Margin box
-        let ml = this.x - this.ml - this.posl;
-        let mt = this.y - this.mt - this.post;
-        let mr = this.w + this.mr + this.ml + ml;
-        let mb = this.h + this.mb + this.mt + mt;
+        let ml = this.ml;
+        let mt = this.mt;
+        let mr = this.mr;
+        let mb = this.mb;
 
         //Padding box
-        let pl = this.x + this.pl + this.bl;
-        let pt = this.y + this.pt + this.bt;
-        let pr = this.w - this.pr - this.pl - this.br - this.bl + pl;
-        let pb = this.h - this.pb - this.pt - this.bb - this.bt + pt;
+        let pl = this.pl;
+        let pt = this.pt;
+        let pr = this.pr;
+        let pb = this.pb;
 
         //Content box
-        let cbl = this.x + this.bl;
-        let cbt = this.y + this.bt;
-        let cbr = this.w - this.br - this.bl + cbl;
-        let cbb = this.h - this.bb - this.bt + cbt;
-
+        let cbl = this.cbl;
+        let cbt = this.cbt;
+        let cbr = this.cbr;
+        let cbb = this.cbb;
 
         ctx.strokeRect(ml, mt, mr - ml, mb - mt);
         ctx.strokeRect(pl, pt, pr - pl, pb - pt);
@@ -152,6 +237,12 @@ class BoxElement {
         gripPoint(ctx, pl, pb, r);
         gripPoint(ctx, pr, pb, r);
     }
+
+    setTarget(element, component, IS_COMPONENT) {
+        this.target.element = element;
+        this.target.component = component;
+        this.target.IS_COMPONENT = IS_COMPONENT;
+    }
 }
 
 export class CanvasManager {
@@ -164,7 +255,7 @@ export class CanvasManager {
 
     setIframeTarget(element, component, IS_COMPONENT = false) {
         let box = new BoxElement(element);
-        box.target = { element, component, IS_COMPONENT };
+        box.setTarget(element, component, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
     }
@@ -188,22 +279,22 @@ export class CanvasManager {
             let tr = 5 / transform.scale; //touch radius
 
             //Margin box
-            let ml = widget.x - widget.ml - widget.posl;
-            let mt = widget.y - widget.mt - widget.post;
-            let mr = widget.w + widget.mr + widget.ml + ml;
-            let mb = widget.h + widget.mb + widget.mt + mt;
+            let ml = widget.ml; // widget.x - widget.ml - widget.posl;
+            let mt = widget.mt; // widget.y - widget.mt - widget.post;
+            let mr = widget.mr; // widget.w + widget.mr + widget.ml + ml;
+            let mb = widget.mb; // widget.h + widget.mb + widget.mt + mt;
 
             //Padding box
-            let pl = widget.x + widget.pl + widget.bl;
-            let pt = widget.y + widget.pt + widget.bt;
-            let pr = widget.w - widget.pr - widget.pl - widget.br - widget.bl + pl;
-            let pb = widget.h - widget.pb - widget.pt - widget.bb - widget.bt + pt;
+            let pl = widget.pl; // widget.x + widget.pl + widget.bl;
+            let pt = widget.pt; // widget.y + widget.pt + widget.bt;
+            let pr = widget.pr; // widget.w - widget.pr - widget.pl - widget.br - widget.bl + pl;
+            let pb = widget.pb; // widget.h - widget.pb - widget.pt - widget.bb - widget.bt + pt;
 
             //Content box
-            let cbl = widget.x + widget.bl;
-            let cbt = widget.y + widget.bt;
-            let cbr = widget.w - widget.br - widget.bl + cbl;
-            let cbb = widget.h - widget.bb - widget.bt + cbt;
+            let cbl = widget.cbl; // widget.x + widget.bl;
+            let cbt = widget.cbt; // widget.y + widget.bt;
+            let cbr = widget.cbr; // widget.w - widget.br - widget.bl + cbl;
+            let cbb = widget.cbb; // widget.h - widget.bb - widget.bt + cbt;
             //Widget size
             while (true) {
 
@@ -279,8 +370,11 @@ export class CanvasManager {
                 }
                 break;
             }
-            if (widget.target.action)
+            if (widget.target.action) {
+
+                widget.setBox();
                 return widget.target;
+            }
             /*
                         if (dx > 0 && dx < w)
                             if (dy > 0 && dy < h) {

@@ -34,7 +34,8 @@ export class UI_Manager {
             These can be modified by the user through project system to create and use custom UI
             elements. 
         */
-        this.components = new Map();
+        this.components = [];
+        this.ui_components = new Map();
         this.loadedComponents = [];
 
         //Menu array
@@ -97,20 +98,20 @@ export class UI_Manager {
             let element = icon_element.cloneNode(true);
             element.onclick = ()=>{
                 this.mountComponent(menu);
-            }
+            };
             this.main_menu.appendChild(element);
             this.main_menu.map.set(name, icon_element);
         }
     }
 
     addComponent(wick_component_file_path) {
-
+        
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
 
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
             component.load(doc);
-            this.components.set(doc.name, component);
+            this.ui_components.set(doc.name, component);
         }
     }
 
@@ -126,7 +127,11 @@ export class UI_Manager {
             this.loadedComponents.forEach(c => c.set(this.target));
 
             if(component){
-                this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                if(this.target.IS_COMPONENT){
+                    this.line_machine.setPotentialBoxes(null, component, this.components);
+                }else{
+                    this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                }
             }
 
             return true;
@@ -201,6 +206,8 @@ export class UI_Manager {
             }
             this.handlePointerEndEvent(e);
         });
+
+        this.components.push(component);
     }
 
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
@@ -248,11 +255,9 @@ export class UI_Manager {
             return;
         } else if (this.target) {
             let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
-
-
             this.origin_x -= dx;
             this.origin_y -= dy;
-
+            //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -dx, -dy, this.target.IS_COMPONENT);
             this.render();
         }
@@ -272,7 +277,7 @@ export class UI_Manager {
         
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
-            console.log(this.system.doc_man)
+
             if (doc) switch (doc.type) {
                 case "wick":
                 case "html":
@@ -300,7 +305,7 @@ export class UI_Manager {
 
     handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
-        console.log(e.target.tagName)
+
         switch(e.target.tagName.toUpperCase()){
             case "SVG":
             case "RECT":
@@ -308,7 +313,7 @@ export class UI_Manager {
                 this.svg_manager.mount(this, e.target, component, x, y);
                 break;
             default:
-                let element_editor = this.components.get("element_edit.html");
+                let element_editor = this.ui_components.get("element_edit.html");
                 element_editor.mount(this.element);
         }
     }
@@ -334,7 +339,8 @@ export class UI_Manager {
 
     render() {
         this.canvas.render(this.transform);
-        this.line_machine.render(this.canvas.ctx, this.transform);
+        if(this.target)
+            this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 }

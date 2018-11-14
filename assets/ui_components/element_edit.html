@@ -4,10 +4,21 @@
 		HTML
 	</div>
 
+	<div badge="data"></div>
+
 	<textarea value="((data))" onchange="((change)())"></textarea>
+
+	<script on=((created))>
+		this.t = new presets.custom.classes.textedit(this.badges.data);
+		//this.t.insertText("This is the test text");
+		this.t.setFont("Arial").then(()=>this.t.renderToDOM());
+		
+	</script>
 
 	<script on=((target)) >
 		src.wick_element = target.element.wick_node; 
+		this.t.insertText(target.element.wick_node + "");
+		this.t.renderToDOM();
 		emit("data", target.element.wick_node + "");
 	</script>
 

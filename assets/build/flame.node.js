@@ -1931,6 +1931,7 @@ class UIComponent extends Component {
 
         this.icon = null;
     }
+    mountListeners(){};
 
     documentReady(pkg) {
         this.mgr = pkg.mount(this.data, this.system.project.flame_data);
@@ -2159,7 +2160,7 @@ class LineMachine {
 
     render(ctx, transform, boxc) {
 
-        if (!boxc) return;
+        if (!boxc || this.boxes.length == 0) return;
 
         ctx.save();
         transform.setCTX(ctx);
@@ -4200,6 +4201,2869 @@ const flame_scheme = schemed({
     })
 });
 
+//Main dna for containing line tokens
+class Container_Cell {
+	constructor() {
+		this.keys = [];
+		this.parent = null;
+		this.IS_LEAF = true;
+		this.min_degree = 20;
+		this.index = 0;
+		this.num_lines = 0;
+		this.num_real_lines = 0;
+		this.pixel_offset = 0;
+	}
+
+	getLine(offset) {
+		if (this.IS_LEAF) {
+			if (offset > this.num_lines) offset = this.num_lines - 1;
+			return this.keys[offset];
+		} else {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+
+				if (offset < cell.num_lines) {
+					return cell.getLine(offset);
+				} else offset -= cell.num_lines;
+			}
+			return this.keys[this.keys.length - 1].getLine(offset);
+		}
+	}
+
+	getRealLine(offset) {
+		if (this.IS_LEAF) {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+
+				if (offset < cell.size && cell.size > 0) {
+					return cell;
+				} else offset -= cell.size;
+			}
+		} else {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+				if (offset < cell.num_real_lines) {
+					return cell.getRealLine(offset);
+				} else offset -= cell.num_real_lines;
+			}
+			return this.keys[this.keys.length - 1].getRealLine(offset);
+		}
+	}
+
+	getLineAtPixelOffset(offset) {
+		if (this.IS_LEAF) {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+				if (offset < cell.pixel_height && cell.pixel_height > 0) {
+					return cell;
+				} else offset -= cell.pixel_height;
+			}
+			return cell
+		} else {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+				if (offset < cell.pixel_offset) {
+					return cell.getLineAtPixelOffset(offset);
+				} else offset -= cell.pixel_offset;
+			}
+			return cell.getLineAtPixelOffset(offset);
+		}
+	}
+
+
+
+	getLineIndex(index, line, id) {
+		if (this.IS_LEAF) {
+			for (var i = 0, l = this.num_lines; i < l; i++) {
+				if (this.keys[i] === line) break;
+			}
+			index = i;
+		} else {
+			var sibs = this.keys;
+			var i = id;
+			while (i > 0) {
+				i--;
+				index += sibs[i].num_lines;
+			}
+		}
+
+		if (!this.parent.IS_ROOT) return this.parent.getLineIndex(index, null, this.getIndex());
+
+
+		return index;
+	}
+
+	getRealLineIndex(index, line, id) {
+		if (this.IS_LEAF) {
+			index = -1; //WTF
+			for (var i = 0, l = this.num_lines; i < l; i++) {
+				var key = this.keys[i];
+				index += key.size;
+				if (key === line) break;
+			}
+		} else {
+			var sibs = this.keys;
+			var i = id;
+			while (i > 0) {
+				i--;
+				index += sibs[i].num_real_lines;
+			}
+		}
+
+		if (!this.parent.IS_ROOT) return this.parent.getRealLineIndex(index, null, this.getIndex());
+
+
+		return index;
+	}
+
+	getPixelOffset(pixel_top, line, id) {
+		if (this.IS_LEAF) {
+			//pixel_top = -1; //WTF
+			for (var i = 0, l = this.num_lines; i < l; i++) {
+				var key = this.keys[i];
+				if (key === line) break;
+				pixel_top += key.pixel_height;
+			}
+		} else {
+			var sibs = this.keys;
+			var i = id;
+			while (i > 0) {
+				i--;
+				pixel_top += sibs[i].pixel_offset;
+			}
+		}
+
+		if (!this.parent.IS_ROOT) return this.parent.getPixelOffset(pixel_top, null, this.getIndex());
+
+		return pixel_top;
+	}
+
+	//Remove sibling on right from parent, combine with its keys and discard sibling and update line
+	merge(sib, index) {
+		this.parent.keys.splice(index, 1);
+
+		this.keys = this.keys.concat(sib.keys);
+
+		this.getLineCount();
+
+		this.setAsParent();
+
+		this.parent.balance();
+	}
+
+	//Take an element from the left and place into head of own keys
+	leftRotate(sib) {
+		var index = sib.keys.length - 1;
+		var element = sib.keys[index];
+		sib.keys.splice(index, 1);
+
+		this.keys.splice(0, 0, element);
+
+		this.getLineCount();
+		sib.getLineCount();
+		this.setAsParent();
+
+		this.parent.balance();
+	}
+
+	//Take an element from the right and place into tail of own keys
+	rightRotate(sib) {
+		var index = 0;
+		var element = sib.keys[index];
+
+		sib.keys.splice(index, 1);
+
+		this.keys.push(element);
+
+		this.getLineCount();
+		sib.getLineCount();
+		this.setAsParent();
+
+		this.parent.balance();
+	}
+
+	balance() {
+		//debugger
+		var siblings = this.parent.keys;
+
+		if (this.checkMinLimit()) {
+
+			if (this.parent.IS_ROOT) return;
+			//try left rotate
+			var id = this.getIndex();
+
+			//Something went horribly wrong if this happened
+			if (id < 0) debugger;
+
+			if (id > 0) {
+				if (siblings[id - 1].keys.length > this.min_degree) {
+					this.leftRotate(siblings[id - 1]);
+				}
+				siblings[id - 1].merge(this, id);
+			} else if (id < siblings.length - 1) {
+				if (siblings[id + 1].keys.length > this.min_degree) {
+					this.rightRotate(siblings[id + 1]);
+				}
+				this.merge(siblings[id + 1], id + 1);
+			}
+		}
+	}
+
+	remove(line) {
+		for (var i = 0, l = this.keys.length; i < l; i++) {
+			if (this.keys[i] === line) {
+				this.keys.splice(i, 1);
+				this.decrementNumOfLines();
+				this.decrementNumOfRealLines(line.size);
+				this.decrementPixelOffset(line.pixel_height);
+				this.balance();
+				return;
+			}
+		}
+	}
+
+	split() {
+		var sib = new Container_Cell();
+
+		sib.parent = this.parent;
+
+		sib.IS_LEAF = this.IS_LEAF;
+
+		sib.keys = this.keys.slice(this.min_degree);
+
+		this.keys = this.keys.slice(0, this.min_degree);
+
+		this.getLineCount();
+		sib.getLineCount();
+		sib.setAsParent();
+
+		return sib;
+	}
+
+	insert(line, index) {
+		//if leaf, insert line at index position
+		if (this.IS_LEAF) {
+			line.parent = this;
+			this.keys.splice(index, 0, line);
+			this.incrementNumOfLines();
+			this.incrementNumOfRealLines(line.size);
+			this.incrementPixelOffset(line.pixel_height);
+		} else {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				var cell = this.keys[i];
+				//Check to see if cell needs to be split. 
+				if (cell.checkMaxLimit()) {
+					//Insert the resulting operation, which transferes half the keys/lines of 
+					//current cell into a new cell and returns that new cell, into the current array
+					//right after the current cell.
+					this.keys.splice(i + 1, 0, cell.split());
+					//Increment the length so we don't miss out on the last cell
+					l++;
+				}
+				if (index < cell.num_lines) {
+					cell.insert(line, index);
+
+					return;
+				} else index -= cell.num_lines;
+			}
+			//If here then index is greater than number of current lines.
+			//Line should be inserted into the last cell anyways, extending the number of lines in the entire tree
+			this.keys[this.keys.length - 1].insert(line, Infinity);
+		}
+	}
+
+	checkMaxLimit() {
+		return this.keys.length >= this.min_degree * 2 - 1;
+	}
+
+	checkMinLimit() {
+		return this.keys.length < this.min_degree;
+	}
+
+	getLineCount() {
+		var num = 0,
+			num2 = 0,
+			num3 = 0;
+		if (this.IS_LEAF) {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				num += this.keys[i].size;
+				num2 += this.keys[i].pixel_height;
+
+			}
+			this.num_lines = this.keys.length;
+			this.num_real_lines = num;
+			this.pixel_offset = num2;
+		} else {
+			for (var i = 0, l = this.keys.length; i < l; i++) {
+				num += this.keys[i].num_lines;
+				num2 += this.keys[i].num_real_lines;
+				num3 += this.keys[i].pixel_offset;
+			}
+			this.num_real_lines = num2;
+			this.num_lines = num;
+			this.pixel_offset = num3;
+		}
+
+		return this.num_lines;
+	}
+
+	getIndex() {
+		var keys = this.parent.keys;
+		for (var i = 0, l = keys.length; i < l; i++) {
+			if (keys[i] === this) return i;
+		}
+		return -1;
+	}
+
+	setAsParent() {
+		for (var i = 0, l = this.keys.length; i < l; i++) {
+			this.keys[i].parent = this;
+		}
+	}
+
+	incrementNumOfRealLines(i) {
+		if (i < 1) return;
+		this.num_real_lines += i;
+		this.parent.incrementNumOfRealLines(i);
+	}
+
+	decrementNumOfRealLines(i) {
+		if (i < 1) return;
+		this.num_real_lines -= i;
+		this.parent.decrementNumOfRealLines(i);
+	}
+
+	incrementNumOfLines() {
+		this.num_lines++;
+		this.parent.incrementNumOfLines();
+	}
+
+	decrementNumOfLines() {
+		this.num_lines--;
+		this.parent.decrementNumOfLines();
+	}
+
+	incrementPixelOffset(px) {
+		this.pixel_offset += px;
+		this.parent.incrementPixelOffset(px);
+	}
+
+	decrementPixelOffset(px) {
+		this.pixel_offset -= px;
+		this.parent.decrementPixelOffset(px);
+	}
+}
+
+
+
+class Token_Container {
+	constructor() {
+		this.root = null;
+		this.IS_ROOT = true;
+		this.num_lines = 0;
+		this.num_real_lines = 0;
+		this.pixel_height = 0;
+	}
+
+	incrementNumOfLines() {
+		this.num_lines++;
+	}
+
+	decrementNumOfLines() {
+		this.num_lines--;
+	}
+
+	incrementNumOfRealLines(i) {
+		this.num_real_lines += i;
+	}
+
+	decrementNumOfRealLines(i) {
+		this.num_real_lines -= i;
+	}
+
+	incrementPixelOffset(px) {
+		this.pixel_height += px;
+	}
+
+	decrementPixelOffset(px) {
+		this.pixel_height -= px;
+	}
+
+	getLine(index) {
+		if (index >= this.num_lines) index = this.num_lines - 1;
+		return this.root.getLine(index);
+	}
+	getRealLine(index) {
+		if (index >= this.num_real_lines) index = this.num_real_lines - 1;
+		return this.root.getRealLine(index);
+	}
+
+	getLineAtPixelOffset(pixel_height) {
+		if (pixel_height >= this.pixel_height) {
+			pixel_height = this.pixel_height - 1;
+		}
+
+		return this.root.getLineAtPixelOffset(pixel_height);
+	}
+
+	//Transition kludges ****************************
+	getIndexedLine(offset) {
+		return this.getLine(offset);
+	}
+
+	get count() {
+		return this.num_lines;
+	}
+
+	get countWL() {
+		return this.num_lines;
+	}
+	setIndexes() {}
+	getHeight() {
+		return this.num_lines;
+	}
+
+	get height() {
+		return this.num_lines;
+	}
+	//**********************************************************
+	get length() {
+		return this.num_lines;
+	}
+
+	insert(line, index = Infinity) {
+		//If index is not defined, use infinity to ensure that line is placed in the last position;
+
+		var root = this.root;
+
+		if (!root) {
+			this.root = new Container_Cell();
+			this.root.parent = this;
+			this.root.insert(line, index);
+		} else {
+			if (root.checkMaxLimit()) {
+				var new_root = new Container_Cell();
+
+				new_root.parent = this;
+
+				new_root.IS_LEAF = false;
+
+				root.parent = new_root;
+
+				new_root.keys = [root, root.split()];
+
+				root = this.root = new_root;
+
+				root.getLineCount();
+			}
+
+			root.insert(line, index);
+		}
+	}
+
+	remove(line) {
+		var cell = line.parent;
+		cell.remove(line);
+	}
+}
+
+//[Singleton]  Store unused tokens, preventing garbage collection of tokens
+var TEXT_POOL = new(function() {
+	this.pool = null;
+	//this.token_pool = new TEXT_TOKEN();
+
+	function Text(index, text) {
+		this.text = text || "";
+		this.index = index || 0;
+		this.prev_sib = null;
+		this.next_sib = null;
+	}
+
+	this.aquire = function(index, text) {
+		var temp = this.pool;
+		if (temp) {
+			this.pool = temp.prev_sib;
+			temp.index = index;
+			temp.text = text;
+			temp.prev_sib = null;
+			return temp;
+		} else {
+			return new Text(index, text);
+		}
+	};
+
+	this.release = function(object) {
+		object.prev_sib = this.pool;
+		this.pool = object;
+	};
+
+	for (var i = 0; i < 50; i++) {
+		var temp = new Text();
+		temp.prev_sib = this.pool;
+		this.pool = temp;
+	}
+})();
+
+//Releases given token to pool and returns that token's previous sibling.
+function releaseToken(token) {
+	var prev_line = token.prev_line;
+	var next_line = token.next_line;
+
+	var prev_sib = token.prev_sib;
+	var next_sib = token.next_sib;
+
+	if (prev_sib) {
+		prev_sib.next_sib = next_sib;
+	}
+	if (next_sib) {
+		next_sib.prev_sib = prev_sib;
+	}
+	if (prev_line) {
+		if (next_sib && next_sib.IS_NEW_LINE) {
+			prev_line.next_line = next_sib;
+		} else {
+			prev_line.next_line = next_line;
+		}
+	}
+	if (next_line) {
+		if (prev_sib && prev_sib.IS_NEW_LINE) {
+			next_line.prev_line = prev_sib;
+		} else {
+			next_line.prev_line = prev_line;
+		}
+	}
+
+	if (token.IS_NEW_LINE) {
+		this.token_container.remove(token);
+		this.setIndexes();
+	}
+
+	var t = token.prev_sib;
+	token.reset();
+	token.next_sib = this.token_pool;
+	token.prev_sib = null;
+	token.text = "";
+	this.token_pool = token;
+	return t;
+}
+
+//Either returns an existing token from pool or creates a new one and returns that.
+function aquireToken(prev_token) {
+	var t = this.token_pool;
+
+	if (t) {
+		if (t.next_sib) {
+			this.token_pool = t.next_sib;
+			this.token_pool.prev_sib = null;
+		} else {
+			this.token_pool = new TEXT_TOKEN(this, null);
+		}
+	} else {
+		t = new TEXT_TOKEN(this, null);
+	}
+
+	t.reset();
+
+	if (prev_token) {
+		t.prev_line = prev_token.prev_line;
+		t.next_line = prev_token.next_line;
+
+		if (prev_token.IS_NEW_LINE) {
+			t.prev_line = prev_token;
+		}
+
+		t.next_sib = prev_token.next_sib;
+		t.prev_sib = prev_token;
+		prev_token.next_sib = t;
+		if (t.next_sib) {
+			t.next_sib.prev_sib = t;
+		}
+	}
+	return t;
+}
+
+//Token represents a single text unit, which either can be a new line, or any the symbols defined in the token parse and format array object which maintained by the text_fw object
+//Special consideration is given to new line tokens, as they are considered the root element for each line. 
+class TEXT_TOKEN {
+	constructor(text_fw) {
+
+		this.text_insert = null;
+
+		this.text = "";
+		this.style = "";
+		this.type = "new_line";
+		this.html_cache = "";
+		this.CACHED = false;
+		this.HTML_CACHED = false;
+
+		this.char_start = 0;
+		this.text_fw = text_fw;
+
+		this.prev_sib = null;
+		this.next_sib = null;
+
+		//Token as line
+		this.next_line = null;
+		this.prev_line = null;
+		this.IS_NEW_LINE = false;
+
+		//container variables
+		this.line_size = 1;
+		this.size = 1;
+		this.pixel_height = 30;
+
+		this.NEED_PARSE = true;
+		this.IS_NEW_LINE = false;
+		this.IS_LINKED_LINE = false;
+	}
+
+	//Resets vaules to unbiased defaults
+	reset() {
+		this.pixel_height = 30;
+		this.char_start = 0;
+		this.next_line = null;
+		this.prev_line = null;
+		this.prev_sib = null;
+		this.next_sib = null;
+		this.NEED_PARSE = true;
+		this.HTML_CACHED = false;
+		this.IS_LINKED_LINE = false;
+		this.IS_NEW_LINE = false;
+		this.text_insert = null;
+		this.type = "";
+		this.size = 1;
+		this.setText("");
+		this.color = "black";
+	}
+
+	setText(text) {
+		this.text = text;
+		this.NEED_PARSE = true;
+	}
+
+	//Removes siblings of a new line token and appends their strings to the new line text
+	flushTokens(offset) {
+		if (!this.IS_NEW_LINE) {
+			//Jump to head of line
+			if (this.prev_line) {
+				return this.prev_line.flushTokens();
+			} else {
+				//The top most token should always be a new line. If here, something went really wrong
+				throw (this)
+			}
+		}
+
+		var text = this.text;
+
+		var token = this.next_sib;
+
+		var offsets = this.length - 1;
+
+		if (this.IS_LINKED_LINE) {
+			while (token && !(token.IS_NEW_LINE)) {
+				text += token.text;
+				token = this.text_fw.releaseToken(token).next_sib;
+			}
+		} else {
+			while (token && !(token.IS_NEW_LINE && !token.IS_LINKED_LINE)) {
+				if (token.IS_LINKED_LINE) {
+
+					//merge texts
+					if (token.text_insert) {
+						token.setTempTextOffsets(offsets).prev_sib = this.text_insert;
+						this.text_insert = token.text_insert;
+						token.text_insert = null;
+					}
+
+					offsets += token.length;
+					text += token.text;
+				} else {
+					text += token.text;
+				}
+
+				token = this.text_fw.releaseToken(token).next_sib;
+			}
+		}
+
+
+		this.setText(text);
+
+		return this;
+	}
+
+	setTempTextOffsets(offset) {
+		var temp = this.text_insert;
+		var last = null;
+		while (temp) {
+			temp.index += offset;
+			last = temp;
+			temp = temp.prev_sib;
+		}
+		return last
+	}
+
+	mergeLeft() {
+		if (!this.IS_NEW_LINE) {
+			return this.prev_line.mergeLeft();
+		}
+		if (!this.prev_line) return;
+
+		if (this.IS_LINKED_LINE) {
+			if (this.prev_line.IS_LINKED_LINE) {
+				return this.prev_line.mergeLeft();
+			} else {
+				return this.prev_line.flushTokens();
+			}
+		}
+		this.flushTokens();
+
+		if (this.prev_line === this) {
+			return this;
+		}
+
+		this.prev_line.flushTokens();
+
+		var text = this.prev_line.text + this.text.slice((this.text[0] === this.text_fw.new_line) | 0);
+
+		this.prev_line.setText(text);
+
+		return this.text_fw.releaseToken(this);
+	}
+
+	//Store new inserted text into tempory tokens, whose contents will be merged into the actaul token list when parsed.
+	insertText(text, char_pos) {
+		var l = this.cache.length;
+			//Account for new line character
+
+		if (char_pos > l) {
+			if (this.next_line) {
+				return this.next_line.insertText(text, char_pos - l)
+			} else {
+				char_pos = this.text.length;
+			}
+		} else if (char_pos < 0) {
+			if (this.prev_line) {
+				return this.prev_line.insertText(text, this.prev_line.length - char_pos);
+			} else {
+				char_pos = 0;
+			}
+		}
+		return this.addTextCell(text, char_pos);
+	}
+
+	addTextCell(text, index) {
+		var temp = TEXT_POOL.aquire(index, text);
+		temp.prev_sib = null;
+		var temp_prev = null;
+		var temp_next = this.text_insert;
+
+		if (!this.text_insert) {
+			this.text_insert = temp;
+		} else {
+			while (true) {
+				if (temp_next) {
+					if (temp_next.index <= temp.index) {
+						//insert before;
+						if (temp_prev) {
+							temp.prev_sib = temp_next;
+							temp_prev.prev_sib = temp;
+						} else {
+							temp.prev_sib = temp_next;
+							this.text_insert = temp;
+						}
+						break;
+					}
+					if (!temp_next.prev_sib) {
+						temp_next.prev_sib = temp;
+						break;
+					}
+					temp_prev = temp_next;
+					temp_next = temp_prev.prev_sib;
+				}
+			}
+		}
+		var token = this;
+		while (token.IS_LINKED_LINE) {
+			token = token.prev_line;
+		}
+
+		token.NEED_PARSE = true;
+		return token;
+	}
+
+	get index() {
+		if(!this.IS_NEW_LINE) return this.prev_line.index;
+		return this.parent.getLineIndex(0, this);
+	}
+
+	set index(e) {
+		//this.parent.remove(this);
+	}
+
+	get real_index() {
+		if(!this.IS_NEW_LINE) return this.prev_line.real_index;
+		return this.parent.getRealLineIndex(0, this);
+	}
+
+	set real_index(e) {
+
+	}
+
+	get pixel_offset() {
+		return this.parent.getPixelOffset(0, this);
+	}
+
+	setPixelOffset() {
+
+	}
+	//Takes the token text string and breaks it down into individaul pieces, linking resulting tokens into a linked list.
+	parse(FORCE) {
+		if (!this.NEED_PARSE && !FORCE) return this.next_sib;
+
+
+
+		//debugger
+		if (this.IS_NEW_LINE) {
+			this.flushTokens();
+		}
+
+		//CACHE parse functions variables
+		var
+			SPF = this.text_fw.SPF,
+			SPF_length = SPF.length,
+			SPF_function = null,
+			text_length = 0,
+			code = 0,
+			token_length = 0,
+			text = null,
+			temp = null;
+
+		//Reset token type	
+		this.type = "generic";
+
+		//This function will change structure of tokens, thus resetting cache.
+		this.CACHED = false;
+		this.HTML_CACHED = false;
+		this.IS_WHITESPACE = false;
+		this.NEED_PARSE = false;
+
+
+
+		var del_char = this.text_fw.del_char;
+
+		//Walk the temporary text chain and insert strings into the text variable : History is also appended to through here
+		if (this.text_insert) {
+			//These get added to history
+
+			var fw = this.text_fw;
+
+			var i = 0,
+				temp = this.text_insert;
+			while (temp) {
+				var text = temp.text;
+				var index = temp.index + 1;
+				var prev_sib = temp.prev_sib;
+
+				TEXT_POOL.release(temp);
+
+				//add saved text to history object in framework
+
+				//text inserts get seperated as character insertions, delete characters, and cursors
+
+				if (index < this.text.length && index > 0) {
+					this.text = this.text.slice(0, index) + text + this.text.slice(index);
+				} else if (index > 0) {
+					this.text = this.text + text;
+				} else {
+					this.text = text + this.text;
+				}
+
+				temp = prev_sib;
+			}
+
+			this.text_insert = null;
+
+			//Perform a lookahead for delete characters
+			for (i = 1; i < this.text.length; i++) {
+				if (i === 0) continue;
+				var s = this.text.charCodeAt(i);
+				var f = this.text.charCodeAt(i - 1);
+				if (( /*f !== this.text_fw.new_line_code && */ f !== this.text_fw.del_code) && s === this.text_fw.del_code) {					
+					if(f === this.text_fw.new_line_code && !this.prev_sib){
+						break;
+					}
+
+
+					i--;
+					this.text = this.text.slice(0, i) + this.text.slice(i + 2);
+					i--;
+				}
+			}
+		}
+
+		//Check for wrapping
+		//if (this.char_start > 80 && this.text.charCodeAt(0) !== 28) {
+		//	this.text = this.text_fw.linked_line + this.text;
+		//}
+
+
+		text_length = this.text.length;
+		text = this.text;
+		code = this.text.charCodeAt(0);
+
+
+
+		//Check for existence of mismatched new line tokens
+		if (this.IS_NEW_LINE && !(code === this.text_fw.new_line_code || code === this.text_fw.linked_line_code)) {
+			//Merge back into last line;
+			return this.mergeLeft();
+		}
+
+		//Default parse functions
+		router: switch (code) {
+			case this.text_fw.del_code: // Backspace Character
+				//reinsert this into the previous line
+				//get text of previous sibling
+				var prev_sib = this.prev_sib;
+				if (prev_sib) {
+					//debugger	
+					if (prev_sib.IS_NEW_LINE) {
+
+						//Linked lines don't have a length, so the delete character would not be exausted.
+						if (!prev_sib.IS_LINKED_LINE) {
+							this.text = this.text.slice(1);
+
+							if(!prev_sib.prev_sib){
+								return this.mergeLeft();
+							}
+						}
+
+						//insert into the previous line and flush it
+						prev_sib = this.text_fw.releaseToken(prev_sib);
+
+						var prev_line = prev_sib;
+						
+						if (!prev_line.IS_NEW_LINE) {
+							prev_line = prev_sib.prev_line;
+						}
+
+						var root = prev_sib.prev_line.addTextCell(this.text, prev_line.length + 1);
+
+						this.text_fw.releaseToken(this);
+
+						return root.parse();
+					} else {
+						this.text = this.text.slice(1);
+						prev_sib.setText(prev_sib.text.slice(0, -1) + this.text);
+						return this.text_fw.releaseToken(this).parse();
+					}
+				} else {
+					debugger
+					this.text = this.text.slice(1);
+				}
+				break;
+			case this.text_fw.linked_line_code: // Carriage Return // Linked Lines for text wrap
+				this.size = 0;
+				this.pixel_height = 10;
+				this.IS_LINKED_LINE = true;
+				if (!this.IS_NEW_LINE) {
+					this.text_fw.insertLine(this.prev_line, this);
+				}
+				this.text = this.text.slice(1);
+				this.char_start = 0;
+				token_length = 0;
+				break;
+			case this.text_fw.new_line_code: // Line Feed
+				//this.pixel_height = 30
+				this.IS_LINKED_LINE = false;
+				if (!this.IS_NEW_LINE) {
+					this.text_fw.insertLine(this.prev_line, this);
+				}
+				this.char_start = 0;
+				token_length = 1;
+				break;
+				//Cursor Character - Tells token to move specific cursor to line and character offset
+			case this.text_fw.curs_code:
+				//Update cursor position;
+				var cursor = this.text_fw.aquireCursor();
+				if (cursor) {
+					cursor.y = this.prev_line.index;
+					cursor.x = this.char_start + ((this.prev_line.IS_LINKED_LINE | 0) - 1);
+				}
+				//Remove cursor section from text
+				var text = text.slice(1);
+				var prev_sib = this.text_fw.releaseToken(this);
+				//Reparse or move on to next token
+				if (text.length > 0) { 
+					//Reconnect string to the previous token and parse it
+					prev_sib.text += text;
+					return prev_sib.parse(true);
+				} else {
+					//Remove this token from linup. It contained only the cursor section and is not needed for any other purpose
+					return prev_sib.next_sib;
+				}
+			default:
+				token_length = 1;
+
+				for (i = 0; i < SPF_length; i++) {
+					SPF_function = SPF[i];
+					let test_index = SPF_function.check(code, text);
+					if (test_index > 0) {
+						this.type = SPF_function.type;
+
+						for (i = test_index; i < text_length; i++) {
+							if (!SPF_function.scanToEnd(text.charCodeAt(i))) {
+								token_length = i;
+								break router;
+							}
+						}
+						token_length = i;
+						break router;
+					}
+				}
+		}
+
+
+		//If not at end of string, split off last part of string and pass off into new token for further processing
+		if (token_length < text_length) {
+			temp = this.text_fw.aquireToken(this);
+			temp.setText(this.text.slice(token_length, this.text.length));
+
+			//Split happens here
+			this.text = this.text.slice(0, token_length);
+			temp.char_start = this.char_start + token_length;
+		}
+
+		this.token_length = token_length;
+
+		//cache format function for faster testing and executing
+
+		//Format function will apply color and other text formatting attributes for specific type
+		if (SPF_function) SPF_function.format(this);
+
+		if (this.prev_line.IS_LINKED_LINE) this.color = "red";
+
+
+		//Continue down chain of cells
+		return this.next_sib;
+	}
+
+	charAt(index) {
+		//get root line
+		if (!this.IS_NEW_LINE) return this.prev_line.charAt(index);
+
+		if (index <= 0) return this.text;
+		return this.renderDOM(true, this.text)[index];
+	}
+
+	get cache() {
+		if (!this.CACHED) {
+			this.CACHED = true;
+
+			var text = "";
+			var token = this.next_sib;
+
+			while (token && !(token.IS_NEW_LINE)) {
+				text += token.text;
+				token = token.next_sib;
+			}
+
+			this.plain_text = text;
+		}
+		return this.plain_text;
+	}
+	set cache(p) {
+
+	}
+
+
+	get length() {
+		if (this.IS_NEW_LINE) {
+			var token = this.next_sib;
+			var length = this.text.length;
+			while (token && !token.IS_NEW_LINE) {
+				length += token.length;
+				token = token.next_sib;
+			}
+			return length;
+		} else return this.text.length;
+	}
+	set length(p) {
+
+	}
+
+
+	//Creates, or appends, a string that contains <PRE> enclosed formatted text ready for insertion into the DOM.
+	renderDOM(plain_text, text) {
+		if (this.IS_NEW_LINE) {
+			if (plain_text) {
+				return this.cache;
+			} else {
+				if (!this.HTML_CACHED) {
+
+					this.cached_html = "";
+
+					var token = this.next_sib;
+
+					//Only non New Line tokens will have their strings appended
+					while (token && !token.IS_NEW_LINE) {
+						this.cached_html += token.renderDOM(plain_text);
+						token = token.next_sib;
+					}
+
+					this.HTML_CACHED = true;
+				}
+				return this.cached_html;
+			}
+		} else {
+			if (plain_text) {
+				return this.text;
+			} else {
+				if (this.color !== "black") {
+
+					return `<span style="color:${this.color}">${this.text}</span>`;
+				}
+				return this.text;
+			}
+		}
+	}
+
+	renderToBuffer(buffer, offsets, line) {
+		if (this.IS_NEW_LINE) {
+
+			offsets = {
+				buffer: offsets,
+				line,
+				x: 0,
+				count: 0
+			};
+
+			var token = this.next_sib;
+			while (token && !token.IS_NEW_LINE) {
+				token.renderToBuffer(buffer, offsets);
+				token = token.next_sib;
+			}
+			return offsets.count;
+		} else {
+			for (var i = 0; i < this.text.length; i++) {
+				//pos x
+				var code = this.text.charCodeAt(i);
+				var font = this.text_fw.font;
+				var index = code - 33;
+
+
+				//
+				// offsets.x += 6
+				//position
+				buffer[offsets.buffer + 0] = offsets.x;
+				buffer[offsets.buffer + 1] = 0; //offsets.line
+				//texture index
+				buffer[offsets.buffer + 2] = code - 33;
+
+				offsets.buffer += 3;
+
+				if (index > 0) {
+					if (font.props.length === 94) offsets.x += font.props[code - 33].width * 0.5 + 0.5;
+				} else {
+					offsets.x += 1;
+				}
+
+				offsets.count++;
+			}
+		}
+	}
+}
+
+class TEXT_CURSOR {
+	constructor(text_fw) {
+		//On screen HTML representation of cursor
+		this.HTML_ELEMENT = null;
+		//this.HTML_ELEMENT = document.createElement("div");
+		//this.HTML_ELEMENT.classList.add("txt_cursor");
+		
+
+		//Character and Line position of cursor
+		this.x = 0;
+		this.y = 0;
+
+		//Character and Line position of cursor selection bound
+		this.selection_x = -1;
+		this.selection_y = -1;
+
+
+		//Real position of cursor line and character. These values is related to the total number of non Linked Lines found in the
+		//line container object. Lines that are linked are treated as character indexes extending from non Linked Lines.
+
+		this.rpx = 0;
+		this.rpy = 0;
+
+
+
+		//Same for selection bounds. 
+		this.rpsx = 0;
+		this.rpsy = 0;
+
+
+		this.index = 0;
+		this.text_fw = text_fw;
+		this.line_container = text_fw.token_container;
+		this.char_code = text_fw.curs_char;
+		this.selections = [];
+		this.line_height = 0;
+
+		//FLAGS
+		this.IU = false;
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+	}
+
+	toString() {
+		this.text_fw.token_container.getRealLine(this.real_position_y).insertText(this.char_code, this.real_position_x);
+	}
+
+	get HAS_SELECTION() {
+		return (this.selection_x > -1 && this.selection_y > -1);
+	}
+
+	set HAS_SELECTION(p) {
+
+	}
+
+	get IN_USE() {
+		return this.IU;
+	}
+
+	set IN_USE(bool) {
+		if (bool !== this.IU) {
+			if (bool) {
+			//	this.text_fw.parent_element.appendChild(this.HTML_ELEMENT);
+			} else {
+			//	this.text_fw.parent_element.removeChild(this.HTML_ELEMENT);
+				this.resetSelection();
+				this.REAL_POSITION_NEEDS_UPDATE = true;
+				this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+			}
+			this.IU = bool;
+		}
+	}
+
+	resetSelection() {
+		this.selection_x = -1;
+		this.selection_y = -1;
+
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+
+		for (var i = 0; i < this.selections.length; i++) {
+			var div = this.selections[i];
+			div.hide();
+		}
+	}
+
+	set size(scale) {
+		this.HTML_ELEMENT.style.width = 1 * scale + "px";
+		this.HTML_ELEMENT.style.height = this.line_height * scale + "px";
+	}
+
+	get id() {
+		return this.x | (this.y << 10);
+	}
+
+	get lineLength() {
+		var line = this.text_fw.token_container.getLine(this.y);
+		if (line) {
+			return line.length + ((line.IS_LINKED_LINE | 0) - 1)
+		} else {
+			return 0;
+		}
+	}
+
+	get lineLength_Select() {
+		var line = this.text_fw.token_container.getLine(this.selection_y);
+		if (line) {
+			return line.length + ((line.IS_LINKED_LINE | 0) - 1)
+		} else {
+			return 0;
+		}
+	}
+
+	getXCharOffset(x_in, y_in) {
+		var y = (((y_in) * this.text_fw.line_height) - 1),
+			x = 0;
+
+		if (this.text_fw.font.IS_MONOSPACE) {
+			//Monospace fonts need only add up all charcters and scale by width of any character
+			x = (Math.min(x_in, line.length - 1) * this.text_fw.font.props[0].width2);
+		} else {
+			//Non Monospace fonts will have to build up offset by measuring individual character widths
+			var fontData = this.text_fw.font.props;
+			var line = this.getLine(y_in);
+			if (line) {
+				var text = line.renderDOM(true);
+				//Cap to end of line to prevent out of bounds reference
+				var l = Math.min(x_in, line.length + ((line.IS_LINKED_LINE | 0) - 1));
+				for (var i = 0; i < l; i++) {
+					var code = text.charCodeAt(i) - 32;
+					var char = fontData[code];
+
+					if (code < 0) {
+						x += 0;
+					} else
+						x += char.width;
+				}
+
+			}
+		}
+		return x;
+	}
+
+	getRealPosition(x, y) {
+		var line = this.line_container.getLine(y);
+		var offset_length = 0;
+
+		//Trace linked line chains to their originating location, which is the last non-linked line
+
+		if (line.IS_LINKED_LINE) {
+			line = line.prev_line;
+			while (line.IS_LINKED_LINE) {
+				offset_length += line.cache.length;
+				line = line.prev_line;
+				y--;
+			}
+			y--;
+			offset_length += line.cache.length;
+		}
+		return {
+			x: offset_length + x,
+			y: line.real_index
+		};
+	}
+
+	updateRealPosition(FORCE) {
+		if (this.REAL_POSITION_NEEDS_UPDATE || FORCE) {
+			var temp = this.getRealPosition(this.x, this.y);
+			this.rpy = temp.y;
+			this.rpx = temp.x;
+			this.REAL_POSITION_NEEDS_UPDATE = false;
+		}
+	}
+
+	updateRealSelectPosition(FORCE) {
+		if (this.REAL_SELECT_POSITION_NEEDS_UPDATE || FORCE) {
+			var temp = this.getRealPosition(this.selection_x, this.selection_y);
+			this.rspy = temp.y;
+			this.rspx = temp.x;
+			this.REAL_SELECT_POSITION_NEEDS_UPDATE = false;
+		}
+	}
+
+	get real_position_x() {
+		this.updateRealPosition();
+		return this.rpx;
+	}
+
+	set real_position_x(x) {
+		var line = this.line_container.getLine(this.y);
+		while (line && x > line.cache.length) {
+			this.y++;
+			x -= line.cache.length;
+			line = line.next_line;
+			x += ((line.IS_LINKED_LINE | 0) - 1);
+		}
+
+		this.x = x;
+		this.updateRealPosition(true);
+	}
+
+
+
+	get real_position_y() {
+		this.updateRealPosition();
+		return this.rpy;
+	}
+	set real_position_y(y) {
+		this.y = this.line_container.getRealLine(y).index;
+		this.updateRealPosition(true);
+	}
+
+	//These are for the text selection part of the cursor
+	get real_select_position_x() {
+		if (this.selection_x < 0) return -1;
+		this.updateRealSelectPosition();
+		return this.rspx;
+	}
+
+	set real_select_position_x(x) {
+		var line = this.line_container.getLine(this.selection_y);
+		while (line && x > line.cache.length) {
+			this.selection_y++;
+			x -= line.cache.length; //- ;
+			line = line.next_line;
+			x += ((line.IS_LINKED_LINE | 0) - 1);
+
+		}
+		this.selection_x = x;
+		this.updateRealSelectPosition(true);
+	}
+
+	get real_select_position_y() {
+		if (this.selection_y < 0) return -1;
+		this.updateRealSelectPosition();
+		return this.rspy;
+	}
+	set real_select_position_y(y) {
+		this.selection_y = this.line_container.getRealLine(y).index;
+		this.updateRealSelectPosition(true);
+	}
+
+	createSelection(y, x_start, x_end, xc, yc, scale) {
+		if (!this.selections) {
+			for (var i = 0; i < this.selections.length; i++) {
+				var div = this.selections[i];
+				div.hide();
+			}
+			this.selection_index = 0;
+		}
+
+		if (!this.selections[this.selection_index]) {
+			var div = document.createElement("div");
+			div.style.cssText = `
+			position:absolute;
+			top:0;
+			left:0;
+			background-color:rgba(250,0,0,0.5);
+	 		z-index:30000000000;
+		`;
+			this.selections[this.selection_index] = div;
+
+		}
+
+		var div = this.selections[this.selection_index];
+		this.selection_index++;
+		var x1 = this.getXCharOffset(x_start, y);
+		var x2 = this.getXCharOffset(x_end, y);
+		var width = x2 - x1;
+
+		div.show();
+		div.style.left = ((x1 + xc) * scale) + "px";
+		div.style.top = ((this.getYCharOffset(y) + yc) * scale) + "px";
+		div.style.width = width * scale + "px";
+		div.style.height = 16 * scale + "px";
+		this.text_fw.parent_element.appendChild(div);
+	}
+
+	getSortedPositions() {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+
+		var x1 = this.x;
+		var y1 = this.y;
+		var x2 = this.selection_x;
+		var y2 = this.selection_y;
+		if (this.selection_x > -1 && this.selection_y > -1) {
+			var id1 = this.id;
+			var id2 = (this.selection_y << 10) | this.selection_x;
+
+			if (id2 < id1) {
+				var x1 = this.selection_x;
+				var y1 = this.selection_y;
+				var x2 = this.x;
+				var y2 = this.y;
+			}
+		}
+		return {
+			x1, y1, x2, y2
+		};
+	}
+
+	arrangeSelection() {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+
+		if (this.HAS_SELECTION) {
+			var id1 = this.id;
+			var id2 = (this.selection_y << 10) | this.selection_x;
+
+			if (id2 < id1) {
+				var x1 = this.selection_x;
+				var y1 = this.selection_y;
+				var x2 = this.x;
+				var y2 = this.y;
+			} else {
+				var x1 = this.x;
+				var y1 = this.y;
+				var x2 = this.selection_x;
+				var y2 = this.selection_y;
+			}
+
+			this.x = x1;
+			this.y = y1;
+			this.selection_x = x2;
+			this.selection_y = y2;
+		}
+	}
+
+	getLine(y_in) {
+		return this.text_fw.token_container.getIndexedLine(y_in || this.y)
+	}
+
+	getYCharOffset(y_in) {
+		return (((y_in) * this.text_fw.line_height) - 1)
+	}
+	//Returns string of concated lines between [x,y] and [x2,y2]. Returns empty string if [x2.selection_y] is less then 0;
+	getTextFromSelection() {
+		var string = "";
+		if (this.HAS_SELECTION) {
+			this.selection_index = 0;
+			//Sets each tokens selected attribute to true
+			var id1 = this.id;
+			var id2 = (this.selection_y << 10) | this.selection_x;
+
+			if (id2 < id1) {
+				var x1 = this.selection_x;
+				var y1 = this.selection_y;
+				var x2 = this.x;
+				var y2 = this.y;
+			} else {
+				var x1 = this.x;
+				var y1 = this.y;
+				var x2 = this.selection_x;
+				var y2 = this.selection_y;
+			}
+
+			var line_count = y2 - y1;
+
+
+			//Append first line out of loop. Each successive line will have the newline control character inserted at head of appending string. 
+			var line = this.getLine(y1);
+
+			string += line.cache.slice(x1, (line_count > 0) ? line.cache.length : Math.min(x2, line.cache.length));
+
+			for (var i = 1; i < line_count + 1; i++) {
+				var x_start = 0;
+				var y = y1 + i;
+				line = this.getLine(y);
+				var length = line.cache.length;
+				var x_end = length;
+
+				if (i == line_count) {
+					x_end = Math.min(x2, length);
+				}
+
+				string += ((line.IS_LINKED_LINE) ? "" : this.text_fw.new_line) + line.cache.slice(x_start, x_end);
+			}
+		}
+		return string;
+	}
+
+	update(camera, scale, xc, yc) {
+		// todo - correct font data 
+
+
+		//Set cursor size to mach current zoom level of camera
+		this.size = scale;
+
+		this.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y) + xc) * scale) + "px";
+
+
+		this.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset + yc) * scale) + "px";
+
+		//Update shading for selections
+
+		for (var i = 0; i < this.selections.length; i++) {
+				var div = this.selections[i];
+				div.hide();
+			}
+		if (this.HAS_SELECTION) {
+			this.selection_index = 0;
+
+
+			var id1 = this.id;
+			var id2 = (this.selection_y << 10) | this.selection_x;
+
+			if (id2 < id1) {
+				var x1 = this.selection_x;
+				var y1 = this.selection_y;
+				var x2 = this.x;
+				var y2 = this.y;
+			} else {
+				var x1 = this.x;
+				var y1 = this.y;
+				var x2 = this.selection_x;
+				var y2 = this.selection_y;
+			}
+
+			var line_count = y2 - y1;
+
+			for (var i = 0; i < line_count + 1; i++) {
+				var x_start = 0;
+				var y = y1 + i;
+				var line = this.getLine(y);
+				var x_end = line.length - ((line.IS_LINKED_LINE) ? 0 : 1);
+
+				if (i === 0) {
+					x_start = x1;
+				}
+
+				if (i == line_count) {
+
+					x_end = Math.min(x2, line.length - ((line.IS_LINKED_LINE) ? 0 : 1));
+				}
+
+				this.createSelection(y, x_start, x_end, xc, yc, scale);
+			}
+
+
+		}
+	}
+
+
+	//Sets cursor to line givin pixel coordinates
+	setX(x) {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+
+		if (this.text_fw.font.IS_MONOSPACE) {
+			this.x = Math.min(Math.max(Math.round(x / this.text_fw.font.props[0].width), 0), this.lineLength);
+		} else {
+			var fontData = this.text_fw.font.props;
+			var line = this.line_container.getLine(this.y);
+			var text = line.cache;
+			var l = text.length;
+			var y = 0;
+
+			var diff = this.y - line.index;
+			var offset = 0;
+			var i = 0;
+
+			for (; i < l; i++) {
+				var code = text.charCodeAt(i) - 32;
+				var char = fontData[code];
+				y += char.width;
+				if ((x + 2) < y) {
+					break;
+				}
+			}
+			this.x = i;
+		}
+	}
+
+	setY(y) {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+		var line = this.line_container.getLineAtPixelOffset(y);
+		this.y = line.index;
+		this.line_height = line.pixel_height;
+	}
+
+
+	setSelectionX(x) {
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+		if (this.text_fw.font.IS_MONOSPACE) {
+			this.selection_x = Math.min(Math.max(Math.round(x / this.text_fw.font.props[0].width), 0), this.lineLength_Select);
+		} else {
+			var fontData = this.text_fw.font.props;
+			var line = this.line_container.getLine(this.selection_y);
+			var text = line.cache;
+			var l = text.length;
+			var y = 0;
+
+			var diff = this.y - line.index;
+			var offset = 0;
+			var i = 0;
+
+			for (; i < l; i++) {
+				var code = text.charCodeAt(i) - 32;
+				var char = fontData[code];
+				y += char.width;
+				if ((x + 2) < y) {
+					break;
+				}
+			}
+			this.selection_x = i;
+		}
+	}
+
+	setSelectionY(y) {
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+		this.selection_y = this.line_container.getLineAtPixelOffset(y).index;
+	}
+
+	setToSelectionTail() {
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+
+		var id1 = this.id;
+		var id2 = (this.selection_y << 10) | this.selection_x;
+
+		if (id2 < id1) {
+			var x1 = this.selection_x;
+			var y1 = this.selection_y;
+			var x2 = this.x;
+			var y2 = this.y;
+		} else {
+			var x1 = this.x;
+			var y1 = this.y;
+			var x2 = this.selection_x;
+			var y2 = this.selection_y;
+		}
+
+		this.x = x2;
+		this.y = y2;
+
+	}
+
+	moveChar(change) {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+
+		var diff = this.x + change;
+		if (diff < 0) {
+			if (this.y <= 0) {
+				this.x = 0;
+			} else {
+				this.y--;
+				this.x = this.lineLength;
+			}
+		} else if (diff > this.lineLength) {
+			if (this.y >= this.line_container.height - 1) {
+				this.x = this.lineLength;
+			} else {
+				this.y++;
+				this.x = 0;
+			}
+		} else {
+			this.x = diff;
+		}
+	}
+
+	moveSelectChar(change) {
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+		//Need to set selection position to cursor if there is not currently a selection
+		if (this.selection_x < 0 || this.selection_y < 0) {
+			this.selection_x = this.x;
+			this.selection_y = this.y;
+		}
+		var diff = this.selection_x + change;
+		if (diff < 0) {
+			if (this.selection_y <= 0) {
+				this.selection_x = 0;
+			} else {
+				this.selection_y--;
+				this.selection_x = this.lineLength_Select;
+			}
+		} else if (diff > this.lineLength_Select) {
+			if (this.selection_y >= this.line_container.length - 1) {
+				this.selection_x = this.lineLength_Select;
+			} else {
+				this.selection_y++;
+				this.selection_x = 0;
+			}
+		} else {
+			this.selection_x = diff;
+		}
+	}
+
+	moveLine(change) {
+		this.REAL_POSITION_NEEDS_UPDATE = true;
+
+		var diff = this.y + change;
+		if (diff <= 0) {
+			this.y = 0;
+		} else if (diff >= this.line_container.height - 1) {
+			this.y = this.line_container.height - 1;
+		} else {
+			this.y = diff;
+		}
+	}
+
+	moveSelectLine(change) {
+		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+		//Need to set selection position to cursor if there is not currently a selection
+		if (this.selection_x < 0 || this.selection_y < 0) {
+			this.selection_x = this.x;
+			this.selection_y = this.y;
+		}
+		var diff = this.selection_y + change;
+		if (diff <= 0) {
+			this.selection_y = 0;
+		} else if (diff >= this.line_container.height - 1) {
+			this.selection_y = this.line_container.height - 1;
+		} else {
+			this.selection_y = diff;
+		}
+	}
+
+	charAt() {
+		return this.charBefore(this.real_position_x + 1)
+	}
+
+	charBefore(x = this.real_position_x) {
+		var line = this.text_fw.token_container.getRealLine(this.real_position_y);
+
+		if (x < 0) {
+			line = line.prev_sib;
+			return line.text[line.text.length - 1]
+		}
+		while (true) {
+			if (x >= line.token_length) {
+				x -= line.token_length;
+				if (!line.next_sib) {
+					//return last 
+					return line.text[line.text.length - 1];
+				}
+			} else {
+				return line.text[x];
+			}
+			line = line.next_sib;
+		}
+	}
+}
+
+//var createSignedDistanceBuffer = require("../vector/research.vector").createSignedDistanceBuffer;
+
+var database = (function() {});
+
+var font_size = 24;
+var letter_spacing = 0;
+
+
+//Object to cache fonts in program;
+var existing_fonts = {};
+
+var b_size = 64;
+var sd_distance = 64;
+
+//No need to create multiple canvas elements
+var canvas = document.createElement("canvas");
+var canvas_size = 1024;
+canvas.width = canvas_size;
+canvas.height = canvas_size;
+var ctx = canvas.getContext("2d");
+
+
+canvas.style.position = "absolute";
+canvas.style.zIndex = 200000;
+
+var signed_canvas = document.createElement("canvas");
+var signed_canvas_size = 2048;
+signed_canvas.width = signed_canvas_size;
+signed_canvas.height = signed_canvas_size;
+var ctx_s = signed_canvas.getContext("2d");
+
+var worker_function = function(self) {
+	self.onmessage = function(e) {
+		var data = e.data;
+		var df = new Float32Array(data.buffer1);
+		var image = new Uint8Array(data.buffer2);
+		createSignedDistanceBuffer(image, e.data.image_size, e.data.image_size, df, e.data.sd_size, e.data.sd_size, e.data.distance);
+		self.postMessage({
+			buffer1: df.buffer,
+			buffer2: image.buffer,
+			index: e.data.index
+		}, [df.buffer, image.buffer]);
+	};
+
+	function createSignedDistanceBuffer(inRGBArray, inWidth, inHeight, outSDArray, outWidth, outHeight, kernal_in) {
+		var x_scale = inWidth / outWidth;
+		var y_scale = inHeight / outHeight;
+		var kernal = kernal_in || 50;
+		var lowest_distance_positive = Infinity;
+		var highest_distance_positive = -Infinity;
+		var lowest_distance_negative = Infinity;
+		var highest_distance_negative = -Infinity;
+		var min = Math.min;
+		var max = Math.max;
+
+		for (var y = 0; y < outHeight; y++) {
+			for (var x = 0; x < outWidth; x++) {
+				var index = y * outWidth + x;
+
+				var in_x = x * x_scale | 0;
+				var in_y = y * y_scale | 0;
+
+				var indexIn = ((in_y * inWidth + in_x) | 0) * 4;
+
+				var sign = inRGBArray[indexIn + 3] > 0 ? 1 : -1;
+
+				var min_distance = (kernal * 0.5) * (kernal * 0.5);
+				//Use kernal to scan a box section of inRGBArray and find closest distance
+				var boundY = max(in_y - kernal * .5, 0) | 0;
+				var boundH = min(boundY + kernal, inHeight) | 0;
+				var boundX = max(in_x - kernal * .5, 0) | 0;
+				var boundW = min(boundX + kernal, inWidth) | 0;
+
+				for (var v = boundY | 0; v < boundH; v++) {
+					for (var u = boundX | 0; u < boundW; u++) {
+
+						if (v === in_y && u === in_x) continue;
+
+						var index_ = (v * inWidth + u) * 4;
+
+						var alpha = inRGBArray[index_ + 3];
+
+
+
+						if (sign > 0 && alpha <= 0) {
+							var xi = (in_x - u);
+							var yi = (in_y - v);
+							var distance = (xi * xi + yi * yi);
+							min_distance = min(min_distance, distance);
+						}
+
+						if (sign < 0 && alpha > 0) {
+							var xi = (in_x - u);
+							var yi = (in_y - v);
+							var distance = (xi * xi + yi * yi);
+							min_distance = min(min_distance, distance);
+						}
+					}
+				}
+				//debugger
+
+				min_distance = Math.sqrt(min_distance) * sign;
+
+				outSDArray[index] = min_distance;
+
+				if (sign > 0) {
+					highest_distance_positive = max(highest_distance_positive, min_distance);
+					lowest_distance_positive = min(lowest_distance_positive, min_distance);
+				} else {
+					highest_distance_negative = max(highest_distance_negative, min_distance);
+					lowest_distance_negative = min(lowest_distance_negative, min_distance);
+				}
+			}
+		}
+		//return
+		//normalize in range 0 > 1;
+		//debugger
+
+		var scale_nagative = 1 / (highest_distance_negative - lowest_distance_negative);
+		var scale_positive = 1 / (highest_distance_positive - lowest_distance_positive);
+
+		var scale = 1 / (highest_distance_positive - lowest_distance_negative);
+
+		var offset_negative = 0 - lowest_distance_negative;
+		var offset_positive = 0 - lowest_distance_positive;
+
+		var kernal_inv_halved = (1 / kernal_in) * 0.5;
+
+		for (var i = 0, l = outWidth * outHeight; i < l; i++) {
+			//outSDArray[i] = ((outSDArray[i] + offset_negative) * scale);
+			//continue
+
+			if (outSDArray[i] <= 0) {
+				outSDArray[i] = ((outSDArray[i] + offset_negative) * scale_nagative) * 0.5;
+				//outSDArray[i] =(Math.max(outSDArray[i] + kernal_in, 0) * kernal_inv_halved);
+			} else {
+				outSDArray[i] = ((outSDArray[i] + offset_positive) * scale_positive) * 0.5 + 0.5;
+			}
+		}
+	}
+
+};
+
+var worker_blob = new Blob([`(${worker_function.toString()})(self)`]);
+var worker_url = window.URL.createObjectURL(worker_blob);
+
+//Font range UTF8 = 33 - 126 ; 93 Characters
+
+/*Database functions*/
+
+var db_handler = null;
+var db = null;
+
+var request = indexedDB.open("font_signed_distance_maps", 2);
+
+request.onsuccess = (e) => {
+	return
+	db = request.result;
+	db_handler = db.transaction(["distance_maps"], "readwrite");
+	console.log(db_handler);
+
+
+};
+
+request.onupgradeneeded = function(event) {
+	return
+	console.log("Sd");
+	var d = db.createObjectStore("distance_maps");
+	d.onsuccess = function(e) {
+		console.log("Sd");
+
+
+	};
+};
+
+// This dna handless the loading and conversion of HTML fonts into font atlases for consumption by text framework. 
+class Font {
+	constructor(font) {
+		var font_name = font;
+		if (existing_fonts[font_name]) return existing_fonts[font_name];
+
+		var num_of_workers = 15;
+		this.workers = new Array(num_of_workers);
+
+		this.IS_READY = false;
+		this.IS_MONOSPACE = false;
+
+		this.name = font_name;
+
+		this.atlas_start = 32;
+		this.atlas_end = 127;
+
+		this.signed_field = new Uint8Array(640 * 640);
+
+		this.props = new Array(this.atlas_end - this.atlas_start);
+		for (var i = 0, l = this.atlas_end - this.atlas_start; i < l; i++) {
+			this.props[i] = {};
+		}
+
+
+
+		existing_fonts[this.name] = this;
+
+		var cache = sessionStorage.getItem(this.name);
+		if (cache) {
+			cache = JSON.parse(cache);
+			this.signed_field = new Uint8Array(cache.field);
+			this.props = cache.props;
+			this.calc_index = Infinity;
+			//	this.drawField()
+			this.IS_READY = true;
+		} else {
+
+			this.calc_index = 0;
+			this.finished_index = 0;
+
+			for (var i = 0; i < num_of_workers; i++) {
+				/*var worker = new Worker(worker_url)
+				this.workers[i] = worker;
+				worker.onmessage = ((index) => {			
+					return (e) =>{
+					//place into texture array
+					var buffer = new Float32Array(e.data.buffer1)
+					var i = e.data.index;
+
+					for (var y = 0; y < b_size; y++) {
+						for (var x = 0; x < b_size; x++) {
+							var index1 = b_size * y + x
+							var index2 = 640 * y + x + ((i % 10) * b_size) + (Math.floor(i / 10) * 640 * 64);
+							this.signed_field[index2] = (buffer[index1] * 255);
+						}
+					}
+
+					this.finished_index++;
+
+					this.calcSection(index);
+					}
+
+				})(i)*/
+				this.finished_index++;
+				this.calcSection(i);
+			}
+
+
+		}
+		/*if (db && db_handler) {
+
+			var db_handler = db.transaction(["distance_maps"], "readwrite");
+			console.log(db_handler.objectStore("elephants").get(this.name));
+
+			//ths.IS_READY = true;
+			//this.onComplete();
+		}*/
+		console.table(this);
+		this.IS_READY = true;
+		this.onComplete();
+
+
+
+
+
+		//
+		//debugger
+	}
+
+	onComplete() {
+
+	}
+
+	drawField() {
+		canvas_size = 1024;
+		canvas.width = canvas_size;
+		canvas.height = canvas_size;
+		var image = ctx.getImageData(0, 0, canvas_size, canvas_size);
+		var d = image.data;
+
+		for (var i = 0; i < 640; i++) {
+			for (var j = 0; j < 640; j++) {
+				var index1 = 640 * i + j;
+				var index2 = canvas_size * i + j;
+
+				d[index2 * 4 + 0] = this.signed_field[index1];
+				d[index2 * 4 + 1] = this.signed_field[index1];
+				d[index2 * 4 + 2] = this.signed_field[index1];
+				d[index2 * 4 + 3] = 255;
+			}
+		}
+
+
+		ctx.putImageData(image, 0, 0);
+
+		this.calculateMonospace(this.name);
+		//document.body.appendChild(canvas)
+
+	}
+	startCalc() {
+		for (var i = 0; i < this.workers.length; i++) {
+			this.calcSection(i);
+		}
+	}
+
+	calcSection(worker_index) {
+		var buffer = new Float32Array(b_size * b_size);
+		var pos = canvas_size * 0.5;
+		var start = this.atlas_start;
+		var end = this.atlas_end;
+		var length = end - start;
+		var i = this.calc_index;
+		var fin_i = this.finished_index;
+		var font_size = canvas_size * 0.8;
+
+		if (fin_i >= length) {
+			this.drawField();
+
+			if (db) {
+				var db_handler = db.transaction(["distance_maps"], "readwrite");
+				db_handler.objectStore("distance_maps").put(this.signed_field, this.name);
+
+			}
+
+			//sessionStorage.setItem(this.name, JSON.stringify({field:Array.prototype.slice.call(this.signed_field),props:this.props}));
+
+			this.onComplete();
+			return
+		}
+
+		if (this.calc_index >= length) return;
+
+		canvas.width = canvas_size;
+		ctx.font = `${font_size}px  "${this.name}"`;
+		ctx.textBaseline = "middle";
+		ctx.textAlign = "center";
+		var char = String.fromCharCode(start + i);
+		ctx.fillStyle = "black";
+		var width = ctx.measureText(char).width; // * (12/300)
+
+		this.props[i] = {
+			char: char,
+			code: start + i,
+			width: width * (12 / font_size),
+			width2: width * (12 / font_size),
+			ratio: width / font_size
+		};
+
+		ctx.fillText(char, pos, pos);
+
+		var image = ctx.getImageData(0, 0, canvas_size, canvas_size);
+		this.calc_index++;
+
+		this.calcSection(i);
+		/*this.workers[worker_index].postMessage({
+			buffer1: buffer.buffer,
+			buffer2: image.data.buffer,
+			image_size: canvas_size,
+			sd_size: b_size,
+			distance: sd_distance,
+			index: i
+		}, [buffer.buffer, image.data.buffer])*/
+	}
+
+	calculateMonospace() {
+		return;
+		var DIV = document.createElement("pre");
+
+		DIV.style.fontFamily = `${this.name}`;
+		DIV.style.fontSize = 12 + "px";
+		DIV.style.letterSpacing = 0;
+		DIV.style.wordSpacing = 0;
+		DIV.style.padding = 0;
+		DIV.style.border = 0;
+		DIV.style.margin = 0;
+		DIV.style.position = "fixed";
+		DIV.innerHTML = "A";
+
+		var IS_MONOSPACE = true;
+		var last_width = 0;
+		var width = 0;
+
+		document.body.appendChild(DIV);
+
+		last_width = DIV.getBoundingClientRect().width;
+
+		for (var i = this.atlas_start, d = 0; i < this.atlas_end; i++, d++) {
+			var char = String.fromCharCode(i);
+			DIV.innerHTML = char;
+			console.log(DIV.getClientRects());
+			width = DIV.getBoundingClientRect().width;
+			this.props[i - this.atlas_start].width = width;
+			if (last_width !== width) {
+				IS_MONOSPACE = false;
+			}
+		}
+
+		document.body.removeChild(DIV);
+
+		this.IS_MONOSPACE = IS_MONOSPACE;
+	}
+}
+
+//Just for fun
+function rB(){ //randomByte
+    return (Math.random() * 245 + 10)|0;
+}
+function randomColor() {
+    var r = ((Math.random() * 240) + 15)|0;
+	return `rgb(${rB()},${r},${r})`;
+}
+
+//Compares code with argument list and returns true if match is found, otherwise false is returned 
+function compareCode(code) {
+	var list = arguments;
+	for (var i = 1, l = list.length; i < l; i++) {
+		if (list[i] === code) return true;
+	}
+	return false;
+}
+
+//Returns true if code lies between the other two arguments 
+function inRange(code) {
+	return (code > arguments[1] && code < arguments[2]);
+}
+//The resulting array is used while parsing and tokenizing token strings
+var string_parse_and_format_functions = (function() {
+	var array = [{
+			type: "number",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code, text) {
+				if (inRange(code, 47, 58)) {
+					code = text.charCodeAt(1);
+					if (compareCode(code, 66, 98, 88, 120, 79, 111)) {
+						return 2;
+					}
+					return 1;
+				} else if (code == 46) {
+					code = text.charCodeAt(1);
+					if (inRange(code, 47, 58)) {
+						return 2;
+					}
+				}
+				return 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				return inRange(code, 47, 58) || code === 46
+			},
+			format(token) {
+				token.color = "rgb(20,40,180)";
+			}
+
+        }, {
+			type: "identifier",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code) {
+				return (inRange(code, 64, 91) || inRange(code, 96, 123)) ? 1 : 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				return inRange(code, 47, 58) || inRange(code, 64, 91) || inRange(code, 96, 123) || compareCode(code, 35, 36, 38, 45, 95);
+			},
+			format(token) {
+
+				//token.color = randomColor();
+			}
+
+        }, {
+			type: "white_space",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code) {
+				return (code === 32 || code === 9) ? 1 : 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				return code === 32 || code === 9;
+			},
+			format(token) {
+				//console.log(token)
+			}
+
+        }, {
+			type: "open_bracket",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code) {
+				return compareCode(code, 123, 40, 91) ? 1 : 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				//Single character, end comes immediatly
+				return false;
+			},
+			format(token) {
+				token.color = "rgb(100,100,100)";
+			}
+
+        }, {
+			type: "close_bracket",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code) {
+				return compareCode(code, 125, 41, 93) ? 1 : 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				//Single character, end comes immediatly
+				return false;
+			},
+			format(token) {
+				token.color = "rgb(100,100,100)";
+			}
+
+        },
+
+		{
+			type: "operator",
+			//Initial check function. Return index offset to start for scan. If 0 is returned then the parser will move on to the next check function
+			check(code) {
+				return compareCode(code, 42, 43, 60, 61, 62, 92, 38, 37, 33, 94, 124, 58) ? 1 : 0;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				//Single character, end comes immediatly
+				return false;
+			},
+			format(token) {
+				token.color = "rgb(205,120,0)";
+			}
+
+        }, {
+			type: "symbol", //Everything else should be generic symbols
+			check(code) {
+				return 1;
+			},
+			// Scan for end of token. Return false if character not part of token
+			scanToEnd(code) {
+				//Generic will capture ANY remainder character sets.
+				return false;
+			},
+			format(token) {
+				token.color = "red";
+			}
+        }
+    ];
+
+	//This allows for creation custom parsers and formatters based upon this object. 
+	array.clone = function() {
+		return string_parse_and_format_functions();
+	};
+
+	return array;
+});
+
+class TextFramework {
+	constructor(parent_element) {
+		this.token_container = new Token_Container();
+
+		this.font_size = 32;
+		this.letter_spacing = 0;
+		this.line_height = 30;
+
+		this.DOM = document.createElement("div");
+
+		this.parent_element = parent_element || document.body;
+
+		parent_element.appendChild(this.DOM);
+
+		this.font = new Font("Time New Roman");
+
+		this.length = 0;
+
+		this.char_width = 24;
+
+		this.max_length = 0;
+		this.scroll_top = 0;
+		this.max_line_width = 0;
+
+		this.del_code = 8; // should be 127 or 8
+		this.del_char = String.fromCharCode(this.del_code);
+		this.new_line_code = 10; // should be 10
+		this.new_line = String.fromCharCode(this.new_line_code);
+		this.linked_line_code = 13; // should be 13
+		this.linked_line = String.fromCharCode(this.linked_line_code);
+		this.curs_code = 33; // should be 31
+		this.curs_char = String.fromCharCode(this.curs_code);
+
+		//Fixed character width for scaling
+		this.width = 0;
+		this.height = 0;
+
+		this.last_keycode = 0;
+
+		this.SPF = string_parse_and_format_functions;
+
+		this.token_pool = new TEXT_TOKEN(this);
+		this.cursors = [new TEXT_CURSOR(this)];
+
+		this.aquireCursor();
+	}
+
+	unload(){
+		this.clearCursors();
+		//this.parent_element.removeChild(this.DOM);
+		this.token_container = null;
+		this.DOM = null;
+		this.parent_element = null;
+		this.font = null;
+		this.SPF = null;
+		this.token_pool = null;
+		this.cursors = null;
+	}
+
+	get HAS_SELECTION() {
+		for (var i = 0; i < this.cursors.length; i++) {
+			if (this.cursors[i].HAS_SELECTION) return true;
+		}
+		return false;
+	}
+
+	get boxHeight() {
+		return this.token_container.getHeight();
+	}
+
+	clearCursors() {
+		for (var i = 0; i < this.cursors.length; i++) {
+			this.cursors[i].IN_USE = false;
+		}
+	}
+
+	updateCursors(camera, scale, x, y) {
+		for (var i = 0; i < this.cursors.length; i++) {
+			this.cursors[i].update(camera, scale, x, y + 1);
+		}
+	}
+
+	moveCursorsX(change, SELECT) {
+		if (SELECT) {
+			for (var i = 0; i < this.cursors.length; i++) {
+				if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
+				if (this.cursors[i].IN_USE) console.log({
+					text: this.cursors[i].getTextFromSelection()
+				});
+			}
+		} else {
+			for (var i = 0; i < this.cursors.length; i++) {
+				if (this.cursors[i].IN_USE) this.cursors[i].moveChar(change);
+			}
+		}
+
+		this.checkForCursorOverlap();
+	}
+
+	moveCursorsY(change, SELECT) {
+		if (SELECT) {
+			for (var i = 0; i < this.cursors.length; i++) {
+				if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
+			}
+		} else {
+
+			for (var i = 0; i < this.cursors.length; i++) {
+				if (this.cursors[i].IN_USE) this.cursors[i].moveLine(change);
+			}
+		}
+		this.checkForCursorOverlap();
+	}
+
+	checkForCursorOverlap() {
+		var cur1 = null,
+			cur2 = null;
+		for (var i = 0; i < this.cursors.length; i++) {
+			cur1 = this.cursors[i];
+			if (!cur1.IN_USE) continue
+			var id = (cur1.selection_y << 10) | cur1.selection_x;
+
+			for (var j = i + 1; j < this.cursors.length; j++) {
+				cur2 = this.cursors[j];
+				if (!cur2.IN_USE) continue
+
+				var id2 = (cur2.selection_y << 10) | cur2.selection_x;
+				if (cur1.id == cur2.id) {
+					debugger
+					this.releaseCursor(cur2);
+				} else if (cur2.id <= id && id > -1) {
+					debugger
+					cur1.selection_x = cur2.selection_x;
+					cur1.selection_y = cur2.selection_y;
+					this.releaseCursor(cur2);
+				} else if (id2 > -1 && cur1.id >= id2) {
+					debugger
+					cur1.x = cur2.x;
+					cur1.y = cur2.y;
+					this.releaseCursor(cur2);
+				}
+			}
+		}
+		this.sortCursors();
+	}
+
+	sortCursors(){
+		for (var i = 0; i < this.cursors.length-1; i++) {
+			var 
+			cur1 = this.cursors[i],
+			cur2 = this.cursors[i+1];
+			//move data from cur2 to cur1
+			if(!cur1.IU && cur2.IU){
+				this.cursors[i] = cur2;
+				this.cursors[i+1] = cur1;
+			}
+		}
+	}
+
+	updateLineOffsets(x, y, min_x, min_y, max_x, max_y, scale, camera) {
+		var length = this.token_container.length;
+		if (length < 1) return;
+		var sh = this.line_height / scale;
+
+		if (this.scroll_top > 0) {
+			min_y += this.scroll_top / scale;
+			max_y += this.scroll_top / scale;
+			this.diff_y_min = Math.max(Math.floor(((min_y - (y / scale)) / sh)), 0);
+			this.diff_y_max = Math.min(Math.ceil((max_y - (y / scale)) / sh), length);
+		} else {
+			this.diff_y_min = Math.max(((min_y - (y / 1)) / this.line_height) | 0, 0);
+			this.diff_y_max = Math.min(((max_y - (y / 1)) / this.line_height) | 0, length);
+
+			this.pixel_offset = min_y - (y / 1);
+			this.pixel_top = Math.max(min_y - (y / 1));
+			this.pixel_bottom = Math.max(max_y - (y / 1));
+		}
+		this.updateCursors(camera, scale, camera.px + x, camera.py + y);
+		this.checkForCursorOverlap();
+	}
+
+	renderToDOM(scale = 1) {
+		this.DOM.innerHTML = "";
+		this.DOM.style.fontSize = "200%";
+		var text = "<div dna='small_scale_pre'>";
+		//get size of space and line
+		this.max_length = 0;
+
+
+		var mh = this.line_height * scale;
+		if (scale < 0.4) {
+			text = "<div dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
+			for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
+				var line = this.token_container.getIndexedLine(i);
+				if (line) {
+					var length = line.length;
+					if (length > this.max_length) this.max_length = length;
+					text += line.renderDOM(true) + "</br>";
+
+				}
+			}
+		} else {
+			var y = (this.pixel_top > -1) ? this.pixel_top : 0;
+			var height = this.token_container.pixel_height;
+			if (this.token_container.length > 0) {
+				var line = this.token_container.getLineAtPixelOffset(y | 0);
+				var t = line.pixel_offset;
+				var diff = (y > 0) ? t - y : 0;
+				var i = 0;
+				while (line) {
+					i++;
+					text += "<span dna='small_scale_pre' style='top: " + ((y + diff) * scale) + "px'>" + line.renderDOM(false) + "</span>";
+					y += line.pixel_height;
+					t += line.pixel_height;
+					var length = line.length;
+					if (length > this.max_length) this.max_length = length;
+					if (y >= this.pixel_bottom || t >= height) break;
+					var line = line.next_line;
+
+				}
+			}
+
+		}
+
+		text += "</div>";
+
+		this.DOM.innerHTML = text;
+	}
+
+	renderToBuffer(buffer = new Float32Array(52)) {
+		this.max_length = 0;
+
+		var offset = 0;
+		
+		for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
+			var line = this.token_container.getIndexedLine(i);
+			if (line) {
+				var length = line.length;
+				if (length > this.max_length) this.max_length = length;
+				offset = line.renderToBuffer(buffer, offset);
+			}
+		}
+
+		return offset;
+	}
+
+
+	updateText(index = 0) {
+		var loop_check = 0;
+		
+		this.releaseAllCursors();
+		
+		var token = this.token_container.getIndexedLine(index);
+		while (token = token.parse()) {
+			if (loop_check++ > 1000000) {
+				break;
+			}
+		}
+		this.cursors[0].IN_USE = true;
+	}
+
+	toString() {
+		var i = 0,
+			text = "";
+		var token = this.token_container.getIndexedLine(0);
+		while (token) {
+			text += this.new_line + token.cache;
+			token = token.next_line;
+		}
+		return text;
+	}
+
+	setIndexes() {
+		return;
+	}
+
+	//************************
+	//POOLS
+	releaseAllCursors() {
+		for (var i = 0; i < this.cursors.length; i++) {
+			var temp = this.cursors[i];
+			temp.IN_USE = false;
+		}
+	}
+
+
+	releaseCursor(cursor) {
+		if (cursor.IN_USE) {
+			cursor.IN_USE = false;
+		}
+	}
+
+	aquireCursor() {
+		var temp = null;
+		if (this.cursors.length > 0) {
+			for (var i = 0; i < this.cursors.length; i++) {
+				temp = this.cursors[i];
+				if (!temp.IU)
+					break
+				temp = null;
+			}
+		}
+		if (!temp) {
+			temp = new TEXT_CURSOR(this);
+			temp.index = this.cursors.push(temp) - 1;
+		}
+		temp.IN_USE = true;
+		return temp;
+	}
+
+
+	//Releases given token to pool and returns that token's previous sibling.
+	releaseToken(token) {
+		var prev_line = token.prev_line;
+		var next_line = token.next_line;
+
+		var prev_sib = token.prev_sib;
+		var next_sib = token.next_sib;
+
+		if (prev_sib) {
+			prev_sib.next_sib = next_sib;
+		}
+		if (next_sib) {
+			next_sib.prev_sib = prev_sib;
+		}
+		if (prev_line) {
+			if (next_sib && next_sib.IS_NEW_LINE) {
+				prev_line.next_line = next_sib;
+			} else {
+				prev_line.next_line = next_line;
+			}
+		}
+		if (next_line) {
+			if (prev_sib && prev_sib.IS_NEW_LINE) {
+				next_line.prev_line = prev_sib;
+			} else {
+				next_line.prev_line = prev_line;
+			}
+		}
+
+		if (token.IS_NEW_LINE) {
+			this.token_container.remove(token);
+			this.setIndexes();
+		}
+
+		var t = token.prev_sib;
+		token.reset();
+		token.next_sib = this.token_pool;
+		token.prev_sib = null;
+		token.text = "";
+		this.token_pool = token;
+		return t;
+	}
+
+	//Either returns an existing token from pool or creates a new one and returns that.
+	aquireToken(prev_token) {
+		var t = this.token_pool;
+
+		if (t) {
+			if (t.next_sib) {
+				this.token_pool = t.next_sib;
+				this.token_pool.prev_sib = null;
+			} else {
+				this.token_pool = new TEXT_TOKEN(this, null);
+			}
+		} else {
+			t = new TEXT_TOKEN(this, null);
+		}
+
+		t.reset();
+
+		if (prev_token) {
+			t.prev_line = prev_token.prev_line;
+			t.next_line = prev_token.next_line;
+
+			if (prev_token.IS_NEW_LINE) {
+				t.prev_line = prev_token;
+			}
+
+			t.next_sib = prev_token.next_sib;
+			t.prev_sib = prev_token;
+			prev_token.next_sib = t;
+			if (t.next_sib) {
+				t.next_sib.prev_sib = t;
+			}
+		}
+		return t;
+	}
+
+	insertTextAtCursor(char, deletekey) {
+		this.insertCharAtCursor(char, deletekey);
+	}
+
+	insertCharAtCursor(char, deletekey, index) {
+		var l = this.cursors.length;
+		var j = 0;
+
+		if (typeof index === "number") {
+			l = index + 1;
+			j = index;
+		}
+
+		for (; j < l; j++) {
+			if (this.cursors[j].IN_USE) {
+				var cursor = this.cursors[j];
+				var select = cursor.getTextFromSelection().length;
+				cursor.arrangeSelection();
+				cursor.setToSelectionTail();
+				var line = cursor.real_position_y;
+				var i = cursor.real_position_x;
+				var c = char;
+				if (select > 0) {
+					c = this.del_char.repeat(select) + char;
+				}
+				console.log(c);
+				this.token_container.getRealLine(line).insertText(c, i);
+				cursor.toString();
+				cursor.resetSelection();
+			}
+		}
+	}
+
+	//Inserts token into list of lines after prev_line. Returns new line token
+	insertLine(prev_line, new_line) {
+		if (!prev_line) {
+			new_line.prev_line = new_line;
+			new_line.next_line = null;
+			new_line.index = 0;
+			this.token_container.insert(new_line, 0);
+		} else {
+			new_line.index = prev_line.index + 1;
+			this.token_container.insert(new_line, prev_line.index + 1);
+			new_line.next_line = prev_line.next_line;
+			if (new_line.next_line) {
+				new_line.next_line.prev_line = new_line;
+			}
+			new_line.prev_line = prev_line;
+			prev_line.next_line = new_line;
+		}
+		this.length++;
+		this.setIndexes();
+		new_line.IS_NEW_LINE = true;
+		return new_line
+	}
+
+	releaseLine(line) {
+		line.first_token.text = "";
+		var line1 = line.prev_sib;
+		var line2 = line.next_sib;
+
+		if (line1) {
+			line1.next_sib = line2;
+		}
+		if (line2) {
+			line2.prev_sib = line1;
+		}
+
+		line.next_sib = this.line_pool;
+		line.prev_sib = null;
+		this.line_pool = line;
+
+		this.token_container.remove(line);
+
+		this.length--;
+		//this.setIndexes();
+		line.PROTECT__IN_USE = false;
+		return line;
+	}
+
+
+	insertText(text, li = 0, cursor_ind) {
+		if ((this.token_container.height | 0) < 1) {
+			if (text.charCodeAt(0) !== this.new_line_code) {
+				text = this.new_line + text;
+			}
+			this.insertLine(null, this.aquireToken()).insertText(text, 1);
+			this.updateText(0);
+		} else {
+			this.token_container.getIndexedLine(li).insertText(text, -1, cursor_ind);
+		}
+	}
+
+	setFont(font) {
+		this.font = new Font(font);
+
+		this.DOM.style.fontFamily = font;
+
+		return new Promise((res, rej) => { 
+			this.font.onComplete = () => {
+				res();
+			};
+
+			if (this.font.IS_READY)
+				res();
+			else
+				this.font.startCalc();
+		});
+	}
+}
+
 /**
  * @brief Stores data for the current project.
  * @details The project object is the primary store of user data and preferences. 
@@ -4223,6 +7087,9 @@ class Project {
             custom:{
                 actions : system.actions,
                 ui : system.ui,
+                classes : {
+                    textedit : TextFramework
+                },
                 system
             }
         });

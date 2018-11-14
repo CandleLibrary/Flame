@@ -29,6 +29,8 @@ import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
 import { PackageNode } from "./wick_compiler_nodes/package.js";
 import { Script } from "./wick_compiler_nodes/script.js";
 
+
+
 //Poject system
 import { Project } from "./project/project";
 

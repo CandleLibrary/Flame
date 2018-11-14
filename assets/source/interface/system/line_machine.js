@@ -184,7 +184,7 @@ export class LineMachine {
 
     render(ctx, transform, boxc) {
 
-        if (!boxc) return;
+        if (!boxc || this.boxes.length == 0) return;
 
         ctx.save();
         transform.setCTX(ctx);

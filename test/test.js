@@ -15,6 +15,7 @@ describe("Flame Application", function() {
         this.app = new Application({
             path: electronPath,
             args: [path.join(__dirname, "..")],
+            env : { FLAME_DEV:true, FLAME_TEST:true},
             webdriverOptions:{
                 deprecationWarnings: false
             }

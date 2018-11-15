@@ -187,14 +187,14 @@ export class TextFramework {
 	renderToDOM(scale = 1) {
 		this.DOM.innerHTML = "";
 		this.DOM.style.fontSize = "200%";
-		var text = "<div dna='small_scale_pre'>";
+		var text = "<pre dna='small_scale_pre'>";
 		//get size of space and line
 		this.max_length = 0;
 
 
 		var mh = this.line_height * scale;
 		if (scale < 0.4) {
-			text = "<div dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
+			text = "<pre dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
 			for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
 				var line = this.token_container.getIndexedLine(i);
 				if (line) {
@@ -214,6 +214,7 @@ export class TextFramework {
 				var i = 0;
 				while (line) {
 					i++;
+					console.log(line.renderDOM(false))
 					text += "<span dna='small_scale_pre' style='top: " + ((y + diff) * scale) + "px'>" + line.renderDOM(false) + "</span>";
 					y += line.pixel_height;
 					t += line.pixel_height;
@@ -227,7 +228,7 @@ export class TextFramework {
 
 		}
 
-		text += "</div>";
+		text += "</pre>";
 
 		this.DOM.innerHTML = text;
 	}

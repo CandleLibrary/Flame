@@ -2304,11 +2304,9 @@ class SVGManager {
 
     mount(ui, target_element, component, x, y) {
 
-
-        while (target_element && target_element.tagName.toUpperCase() !== "SVG") {
+        while (target_element && target_element.tagName.toUpperCase() !== "SVG") 
             target_element = target_element.parentElement;
-        }
-
+        
         if (!target_element) return;
 
         this.wick_node = target_element.wick_node;
@@ -6748,14 +6746,14 @@ class TextFramework {
 	renderToDOM(scale = 1) {
 		this.DOM.innerHTML = "";
 		this.DOM.style.fontSize = "200%";
-		var text = "<div dna='small_scale_pre'>";
+		var text = "<pre dna='small_scale_pre'>";
 		//get size of space and line
 		this.max_length = 0;
 
 
 		var mh = this.line_height * scale;
 		if (scale < 0.4) {
-			text = "<div dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
+			text = "<pre dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
 			for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
 				var line = this.token_container.getIndexedLine(i);
 				if (line) {
@@ -6775,6 +6773,7 @@ class TextFramework {
 				var i = 0;
 				while (line) {
 					i++;
+					console.log(line.renderDOM(false));
 					text += "<span dna='small_scale_pre' style='top: " + ((y + diff) * scale) + "px'>" + line.renderDOM(false) + "</span>";
 					y += line.pixel_height;
 					t += line.pixel_height;
@@ -6788,7 +6787,7 @@ class TextFramework {
 
 		}
 
-		text += "</div>";
+		text += "</pre>";
 
 		this.DOM.innerHTML = text;
 	}
@@ -7162,8 +7161,9 @@ class System {
 
 const flame = {
     init: (wick) => {
-        //Startup the Main UI system
+        //Get testing and development flags. 
         const DEV = !!require('electron').remote.process.env.FLAME_DEV;
+        const TEST = !!require('electron').remote.process.env.FLAME_TEST;
 
         let system = new System();
 
@@ -7188,6 +7188,11 @@ const flame = {
             actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
             window.flame = flame;
         }
+
+        if(TEST){
+            const test = require("../../test/client_test.js")(system);
+        }
+        
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
           //Load Poject.

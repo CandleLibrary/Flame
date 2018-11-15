@@ -107,11 +107,9 @@ export class SVGManager {
 
     mount(ui, target_element, component, x, y) {
 
-
-        while (target_element && target_element.tagName.toUpperCase() !== "SVG") {
+        while (target_element && target_element.tagName.toUpperCase() !== "SVG") 
             target_element = target_element.parentElement;
-        }
-
+        
         if (!target_element) return;
 
         this.wick_node = target_element.wick_node;

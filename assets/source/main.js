@@ -57,8 +57,9 @@ class System {
 
 const flame = {
     init: (wick) => {
-        //Startup the Main UI system
+        //Get testing and development flags. 
         const DEV = !!require('electron').remote.process.env.FLAME_DEV;
+        const TEST = !!require('electron').remote.process.env.FLAME_TEST;
 
         let system = new System();
 
@@ -83,6 +84,11 @@ const flame = {
             actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
             window.flame = flame;
         }
+
+        if(TEST){
+            const test = require("../../test/client_test.js")(system);
+        }
+        
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
           //Load Poject.

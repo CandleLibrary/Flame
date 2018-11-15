@@ -248,76 +248,28 @@
 	"buffers":
 	[
 		{
-			"file": "assets/source/interface/system/svg_manager.js",
+			"file": "assets/source/main.js",
 			"settings":
 			{
-				"buffer_size": 1389,
+				"buffer_size": 3079,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"contents": "Conference Closet: Switch + Wap\n\tHP \n\n\tAPC ES 350 - UPS backup for WAP and Switch\n\t\tReplacement Battery: RBC35\n\nServer Closet \n\tContains Firewall + Voip + Server + Fiber to Network\n\n\tSonicwal TZ400\n\t\tDevices connected to it: \n\t\t\tX0 - HP switch\n\t\t\tX1 - Ciena 3916\n\t\t\tX2 - Edgewater 4550\n\n\tEdgewater 4550 - VoIP server. \n\t\tNote: Connected to inteface X2 on firewall\n\n\tCiena 3916 Service Delivery Switch - Comcast Demarc Device\n\t\tNote: Contains redundant power supply. Both cables plugged into ES350 UPS\n\t\t\t  Connected to interface X1 on firewall\n\t\n\tPoweredge T110 2 - TWCSERVER host  \n\t\tNote: Monitor and Server connected to SmartUPS 1000\n\nPower:\n\tAPC ES 550 - UPS Backup for Firewall, Comcast Switch, VOIP \n\n\tAPC SmartUPS - UPS Backup\n\n\n\n\nFirewall Ports:\nX0 - switch\nX1 - siena\nX2 - voip\n\nSwitch Ports\nP2 Wap\nD10 P19 - Firewall\nD11 P20 - Server\n\nSewell USB for Large Conference touch screen and webcam\n",
+			"file": "assets/source/component/text_edit.js",
 			"settings":
 			{
-				"buffer_size": 901,
-				"line_ending": "Windows",
-				"name": "Conference Closet: Switch + Wap"
+				"buffer_size": 0,
+				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "assets/source/interface/canvas_manager.js",
+			"file": "assets/source/text/text_framework.js",
 			"settings":
 			{
-				"buffer_size": 10775,
+				"buffer_size": 11870,
 				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "node_modules/wick/source/source/compiler/nodes/svg.js",
-			"settings":
-			{
-				"buffer_size": 330,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "assets/source/wick_compiler_nodes/style.js",
-			"settings":
-			{
-				"buffer_size": 1532,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "assets/source/interface/ui_manager.js",
-			"settings":
-			{
-				"buffer_size": 10698,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"contents": "<div class=\"n4377436\">\n    <div>\n        <div>\n            <div>test b</div>\n            <div class=\"n2751884\" style=\"font-family:'comic sans ms'; color:white; font-weight:100\">\n                Thez bes button\n            </div>\n            <div>test a</div>\n        </div>\n    </div>\n    <svg version=\"1.1\" width=\"40\" height=\"40\">\n        <rect width=\"40\" height=\"40\" fill=\"#cc0000\"></rect> \n    </svg>\n    <style>\n        button, div {\n            border: 1px solid black;\n            background-color:rgba(0,128,0,1);\n            height:50px;\n        }\n        .n2751884 {\n            display:block;\n        }\n    </style>\n    <style url=\"./css/test.css\"></style>\n    <div class=\"n8088360\">\n        text ((test1))\n        <input type=\"text\" value=\"((test1))\" class=\"n702606 n7013584 n1271045 n594049 n6581743\">\n    </div>\n</div>\n",
-			"file": "assets/components/test(2).html",
-			"file_size": 860,
-			"file_write_time": 131860862449427574,
-			"settings":
-			{
-				"buffer_size": 832,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"contents": "import wick from \"wick\";\nimport fs from \"fs\";\n\nconst Lexer = wick.core.lexer;\n\nexport class WickDocument {\n    constructor(file_name, path, type, system) {\n        this.name = file_name;\n        this.type = type;\n        this.path = path;\n        this.data = null;\n        this.LOADED = false;\n        this.UPDATED = true;\n        this.SAVING = false;\n        this.PENDING_SAVE = false;\n        this.observers = [];\n        this.ObjectsPendingLoad = [];\n        this.css_docs = [];\n        this.system = system;\n        this.old_data = \"\";\n        this.element = document.createElement(\"div\");\n    }\n\n    load() {\n        fs.open(this.path + \"/\" + this.name, \"r\", (err, fd) => {\n            if (err) throw err;\n            fs.readFile(fd, \"utf8\", (err, data) => {\n                fs.close(fd, (err) => {\n                    if (err) throw err\n                });\n                if (err) {\n                    throw err;\n                }\n                this.data = data;\n                this.LOADED = true;\n                (new wick.core.source.package(this.data, this.system.project.presets, true, this.path + \"/\" + this.name)).then((pkg) => {\n                    this.data = pkg;\n                    pkg._skeletons_[0].tree.addObserver(this);\n                    for (let i = 0; i < this.ObjectsPendingLoad.length; i++) this.ObjectsPendingLoad[i].documentReady(pkg);\n                    this.ObjectsPendingLoad = null;\n                });\n            });\n        });\n    }\n\n    updatedWickASTTree(tree) {Servers (OS) – for all servers\n    \n    REDCLOUD\n    \n        What can be done to lessen the alerts?: \n            No alerts\n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    APP01\n    \n        What can be done to lessen the alerts?: \n            Uptime - new Reboot task created\n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    DC01\n    \n        What can be done to lessen the alerts?: \n            No alerts\n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    DC02\n    \n        What can be done to lessen the alerts?: \n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    MS1\n    \n        What can be done to lessen the alerts?: \n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    VEEAM\n    \n        What can be done to lessen the alerts?: \n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\n    H16A\n    \n        What can be done to lessen the alerts?: \n        \n        Windows Updates:\n            Are they scheduled and automatic (y/n): yes\n            Were updates installed successfully (y/n): yes\n        \n        Is AV up to date (y/n): yes\n\nHardware / Hosts\n    ESXi-01:\n        OMSA\n            Review errors or alerts for the hardware and resolve as needed.\n                No errors or warnings\n\n    ESXi-02:\n        OMSA\n            Review errors or alerts for the hardware and resolve as needed.\n                No errors or warnings\n\n    DC2:\n        OMSA\n            Review errors or alerts for the hardware and resolve as needed.\n                No errors or warnings\n\n\n\n        this.element.innerText = tree;\n        this.save();\n    }\n\n    save() {\n        this.PENDING_SAVE = true;\n        return;\n        if (this.SAVING) return;\n        this.SAVING = true;\n        this.PENDING_SAVE = false;\n        fs.open(this.path + \"/\" + this.name, \"w\", (err, fd) => {\n            if (err) throw err;\n            fs.write(fd, (this.data._skeletons_[0].tree + \"\"), 0, \"utf8\", (err, written, data) => {\n                fs.close(fd, (err) => {\n                    if (err) throw err\n                });\n                if (err) {\n                    throw err;\n                }\n                if (this.PENDING_SAVE) this.save();\n                else this.PENDING_SAVE = false;\n                this.SAVING = false;\n            });\n        });\n    }\n\n    bind(object) {\n        if (this.LOADED) object.documentReady(this.data);\n        else this.ObjectsPendingLoad.push(object);\n    }\n\n    seal(differ){\n        if(this.PENDING_SAVE){\n            this.PENDING_SAVE = false;\n            \n            let new_data = this + \"\";\n\n            let diff = differ.createDiff(this.old_data, new_data);\n\n            this.old_data = new_data;\n\n            return (diff) ? {name:this.name, diff} : null;\n        }\n\n        return null;\n    }\n\n    toString(){\n        return this.data._skeletons_[0].tree + \"\";\n    }\n}",
-			"file": "source/document/wick_document.js",
-			"file_size": 2929,
-			"file_write_time": 131859319907751107,
-			"settings":
-			{
-				"buffer_size": 5206,
 				"line_ending": "Windows"
 			}
 		},
@@ -325,7 +277,36 @@
 			"file": "main.js",
 			"settings":
 			{
-				"buffer_size": 570,
+				"buffer_size": 776,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "node_modules/wick/package.json",
+			"settings":
+			{
+				"buffer_size": 2404,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "{\n  \"name\": \"flame\",\n  \"version\": \"0.0.1\",\n  \"description\": \"A web based editing app for wick\",\n  \"main\": \"main.js\",\n  \"scripts\": {\n    \"start\": \"electron .\",\n    \"build\": \"rollup --config ./assets/build/config/main_dev.config.js\",\n    \"build.watch\": \"rollup --watch --config ./assets/build/config/node.config.js\",\n    \"test\": \"mocha\"\n  },\n  \"private\": true,\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"https://www.gitlab.com/anthonycweathersby/flame\"\n  },\n  \"keywords\": [\n    \"wick\",\n    \"PWA\"\n  ],\n  \"author\": \"Anthony C Weathersby\",\n  \"license\": \"ISC\",\n  \"dependencies\": {\n    \"diff\": \"^3.5.0\",\n    \"electron\": \"^3.0.8\",\n    \"paper\": \"^0.11.8\",\n    \"wick\": \"file:../wick\"\n  },\n  \"devDependencies\": {\n    \"chai\": \"^4.2.0\",\n    \"devtron\": \"^1.4.0\",\n    \"electron-packager\": \"^12.2.0\",\n    \"mocha\": \"^5.2.0\",\n    \"rollup\": \"^0.66.6\",\n    \"rollup-plugin-node-resolve\": \"^3.4.0\",\n    \"spectron\": \"^5.0.0\"\n  },\n  \"jshintConfig\": {\n    \"esversion\": 6,\n    \"unused\": true\n  }\n}\n",
+			"file": "package.json",
+			"file_size": 1020,
+			"file_write_time": 131866940879714357,
+			"settings":
+			{
+				"buffer_size": 978,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "test/client_test.js",
+			"settings":
+			{
+				"buffer_size": 58,
+				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
@@ -351,7 +332,7 @@
 			"file": "node_modules/wick/source/root/config/library.js",
 			"settings":
 			{
-				"buffer_size": 4263,
+				"buffer_size": 4337,
 				"line_ending": "Windows"
 			}
 		},
@@ -359,7 +340,7 @@
 			"file": "node_modules/wick/source/common/html/root.js",
 			"settings":
 			{
-				"buffer_size": 25160,
+				"buffer_size": 25257,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -411,7 +392,19 @@
 	"file_history":
 	[
 		"/D/flame/.git/COMMIT_EDITMSG",
+		"/D/flame/main.js",
 		"/D/flame/package.json",
+		"/D/flame/source/document/wick_document.js",
+		"/D/flame/assets/components/test(2).html",
+		"/D/flame/assets/source/interface/ui_manager.js",
+		"/D/flame/assets/source/wick_compiler_nodes/style.js",
+		"/D/flame/node_modules/wick/source/source/compiler/nodes/svg.js",
+		"/D/flame/assets/source/interface/canvas_manager.js",
+		"/D/flame/node_modules/wick/test/test.js",
+		"/D/flame/assets/source/interface/system/svg_manager.js",
+		"/D/flame/test/test.js",
+		"/D/flame/assets/source/main.js",
+		"/D/flame/node_modules/wick/package.json",
 		"/C/Users/Anthony/Downloads/live.cshrc",
 		"/C/Users/Anthony/Desktop/.cshrc",
 		"/D/flame/source/interface/actions/color.js",
@@ -444,7 +437,6 @@
 		"/D/flame/source/project/scheme.js",
 		"/D/flame/source/project/project.js",
 		"/D/flame/source/main.js",
-		"/D/flame/source/document/wick_document.js",
 		"/D/flame/node_modules/wick/source/common/css/nodes.js",
 		"/D/flame/node_modules/wick/source/common/css/properties/property_and_type_definitions.js",
 		"/D/flame/source/css/css_component.js",
@@ -504,7 +496,6 @@
 		"/D/flame/node_modules/wick/source/source/io/expression_io.js",
 		"/D/flame/node_modules/wick/test/data/source_template_transition.html",
 		"/D/flame/node_modules/wick/source/source/compiler/nodes/style.js",
-		"/D/flame/main.js",
 		"/D/flame/node_modules/wick/source/common/css/types/url.js",
 		"/D/flame/node_modules/wick/source/source/compiler/nodes/void.js",
 		"/D/wick/.gitignore",
@@ -527,21 +518,11 @@
 		"/D/wick/source/source/io/io.js",
 		"/D/wick/node_modules/lodash/transform.js",
 		"/D/wick/docs/guide/components/container.html",
-		"/D/wick/node_modules/chai/chai.js",
-		"/D/wick/source/source/io/expression_io.js",
-		"/D/wick/node_modules/lodash/template.js",
-		"/D/wick/docs/guide/TEMPLATE_PATTERNS.md",
-		"/D/wick/node_modules/@babel/traverse/lib/scope/binding.js",
-		"/D/wick/source/source/io/script_io.js",
-		"/D/wick/node_modules/@babel/template/lib/string.js",
-		"/D/wick/source/source/compiler/template/template_evaluator.js",
-		"/D/wick/source/source/compiler/compiler.js",
-		"/D/wick/node_modules/snapdragon/lib/compiler.js",
-		"/D/wick/README.md"
+		"/D/wick/node_modules/chai/chai.js"
 	],
 	"find":
 	{
-		"height": 24.0
+		"height": 40.0
 	},
 	"find_in_files":
 	{
@@ -556,6 +537,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"div",
+			" \n",
 			"cdase",
 			"handleContextMenu",
 			"handling",
@@ -684,24 +667,54 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 2,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "assets/source/interface/system/svg_manager.js",
+					"file": "assets/source/main.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1389,
+						"buffer_size": 3079,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								474,
-								474
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "assets/source/component/text_edit.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 0,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
 							]
 						],
 						"settings":
@@ -716,227 +729,49 @@
 					"type": "text"
 				},
 				{
-					"buffer": 1,
+					"buffer": 2,
+					"file": "assets/source/text/text_framework.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 901,
+						"buffer_size": 11870,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								36,
-								36
+								5837,
+								5837
 							]
 						],
 						"settings":
 						{
-							"auto_name": "Conference Closet: Switch + Wap",
-							"syntax": "Packages/Text/Plain text.tmLanguage"
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
+							"translate_tabs_to_spaces": false
 						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.x": 26.0,
+						"translation.y": 2415.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "assets/source/interface/canvas_manager.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 10775,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 675.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
 					"buffer": 3,
-					"file": "node_modules/wick/source/source/compiler/nodes/svg.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 330,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "assets/source/wick_compiler_nodes/style.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1532,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								461,
-								461
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "assets/source/interface/ui_manager.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 10698,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								670,
-								680
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 30.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "assets/components/test(2).html",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 832,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								832,
-								832
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/HTML/HTML.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "source/document/wick_document.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 5206,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1508,
-								3881
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 9,
-					"type": "text"
-				},
-				{
-					"buffer": 8,
 					"file": "main.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 570,
+						"buffer_size": 776,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								417,
+								417
 							]
 						],
 						"settings":
@@ -948,7 +783,95 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "node_modules/wick/package.json",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2404,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 741.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "package.json",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 978,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								941,
+								941
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "test/client_test.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 58,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								56,
+								56
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
 					"type": "text"
 				}
 			]
@@ -958,7 +881,7 @@
 			"sheets":
 			[
 				{
-					"buffer": 9,
+					"buffer": 7,
 					"semi_transient": false,
 					"settings":
 					{
@@ -982,11 +905,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 13,
+					"stack_index": 11,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 8,
 					"semi_transient": false,
 					"settings":
 					{
@@ -1004,30 +927,31 @@
 						"settings":
 						{
 							"auto_name": "Servers (OS) – for all servers",
-							"syntax": "Packages/Text/Plain text.tmLanguage"
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 289.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
+					"buffer": 9,
 					"file": "node_modules/wick/source/root/config/library.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4263,
+						"buffer_size": 4337,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3273,
-								3273
+								0,
+								0
 							]
 						],
 						"settings":
@@ -1037,27 +961,27 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1141.0,
+						"translation.y": 989.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 8,
 					"type": "text"
 				},
 				{
-					"buffer": 12,
+					"buffer": 10,
 					"file": "node_modules/wick/source/common/html/root.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 25160,
+						"buffer_size": 25257,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								24510,
-								24510
+								0,
+								0
 							]
 						],
 						"settings":
@@ -1067,14 +991,14 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 11517.0,
+						"translation.y": 9983.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 13,
+					"buffer": 11,
 					"file": "build/flame.node.js",
 					"semi_transient": false,
 					"settings":
@@ -1098,10 +1022,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 15300.0,
+						"translation.y": 13260.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 12,
+					"stack_index": 10,
 					"type": "text"
 				}
 			]
@@ -1109,7 +1033,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 24.0
+		"height": 22.0
 	},
 	"input":
 	{
@@ -1135,7 +1059,7 @@
 		"cols":
 		[
 			0.0,
-			0.697150219906,
+			0.950544015826,
 			1.0
 		],
 		"rows":
@@ -1153,7 +1077,7 @@
 	"project": "flame.sublime-project",
 	"replace":
 	{
-		"height": 44.0
+		"height": 42.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1162,6 +1086,34 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"tex",
+				"flame\\assets\\source\\text\\text_framework.js"
+			],
+			[
+				"text",
+				"flame\\assets\\source\\component\\text_edit.js"
+			],
+			[
+				"main",
+				"flame\\assets\\source\\main.js"
+			],
+			[
+				"pac",
+				"flame\\package.json"
+			],
+			[
+				"pack",
+				"wick\\package.json"
+			],
+			[
+				"wicktes.",
+				"wick\\test\\test.js"
+			],
+			[
+				"wickpa",
+				"wick\\package.json"
+			],
 			[
 				"htmlroot",
 				"wick\\source\\common\\html\\root.js"
@@ -1191,10 +1143,6 @@
 				"flame\\assets\\source\\interface\\ui_manager.js"
 			],
 			[
-				"main",
-				"flame\\main.js"
-			],
-			[
 				"flame root",
 				"flame\\source\\wick_compiler_nodes\\root.js"
 			],
@@ -1217,10 +1165,6 @@
 			[
 				"action",
 				"flame\\source\\interface\\actions\\action.js"
-			],
-			[
-				"pack",
-				"flame\\package.json"
 			],
 			[
 				"comple",
@@ -1388,10 +1332,6 @@
 			],
 			[
 				"nodetext",
-				"flame\\source\\wick_compiler_nodes\\text.js"
-			],
-			[
-				"text",
 				"flame\\source\\wick_compiler_nodes\\text.js"
 			],
 			[
@@ -1657,18 +1597,6 @@
 			[
 				"sourcetempl",
 				"source\\source\\template.js"
-			],
-			[
-				"read",
-				"README.md"
-			],
-			[
-				"libr",
-				"source\\root\\config\\library.js"
-			],
-			[
-				"chang",
-				"docs\\meta\\CHANGELOG.md"
 			]
 		],
 		"width": 0.0

@@ -1,5 +1,5 @@
-<w-s component="color-picker" model="settings" #menu="main" export="load">
-    <div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
+<w-s component="color-picker" model="settings" #menu="main" export="load" element="div" class="flame_ui_panel">
+    <div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))" style="display:none">
         COLOR
     </div>
 
@@ -13,19 +13,19 @@
     </canvas>
 
     <script on="((created))">
-        let cp = presets.custom.system.ui.color_picker;
+        this.cp = new presets.custom.classes.coloredit();
         src.ctx = src.badges.color_field.getContext("2d");
-        cp.draw(src.ctx, 0,0,150,150,"square","hsl");
+        this.cp.draw(src.ctx, 0,0,150,150,"square","hsl");
     </script>
 
     <script on="((down))">
-        let cp = presets.custom.system.ui.color_picker;
-        let col = cp.getColor(event.offsetX, event.offsetY, 150, 150, "square", "hsl");
+        let col = this.cp.getColor(event.offsetX, event.offsetY, 150, 150, "square", "hsl");
         emit.r = col.r;
         emit.g = col.g;
         emit.b = col.b;
         emit.a = col.a / 255;
         emit.primary_color = (col.r) | (col.g << 8) | (col.b << 16) | (col.a << 24);
+
     </script>
 
     <span>R<input type="number" value="((r))"></span>
@@ -37,6 +37,7 @@
 
     <script on=((target))>	
 		src.target = target;
+        this.cp.draw(src.ctx, 0,0,150,150,"square","hsl");
 	</script>
     
     <script on="((bg))">

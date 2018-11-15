@@ -1,4 +1,4 @@
-export class colorPicker {
+export class ColorFramework {
 	constructor() {
 		this.r = 0;
 		this.g = 0;

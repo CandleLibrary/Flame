@@ -7,7 +7,10 @@ import {
     SETBACKGROUNDCOLOR,
     SETCOLOR
 } from "./color";
-import { UNDO , REDO} from "./history"
+import {
+    MOVE_PANEL
+}from "./ui_panels";
+import { UNDO , REDO} from "./history";
 import {
     SETLEFT,
     SETDELTALEFT,
@@ -102,6 +105,9 @@ import {
     BORDERRADIUSBR,
 } from "./border";
 const actions = {
+    //UI PANELS
+    MOVE_PANEL,
+    //
     CacheFactory,
     COMPLETE,
     TEXTEDITOR,

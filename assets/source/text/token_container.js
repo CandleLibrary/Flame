@@ -232,7 +232,7 @@ class Container_Cell {
 
 		this.getLineCount();
 		sib.getLineCount();
-		sib.setAsParent()
+		sib.setAsParent();
 
 		return sib;
 	}
@@ -293,8 +293,8 @@ class Container_Cell {
 		} else {
 			for (var i = 0, l = this.keys.length; i < l; i++) {
 				num += this.keys[i].num_lines;
-				num2 += this.keys[i].num_real_lines
-				num3 += this.keys[i].pixel_offset
+				num2 += this.keys[i].num_real_lines;
+				num3 += this.keys[i].pixel_offset;
 			}
 			this.num_real_lines = num2;
 			this.num_lines = num;

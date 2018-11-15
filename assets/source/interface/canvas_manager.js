@@ -217,8 +217,8 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2 / scale;
-        let r = 5 / scale;
+        ctx.lineWidth = 1 / scale;
+        let r = 4 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
         gripPoint(ctx, cbr, cbt, r);

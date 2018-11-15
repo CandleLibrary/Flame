@@ -800,11 +800,14 @@ class Component {
         this.width = system.project.flame_data.default.component.width;
         this.height = system.project.flame_data.default.component.height;
 
+        this.IFRAME_LOADED = false;
+
         this.iframe.onload = (e) => {
             this.mountListeners();
-            e.target.contentDocument.body.appendChild(this.data);
+            //e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick$2;
             this.window = e.target.contentWindow;
+            this.IFRAME_LOADED = true;
         };
 
         //Label
@@ -840,7 +843,7 @@ class Component {
         this.action = null;
     }
 
-    mountListeners(){
+    mountListeners() {
         this.system.ui.integrateIframe(this.iframe, this);
     }
 
@@ -888,16 +891,22 @@ class Component {
     documentReady(pkg) {
 
         let css = pkg._skeletons_[0].tree.css;
-        
+
         if (css)
             css.forEach(css => {
                 this.local_css.push(css);
             });
-        this.manager = pkg.mount(this.data, null, false, this);
+
+        if (this.IFRAME_LOADED)
+            this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+        else
+            this.iframe.addEventListener("load", () => {
+                this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+            });
 
     }
 
-    _upImport_(){
+    _upImport_() {
 
     }
 
@@ -999,6 +1008,16 @@ function SETCOLOR(system, element, component, r, g, b, a = 1){
 	element.wick_node.setRebuild();
 }
 //set font image
+
+function MOVE_PANEL(system, panel, dx, dy) {
+    panel.x -= dx;
+    panel.y -= dy;
+
+    if (panel.x < 0) panel.x = 0;
+    if (panel.y < 0) panel.y = 0;
+    if (panel.x + panel.width > window.screen.width) panel.x = window.screen.width - panel.width;
+    if (panel.y + panel.height > window.screen.height) panel.y = window.screen.height - panel.height;
+}
 
 function UNDO(system){
 	system.doc_man.stepBack();
@@ -1800,6 +1819,9 @@ function BORDERRADIUSBR(system, element, component, d){
 }
 
 const actions = {
+    //UI PANELS
+    MOVE_PANEL,
+    //
     CacheFactory,
     COMPLETE,
     TEXTEDITOR,
@@ -1916,6 +1938,29 @@ class UIComponent extends Component {
 
         super(system);
 
+        this.iframe.onload = (e) => {
+
+            this.mountListeners();
+
+            let children = Array.prototype.slice.apply(this.data.children);
+
+            for (let i = 0; i < children.length; i++) {
+                e.target.contentDocument.body.appendChild(children[i]);
+            }
+
+            e.target.contentWindow.wick = wick$3;
+
+            this.window = e.target.contentWindow;
+
+            this.local_css.forEach((css) => {
+                let style = document.createElement("style");
+                style.innerText = css + "";
+                this.iframe.contentDocument.head.appendChild(style);
+            });
+
+            this.iframe.onload = null;
+        };
+
         //frame for fancy styling
         this.iframe.classList.add("flame_ui_component");
 
@@ -1925,19 +1970,33 @@ class UIComponent extends Component {
 
         this.system = system;
 
-        this.width = 180;
-        this.height =300;
+        this.width = 300;
+        this.height = 500;
+        this.x = 0;
+        this.y = 0;
 
-
-        this.icon = null;
+        this.LOADED = false;
     }
-    mountListeners(){};
+
+    mountListeners() {
+        this.style_frame.addEventListener("mousedown", e => {
+            this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
+            this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
+        });
+        this.iframe.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.iframe.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+    }
 
     documentReady(pkg) {
+        if (this.LOADED) {
+            return;
+        }
+        this.LOADED = true;
+
         this.mgr = pkg.mount(this.data, this.system.project.flame_data);
-        
+
         let src = this.mgr.sources[0].ast;
-        
+
         if (src._statics_.menu) {
             switch (src._statics_.menu) {
                 case "main":
@@ -1947,13 +2006,24 @@ class UIComponent extends Component {
         }
 
         let css = pkg._skeletons_[0].tree.css;
-        if (css)
+        if (css) {
             css.forEach(css => {
                 this.local_css.push(css);
             });
+        }
 
         this.mgr._upImport_ = (prop_name, data, meta) => {
-            this.system.ui.mountComponent(this);
+            switch (prop_name) {
+                case "load":
+                    this.system.ui.mountComponent(this);
+                    break;
+                case "width":
+                    this.width = data;
+                    break;
+                case "height":
+                    this.height = data;
+                    break;
+            }
         };
     }
 
@@ -1968,7 +2038,8 @@ class UIComponent extends Component {
     }
 
     mount(element) {
-        element.appendChild(this.element);
+        if(this.element.parentNode != element)
+            element.appendChild(this.element);
     }
 
     unmount() {};
@@ -2548,8 +2619,8 @@ class BoxElement {
         //Box \ Border Markers 
         ctx.fillStyle = "rgb(0,100,200)";
         ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 2 / scale;
-        let r = 5 / scale;
+        ctx.lineWidth = 1 / scale;
+        let r = 4 / scale;
 
         gripPoint(ctx, cbl, cbt, r);
         gripPoint(ctx, cbr, cbt, r);
@@ -2767,6 +2838,7 @@ class UI_Manager {
         this.origin_y = 0;
         this.transform = new(wick$1.core.common.Transform2D)();
         this.last_action = Date.now();
+        this.ui_target = null;
 
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
@@ -2835,7 +2907,8 @@ class UI_Manager {
     addToMenu(menu_name, item_name, icon_element, menu) {
         if (menu_name == "main") {
             let element = icon_element.cloneNode(true);
-            element.onclick = ()=>{
+            element.style.display = "";
+            element.onclick = () => {
                 this.mountComponent(menu);
             };
             this.main_menu.appendChild(element);
@@ -2844,7 +2917,7 @@ class UI_Manager {
     }
 
     addComponent(wick_component_file_path) {
-        
+
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
 
         if (doc) {
@@ -2865,10 +2938,10 @@ class UI_Manager {
 
             this.loadedComponents.forEach(c => c.set(this.target));
 
-            if(component){
-                if(this.target.IS_COMPONENT){
+            if (component) {
+                if (this.target.IS_COMPONENT) {
                     this.line_machine.setPotentialBoxes(null, component, this.components);
-                }else{
+                } else {
                     this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
                 }
             }
@@ -2879,6 +2952,7 @@ class UI_Manager {
 
         if (SET_MENU) this.main_menu.setAttribute("show", "false");
         return false;
+
     }
 
     integrateIframe(iframe, component) {
@@ -2890,9 +2964,9 @@ class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
-            
-            let x = e.pageX + 4 + component.x ;
-            let y = e.pageY + 4 + component.y ;
+
+            let x = e.pageX + 4 + component.x;
+            let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
             this.handlePointerDownEvent(e, x, y);
 
@@ -2905,7 +2979,7 @@ class UI_Manager {
                     } else {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, component,  x, y);
+                        this.setTarget(e, component, x, y);
                     }
                 }
             }
@@ -2917,7 +2991,7 @@ class UI_Manager {
         iframe.contentWindow.addEventListener("mousemove", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-            if (e.button !== 1) this.handlePointerMoveEvent(e, x, y);
+            this.handlePointerMoveEvent(e, x, y);
             return false;
         });
 
@@ -2952,9 +3026,9 @@ class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
-            if(x === NaN || y === NaN){
+            if (x === NaN || y === NaN)
                 debugger;
-            }
+
             this.origin_x = x;
             this.origin_y = y;
             this.ACTIVE_POINTER_INPUT = true;
@@ -2978,13 +3052,15 @@ class UI_Manager {
         return false;
     }
 
-    handlePointerMoveEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY)) {
+    handlePointerMoveEvent(e, x, y) {
 
         if (!this.ACTIVE_POINTER_INPUT) return;
 
-        let diffx = this.origin_x - x;
-        let diffy = this.origin_y - y;
         if (this.UI_MOVE) {
+            x = (typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX);
+            y = (typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY);
+            let diffx = this.origin_x - x;
+            let diffy = this.origin_y - y;
             this.transform.px -= diffx * this.transform.sx;
             this.transform.py -= diffy * this.transform.sy;
             this.origin_x = x + diffx;
@@ -2992,8 +3068,16 @@ class UI_Manager {
             this.render();
             this.view_element.style.transform = this.transform;
             return;
+        } else if (this.ui_target) {
+            let diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
+            let diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
+            this.origin_x -= diffx;
+            this.origin_y -= diffy;
+            if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+            let { dx, dy } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -3006,14 +3090,16 @@ class UI_Manager {
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
-        //this.target = null;
+        if (this.ui_target)
+            return (this.ui_target = null);
+
         if (this.target)
             actions.COMPLETE(this.system, this.target.element, this.target.component);
     }
 
     handleDocumentDrop(e) {
         e.preventDefault();
-        
+
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
 
@@ -3045,7 +3131,7 @@ class UI_Manager {
     handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
 
-        switch(e.target.tagName.toUpperCase()){
+        switch (e.target.tagName.toUpperCase()) {
             case "SVG":
             case "RECT":
             case "PATH":
@@ -3072,13 +3158,13 @@ class UI_Manager {
         this.view_element.style.transform = this.transform;
     }
 
-    update(){
+    update() {
         this.render();
     }
 
     render() {
         this.canvas.render(this.transform);
-        if(this.target)
+        if (this.target)
             this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
@@ -4815,7 +4901,7 @@ class TEXT_TOKEN {
 		this.IS_LINKED_LINE = false;
 	}
 
-	//Resets vaules to unbiased defaults
+	//Resets values to unbiased defaults
 	reset() {
 		this.pixel_height = 30;
 		this.char_start = 0;
@@ -4847,7 +4933,7 @@ class TEXT_TOKEN {
 				return this.prev_line.flushTokens();
 			} else {
 				//The top most token should always be a new line. If here, something went really wrong
-				throw (this)
+				throw (this);
 			}
 		}
 
@@ -4897,7 +4983,7 @@ class TEXT_TOKEN {
 			last = temp;
 			temp = temp.prev_sib;
 		}
-		return last
+		return last;
 	}
 
 	mergeLeft() {
@@ -5014,7 +5100,7 @@ class TEXT_TOKEN {
 	setPixelOffset() {
 
 	}
-	//Takes the token text string and breaks it down into individaul pieces, linking resulting tokens into a linked list.
+	//Takes the token text string and breaks it down into individual pieces, linking resulting tokens into a linked list.
 	parse(FORCE) {
 		if (!this.NEED_PARSE && !FORCE) return this.next_sib;
 
@@ -5314,14 +5400,15 @@ class TEXT_TOKEN {
 				return this.cached_html;
 			}
 		} else {
+			let text = (this.text == "<") ? "&lt;" : (this.text == ">") ? "&gt;" : this.text;
+
 			if (plain_text) {
-				return this.text;
+				return text;
 			} else {
 				if (this.color !== "black") {
-
-					return `<span style="color:${this.color}">${this.text}</span>`;
+					return `<span style="color:${this.color}">${text}</span>`;
 				}
-				return this.text;
+				return text;
 			}
 		}
 	}
@@ -5374,10 +5461,11 @@ class TEXT_TOKEN {
 
 class TEXT_CURSOR {
 	constructor(text_fw) {
+
 		//On screen HTML representation of cursor
 		this.HTML_ELEMENT = null;
-		//this.HTML_ELEMENT = document.createElement("div");
-		//this.HTML_ELEMENT.classList.add("txt_cursor");
+		this.HTML_ELEMENT = document.createElement("div");
+		this.HTML_ELEMENT.classList.add("txt_cursor");
 		
 
 		//Character and Line position of cursor
@@ -5434,9 +5522,9 @@ class TEXT_CURSOR {
 	set IN_USE(bool) {
 		if (bool !== this.IU) {
 			if (bool) {
-			//	this.text_fw.parent_element.appendChild(this.HTML_ELEMENT);
+				this.text_fw.parent_element.appendChild(this.HTML_ELEMENT);
 			} else {
-			//	this.text_fw.parent_element.removeChild(this.HTML_ELEMENT);
+				this.text_fw.parent_element.removeChild(this.HTML_ELEMENT);
 				this.resetSelection();
 				this.REAL_POSITION_NEEDS_UPDATE = true;
 				this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
@@ -5458,6 +5546,7 @@ class TEXT_CURSOR {
 	}
 
 	set size(scale) {
+
 		this.HTML_ELEMENT.style.width = 1 * scale + "px";
 		this.HTML_ELEMENT.style.height = this.line_height * scale + "px";
 	}
@@ -5485,6 +5574,7 @@ class TEXT_CURSOR {
 	}
 
 	getXCharOffset(x_in, y_in) {
+
 		var y = (((y_in) * this.text_fw.line_height) - 1),
 			x = 0;
 
@@ -5508,7 +5598,6 @@ class TEXT_CURSOR {
 					} else
 						x += char.width;
 				}
-
 			}
 		}
 		return x;
@@ -5594,7 +5683,7 @@ class TEXT_CURSOR {
 		var line = this.line_container.getLine(this.selection_y);
 		while (line && x > line.cache.length) {
 			this.selection_y++;
-			x -= line.cache.length; //- ;
+			x -= line.cache.length;
 			line = line.next_line;
 			x += ((line.IS_LINKED_LINE | 0) - 1);
 
@@ -5662,10 +5751,10 @@ class TEXT_CURSOR {
 			var id2 = (this.selection_y << 10) | this.selection_x;
 
 			if (id2 < id1) {
-				var x1 = this.selection_x;
-				var y1 = this.selection_y;
-				var x2 = this.x;
-				var y2 = this.y;
+				x1 = this.selection_x;
+				y1 = this.selection_y;
+				x2 = this.x;
+				y2 = this.y;
 			}
 		}
 		return {
@@ -5687,10 +5776,10 @@ class TEXT_CURSOR {
 				var x2 = this.x;
 				var y2 = this.y;
 			} else {
-				var x1 = this.x;
-				var y1 = this.y;
-				var x2 = this.selection_x;
-				var y2 = this.selection_y;
+				x1 = this.x;
+				y1 = this.y;
+				x2 = this.selection_x;
+				y2 = this.selection_y;
 			}
 
 			this.x = x1;
@@ -5753,17 +5842,16 @@ class TEXT_CURSOR {
 		return string;
 	}
 
-	update(camera, scale, xc, yc) {
+	update(camera, scale) {
 		// todo - correct font data 
 
 
 		//Set cursor size to mach current zoom level of camera
 		this.size = scale;
 
-		this.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y) + xc) * scale) + "px";
+		this.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y))) + "px";
 
-
-		this.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset + yc) * scale) + "px";
+		this.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset)) + "px";
 
 		//Update shading for selections
 
@@ -5912,6 +6000,7 @@ class TEXT_CURSOR {
 		this.REAL_POSITION_NEEDS_UPDATE = true;
 
 		var diff = this.x + change;
+		
 		if (diff < 0) {
 			if (this.y <= 0) {
 				this.x = 0;
@@ -6026,8 +6115,6 @@ var letter_spacing = 0;
 var existing_fonts = {};
 
 var b_size = 64;
-var sd_distance = 64;
-
 //No need to create multiple canvas elements
 var canvas = document.createElement("canvas");
 var canvas_size = 1024;
@@ -6039,155 +6126,8 @@ var ctx = canvas.getContext("2d");
 canvas.style.position = "absolute";
 canvas.style.zIndex = 200000;
 
-var signed_canvas = document.createElement("canvas");
-var signed_canvas_size = 2048;
-signed_canvas.width = signed_canvas_size;
-signed_canvas.height = signed_canvas_size;
-var ctx_s = signed_canvas.getContext("2d");
-
-var worker_function = function(self) {
-	self.onmessage = function(e) {
-		var data = e.data;
-		var df = new Float32Array(data.buffer1);
-		var image = new Uint8Array(data.buffer2);
-		createSignedDistanceBuffer(image, e.data.image_size, e.data.image_size, df, e.data.sd_size, e.data.sd_size, e.data.distance);
-		self.postMessage({
-			buffer1: df.buffer,
-			buffer2: image.buffer,
-			index: e.data.index
-		}, [df.buffer, image.buffer]);
-	};
-
-	function createSignedDistanceBuffer(inRGBArray, inWidth, inHeight, outSDArray, outWidth, outHeight, kernal_in) {
-		var x_scale = inWidth / outWidth;
-		var y_scale = inHeight / outHeight;
-		var kernal = kernal_in || 50;
-		var lowest_distance_positive = Infinity;
-		var highest_distance_positive = -Infinity;
-		var lowest_distance_negative = Infinity;
-		var highest_distance_negative = -Infinity;
-		var min = Math.min;
-		var max = Math.max;
-
-		for (var y = 0; y < outHeight; y++) {
-			for (var x = 0; x < outWidth; x++) {
-				var index = y * outWidth + x;
-
-				var in_x = x * x_scale | 0;
-				var in_y = y * y_scale | 0;
-
-				var indexIn = ((in_y * inWidth + in_x) | 0) * 4;
-
-				var sign = inRGBArray[indexIn + 3] > 0 ? 1 : -1;
-
-				var min_distance = (kernal * 0.5) * (kernal * 0.5);
-				//Use kernal to scan a box section of inRGBArray and find closest distance
-				var boundY = max(in_y - kernal * .5, 0) | 0;
-				var boundH = min(boundY + kernal, inHeight) | 0;
-				var boundX = max(in_x - kernal * .5, 0) | 0;
-				var boundW = min(boundX + kernal, inWidth) | 0;
-
-				for (var v = boundY | 0; v < boundH; v++) {
-					for (var u = boundX | 0; u < boundW; u++) {
-
-						if (v === in_y && u === in_x) continue;
-
-						var index_ = (v * inWidth + u) * 4;
-
-						var alpha = inRGBArray[index_ + 3];
-
-
-
-						if (sign > 0 && alpha <= 0) {
-							var xi = (in_x - u);
-							var yi = (in_y - v);
-							var distance = (xi * xi + yi * yi);
-							min_distance = min(min_distance, distance);
-						}
-
-						if (sign < 0 && alpha > 0) {
-							var xi = (in_x - u);
-							var yi = (in_y - v);
-							var distance = (xi * xi + yi * yi);
-							min_distance = min(min_distance, distance);
-						}
-					}
-				}
-				//debugger
-
-				min_distance = Math.sqrt(min_distance) * sign;
-
-				outSDArray[index] = min_distance;
-
-				if (sign > 0) {
-					highest_distance_positive = max(highest_distance_positive, min_distance);
-					lowest_distance_positive = min(lowest_distance_positive, min_distance);
-				} else {
-					highest_distance_negative = max(highest_distance_negative, min_distance);
-					lowest_distance_negative = min(lowest_distance_negative, min_distance);
-				}
-			}
-		}
-		//return
-		//normalize in range 0 > 1;
-		//debugger
-
-		var scale_nagative = 1 / (highest_distance_negative - lowest_distance_negative);
-		var scale_positive = 1 / (highest_distance_positive - lowest_distance_positive);
-
-		var scale = 1 / (highest_distance_positive - lowest_distance_negative);
-
-		var offset_negative = 0 - lowest_distance_negative;
-		var offset_positive = 0 - lowest_distance_positive;
-
-		var kernal_inv_halved = (1 / kernal_in) * 0.5;
-
-		for (var i = 0, l = outWidth * outHeight; i < l; i++) {
-			//outSDArray[i] = ((outSDArray[i] + offset_negative) * scale);
-			//continue
-
-			if (outSDArray[i] <= 0) {
-				outSDArray[i] = ((outSDArray[i] + offset_negative) * scale_nagative) * 0.5;
-				//outSDArray[i] =(Math.max(outSDArray[i] + kernal_in, 0) * kernal_inv_halved);
-			} else {
-				outSDArray[i] = ((outSDArray[i] + offset_positive) * scale_positive) * 0.5 + 0.5;
-			}
-		}
-	}
-
-};
-
-var worker_blob = new Blob([`(${worker_function.toString()})(self)`]);
-var worker_url = window.URL.createObjectURL(worker_blob);
-
 //Font range UTF8 = 33 - 126 ; 93 Characters
 
-/*Database functions*/
-
-var db_handler = null;
-var db = null;
-
-var request = indexedDB.open("font_signed_distance_maps", 2);
-
-request.onsuccess = (e) => {
-	return
-	db = request.result;
-	db_handler = db.transaction(["distance_maps"], "readwrite");
-	console.log(db_handler);
-
-
-};
-
-request.onupgradeneeded = function(event) {
-	return
-	console.log("Sd");
-	var d = db.createObjectStore("distance_maps");
-	d.onsuccess = function(e) {
-		console.log("Sd");
-
-
-	};
-};
 
 // This dna handless the loading and conversion of HTML fonts into font atlases for consumption by text framework. 
 class Font {
@@ -6206,8 +6146,6 @@ class Font {
 		this.atlas_start = 32;
 		this.atlas_end = 127;
 
-		this.signed_field = new Uint8Array(640 * 640);
-
 		this.props = new Array(this.atlas_end - this.atlas_start);
 		for (var i = 0, l = this.atlas_end - this.atlas_start; i < l; i++) {
 			this.props[i] = {};
@@ -6220,7 +6158,6 @@ class Font {
 		var cache = sessionStorage.getItem(this.name);
 		if (cache) {
 			cache = JSON.parse(cache);
-			this.signed_field = new Uint8Array(cache.field);
 			this.props = cache.props;
 			this.calc_index = Infinity;
 			//	this.drawField()
@@ -6231,88 +6168,22 @@ class Font {
 			this.finished_index = 0;
 
 			for (var i = 0; i < num_of_workers; i++) {
-				/*var worker = new Worker(worker_url)
-				this.workers[i] = worker;
-				worker.onmessage = ((index) => {			
-					return (e) =>{
-					//place into texture array
-					var buffer = new Float32Array(e.data.buffer1)
-					var i = e.data.index;
-
-					for (var y = 0; y < b_size; y++) {
-						for (var x = 0; x < b_size; x++) {
-							var index1 = b_size * y + x
-							var index2 = 640 * y + x + ((i % 10) * b_size) + (Math.floor(i / 10) * 640 * 64);
-							this.signed_field[index2] = (buffer[index1] * 255);
-						}
-					}
-
-					this.finished_index++;
-
-					this.calcSection(index);
-					}
-
-				})(i)*/
 				this.finished_index++;
 				this.calcSection(i);
 			}
-
-
 		}
-		/*if (db && db_handler) {
 
-			var db_handler = db.transaction(["distance_maps"], "readwrite");
-			console.log(db_handler.objectStore("elephants").get(this.name));
-
-			//ths.IS_READY = true;
-			//this.onComplete();
-		}*/
-		console.table(this);
 		this.IS_READY = true;
 		this.onComplete();
-
-
-
-
-
-		//
-		//debugger
 	}
 
 	onComplete() {
 
 	}
 
-	drawField() {
-		canvas_size = 1024;
-		canvas.width = canvas_size;
-		canvas.height = canvas_size;
-		var image = ctx.getImageData(0, 0, canvas_size, canvas_size);
-		var d = image.data;
-
-		for (var i = 0; i < 640; i++) {
-			for (var j = 0; j < 640; j++) {
-				var index1 = 640 * i + j;
-				var index2 = canvas_size * i + j;
-
-				d[index2 * 4 + 0] = this.signed_field[index1];
-				d[index2 * 4 + 1] = this.signed_field[index1];
-				d[index2 * 4 + 2] = this.signed_field[index1];
-				d[index2 * 4 + 3] = 255;
-			}
-		}
-
-
-		ctx.putImageData(image, 0, 0);
-
-		this.calculateMonospace(this.name);
-		//document.body.appendChild(canvas)
-
-	}
 	startCalc() {
-		for (var i = 0; i < this.workers.length; i++) {
+		for (var i = 0; i < this.workers.length; i++) 
 			this.calcSection(i);
-		}
 	}
 
 	calcSection(worker_index) {
@@ -6325,25 +6196,10 @@ class Font {
 		var fin_i = this.finished_index;
 		var font_size = canvas_size * 0.8;
 
-		if (fin_i >= length) {
-			this.drawField();
-
-			if (db) {
-				var db_handler = db.transaction(["distance_maps"], "readwrite");
-				db_handler.objectStore("distance_maps").put(this.signed_field, this.name);
-
-			}
-
-			//sessionStorage.setItem(this.name, JSON.stringify({field:Array.prototype.slice.call(this.signed_field),props:this.props}));
-
-			this.onComplete();
-			return
-		}
-
 		if (this.calc_index >= length) return;
 
 		canvas.width = canvas_size;
-		ctx.font = `${font_size}px  "${this.name}"`;
+		ctx.font = `${12}px  "${this.name}"`;
 		ctx.textBaseline = "middle";
 		ctx.textAlign = "center";
 		var char = String.fromCharCode(start + i);
@@ -6353,25 +6209,14 @@ class Font {
 		this.props[i] = {
 			char: char,
 			code: start + i,
-			width: width * (12 / font_size),
-			width2: width * (12 / font_size),
+			width: width,
+			width2: width,
 			ratio: width / font_size
 		};
 
-		ctx.fillText(char, pos, pos);
-
-		var image = ctx.getImageData(0, 0, canvas_size, canvas_size);
 		this.calc_index++;
 
 		this.calcSection(i);
-		/*this.workers[worker_index].postMessage({
-			buffer1: buffer.buffer,
-			buffer2: image.data.buffer,
-			image_size: canvas_size,
-			sd_size: b_size,
-			distance: sd_distance,
-			index: i
-		}, [buffer.buffer, image.data.buffer])*/
 	}
 
 	calculateMonospace() {
@@ -6399,7 +6244,7 @@ class Font {
 		for (var i = this.atlas_start, d = 0; i < this.atlas_end; i++, d++) {
 			var char = String.fromCharCode(i);
 			DIV.innerHTML = char;
-			console.log(DIV.getClientRects());
+			
 			width = DIV.getBoundingClientRect().width;
 			this.props[i - this.atlas_start].width = width;
 			if (last_width !== width) {
@@ -6564,502 +6409,840 @@ var string_parse_and_format_functions = (function() {
 });
 
 class TextFramework {
-	constructor(parent_element) {
-		this.token_container = new Token_Container();
+    constructor(parent_element) {
+        this.token_container = new Token_Container();
 
-		this.font_size = 32;
-		this.letter_spacing = 0;
-		this.line_height = 30;
+        this.font_size = 32;
+        this.letter_spacing = 0;
+        this.line_height = 30;
 
-		this.DOM = document.createElement("div");
+        this.DOM = document.createElement("div");
+        this.DOM.classList.add("text_edit");
 
-		this.parent_element = parent_element || document.body;
+        this.parent_element = parent_element || document.body;
 
-		parent_element.appendChild(this.DOM);
+        parent_element.appendChild(this.DOM);
 
-		this.font = new Font("Time New Roman");
+        this.font = new Font("Time New Roman");
 
-		this.length = 0;
+        this.length = 0;
 
-		this.char_width = 24;
+        this.char_width = 24;
 
-		this.max_length = 0;
-		this.scroll_top = 0;
-		this.max_line_width = 0;
+        this.max_length = 0;
+        this.scroll_top = 0;
+        this.max_line_width = 0;
 
-		this.del_code = 8; // should be 127 or 8
-		this.del_char = String.fromCharCode(this.del_code);
-		this.new_line_code = 10; // should be 10
-		this.new_line = String.fromCharCode(this.new_line_code);
-		this.linked_line_code = 13; // should be 13
-		this.linked_line = String.fromCharCode(this.linked_line_code);
-		this.curs_code = 33; // should be 31
-		this.curs_char = String.fromCharCode(this.curs_code);
+        this.del_code = 8; // should be 127 or 8
+        this.del_char = String.fromCharCode(this.del_code);
+        this.new_line_code = 10; // should be 10
+        this.new_line = String.fromCharCode(this.new_line_code);
+        this.linked_line_code = 13; // should be 13
+        this.linked_line = String.fromCharCode(this.linked_line_code);
+        this.curs_code = 33; // should be 31
+        this.curs_char = String.fromCharCode(this.curs_code);
 
-		//Fixed character width for scaling
-		this.width = 0;
-		this.height = 0;
+        //Fixed character width for scaling
+        this.width = 0;
+        this.height = 0;
 
-		this.last_keycode = 0;
+        this.last_keycode = 0;
 
-		this.SPF = string_parse_and_format_functions;
+        this.SPF = string_parse_and_format_functions;
 
-		this.token_pool = new TEXT_TOKEN(this);
-		this.cursors = [new TEXT_CURSOR(this)];
+        this.token_pool = new TEXT_TOKEN(this);
+        this.cursors = [new TEXT_CURSOR(this)];
 
-		this.aquireCursor();
+        this.aquireCursor();
+    }
+
+    unload() {
+        this.clearCursors();
+        //this.parent_element.removeChild(this.DOM);
+        this.token_container = null;
+        this.DOM = null;
+        this.parent_element = null;
+        this.font = null;
+        this.SPF = null;
+        this.token_pool = null;
+        this.cursors = null;
+    }
+
+    get HAS_SELECTION() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            if (this.cursors[i].HAS_SELECTION) return true;
+        }
+        return false;
+    }
+
+    get boxHeight() {
+        return this.token_container.getHeight();
+    }
+
+    clearCursors() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            this.cursors[i].IN_USE = false;
+        }
+    }
+
+    updateCursors(camera, scale, x, y) {
+        for (var i = 0; i < this.cursors.length; i++) {
+            this.cursors[i].update(null, 1);
+        }
+    }
+
+    onMouseUp(event, x, y, scale) {
+        if (event.button !== 0) return;
+        if (event.ctrlKey) {
+            var cur = this.aquireCursor();
+            cur.setY(y);
+            cur.setX(x);
+
+            for (var i = 0; i < this.cursors.length; i++) {
+                var c1 = this.cursors[i];
+                if (c1.IN_USE) {
+                    for (var j = i + 1; j < this.cursors.length; j++) {
+                        var c2 = this.cursors[j];
+                        if (c2.IN_USE) {
+                            if (c1.id > c2.id) {
+                                var x = c1.x;
+                                c1.x = c2.x;
+                                c2.x = x;
+                                x = c1.y;
+                                c1.y = c2.y;
+                                c2.y = x;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (var i = 1; i < this.cursors.length; i++) {
+                this.releaseCursor(this.cursors[i]);
+            }
+            var cur = this.cursors[0];
+
+            cur.setY(y);
+            cur.setX(x);
+
+        }
+        this.checkForCursorOverlap();
+        this.updateCursors(null, scale);
+    }
+
+    onKeyPress(event) {
+        event.preventDefault();
+        var keycode = event.keyCode;
+        var text = String.fromCharCode(keycode);
+        if (event.ctrlKey) {
+            switch (keycode) {
+                case 26: //z - undo
+                    if (event.shiftKey)
+                        this.redo();
+                    else
+                        this.undo();
+                    break;
+            }
+        } else {
+            if (text.length > 0) {
+                switch (keycode) {
+                    case 13:
+                        text = this.new_line;
+                        break;
+                    default:
+
+                        break;
+                }
+
+                this.insertCharAtCursor(text);
+
+                this.last_keycode = keycode;
+            }
+
+        }
+    }
+
+    onKeyDown(event) {
+        var keycode = event.keyCode;
+        var line_change = 0;
+        var last_line = 0;
+
+
+        //if delete key is pressed. 
+        if (keycode === 8 || keycode === 46) {
+            if (keycode === 46) {
+                this.moveCursorsX(1);
+            }
+            this.insertCharAtCursor(String.fromCharCode(8), (keycode === 46));
+            event.preventDefault();
+        } else if (keycode == 37) { //left
+            this.lockHistory();
+            this.moveCursorsX(-1);
+        } else if (keycode == 38) { //top
+            this.lockHistory();
+            this.moveCursorsY(-1);
+        } else if (keycode == 39) { //right
+            this.lockHistory();
+            this.moveCursorsX(1);
+        } else if (keycode == 40) { //bottom
+            this.lockHistory();
+            this.moveCursorsY(1);
+        }
+    }
+
+    moveCursorsByX(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
+        } else {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveChar(change);
+        }
+
+        this.checkForCursorOverlap();
+    }
+
+    moveCursorsY(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
+            }
+        } else {
+
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveLine(change);
+            }
+        }
+        this.checkForCursorOverlap();
+    }
+
+    checkForCursorOverlap() {
+        var cur1 = null,
+            cur2 = null;
+        for (var i = 0; i < this.cursors.length; i++) {
+            cur1 = this.cursors[i];
+            if (!cur1.IN_USE) continue;
+            var id = (cur1.selection_y << 10) | cur1.selection_x;
+
+            for (var j = i + 1; j < this.cursors.length; j++) {
+                cur2 = this.cursors[j];
+                if (!cur2.IN_USE) continue;
+
+                var id2 = (cur2.selection_y << 10) | cur2.selection_x;
+                if (cur1.id == cur2.id) {
+                    debugger
+                    this.releaseCursor(cur2);
+                } else if (cur2.id <= id && id > -1) {
+                    debugger
+                    cur1.selection_x = cur2.selection_x;
+                    cur1.selection_y = cur2.selection_y;
+                    this.releaseCursor(cur2);
+                } else if (id2 > -1 && cur1.id >= id2) {
+                    debugger
+                    cur1.x = cur2.x;
+                    cur1.y = cur2.y;
+                    this.releaseCursor(cur2);
+                }
+            }
+        }
+        this.sortCursors();
+    }
+
+    sortCursors() {
+        for (var i = 0; i < this.cursors.length - 1; i++) {
+            var
+                cur1 = this.cursors[i],
+                cur2 = this.cursors[i + 1];
+            //move data from cur2 to cur1
+            if (!cur1.IU && cur2.IU) {
+                this.cursors[i] = cur2;
+                this.cursors[i + 1] = cur1;
+            }
+        }
+    }
+
+    updateLineOffsets(x, y, min_x, min_y, max_x, max_y, scale, camera) {
+        var length = this.token_container.length;
+        if (length < 1) return;
+        var sh = this.line_height / scale;
+
+        if (this.scroll_top > 0) {
+            min_y += this.scroll_top / scale;
+            max_y += this.scroll_top / scale;
+            this.diff_y_min = Math.max(Math.floor(((min_y - (y / scale)) / sh)), 0);
+            this.diff_y_max = Math.min(Math.ceil((max_y - (y / scale)) / sh), length);
+        } else {
+            this.diff_y_min = Math.max(((min_y - (y / 1)) / this.line_height) | 0, 0);
+            this.diff_y_max = Math.min(((max_y - (y / 1)) / this.line_height) | 0, length);
+
+            this.pixel_offset = min_y - (y / 1);
+            this.pixel_top = Math.max(min_y - (y / 1));
+            this.pixel_bottom = Math.max(max_y - (y / 1));
+        }
+        this.updateCursors(camera, scale, camera.px + x, camera.py + y);
+        this.checkForCursorOverlap();
+    }
+
+    renderToDOM(scale = 1) {
+        this.DOM.innerHTML = "";
+        this.DOM.style.fontSize = "100%";
+        var text = "<div class='small_scale_pre'>";
+        //get size of space and line
+        this.max_length = 0;
+
+
+        var mh = this.line_height * scale;
+        if (scale < 0.4) {
+            text = "<div class='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
+            for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
+                var line = this.token_container.getIndexedLine(i);
+                if (line) {
+                    var length = line.length;
+                    if (length > this.max_length) this.max_length = length;
+                    text += line.renderDOM(true) + "</br>";
+
+                }
+            }
+        } else {
+            var y = (this.pixel_top > -1) ? this.pixel_top : 0;
+            var height = this.token_container.pixel_height;
+            if (this.token_container.length > 0) {
+                var line = this.token_container.getLineAtPixelOffset(y | 0);
+                var t = line.pixel_offset;
+                var diff = (y > 0) ? t - y : 0;
+                var i = 0;
+                while (line) {
+                    i++;
+                    text += "<pre class='small_scale_pre' style='top: " + ((y + diff) * scale) + "px'>" + line.renderDOM(false) + "</pre>";
+                    y += line.pixel_height;
+                    t += line.pixel_height;
+                    var length = line.length;
+                    if (length > this.max_length) this.max_length = length;
+                    if (y >= this.pixel_bottom || t >= height) break;
+                    var line = line.next_line;
+
+                }
+            }
+
+        }
+
+        text += "</div>";
+
+        this.DOM.innerHTML = text;
+    }
+
+    updateText(index = 0) {
+        var loop_check = 0;
+
+        this.releaseAllCursors();
+
+        var token = this.token_container.getIndexedLine(index);
+        while (token = token.parse()) {
+            if (loop_check++ > 1000000) {
+                break;
+            }
+        }
+        this.cursors[0].IN_USE = true;
+    }
+
+    toString() {
+        var i = 0,
+            text = "";
+        var token = this.token_container.getIndexedLine(0);
+        while (token) {
+            text += this.new_line + token.cache;
+            token = token.next_line;
+        }
+        return text;
+    }
+
+    setIndexes() {
+        return;
+    }
+
+    //************************
+    //POOLS
+    releaseAllCursors() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            var temp = this.cursors[i];
+            temp.IN_USE = false;
+        }
+    }
+
+    releaseCursor(cursor) {
+        if (cursor.IN_USE) {
+            cursor.IN_USE = false;
+        }
+    }
+
+    aquireCursor() {
+        var temp = null;
+        if (this.cursors.length > 0) {
+            for (var i = 0; i < this.cursors.length; i++) {
+                temp = this.cursors[i];
+                if (!temp.IU)
+                    break;
+                temp = null;
+            }
+        }
+        if (!temp) {
+            temp = new TEXT_CURSOR(this);
+            temp.index = this.cursors.push(temp) - 1;
+        }
+        temp.IN_USE = true;
+        return temp;
+    }
+
+
+    //Releases given token to pool and returns that token's previous sibling.
+    releaseToken(token) {
+        var prev_line = token.prev_line;
+        var next_line = token.next_line;
+
+        var prev_sib = token.prev_sib;
+        var next_sib = token.next_sib;
+
+        if (prev_sib) {
+            prev_sib.next_sib = next_sib;
+        }
+        if (next_sib) {
+            next_sib.prev_sib = prev_sib;
+        }
+        if (prev_line) {
+            if (next_sib && next_sib.IS_NEW_LINE) {
+                prev_line.next_line = next_sib;
+            } else {
+                prev_line.next_line = next_line;
+            }
+        }
+        if (next_line) {
+            if (prev_sib && prev_sib.IS_NEW_LINE) {
+                next_line.prev_line = prev_sib;
+            } else {
+                next_line.prev_line = prev_line;
+            }
+        }
+
+        if (token.IS_NEW_LINE) {
+            this.token_container.remove(token);
+            this.setIndexes();
+        }
+
+        var t = token.prev_sib;
+        token.reset();
+        token.next_sib = this.token_pool;
+        token.prev_sib = null;
+        token.text = "";
+        this.token_pool = token;
+        return t;
+    }
+
+    //Either returns an existing token from pool or creates a new one and returns that.
+    aquireToken(prev_token) {
+        var t = this.token_pool;
+
+        if (t) {
+            if (t.next_sib) {
+                this.token_pool = t.next_sib;
+                this.token_pool.prev_sib = null;
+            } else {
+                this.token_pool = new TEXT_TOKEN(this, null);
+            }
+        } else {
+            t = new TEXT_TOKEN(this, null);
+        }
+
+        t.reset();
+
+        if (prev_token) {
+            t.prev_line = prev_token.prev_line;
+            t.next_line = prev_token.next_line;
+
+            if (prev_token.IS_NEW_LINE) {
+                t.prev_line = prev_token;
+            }
+
+            t.next_sib = prev_token.next_sib;
+            t.prev_sib = prev_token;
+            prev_token.next_sib = t;
+            if (t.next_sib) {
+                t.next_sib.prev_sib = t;
+            }
+        }
+        return t;
+    }
+
+    insertTextAtCursor(char, deletekey) {
+        this.insertCharAtCursor(char, deletekey);
+    }
+
+    insertCharAtCursor(char, deletekey, index) {
+        var l = this.cursors.length;
+        var j = 0;
+
+        if (typeof index === "number") {
+            l = index + 1;
+            j = index;
+        }
+
+        for (; j < l; j++) {
+            if (this.cursors[j].IN_USE) {
+                var cursor = this.cursors[j];
+                var select = cursor.getTextFromSelection().length;
+                cursor.arrangeSelection();
+                cursor.setToSelectionTail();
+                var line = cursor.real_position_y;
+                var i = cursor.real_position_x;
+                var c = char;
+                if (select > 0) {
+                    c = this.del_char.repeat(select) + char;
+                }
+
+                this.token_container.getRealLine(line).insertText(c, i);
+                cursor.toString();
+                cursor.resetSelection();
+            }
+        }
+    }
+
+    //Inserts token into list of lines after prev_line. Returns new line token
+    insertLine(prev_line, new_line) {
+        if (!prev_line) {
+            new_line.prev_line = new_line;
+            new_line.next_line = null;
+            new_line.index = 0;
+            this.token_container.insert(new_line, 0);
+        } else {
+            new_line.index = prev_line.index + 1;
+            this.token_container.insert(new_line, prev_line.index + 1);
+            new_line.next_line = prev_line.next_line;
+            if (new_line.next_line) {
+                new_line.next_line.prev_line = new_line;
+            }
+            new_line.prev_line = prev_line;
+            prev_line.next_line = new_line;
+        }
+        this.length++;
+        this.setIndexes();
+        new_line.IS_NEW_LINE = true;
+        return new_line;
+    }
+
+    releaseLine(line) {
+        line.first_token.text = "";
+        var line1 = line.prev_sib;
+        var line2 = line.next_sib;
+
+        if (line1) {
+            line1.next_sib = line2;
+        }
+        if (line2) {
+            line2.prev_sib = line1;
+        }
+
+        line.next_sib = this.line_pool;
+        line.prev_sib = null;
+        this.line_pool = line;
+
+        this.token_container.remove(line);
+
+        this.length--;
+        //this.setIndexes();
+        line.PROTECT__IN_USE = false;
+        return line;
+    }
+
+
+    insertText(text, li = 0, cursor_ind) {
+        if ((this.token_container.height | 0) < 1) {
+            if (text.charCodeAt(0) !== this.new_line_code) {
+                text = this.new_line + text;
+            }
+            this.insertLine(null, this.aquireToken()).insertText(text, 1);
+            this.updateText(0);
+        } else {
+            this.token_container.getIndexedLine(li).insertText(text, -1, cursor_ind);
+        }
+    }
+
+    setFont(font) {
+        this.font = new Font(font);
+
+        this.DOM.style.fontFamily = font;
+
+        return new Promise((res, rej) => {
+            this.font.onComplete = () => {
+                res();
+            };
+
+            if (this.font.IS_READY)
+                res();
+            else
+                this.font.startCalc();
+        });
+    }
+
+    clearContents(){
+
+    }
+}
+
+class ColorFramework {
+	constructor() {
+		this.r = 0;
+		this.g = 0;
+		this.b = 0;
+		this.a = 0;
+
+		this.last_x = 0;
+		this.last_y = 0;
+
+		this.alpha = 255;
+
+		this.h = 0;
+		this.s = 0;
+		this.v = 0;
+
+		this.hex = "#000000";
+
+		this.color_width = 150;
+		this.color_height = 150;
+
+		this.draw_type = "doughnut";
+		this.draw_mode = "hsl";
+
+		this.saturation = 1;
 	}
 
-	unload(){
-		this.clearCursors();
-		//this.parent_element.removeChild(this.DOM);
-		this.token_container = null;
-		this.DOM = null;
-		this.parent_element = null;
-		this.font = null;
-		this.SPF = null;
-		this.token_pool = null;
-		this.cursors = null;
+	rgbToString(r, g, b) {
+		r = r || this.r;
+		g = g || this.g;
+		b = b || this.b;
+		return "rgb(" + r + "," + g + "," + b + ")";
 	}
 
-	get HAS_SELECTION() {
-		for (var i = 0; i < this.cursors.length; i++) {
-			if (this.cursors[i].HAS_SELECTION) return true;
-		}
-		return false;
-	}
+	draw(ctx, x, y, w, h, type, mode) {
+		var pi = Math.PI;
 
-	get boxHeight() {
-		return this.token_container.getHeight();
-	}
+		var width = w;
+		var height = h;
 
-	clearCursors() {
-		for (var i = 0; i < this.cursors.length; i++) {
-			this.cursors[i].IN_USE = false;
-		}
-	}
+		var id = ctx.getImageData(x || 0, y || 0, width, height);
 
-	updateCursors(camera, scale, x, y) {
-		for (var i = 0; i < this.cursors.length; i++) {
-			this.cursors[i].update(camera, scale, x, y + 1);
-		}
-	}
+		var data = id.data;
 
-	moveCursorsX(change, SELECT) {
-		if (SELECT) {
-			for (var i = 0; i < this.cursors.length; i++) {
-				if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
-				if (this.cursors[i].IN_USE) console.log({
-					text: this.cursors[i].getTextFromSelection()
-				});
+		for (var i = 0; i < height; i++) {
+			for (var j = 0; j < width; j++) {
+				var index = (i* width + j) * 4;
+				this.getColor(j, i, width, height, type, mode);
+				if(this.a === 0) continue;
+				data[index + 0] = this.r;
+				data[index + 1] = this.g;
+				data[index + 2] = this.b;
+				data[index + 3] = this.a;
 			}
-		} else {
-			for (var i = 0; i < this.cursors.length; i++) {
-				if (this.cursors[i].IN_USE) this.cursors[i].moveChar(change);
-			}
 		}
 
-		this.checkForCursorOverlap();
-	}
+		ctx.putImageData(id, 0, 0);
 
-	moveCursorsY(change, SELECT) {
-		if (SELECT) {
-			for (var i = 0; i < this.cursors.length; i++) {
-				if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
-			}
-		} else {
+		//Extras
+		switch (type) {
+			case "doughnut":
+				ctx.strokeStyle = "black";
+				ctx.lineWidth = width * 0.02;
 
-			for (var i = 0; i < this.cursors.length; i++) {
-				if (this.cursors[i].IN_USE) this.cursors[i].moveLine(change);
-			}
-		}
-		this.checkForCursorOverlap();
-	}
+				ctx.beginPath();
+				ctx.arc(width * 0.5, height * 0.5, width * 0.475, Math.PI * 2, false);
+				ctx.stroke();
 
-	checkForCursorOverlap() {
-		var cur1 = null,
-			cur2 = null;
-		for (var i = 0; i < this.cursors.length; i++) {
-			cur1 = this.cursors[i];
-			if (!cur1.IN_USE) continue
-			var id = (cur1.selection_y << 10) | cur1.selection_x;
+				ctx.strokeStyle = this.draw_mode === "hsl" ? "white" : "black";
+				ctx.beginPath();
+				ctx.arc(width * 0.5, height * 0.5, width * 0.295, Math.PI * 2, false);
+				ctx.stroke();
 
-			for (var j = i + 1; j < this.cursors.length; j++) {
-				cur2 = this.cursors[j];
-				if (!cur2.IN_USE) continue
-
-				var id2 = (cur2.selection_y << 10) | cur2.selection_x;
-				if (cur1.id == cur2.id) {
-					debugger
-					this.releaseCursor(cur2);
-				} else if (cur2.id <= id && id > -1) {
-					debugger
-					cur1.selection_x = cur2.selection_x;
-					cur1.selection_y = cur2.selection_y;
-					this.releaseCursor(cur2);
-				} else if (id2 > -1 && cur1.id >= id2) {
-					debugger
-					cur1.x = cur2.x;
-					cur1.y = cur2.y;
-					this.releaseCursor(cur2);
-				}
-			}
-		}
-		this.sortCursors();
-	}
-
-	sortCursors(){
-		for (var i = 0; i < this.cursors.length-1; i++) {
-			var 
-			cur1 = this.cursors[i],
-			cur2 = this.cursors[i+1];
-			//move data from cur2 to cur1
-			if(!cur1.IU && cur2.IU){
-				this.cursors[i] = cur2;
-				this.cursors[i+1] = cur1;
-			}
-		}
-	}
-
-	updateLineOffsets(x, y, min_x, min_y, max_x, max_y, scale, camera) {
-		var length = this.token_container.length;
-		if (length < 1) return;
-		var sh = this.line_height / scale;
-
-		if (this.scroll_top > 0) {
-			min_y += this.scroll_top / scale;
-			max_y += this.scroll_top / scale;
-			this.diff_y_min = Math.max(Math.floor(((min_y - (y / scale)) / sh)), 0);
-			this.diff_y_max = Math.min(Math.ceil((max_y - (y / scale)) / sh), length);
-		} else {
-			this.diff_y_min = Math.max(((min_y - (y / 1)) / this.line_height) | 0, 0);
-			this.diff_y_max = Math.min(((max_y - (y / 1)) / this.line_height) | 0, length);
-
-			this.pixel_offset = min_y - (y / 1);
-			this.pixel_top = Math.max(min_y - (y / 1));
-			this.pixel_bottom = Math.max(max_y - (y / 1));
-		}
-		this.updateCursors(camera, scale, camera.px + x, camera.py + y);
-		this.checkForCursorOverlap();
-	}
-
-	renderToDOM(scale = 1) {
-		this.DOM.innerHTML = "";
-		this.DOM.style.fontSize = "200%";
-		var text = "<pre dna='small_scale_pre'>";
-		//get size of space and line
-		this.max_length = 0;
-
-
-		var mh = this.line_height * scale;
-		if (scale < 0.4) {
-			text = "<pre dna='small_scale_pre' top:" + (this.diff_y_min * mh) + "px'>";
-			for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
-				var line = this.token_container.getIndexedLine(i);
-				if (line) {
-					var length = line.length;
-					if (length > this.max_length) this.max_length = length;
-					text += line.renderDOM(true) + "</br>";
-
-				}
-			}
-		} else {
-			var y = (this.pixel_top > -1) ? this.pixel_top : 0;
-			var height = this.token_container.pixel_height;
-			if (this.token_container.length > 0) {
-				var line = this.token_container.getLineAtPixelOffset(y | 0);
-				var t = line.pixel_offset;
-				var diff = (y > 0) ? t - y : 0;
-				var i = 0;
-				while (line) {
-					i++;
-					console.log(line.renderDOM(false));
-					text += "<span dna='small_scale_pre' style='top: " + ((y + diff) * scale) + "px'>" + line.renderDOM(false) + "</span>";
-					y += line.pixel_height;
-					t += line.pixel_height;
-					var length = line.length;
-					if (length > this.max_length) this.max_length = length;
-					if (y >= this.pixel_bottom || t >= height) break;
-					var line = line.next_line;
-
-				}
-			}
-
-		}
-
-		text += "</pre>";
-
-		this.DOM.innerHTML = text;
-	}
-
-	renderToBuffer(buffer = new Float32Array(52)) {
-		this.max_length = 0;
-
-		var offset = 0;
-		
-		for (var i = this.diff_y_min; i < this.diff_y_max; i++) {
-			var line = this.token_container.getIndexedLine(i);
-			if (line) {
-				var length = line.length;
-				if (length > this.max_length) this.max_length = length;
-				offset = line.renderToBuffer(buffer, offset);
-			}
-		}
-
-		return offset;
-	}
-
-
-	updateText(index = 0) {
-		var loop_check = 0;
-		
-		this.releaseAllCursors();
-		
-		var token = this.token_container.getIndexedLine(index);
-		while (token = token.parse()) {
-			if (loop_check++ > 1000000) {
 				break;
-			}
-		}
-		this.cursors[0].IN_USE = true;
-	}
-
-	toString() {
-		var i = 0,
-			text = "";
-		var token = this.token_container.getIndexedLine(0);
-		while (token) {
-			text += this.new_line + token.cache;
-			token = token.next_line;
-		}
-		return text;
-	}
-
-	setIndexes() {
-		return;
-	}
-
-	//************************
-	//POOLS
-	releaseAllCursors() {
-		for (var i = 0; i < this.cursors.length; i++) {
-			var temp = this.cursors[i];
-			temp.IN_USE = false;
+			case "wheel":
+				ctx.strokeStyle = "black";
+				ctx.lineWidth = width * 0.01;
+				ctx.beginPath();
+				ctx.arc(width * 0.5, height * 0.5, width * 0.475, Math.PI * 2, false);
+				ctx.stroke();
+				break;
+			default:
+				ctx.strokeStyle = "rgb(220,220,220)";
+				ctx.lineWidth = 2;
+				ctx.strokeRect(0, 0, width, height);
+			break;
 		}
 	}
 
+	HSLtoRGB(h, s, l) {
+		var h_ = h / 60;
+		var c = (1 - Math.abs(2 * l - 1)) * s;
 
-	releaseCursor(cursor) {
-		if (cursor.IN_USE) {
-			cursor.IN_USE = false;
+		var x = c * (1 - Math.abs((h_ % 2) - 1));
+
+		var rgb = [0, 0, 0];
+
+		if (h_ < 1 && h_ >= 0) {
+			rgb[0] = c;
+			rgb[1] = x;
+		} else if (h_ < 2) {
+			rgb[1] += c;
+			rgb[0] += x;
+		} else if (h_ < 3) {
+			rgb[1] += c;
+			rgb[2] += x;
+		} else if (h_ < 4) {
+			rgb[2] += c;
+			rgb[1] += x;
+		} else if (h_ < 5) {
+			rgb[2] += c;
+			rgb[0] += x;
+		} else if (h_ < 6) {
+			rgb[0] += c;
+			rgb[2] += x;
 		}
+
+		var m = l - 0.5 * c;
+
+		rgb[0] += m;
+		rgb[1] += m;
+		rgb[2] += m;
+
+		rgb[0] *= 255;
+		rgb[1] *= 255;
+		rgb[2] *= 255;
+
+
+		return rgb;
 	}
 
-	aquireCursor() {
-		var temp = null;
-		if (this.cursors.length > 0) {
-			for (var i = 0; i < this.cursors.length; i++) {
-				temp = this.cursors[i];
-				if (!temp.IU)
-					break
-				temp = null;
-			}
+	HSVtoRGB(h, s, v) {
+		var h_ = h / 60;
+		var c = v * s;
+		var m = v - c;
+
+		var x = c * (1 - Math.abs((h_ % 2) - 1));
+
+		var rgb = [m, m, m];
+
+		if (h_ < 1 && h_ >= 0) {
+			rgb[0] += c;
+			rgb[1] += x;
+		} else if (h_ < 2) {
+			rgb[1] += c;
+			rgb[0] += x;
+		} else if (h_ < 3) {
+			rgb[1] += c;
+			rgb[2] += x;
+		} else if (h_ < 4) {
+			rgb[2] += c;
+			rgb[1] += x;
+		} else if (h_ < 5) {
+			rgb[2] += c;
+			rgb[0] += x;
+		} else if (h_ < 6) {
+			rgb[0] += c;
+			rgb[2] += x;
 		}
-		if (!temp) {
-			temp = new TEXT_CURSOR(this);
-			temp.index = this.cursors.push(temp) - 1;
-		}
-		temp.IN_USE = true;
-		return temp;
+
+		rgb[0] *= 255;
+		rgb[1] *= 255;
+		rgb[2] *= 255;
+
+		return rgb;
 	}
 
+	RGBtoHSV(r, g, b) {
+		var h = 0;
+		var h_ = 0;
+		var v = 0;
+		var s = 0;
+		// hue
+		var M = Math.max(r, g, b);
+		var m = Math.min(r, g, b);
+		var c = M - m;
 
-	//Releases given token to pool and returns that token's previous sibling.
-	releaseToken(token) {
-		var prev_line = token.prev_line;
-		var next_line = token.next_line;
+		if (M === r) h_ = ((g - b) / c) % 6;
+		else if (M === g) h_ = ((b - r) / c) + 2;
+		else h_ = ((r - g) / c) + 4;
 
-		var prev_sib = token.prev_sib;
-		var next_sib = token.next_sib;
+		h = ((Math.PI / 180) * 60) * h_;
 
-		if (prev_sib) {
-			prev_sib.next_sib = next_sib;
-		}
-		if (next_sib) {
-			next_sib.prev_sib = prev_sib;
-		}
-		if (prev_line) {
-			if (next_sib && next_sib.IS_NEW_LINE) {
-				prev_line.next_line = next_sib;
+		//value
+		v = M;
+
+		//saturation
+		s = (c == 0) ? 0 : c / v;
+
+		return [h, s, v];
+	}
+
+	RGBtoHSL(r, g, b) {
+		var hsl = this.RGBtoHSV(r, g, b);
+		hsl[2] = (r * 0.3 + g * 0.59 + b * 0.11);
+		return hsl;
+	}
+
+	getColor(x, y, width, height, type, mode, color_array) {
+		var color;
+
+		mode = mode || this.draw_mode;
+		type = type || this.draw_type;
+		//square types
+
+		if (type === "doughnut" || type === "wheel") { //wheel or doughnut
+			//vector from center to xy
+			x = width * 0.5 - x;
+			y = height * 0.5 - y;
+
+			//normalize
+			var l = Math.sqrt(x * x + y * y); // l becomes a useful value
+
+			x /= l;
+			y /= l;
+			l /= width * 0.5; //now even more useful
+
+			if (l > 0.95) { // discard points outside and inside circle
+				this.r = 0;
+				this.g = 0;
+				this.b = 0;
+				this.a = 0;
+				return this;
 			} else {
-				prev_line.next_line = next_line;
-			}
-		}
-		if (next_line) {
-			if (prev_sib && prev_sib.IS_NEW_LINE) {
-				next_line.prev_line = prev_sib;
-			} else {
-				next_line.prev_line = prev_line;
-			}
-		}
-
-		if (token.IS_NEW_LINE) {
-			this.token_container.remove(token);
-			this.setIndexes();
-		}
-
-		var t = token.prev_sib;
-		token.reset();
-		token.next_sib = this.token_pool;
-		token.prev_sib = null;
-		token.text = "";
-		this.token_pool = token;
-		return t;
-	}
-
-	//Either returns an existing token from pool or creates a new one and returns that.
-	aquireToken(prev_token) {
-		var t = this.token_pool;
-
-		if (t) {
-			if (t.next_sib) {
-				this.token_pool = t.next_sib;
-				this.token_pool.prev_sib = null;
-			} else {
-				this.token_pool = new TEXT_TOKEN(this, null);
-			}
-		} else {
-			t = new TEXT_TOKEN(this, null);
-		}
-
-		t.reset();
-
-		if (prev_token) {
-			t.prev_line = prev_token.prev_line;
-			t.next_line = prev_token.next_line;
-
-			if (prev_token.IS_NEW_LINE) {
-				t.prev_line = prev_token;
-			}
-
-			t.next_sib = prev_token.next_sib;
-			t.prev_sib = prev_token;
-			prev_token.next_sib = t;
-			if (t.next_sib) {
-				t.next_sib.prev_sib = t;
-			}
-		}
-		return t;
-	}
-
-	insertTextAtCursor(char, deletekey) {
-		this.insertCharAtCursor(char, deletekey);
-	}
-
-	insertCharAtCursor(char, deletekey, index) {
-		var l = this.cursors.length;
-		var j = 0;
-
-		if (typeof index === "number") {
-			l = index + 1;
-			j = index;
-		}
-
-		for (; j < l; j++) {
-			if (this.cursors[j].IN_USE) {
-				var cursor = this.cursors[j];
-				var select = cursor.getTextFromSelection().length;
-				cursor.arrangeSelection();
-				cursor.setToSelectionTail();
-				var line = cursor.real_position_y;
-				var i = cursor.real_position_x;
-				var c = char;
-				if (select > 0) {
-					c = this.del_char.repeat(select) + char;
+				//calculate angle and convert degrees
+				var angle = ((Math.atan2(0, 1) - Math.atan2(y, x)) * 180 / Math.PI) + 180;
+				if (type === "doughnut") {
+					if (mode == "hsl") {
+						color = this.HSLtoRGB(angle, this.saturation, (1 - (l * 2.5 - 1.5)));
+					} else {
+						color = this.HSVtoRGB(angle, this.saturation, (1 - (l * 2.5 - 1.5)));
+					}
+				} else {
+					if (mode == "hsl") {
+						color = this.HSLtoRGB(angle, this.saturation, (1 - l));
+					} else {
+						color = this.HSVtoRGB(angle, this.saturation, l);
+					}
 				}
-				console.log(c);
-				this.token_container.getRealLine(line).insertText(c, i);
-				cursor.toString();
-				cursor.resetSelection();
+			}
+		} else { //square
+			if (mode === "hsl") {
+				color = this.HSLtoRGB(x / width * 360, this.saturation, 1 - y / height);
+			} else {
+				color = this.HSVtoRGB(x / width * 360, this.saturation, 1 - y / height);
 			}
 		}
-	}
 
-	//Inserts token into list of lines after prev_line. Returns new line token
-	insertLine(prev_line, new_line) {
-		if (!prev_line) {
-			new_line.prev_line = new_line;
-			new_line.next_line = null;
-			new_line.index = 0;
-			this.token_container.insert(new_line, 0);
-		} else {
-			new_line.index = prev_line.index + 1;
-			this.token_container.insert(new_line, prev_line.index + 1);
-			new_line.next_line = prev_line.next_line;
-			if (new_line.next_line) {
-				new_line.next_line.prev_line = new_line;
-			}
-			new_line.prev_line = prev_line;
-			prev_line.next_line = new_line;
-		}
-		this.length++;
-		this.setIndexes();
-		new_line.IS_NEW_LINE = true;
-		return new_line
-	}
-
-	releaseLine(line) {
-		line.first_token.text = "";
-		var line1 = line.prev_sib;
-		var line2 = line.next_sib;
-
-		if (line1) {
-			line1.next_sib = line2;
-		}
-		if (line2) {
-			line2.prev_sib = line1;
+		if(!color_array){
+			this.r = (color[0] | 0);
+			this.g = (color[1] | 0);
+			this.b = (color[2] | 0);
+			this.a = this.alpha;
 		}
 
-		line.next_sib = this.line_pool;
-		line.prev_sib = null;
-		this.line_pool = line;
-
-		this.token_container.remove(line);
-
-		this.length--;
-		//this.setIndexes();
-		line.PROTECT__IN_USE = false;
-		return line;
-	}
-
-
-	insertText(text, li = 0, cursor_ind) {
-		if ((this.token_container.height | 0) < 1) {
-			if (text.charCodeAt(0) !== this.new_line_code) {
-				text = this.new_line + text;
-			}
-			this.insertLine(null, this.aquireToken()).insertText(text, 1);
-			this.updateText(0);
-		} else {
-			this.token_container.getIndexedLine(li).insertText(text, -1, cursor_ind);
-		}
-	}
-
-	setFont(font) {
-		this.font = new Font(font);
-
-		this.DOM.style.fontFamily = font;
-
-		return new Promise((res, rej) => { 
-			this.font.onComplete = () => {
-				res();
-			};
-
-			if (this.font.IS_READY)
-				res();
-			else
-				this.font.startCalc();
-		});
+		return this;
 	}
 }
 
@@ -7087,7 +7270,8 @@ class Project {
                 actions : system.actions,
                 ui : system.ui,
                 classes : {
-                    textedit : TextFramework
+                    textedit : TextFramework,
+                    coloredit : ColorFramework
                 },
                 system
             }

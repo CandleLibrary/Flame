@@ -22,11 +22,14 @@ class Component {
         this.width = system.project.flame_data.default.component.width;
         this.height = system.project.flame_data.default.component.height;
 
+        this.IFRAME_LOADED = false;
+
         this.iframe.onload = (e) => {
             this.mountListeners();
-            e.target.contentDocument.body.appendChild(this.data);
+            //e.target.contentDocument.body.appendChild(this.data);
             e.target.contentWindow.wick = wick;
             this.window = e.target.contentWindow;
+            this.IFRAME_LOADED = true;
         };
 
         //Label
@@ -62,7 +65,7 @@ class Component {
         this.action = null;
     }
 
-    mountListeners(){
+    mountListeners() {
         this.system.ui.integrateIframe(this.iframe, this);
     }
 
@@ -110,16 +113,22 @@ class Component {
     documentReady(pkg) {
 
         let css = pkg._skeletons_[0].tree.css;
-        
+
         if (css)
             css.forEach(css => {
                 this.local_css.push(css);
             });
-        this.manager = pkg.mount(this.data, null, false, this);
+
+        if (this.IFRAME_LOADED)
+            this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+        else
+            this.iframe.addEventListener("load", () => {
+                this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+            });
 
     }
 
-    _upImport_(){
+    _upImport_() {
 
     }
 

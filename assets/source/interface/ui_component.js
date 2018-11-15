@@ -13,6 +13,29 @@ class UIComponent extends Component {
 
         super(system);
 
+        this.iframe.onload = (e) => {
+
+            this.mountListeners();
+
+            let children = Array.prototype.slice.apply(this.data.children);
+
+            for (let i = 0; i < children.length; i++) {
+                e.target.contentDocument.body.appendChild(children[i]);
+            }
+
+            e.target.contentWindow.wick = wick;
+
+            this.window = e.target.contentWindow;
+
+            this.local_css.forEach((css) => {
+                let style = document.createElement("style");
+                style.innerText = css + "";
+                this.iframe.contentDocument.head.appendChild(style);
+            });
+
+            this.iframe.onload = null;
+        };
+
         //frame for fancy styling
         this.iframe.classList.add("flame_ui_component");
 
@@ -22,19 +45,33 @@ class UIComponent extends Component {
 
         this.system = system;
 
-        this.width = 180;
-        this.height =300;
+        this.width = 300;
+        this.height = 500;
+        this.x = 0;
+        this.y = 0;
 
-
-        this.icon = null;
+        this.LOADED = false;
     }
-    mountListeners(){};
+
+    mountListeners() {
+        this.style_frame.addEventListener("mousedown", e => {
+            this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
+            this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
+        });
+        this.iframe.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.iframe.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+    }
 
     documentReady(pkg) {
+        if (this.LOADED) {
+            return;
+        }
+        this.LOADED = true;
+
         this.mgr = pkg.mount(this.data, this.system.project.flame_data);
-        
+
         let src = this.mgr.sources[0].ast;
-        
+
         if (src._statics_.menu) {
             switch (src._statics_.menu) {
                 case "main":
@@ -44,13 +81,24 @@ class UIComponent extends Component {
         }
 
         let css = pkg._skeletons_[0].tree.css;
-        if (css)
+        if (css) {
             css.forEach(css => {
                 this.local_css.push(css);
             });
+        }
 
         this.mgr._upImport_ = (prop_name, data, meta) => {
-            this.system.ui.mountComponent(this);
+            switch (prop_name) {
+                case "load":
+                    this.system.ui.mountComponent(this);
+                    break;
+                case "width":
+                    this.width = data;
+                    break;
+                case "height":
+                    this.height = data;
+                    break;
+            }
         };
     }
 
@@ -65,7 +113,8 @@ class UIComponent extends Component {
     }
 
     mount(element) {
-        element.appendChild(this.element);
+        if(this.element.parentNode != element)
+            element.appendChild(this.element);
     }
 
     unmount() {};

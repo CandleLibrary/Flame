@@ -148,7 +148,7 @@ export class TEXT_TOKEN {
 		this.IS_LINKED_LINE = false;
 	}
 
-	//Resets vaules to unbiased defaults
+	//Resets values to unbiased defaults
 	reset() {
 		this.pixel_height = 30;
 		this.char_start = 0;
@@ -180,7 +180,7 @@ export class TEXT_TOKEN {
 				return this.prev_line.flushTokens();
 			} else {
 				//The top most token should always be a new line. If here, something went really wrong
-				throw (this)
+				throw (this);
 			}
 		}
 
@@ -230,7 +230,7 @@ export class TEXT_TOKEN {
 			last = temp;
 			temp = temp.prev_sib;
 		}
-		return last
+		return last;
 	}
 
 	mergeLeft() {
@@ -263,7 +263,7 @@ export class TEXT_TOKEN {
 
 	//Store new inserted text into tempory tokens, whose contents will be merged into the actaul token list when parsed.
 	insertText(text, char_pos) {
-		var l = this.cache.length
+		var l = this.cache.length;
 			//Account for new line character
 
 		if (char_pos > l) {
@@ -347,7 +347,7 @@ export class TEXT_TOKEN {
 	setPixelOffset() {
 
 	}
-	//Takes the token text string and breaks it down into individaul pieces, linking resulting tokens into a linked list.
+	//Takes the token text string and breaks it down into individual pieces, linking resulting tokens into a linked list.
 	parse(FORCE) {
 		if (!this.NEED_PARSE && !FORCE) return this.next_sib;
 
@@ -642,19 +642,20 @@ export class TEXT_TOKEN {
 						token = token.next_sib;
 					}
 
-					this.HTML_CACHED = true
+					this.HTML_CACHED = true;
 				}
 				return this.cached_html;
 			}
 		} else {
+			let text = (this.text == "<") ? "&lt;" : (this.text == ">") ? "&gt;" : this.text;
+
 			if (plain_text) {
-				return this.text;
+				return text;
 			} else {
 				if (this.color !== "black") {
-
-					return `<span style="color:${this.color}">${this.text}</span>`;
+					return `<span style="color:${this.color}">${text}</span>`;
 				}
-				return this.text;
+				return text;
 			}
 		}
 	}

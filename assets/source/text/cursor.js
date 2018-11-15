@@ -1,9 +1,10 @@
 export class TEXT_CURSOR {
 	constructor(text_fw) {
+
 		//On screen HTML representation of cursor
 		this.HTML_ELEMENT = null;
-		//this.HTML_ELEMENT = document.createElement("div");
-		//this.HTML_ELEMENT.classList.add("txt_cursor");
+		this.HTML_ELEMENT = document.createElement("div");
+		this.HTML_ELEMENT.classList.add("txt_cursor");
 		
 
 		//Character and Line position of cursor
@@ -60,9 +61,9 @@ export class TEXT_CURSOR {
 	set IN_USE(bool) {
 		if (bool !== this.IU) {
 			if (bool) {
-			//	this.text_fw.parent_element.appendChild(this.HTML_ELEMENT);
+				this.text_fw.parent_element.appendChild(this.HTML_ELEMENT);
 			} else {
-			//	this.text_fw.parent_element.removeChild(this.HTML_ELEMENT);
+				this.text_fw.parent_element.removeChild(this.HTML_ELEMENT);
 				this.resetSelection();
 				this.REAL_POSITION_NEEDS_UPDATE = true;
 				this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
@@ -84,6 +85,7 @@ export class TEXT_CURSOR {
 	}
 
 	set size(scale) {
+
 		this.HTML_ELEMENT.style.width = 1 * scale + "px";
 		this.HTML_ELEMENT.style.height = this.line_height * scale + "px";
 	}
@@ -111,6 +113,7 @@ export class TEXT_CURSOR {
 	}
 
 	getXCharOffset(x_in, y_in) {
+
 		var y = (((y_in) * this.text_fw.line_height) - 1),
 			x = 0;
 
@@ -134,14 +137,13 @@ export class TEXT_CURSOR {
 					} else
 						x += char.width;
 				}
-
 			}
 		}
 		return x;
 	}
 
-	getRealPosition(x, y) {;
-		var line = this.line_container.getLine(y)
+	getRealPosition(x, y) {
+		var line = this.line_container.getLine(y);
 		var offset_length = 0;
 
 		//Trace linked line chains to their originating location, which is the last non-linked line
@@ -191,7 +193,7 @@ export class TEXT_CURSOR {
 			this.y++;
 			x -= line.cache.length;
 			line = line.next_line;
-			x += ((line.IS_LINKED_LINE | 0) - 1)
+			x += ((line.IS_LINKED_LINE | 0) - 1);
 		}
 
 		this.x = x;
@@ -220,9 +222,9 @@ export class TEXT_CURSOR {
 		var line = this.line_container.getLine(this.selection_y);
 		while (line && x > line.cache.length) {
 			this.selection_y++;
-			x -= line.cache.length //- ;
+			x -= line.cache.length;
 			line = line.next_line;
-			x += ((line.IS_LINKED_LINE | 0) - 1)
+			x += ((line.IS_LINKED_LINE | 0) - 1);
 
 		}
 		this.selection_x = x;
@@ -256,15 +258,15 @@ export class TEXT_CURSOR {
 			left:0;
 			background-color:rgba(250,0,0,0.5);
 	 		z-index:30000000000;
-		`
+		`;
 			this.selections[this.selection_index] = div;
 
 		}
 
 		var div = this.selections[this.selection_index];
 		this.selection_index++;
-		var x1 = this.getXCharOffset(x_start, y)
-		var x2 = this.getXCharOffset(x_end, y)
+		var x1 = this.getXCharOffset(x_start, y);
+		var x2 = this.getXCharOffset(x_end, y);
 		var width = x2 - x1;
 
 		div.show();
@@ -285,13 +287,13 @@ export class TEXT_CURSOR {
 		var y2 = this.selection_y;
 		if (this.selection_x > -1 && this.selection_y > -1) {
 			var id1 = this.id;
-			var id2 = (this.selection_y << 10) | this.selection_x
+			var id2 = (this.selection_y << 10) | this.selection_x;
 
 			if (id2 < id1) {
-				var x1 = this.selection_x;
-				var y1 = this.selection_y;
-				var x2 = this.x
-				var y2 = this.y
+				x1 = this.selection_x;
+				y1 = this.selection_y;
+				x2 = this.x;
+				y2 = this.y;
 			}
 		}
 		return {
@@ -310,13 +312,13 @@ export class TEXT_CURSOR {
 			if (id2 < id1) {
 				var x1 = this.selection_x;
 				var y1 = this.selection_y;
-				var x2 = this.x
-				var y2 = this.y
+				var x2 = this.x;
+				var y2 = this.y;
 			} else {
-				var x1 = this.x;
-				var y1 = this.y;
-				var x2 = this.selection_x;
-				var y2 = this.selection_y;
+				x1 = this.x;
+				y1 = this.y;
+				x2 = this.selection_x;
+				y2 = this.selection_y;
 			}
 
 			this.x = x1;
@@ -379,17 +381,16 @@ export class TEXT_CURSOR {
 		return string;
 	}
 
-	update(camera, scale, xc, yc) {
+	update(camera, scale) {
 		// todo - correct font data 
 
 
 		//Set cursor size to mach current zoom level of camera
 		this.size = scale;
 
-		this.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y) + xc) * scale) + "px";
+		this.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y))) + "px";
 
-
-		this.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset + yc) * scale) + "px";
+		this.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset)) + "px";
 
 		//Update shading for selections
 
@@ -407,8 +408,8 @@ export class TEXT_CURSOR {
 			if (id2 < id1) {
 				var x1 = this.selection_x;
 				var y1 = this.selection_y;
-				var x2 = this.x
-				var y2 = this.y
+				var x2 = this.x;
+				var y2 = this.y;
 			} else {
 				var x1 = this.x;
 				var y1 = this.y;
@@ -449,12 +450,12 @@ export class TEXT_CURSOR {
 			this.x = Math.min(Math.max(Math.round(x / this.text_fw.font.props[0].width), 0), this.lineLength);
 		} else {
 			var fontData = this.text_fw.font.props;
-			var line = this.line_container.getLine(this.y)
+			var line = this.line_container.getLine(this.y);
 			var text = line.cache;
 			var l = text.length;
 			var y = 0;
 
-			var diff = this.y - line.index
+			var diff = this.y - line.index;
 			var offset = 0;
 			var i = 0;
 
@@ -538,6 +539,7 @@ export class TEXT_CURSOR {
 		this.REAL_POSITION_NEEDS_UPDATE = true;
 
 		var diff = this.x + change;
+		
 		if (diff < 0) {
 			if (this.y <= 0) {
 				this.x = 0;

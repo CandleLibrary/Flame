@@ -2,8 +2,8 @@
 import wick from "wick";
 import { actions } from "./actions/action";
 import { UIComponent } from "./ui_component";
-import {LineMachine} from "./system/line_machine";
-import {SVGManager} from "./system/svg_manager";
+import { LineMachine } from "./system/line_machine";
+import { SVGManager } from "./system/svg_manager";
 
 //OTHER imports
 import { CanvasManager } from "./canvas_manager";
@@ -28,6 +28,7 @@ export class UI_Manager {
         this.origin_y = 0;
         this.transform = new(wick.core.common.Transform2D)();
         this.last_action = Date.now();
+        this.ui_target = null;
 
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
@@ -96,7 +97,8 @@ export class UI_Manager {
     addToMenu(menu_name, item_name, icon_element, menu) {
         if (menu_name == "main") {
             let element = icon_element.cloneNode(true);
-            element.onclick = ()=>{
+            element.style.display = "";
+            element.onclick = () => {
                 this.mountComponent(menu);
             };
             this.main_menu.appendChild(element);
@@ -105,7 +107,7 @@ export class UI_Manager {
     }
 
     addComponent(wick_component_file_path) {
-        
+
         let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
 
         if (doc) {
@@ -126,10 +128,10 @@ export class UI_Manager {
 
             this.loadedComponents.forEach(c => c.set(this.target));
 
-            if(component){
-                if(this.target.IS_COMPONENT){
+            if (component) {
+                if (this.target.IS_COMPONENT) {
                     this.line_machine.setPotentialBoxes(null, component, this.components);
-                }else{
+                } else {
                     this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
                 }
             }
@@ -140,6 +142,7 @@ export class UI_Manager {
 
         if (SET_MENU) this.main_menu.setAttribute("show", "false");
         return false;
+
     }
 
     integrateIframe(iframe, component) {
@@ -151,9 +154,9 @@ export class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
-            
-            let x = e.pageX + 4 + component.x ;
-            let y = e.pageY + 4 + component.y ;
+
+            let x = e.pageX + 4 + component.x;
+            let y = e.pageY + 4 + component.y;
             this.last_action = Date.now();
             this.handlePointerDownEvent(e, x, y);
 
@@ -166,7 +169,7 @@ export class UI_Manager {
                     } else {
                         this.canvas.setIframeTarget(e.target, component);
                         this.render();
-                        this.setTarget(e, component,  x, y);
+                        this.setTarget(e, component, x, y);
                     }
                 }
             }
@@ -178,7 +181,7 @@ export class UI_Manager {
         iframe.contentWindow.addEventListener("mousemove", e => {
             let x = e.pageX + 4 + component.x;
             let y = e.pageY + 4 + component.y;
-            if (e.button !== 1) this.handlePointerMoveEvent(e, x, y);
+            this.handlePointerMoveEvent(e, x, y);
             return false;
         });
 
@@ -213,9 +216,9 @@ export class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
-            if(x === NaN || y === NaN){
+            if (x === NaN || y === NaN)
                 debugger;
-            }
+
             this.origin_x = x;
             this.origin_y = y;
             this.ACTIVE_POINTER_INPUT = true;
@@ -239,13 +242,15 @@ export class UI_Manager {
         return false;
     }
 
-    handlePointerMoveEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY)) {
+    handlePointerMoveEvent(e, x, y) {
 
         if (!this.ACTIVE_POINTER_INPUT) return;
 
-        let diffx = this.origin_x - x;
-        let diffy = this.origin_y - y;
         if (this.UI_MOVE) {
+            x = (typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX);
+            y = (typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY);
+            let diffx = this.origin_x - x;
+            let diffy = this.origin_y - y;
             this.transform.px -= diffx * this.transform.sx;
             this.transform.py -= diffy * this.transform.sy;
             this.origin_x = x + diffx;
@@ -253,8 +258,16 @@ export class UI_Manager {
             this.render();
             this.view_element.style.transform = this.transform;
             return;
+        } else if (this.ui_target) {
+            let diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
+            let diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
+            this.origin_x -= diffx;
+            this.origin_y -= diffy;
+            if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            let {dx, dy} = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+            let { dx, dy } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -267,14 +280,16 @@ export class UI_Manager {
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
-        //this.target = null;
+        if (this.ui_target)
+            return (this.ui_target = null);
+
         if (this.target)
             actions.COMPLETE(this.system, this.target.element, this.target.component);
     }
 
     handleDocumentDrop(e) {
         e.preventDefault();
-        
+
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
             let doc = this.system.doc_man.get(this.system.doc_man.load(f));
 
@@ -306,7 +321,7 @@ export class UI_Manager {
     handleContextMenu(e, x, y, component = null) {
         //Load text editor in the bar.
 
-        switch(e.target.tagName.toUpperCase()){
+        switch (e.target.tagName.toUpperCase()) {
             case "SVG":
             case "RECT":
             case "PATH":
@@ -333,13 +348,13 @@ export class UI_Manager {
         this.view_element.style.transform = this.transform;
     }
 
-    update(){
+    update() {
         this.render();
     }
 
     render() {
         this.canvas.render(this.transform);
-        if(this.target)
+        if (this.target)
             this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }

@@ -5,6 +5,7 @@ import {flame_scheme} from "./scheme";
 
 //Text Editing
 import {TextFramework} from "../text/text_framework";
+import {ColorFramework} from "../color/color_framework";
 
 /**
  * @brief Stores data for the current project.
@@ -30,7 +31,8 @@ export class Project {
                 actions : system.actions,
                 ui : system.ui,
                 classes : {
-                    textedit : TextFramework
+                    textedit : TextFramework,
+                    coloredit : ColorFramework
                 },
                 system
             }

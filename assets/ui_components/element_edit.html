@@ -1,17 +1,20 @@
-<w-s model="settings" #menu="main" export="load">
+<w-s model="settings" #menu="main" export="load" element="div" class="flame_ui_panel">
 	
-	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))">
+	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))" style="display: none">
 		HTML
 	</div>
 
-	<div badge="data"></div>
-
-	<textarea value="((data))" onchange="((change)())"></textarea>
+	<div badge="data" id="text_container"
+		onmouseup="((mouseup)())"
+		onkeypress="((keypress)())"
+		onkeydown="((keypress)())"
+		tabindex=1 
+	></div>
 
 	<script on=((created))>
 		this.t = new presets.custom.classes.textedit(this.badges.data);
 		//this.t.insertText("This is the test text");
-		this.t.setFont("Arial").then(()=>this.t.renderToDOM());
+		//this.t.setFont("comic sans").then(()=>this.t.renderToDOM());
 		
 	</script>
 
@@ -22,7 +25,63 @@
 		emit("data", target.element.wick_node + "");
 	</script>
 
-	<script on="((change))"> 
-		src.wick_element.reparse(event.target.value).then(n=>src.wick_element = n);
+	<script on=((change))>
+		src.wick_element.reparse(change).then(n=>src.wick_element = n);
 	</script>
+
+	<script on=((mouseup))>
+		this.badges.data.focus();
+		this.t.onMouseUp(event, event.offsetX, event.clientY, 1);
+	</script>
+
+	<script on=((keypress))>
+		this.t.onKeyPress(event);
+		this.t.moveCursorsByX(1);
+		this.t.updateText();
+		this.t.updateCursors();
+		this.t.renderToDOM();
+		event.preventDefault();
+		emit.change = this.t + "";
+	</script>
+
+	<script on=((keydown))>
+		this.t.onKeyDown(event);
+		this.t.updateText();
+		this.t.updateCursors();
+		this.t.renderToDOM();
+		event.preventDefault();
+	</script>
+
+	<style>
+		.text_edit {
+			top: 0;
+		    right: 0;
+		    bottom: 0;
+		    left: 0;
+		    background-color: rgba(255,0,0,1);
+		    border:none;
+		    font-size:12px;
+		    /* Lazily forcing consistent spacing by disabling kerning and ligatures. */
+		    font-variant-ligatures: none;
+		    font-kerning: none;
+		}
+
+		.text_edit .small_scale_pre {
+			display: inline;
+		    position: absolute;
+		    font-family: unset;
+		    font-size: 100%;
+		}
+
+		.txt_cursor {
+			position: absolute;
+			width:2px;
+			height:12px;
+			background-color:black;
+		}
+		#text_container{
+			position: relative;
+			font-size: 12px;
+		}
+	</style>
 </w-s>

@@ -130,7 +130,7 @@ export function RESIZEMARGINTL(system, element, component, dx, dy, IS_COMPONENT)
 
 export function RESIZEMARGINTR(system, element, component, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return;
-    console.log({dx,dy})
+    
     SETDELTAMARGINRIGHT(system, element, component, dx, 0, true);
     SETDELTAMARGINTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();

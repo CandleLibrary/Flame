@@ -31,7 +31,7 @@ export class TEXT_CURSOR {
 
 		this.index = 0;
 		this.text_fw = text_fw;
-		this.line_container = text_fw.token_container;
+		//this.line_container = text_fw.token_container;
 		this.char_code = text_fw.curs_char;
 		this.selections = [];
 		this.line_height = 0;
@@ -478,6 +478,10 @@ export class TEXT_CURSOR {
 		this.line_height = line.pixel_height;
 	}
 
+	get line_container(){
+		return this.text_fw.token_container;
+	}
+
 
 	setSelectionX(x) {
 		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
@@ -639,5 +643,9 @@ export class TEXT_CURSOR {
 			}
 			line = line.next_sib;
 		}
+	}
+
+	set line_container(e){
+
 	}
 };

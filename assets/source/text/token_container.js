@@ -390,6 +390,7 @@ export class Token_Container {
 		if (index >= this.num_lines) index = this.num_lines - 1;
 		return this.root.getLine(index);
 	}
+	
 	getRealLine(index) {
 		if (index >= this.num_real_lines) index = this.num_real_lines - 1;
 		return this.root.getRealLine(index);
@@ -400,6 +401,7 @@ export class Token_Container {
 			pixel_height = this.pixel_height - 1;
 		}
 
+		if(!this.root) return 0;
 		return this.root.getLineAtPixelOffset(pixel_height);
 	}
 

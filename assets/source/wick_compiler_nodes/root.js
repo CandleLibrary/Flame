@@ -37,7 +37,7 @@ RootNode.prototype.setSource = function(source) {
 };
 
 RootNode.prototype.reparse = function(text, element) {
-    let lex = Lexer(text);
+
     let Root = new this.reparse_type();
 
     Root.par = this.par;
@@ -60,24 +60,23 @@ RootNode.prototype.reparse = function(text, element) {
 };
 
 // Rebuild all sources relying on this node
-RootNode.prototype.rebuild = function() {
+RootNode.prototype.rebuild = function(win = window) {
 
     //if (!this.par)
     //    this.updated();
 
     if (this.observing_sources) {
-        this._linkCSS_();
+        
         for (let i = 0; i < this.observing_sources.length; i++) {
             try {
-
-                this.observing_sources[i].rebuild();
+                this.observing_sources[i].rebuild(this.observing_sources[i].window);
             } catch (e) {
                 console.error(e);
             }
         }
         this.resetRebuild();
     } else if (this.par)
-        this.par.rebuild();
+        this.par.rebuild(win);
 };
 
 RootNode.prototype.extract = function() {
@@ -86,8 +85,13 @@ RootNode.prototype.extract = function() {
 };
 
 
-RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element) {
+RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window) {
+    
     if (true || this.CHANGED !== 0) {
+
+        element.style.cssText = "";
+
+        this._linkCSS_(null, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
@@ -127,7 +131,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                if (node.buildExisting(child, source, presets, taps, element)) i++;
+                if (node.buildExisting(child, source, presets, taps, element, win)) i++;
             }
         }
     }

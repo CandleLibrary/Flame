@@ -8,18 +8,21 @@ export class TextFramework {
     constructor(parent_element) {
         this.token_container = new Token_Container();
 
+        this.font = null;
         this.font_size = 32;
         this.letter_spacing = 0;
         this.line_height = 30;
 
         this.DOM = document.createElement("div");
         this.DOM.classList.add("text_edit");
+        this.DOM.style.font_kerning = "none";
 
         this.parent_element = parent_element || document.body;
 
         parent_element.appendChild(this.DOM);
 
-        this.font = new TEXT_FONT("Time New Roman");
+        this.setFont("Times New Roman");
+        //this.font = new TEXT_FONT("Time New Roman");
 
         this.length = 0;
 
@@ -579,6 +582,10 @@ export class TextFramework {
     }
 
     clearContents(){
-
+        this.length = 0;
+        this.max_length = 0;
+        this.scroll_top = 0;
+        this.max_line_width = 0;
+        this.token_container = new Token_Container();
     }
 }

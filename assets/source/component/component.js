@@ -119,11 +119,16 @@ class Component {
                 this.local_css.push(css);
             });
 
-        if (this.IFRAME_LOADED)
+        if (this.IFRAME_LOADED){
             this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
-        else
+            this.sources[0].window = this.window;
+            this.rebuild();
+            
+        }else
             this.iframe.addEventListener("load", () => {
                 this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+                this.sources[0].window = this.window;
+                this.rebuild();
             });
 
     }
@@ -161,11 +166,13 @@ class Component {
     set width(w) {
         this.iframe.width = w;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
+        this.rebuild();
     }
 
     set height(h) {
         this.iframe.height = h;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
+        this.rebuild();
     }
 
     get x() {
@@ -186,6 +193,11 @@ class Component {
 
     get target() {
         return this.element;
+    }
+
+    rebuild(){
+        if(this.sources)
+            this.sources[0].rebuild();
     }
 }
 

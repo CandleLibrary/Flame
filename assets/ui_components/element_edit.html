@@ -20,7 +20,9 @@
 
 	<script on=((target)) >
 		src.wick_element = target.element.wick_node; 
+		this.t.clearContents();
 		this.t.insertText(target.element.wick_node + "");
+		this.t.updateText();
 		this.t.renderToDOM();
 		emit("data", target.element.wick_node + "");
 	</script>

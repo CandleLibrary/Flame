@@ -106,10 +106,10 @@ export class CSSManager {
 		}
 
 		if (!selector) {
-			//Create new css document and create identifier for this document best matching the element. 
+			//Create new CSS document and create identifier for this document best matching the element. 
 			//Add new class to element if there is none present. 
 
-			//The last selector in the component css has the highest precedent.
+			//The last selector in the component CSS has the highest precedent.
 			let tree = css_docs[css_docs.length - 1];
 
 			if (css_docs.length == 0) {
@@ -119,28 +119,25 @@ export class CSSManager {
 			}
 
 			let class_name = "n" +((Math.random() * 10000000) | 0) + "";
-
 			let classes = element.wick_node.getAttrib("class");
 			
 			if (classes) {
 				if (typeof(classes.value) == "string")
-					classes.value += ` ${class_name}`
+					classes.value += ` ${class_name}`;
 				else
-					classes.value.txt += ` ${class_name}`
+					classes.value.txt += ` ${class_name}`;
 			}else{
 				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", wick.core.lexer(class_name)));
-/*				element.wick_node._attributes_.push({
-					name:"class",
-					value:class_name,
-				})*/
-				console.log(element.wick_node.classList)
+				console.log(element.wick_node.classList);
 			}
 
 			element.classList.add(class_name);
 
-			selector = tree.createSelector(`.${class_name}`);
+			let body = tree.fch;
 
-			console.log(selector, selector.r)
+			selector = body.createSelector(`.${class_name}`);
+
+			console.log(selector, selector.r);
 		}
 
 		return selector;

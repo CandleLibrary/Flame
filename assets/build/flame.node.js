@@ -897,11 +897,16 @@ class Component {
                 this.local_css.push(css);
             });
 
-        if (this.IFRAME_LOADED)
+        if (this.IFRAME_LOADED){
             this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
-        else
+            this.sources[0].window = this.window;
+            this.rebuild();
+            
+        }else
             this.iframe.addEventListener("load", () => {
                 this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+                this.sources[0].window = this.window;
+                this.rebuild();
             });
 
     }
@@ -939,11 +944,13 @@ class Component {
     set width(w) {
         this.iframe.width = w;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
+        this.rebuild();
     }
 
     set height(h) {
         this.iframe.height = h;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
+        this.rebuild();
     }
 
     get x() {
@@ -964,6 +971,11 @@ class Component {
 
     get target() {
         return this.element;
+    }
+
+    rebuild(){
+        if(this.sources)
+            this.sources[0].rebuild();
     }
 }
 
@@ -1332,7 +1344,7 @@ function RESIZEMARGINTL(system, element, component, dx, dy, IS_COMPONENT) {
 
 function RESIZEMARGINTR(system, element, component, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return;
-    console.log({dx,dy});
+    
     SETDELTAMARGINRIGHT(system, element, component, dx, 0, true);
     SETDELTAMARGINTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
@@ -2536,7 +2548,7 @@ class BoxElement {
             this.w = rect.width;
             this.h = rect.height;
         }
-        
+
         let par_prop = component.window.getComputedStyle(this.target.element);
 
         //margin
@@ -2610,8 +2622,12 @@ class BoxElement {
         let cbr = this.cbr;
         let cbb = this.cbb;
 
-        ctx.strokeRect(ml, mt, mr - ml, mb - mt);
-        ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+
+        if (!this.IS_COMPONENT) {
+            ctx.strokeRect(ml, mt, mr - ml, mb - mt);
+            ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+        }
+        
         ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
 
         //Render Markers
@@ -2627,17 +2643,20 @@ class BoxElement {
         gripPoint(ctx, cbl, cbb, r);
         gripPoint(ctx, cbr, cbb, r);
 
-        //Margin Markers
-        gripPoint(ctx, ml, mt, r);
-        gripPoint(ctx, mr, mt, r);
-        gripPoint(ctx, ml, mb, r);
-        gripPoint(ctx, mr, mb, r);
+        if (!this.IS_COMPONENT) {
 
-        //Padding Markers
-        gripPoint(ctx, pl, pt, r);
-        gripPoint(ctx, pr, pt, r);
-        gripPoint(ctx, pl, pb, r);
-        gripPoint(ctx, pr, pb, r);
+            //Margin Markers
+            gripPoint(ctx, ml, mt, r);
+            gripPoint(ctx, mr, mt, r);
+            gripPoint(ctx, ml, mb, r);
+            gripPoint(ctx, mr, mb, r);
+
+            //Padding Markers
+            gripPoint(ctx, pl, pt, r);
+            gripPoint(ctx, pr, pt, r);
+            gripPoint(ctx, pl, pb, r);
+            gripPoint(ctx, pr, pb, r);
+        }
     }
 
     setTarget(element, component, IS_COMPONENT) {
@@ -3302,10 +3321,10 @@ class CSSManager {
 		}
 
 		if (!selector) {
-			//Create new css document and create identifier for this document best matching the element. 
+			//Create new CSS document and create identifier for this document best matching the element. 
 			//Add new class to element if there is none present. 
 
-			//The last selector in the component css has the highest precedent.
+			//The last selector in the component CSS has the highest precedent.
 			let tree = css_docs[css_docs.length - 1];
 
 			if (css_docs.length == 0) {
@@ -3315,7 +3334,6 @@ class CSSManager {
 			}
 
 			let class_name = "n" +((Math.random() * 10000000) | 0) + "";
-
 			let classes = element.wick_node.getAttrib("class");
 			
 			if (classes) {
@@ -3325,16 +3343,14 @@ class CSSManager {
 					classes.value.txt += ` ${class_name}`;
 			}else{
 				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", wick$1.core.lexer(class_name)));
-/*				element.wick_node._attributes_.push({
-					name:"class",
-					value:class_name,
-				})*/
 				console.log(element.wick_node.classList);
 			}
 
 			element.classList.add(class_name);
 
-			selector = tree.createSelector(`.${class_name}`);
+			let body = tree.fch;
+
+			selector = body.createSelector(`.${class_name}`);
 
 			console.log(selector, selector.r);
 		}
@@ -3734,7 +3750,7 @@ var version = 0;
 let Source = wick$1.core.source.constructor;
 
 Source.prototype.rebuild = function (){
-	this.ast.buildExisting(this.ele, this, this.presets, this.taps);
+	this.ast.buildExisting(this.ele, this, this.presets, this.taps,null,  this.window);
 };
 
 let RootNode = wick$1.core.source.compiler.nodes.root;
@@ -3774,7 +3790,7 @@ RootNode.prototype.setSource = function(source) {
 };
 
 RootNode.prototype.reparse = function(text, element) {
-    let lex = Lexer(text);
+
     let Root = new this.reparse_type();
 
     Root.par = this.par;
@@ -3797,24 +3813,23 @@ RootNode.prototype.reparse = function(text, element) {
 };
 
 // Rebuild all sources relying on this node
-RootNode.prototype.rebuild = function() {
+RootNode.prototype.rebuild = function(win = window) {
 
     //if (!this.par)
     //    this.updated();
 
     if (this.observing_sources) {
-        this._linkCSS_();
+        
         for (let i = 0; i < this.observing_sources.length; i++) {
             try {
-
-                this.observing_sources[i].rebuild();
+                this.observing_sources[i].rebuild(this.observing_sources[i].window);
             } catch (e) {
                 console.error(e);
             }
         }
         this.resetRebuild();
     } else if (this.par)
-        this.par.rebuild();
+        this.par.rebuild(win);
 };
 
 RootNode.prototype.extract = function() {
@@ -3823,8 +3838,13 @@ RootNode.prototype.extract = function() {
 };
 
 
-RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element) {
+RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window) {
+    
     if (true || this.CHANGED !== 0) {
+
+        element.style.cssText = "";
+
+        this._linkCSS_(null, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
@@ -3864,7 +3884,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                if (node.buildExisting(child, source, presets, taps, element)) i++;
+                if (node.buildExisting(child, source, presets, taps, element, win)) i++;
             }
         }
     }
@@ -4677,6 +4697,7 @@ class Token_Container {
 		if (index >= this.num_lines) index = this.num_lines - 1;
 		return this.root.getLine(index);
 	}
+	
 	getRealLine(index) {
 		if (index >= this.num_real_lines) index = this.num_real_lines - 1;
 		return this.root.getRealLine(index);
@@ -4687,6 +4708,7 @@ class Token_Container {
 			pixel_height = this.pixel_height - 1;
 		}
 
+		if(!this.root) return 0;
 		return this.root.getLineAtPixelOffset(pixel_height);
 	}
 
@@ -5492,7 +5514,7 @@ class TEXT_CURSOR {
 
 		this.index = 0;
 		this.text_fw = text_fw;
-		this.line_container = text_fw.token_container;
+		//this.line_container = text_fw.token_container;
 		this.char_code = text_fw.curs_char;
 		this.selections = [];
 		this.line_height = 0;
@@ -5939,6 +5961,10 @@ class TEXT_CURSOR {
 		this.line_height = line.pixel_height;
 	}
 
+	get line_container(){
+		return this.text_fw.token_container;
+	}
+
 
 	setSelectionX(x) {
 		this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
@@ -6100,6 +6126,10 @@ class TEXT_CURSOR {
 			}
 			line = line.next_sib;
 		}
+	}
+
+	set line_container(e){
+
 	}
 }
 
@@ -6412,18 +6442,21 @@ class TextFramework {
     constructor(parent_element) {
         this.token_container = new Token_Container();
 
+        this.font = null;
         this.font_size = 32;
         this.letter_spacing = 0;
         this.line_height = 30;
 
         this.DOM = document.createElement("div");
         this.DOM.classList.add("text_edit");
+        this.DOM.style.font_kerning = "none";
 
         this.parent_element = parent_element || document.body;
 
         parent_element.appendChild(this.DOM);
 
-        this.font = new Font("Time New Roman");
+        this.setFont("Times New Roman");
+        //this.font = new TEXT_FONT("Time New Roman");
 
         this.length = 0;
 
@@ -6983,7 +7016,11 @@ class TextFramework {
     }
 
     clearContents(){
-
+        this.length = 0;
+        this.max_length = 0;
+        this.scroll_top = 0;
+        this.max_line_width = 0;
+        this.token_container = new Token_Container();
     }
 }
 

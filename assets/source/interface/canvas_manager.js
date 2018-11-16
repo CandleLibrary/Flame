@@ -134,7 +134,7 @@ class BoxElement {
             this.w = rect.width;
             this.h = rect.height;
         }
-        
+
         let par_prop = component.window.getComputedStyle(this.target.element);
 
         //margin
@@ -208,8 +208,12 @@ class BoxElement {
         let cbr = this.cbr;
         let cbb = this.cbb;
 
-        ctx.strokeRect(ml, mt, mr - ml, mb - mt);
-        ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+
+        if (!this.IS_COMPONENT) {
+            ctx.strokeRect(ml, mt, mr - ml, mb - mt);
+            ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+        }
+        
         ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
 
         //Render Markers
@@ -225,17 +229,20 @@ class BoxElement {
         gripPoint(ctx, cbl, cbb, r);
         gripPoint(ctx, cbr, cbb, r);
 
-        //Margin Markers
-        gripPoint(ctx, ml, mt, r);
-        gripPoint(ctx, mr, mt, r);
-        gripPoint(ctx, ml, mb, r);
-        gripPoint(ctx, mr, mb, r);
+        if (!this.IS_COMPONENT) {
 
-        //Padding Markers
-        gripPoint(ctx, pl, pt, r);
-        gripPoint(ctx, pr, pt, r);
-        gripPoint(ctx, pl, pb, r);
-        gripPoint(ctx, pr, pb, r);
+            //Margin Markers
+            gripPoint(ctx, ml, mt, r);
+            gripPoint(ctx, mr, mt, r);
+            gripPoint(ctx, ml, mb, r);
+            gripPoint(ctx, mr, mb, r);
+
+            //Padding Markers
+            gripPoint(ctx, pl, pt, r);
+            gripPoint(ctx, pr, pt, r);
+            gripPoint(ctx, pl, pb, r);
+            gripPoint(ctx, pr, pb, r);
+        }
     }
 
     setTarget(element, component, IS_COMPONENT) {

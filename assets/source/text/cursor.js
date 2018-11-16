@@ -22,8 +22,6 @@ export class TEXT_CURSOR {
 		this.rpx = 0;
 		this.rpy = 0;
 
-
-
 		//Same for selection bounds. 
 		this.rpsx = 0;
 		this.rpsy = 0;
@@ -99,7 +97,7 @@ export class TEXT_CURSOR {
 		if (line) {
 			return line.length + ((line.IS_LINKED_LINE | 0) - 1)
 		} else {
-			return 0;
+			return 0
 		}
 	}
 
@@ -112,34 +110,8 @@ export class TEXT_CURSOR {
 		}
 	}
 
-	getXCharOffset(x_in, y_in) {
-
-		var y = (((y_in) * this.text_fw.line_height) - 1),
-			x = 0;
-
-		if (this.text_fw.font.IS_MONOSPACE) {
-			//Monospace fonts need only add up all charcters and scale by width of any character
-			x = (Math.min(x_in, line.length - 1) * this.text_fw.font.props[0].width2);
-		} else {
-			//Non Monospace fonts will have to build up offset by measuring individual character widths
-			var fontData = this.text_fw.font.props;
-			var line = this.getLine(y_in);
-			if (line) {
-				var text = line.renderDOM(true);
-				//Cap to end of line to prevent out of bounds reference
-				var l = Math.min(x_in, line.length + ((line.IS_LINKED_LINE | 0) - 1));
-				for (var i = 0; i < l; i++) {
-					var code = text.charCodeAt(i) - 32;
-					var char = fontData[code];
-
-					if (code < 0) {
-						x += 0;
-					} else
-						x += char.width;
-				}
-			}
-		}
-		return x;
+	getXCharOffset(x_in, y_in, view = this.text_fw.default_view) {
+		return view.scanToX(x,y,this.text_fw);
 	}
 
 	getRealPosition(x, y) {

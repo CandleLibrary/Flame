@@ -268,46 +268,20 @@
 			"file": "assets/source/text/text_framework.js",
 			"settings":
 			{
-				"buffer_size": 11870,
+				"buffer_size": 17167,
 				"encoding": "UTF-8",
-				"line_ending": "Windows"
+				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "main.js",
+			"contents": "export class TEXT_CURSOR {\n\tconstructor(text_fw) {\n\n\t\t//On screen HTML representation of cursor\n\t\tthis.HTML_ELEMENT = null;\n\t\tthis.HTML_ELEMENT = document.createElement(\"div\");\n\t\tthis.HTML_ELEMENT.classList.add(\"txt_cursor\");\n\t\t\n\n\t\t//Character and Line position of cursor\n\t\tthis.x = 0;\n\t\tthis.y = 0;\n\n\t\t//Character and Line position of cursor selection bound\n\t\tthis.selection_x = -1;\n\t\tthis.selection_y = -1;\n\n\n\t\t//Real position of cursor line and character. These values is related to the total number of non Linked Lines found in the\n\t\t//line container object. Lines that are linked are treated as character indexes extending from non Linked Lines.\n\n\t\tthis.rpx = 0;\n\t\tthis.rpy = 0;\n\n\t\t//Same for selection bounds. \n\t\tthis.rpsx = 0;\n\t\tthis.rpsy = 0;\n\n\n\t\tthis.index = 0;\n\t\tthis.text_fw = text_fw;\n\t\t//this.line_container = text_fw.token_container;\n\t\tthis.char_code = text_fw.curs_char;\n\t\tthis.selections = [];\n\t\tthis.line_height = 0;\n\n\t\t//FLAGS\n\t\tthis.IU = false;\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t}\n\n\ttoString() {\n\t\tthis.text_fw.token_container.getRealLine(this.real_position_y).insertText(this.char_code, this.real_position_x);\n\t}\n\n\tget HAS_SELECTION() {\n\t\treturn (this.selection_x > -1 && this.selection_y > -1);\n\t}\n\n\tset HAS_SELECTION(p) {\n\n\t}\n\n\tget IN_USE() {\n\t\treturn this.IU;\n\t}\n\n\tset IN_USE(bool) {\n\t\tif (bool !== this.IU) {\n\t\t\tif (bool) {\n\t\t\t\tthis.text_fw.parent_element.appendChild(this.HTML_ELEMENT);\n\t\t\t} else {\n\t\t\t\tthis.text_fw.parent_element.removeChild(this.HTML_ELEMENT);\n\t\t\t\tthis.resetSelection();\n\t\t\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\t\t\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\t\t}\n\t\t\tthis.IU = bool;\n\t\t}\n\t}\n\n\tresetSelection() {\n\t\tthis.selection_x = -1;\n\t\tthis.selection_y = -1;\n\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\n\t\tfor (var i = 0; i < this.selections.length; i++) {\n\t\t\tvar div = this.selections[i];\n\t\t\tdiv.hide();\n\t\t}\n\t}\n\n\tset size(scale) {\n\n\t\tthis.HTML_ELEMENT.style.width = 1 * scale + \"px\";\n\t\tthis.HTML_ELEMENT.style.height = this.line_height * scale + \"px\";\n\t}\n\n\tget id() {\n\t\treturn this.x | (this.y << 10);\n\t}\n\n\tget lineLength() {\n\t\tvar line = this.text_fw.token_container.getLine(this.y);\n\t\tif (line) {e\n\t\t\treturn line.length + ((line.IS_LINKED_LINE | 0) - 1)\n\t\t} else {\n\t\t\treturn 0\n\t\t}\n\t}\n\n\tget lineLength_Select() {\n\t\tvar line = this.text_fw.token_container.getLine(this.selection_y);\n\t\tif (line) {\n\t\t\treturn line.length + ((line.IS_LINKED_LINE | 0) - 1)\n\t\t} else {\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\tgetXCharOffset(x_in, y_in) {\n\n\t\tvar y = (((y_in) * this.text_fw.line_height) - 1),\n\t\t\tx = 0;\n\n\t\tif (this.text_fw.font.IS_MONOSPACE) {\n\t\t\t//Monospace fonts need only add up all charcters and scale by width of any character\n\t\t\tx = (Math.min(x_in, line.length - 1) * this.text_fw.font.props[0].width2);\n\t\t} else {\n\t\t\t//Non Monospace fonts will have to build up offset by measuring individual character widths\n\t\t\tvar fontData = this.text_fw.font.props;\n\t\t\tvar line = this.getLine(y_in);\n\t\t\tif (line) {\n\t\t\t\tvar text = line.renderDOM(true);\n\t\t\t\t//Cap to end of line to prevent out of bounds reference\n\t\t\t\tvar l = Math.min(x_in, line.length + ((line.IS_LINKED_LINE | 0) - 1));\n\t\t\t\tfor (var i = 0; i < l; i++) {\n\t\t\t\t\tvar code = text.charCodeAt(i) - 32;\n\t\t\t\t\tvar char = fontData[code];\n\n\t\t\t\t\tif (code < 0) {\n\t\t\t\t\t\tx += 0;\n\t\t\t\t\t} else\n\t\t\t\t\t\tx += char.width;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\treturn x;\n\t}\n\n\tgetRealPosition(x, y) {\n\t\tvar line = this.line_container.getLine(y);\n\t\tvar offset_length = 0;\n\n\t\t//Trace linked line chains to their originating location, which is the last non-linked line\n\n\t\tif (line.IS_LINKED_LINE) {\n\t\t\tline = line.prev_line;\n\t\t\twhile (line.IS_LINKED_LINE) {\n\t\t\t\toffset_length += line.cache.length;\n\t\t\t\tline = line.prev_line;\n\t\t\t\ty--;\n\t\t\t}\n\t\t\ty--;\n\t\t\toffset_length += line.cache.length;\n\t\t}\n\t\treturn {\n\t\t\tx: offset_length + x,\n\t\t\ty: line.real_index\n\t\t};\n\t}\n\n\tupdateRealPosition(FORCE) {\n\t\tif (this.REAL_POSITION_NEEDS_UPDATE || FORCE) {\n\t\t\tvar temp = this.getRealPosition(this.x, this.y)\n\t\t\tthis.rpy = temp.y;\n\t\t\tthis.rpx = temp.x;\n\t\t\tthis.REAL_POSITION_NEEDS_UPDATE = false;\n\t\t}\n\t}\n\n\tupdateRealSelectPosition(FORCE) {\n\t\tif (this.REAL_SELECT_POSITION_NEEDS_UPDATE || FORCE) {\n\t\t\tvar temp = this.getRealPosition(this.selection_x, this.selection_y)\n\t\t\tthis.rspy = temp.y;\n\t\t\tthis.rspx = temp.x;\n\t\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = false;\n\t\t}\n\t}\n\n\tget real_position_x() {\n\t\tthis.updateRealPosition();\n\t\treturn this.rpx;\n\t}\n\n\tset real_position_x(x) {\n\t\tvar line = this.line_container.getLine(this.y);\n\t\twhile (line && x > line.cache.length) {\n\t\t\tthis.y++;\n\t\t\tx -= line.cache.length;\n\t\t\tline = line.next_line;\n\t\t\tx += ((line.IS_LINKED_LINE | 0) - 1);\n\t\t}\n\n\t\tthis.x = x;\n\t\tthis.updateRealPosition(true);\n\t}\n\n\n\n\tget real_position_y() {\n\t\tthis.updateRealPosition();\n\t\treturn this.rpy;\n\t}\n\tset real_position_y(y) {\n\t\tthis.y = this.line_container.getRealLine(y).index;\n\t\tthis.updateRealPosition(true);\n\t}\n\n\t//These are for the text selection part of the cursor\n\tget real_select_position_x() {\n\t\tif (this.selection_x < 0) return -1;\n\t\tthis.updateRealSelectPosition();\n\t\treturn this.rspx;\n\t}\n\n\tset real_select_position_x(x) {\n\t\tvar line = this.line_container.getLine(this.selection_y);\n\t\twhile (line && x > line.cache.length) {\n\t\t\tthis.selection_y++;\n\t\t\tx -= line.cache.length;\n\t\t\tline = line.next_line;\n\t\t\tx += ((line.IS_LINKED_LINE | 0) - 1);\n\n\t\t}\n\t\tthis.selection_x = x;\n\t\tthis.updateRealSelectPosition(true);\n\t}\n\n\tget real_select_position_y() {\n\t\tif (this.selection_y < 0) return -1;\n\t\tthis.updateRealSelectPosition();\n\t\treturn this.rspy;\n\t}\n\tset real_select_position_y(y) {\n\t\tthis.selection_y = this.line_container.getRealLine(y).index;\n\t\tthis.updateRealSelectPosition(true);\n\t}\n\n\tcreateSelection(y, x_start, x_end, xc, yc, scale) {\n\t\tif (!this.selections) {\n\t\t\tfor (var i = 0; i < this.selections.length; i++) {\n\t\t\t\tvar div = this.selections[i];\n\t\t\t\tdiv.hide();\n\t\t\t}\n\t\t\tthis.selection_index = 0;\n\t\t}\n\n\t\tif (!this.selections[this.selection_index]) {\n\t\t\tvar div = document.createElement(\"div\");\n\t\t\tdiv.style.cssText = `\n\t\t\tposition:absolute;\n\t\t\ttop:0;\n\t\t\tleft:0;\n\t\t\tbackground-color:rgba(250,0,0,0.5);\n\t \t\tz-index:30000000000;\n\t\t`;\n\t\t\tthis.selections[this.selection_index] = div;\n\n\t\t}\n\n\t\tvar div = this.selections[this.selection_index];\n\t\tthis.selection_index++;\n\t\tvar x1 = this.getXCharOffset(x_start, y);\n\t\tvar x2 = this.getXCharOffset(x_end, y);\n\t\tvar width = x2 - x1;\n\n\t\tdiv.show();\n\t\tdiv.style.left = ((x1 + xc) * scale) + \"px\";\n\t\tdiv.style.top = ((this.getYCharOffset(y) + yc) * scale) + \"px\";\n\t\tdiv.style.width = width * scale + \"px\";\n\t\tdiv.style.height = 16 * scale + \"px\";\n\t\tthis.text_fw.parent_element.appendChild(div);\n\t}\n\n\tgetSortedPositions() {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\n\t\tvar x1 = this.x;\n\t\tvar y1 = this.y;\n\t\tvar x2 = this.selection_x;\n\t\tvar y2 = this.selection_y;\n\t\tif (this.selection_x > -1 && this.selection_y > -1) {\n\t\t\tvar id1 = this.id;\n\t\t\tvar id2 = (this.selection_y << 10) | this.selection_x;\n\n\t\t\tif (id2 < id1) {\n\t\t\t\tx1 = this.selection_x;\n\t\t\t\ty1 = this.selection_y;\n\t\t\t\tx2 = this.x;\n\t\t\t\ty2 = this.y;\n\t\t\t}\n\t\t}\n\t\treturn {\n\t\t\tx1, y1, x2, y2\n\t\t};\n\t}\n\n\tarrangeSelection() {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\n\t\tif (this.HAS_SELECTION) {\n\t\t\tvar id1 = this.id;\n\t\t\tvar id2 = (this.selection_y << 10) | this.selection_x;\n\n\t\t\tif (id2 < id1) {\n\t\t\t\tvar x1 = this.selection_x;\n\t\t\t\tvar y1 = this.selection_y;\n\t\t\t\tvar x2 = this.x;\n\t\t\t\tvar y2 = this.y;\n\t\t\t} else {\n\t\t\t\tx1 = this.x;\n\t\t\t\ty1 = this.y;\n\t\t\t\tx2 = this.selection_x;\n\t\t\t\ty2 = this.selection_y;\n\t\t\t}\n\n\t\t\tthis.x = x1;\n\t\t\tthis.y = y1;\n\t\t\tthis.selection_x = x2;\n\t\t\tthis.selection_y = y2;\n\t\t}\n\t}\n\n\tgetLine(y_in) {\n\t\treturn this.text_fw.token_container.getIndexedLine(y_in || this.y)\n\t}\n\n\tgetYCharOffset(y_in) {\n\t\treturn (((y_in) * this.text_fw.line_height) - 1)\n\t}\n\t//Returns string of concated lines between [x,y] and [x2,y2]. Returns empty string if [x2.selection_y] is less then 0;\n\tgetTextFromSelection() {\n\t\tvar string = \"\";\n\t\tif (this.HAS_SELECTION) {\n\t\t\tthis.selection_index = 0;\n\t\t\t//Sets each tokens selected attribute to true\n\t\t\tvar id1 = this.id;\n\t\t\tvar id2 = (this.selection_y << 10) | this.selection_x\n\n\t\t\tif (id2 < id1) {\n\t\t\t\tvar x1 = this.selection_x;\n\t\t\t\tvar y1 = this.selection_y;\n\t\t\t\tvar x2 = this.x\n\t\t\t\tvar y2 = this.y\n\t\t\t} else {\n\t\t\t\tvar x1 = this.x;\n\t\t\t\tvar y1 = this.y;\n\t\t\t\tvar x2 = this.selection_x;\n\t\t\t\tvar y2 = this.selection_y;\n\t\t\t}\n\n\t\t\tvar line_count = y2 - y1;\n\n\n\t\t\t//Append first line out of loop. Each successive line will have the newline control character inserted at head of appending string. \n\t\t\tvar line = this.getLine(y1)\n\n\t\t\tstring += line.cache.slice(x1, (line_count > 0) ? line.cache.length : Math.min(x2, line.cache.length));\n\n\t\t\tfor (var i = 1; i < line_count + 1; i++) {\n\t\t\t\tvar x_start = 0;\n\t\t\t\tvar y = y1 + i;\n\t\t\t\tline = this.getLine(y);\n\t\t\t\tvar length = line.cache.length;\n\t\t\t\tvar x_end = length;\n\n\t\t\t\tif (i == line_count) {\n\t\t\t\t\tx_end = Math.min(x2, length);\n\t\t\t\t}\n\n\t\t\t\tstring += ((line.IS_LINKED_LINE) ? \"\" : this.text_fw.new_line) + line.cache.slice(x_start, x_end);\n\t\t\t}\n\t\t}\n\t\treturn string;\n\t}\n\n\tupdate(camera, scale) {\n\t\t// todo - correct font data \n\n\n\t\t//Set cursor size to mach current zoom level of camera\n\t\tthis.size = scale;\n\n\t\tthis.HTML_ELEMENT.style.left = ((this.getXCharOffset(this.x, this.y))) + \"px\";\n\n\t\tthis.HTML_ELEMENT.style.top = ((this.line_container.getLine(this.y).pixel_offset)) + \"px\";\n\n\t\t//Update shading for selections\n\n\t\tfor (var i = 0; i < this.selections.length; i++) {\n\t\t\t\tvar div = this.selections[i];\n\t\t\t\tdiv.hide();\n\t\t\t}\n\t\tif (this.HAS_SELECTION) {\n\t\t\tthis.selection_index = 0;\n\n\n\t\t\tvar id1 = this.id;\n\t\t\tvar id2 = (this.selection_y << 10) | this.selection_x\n\n\t\t\tif (id2 < id1) {\n\t\t\t\tvar x1 = this.selection_x;\n\t\t\t\tvar y1 = this.selection_y;\n\t\t\t\tvar x2 = this.x;\n\t\t\t\tvar y2 = this.y;\n\t\t\t} else {\n\t\t\t\tvar x1 = this.x;\n\t\t\t\tvar y1 = this.y;\n\t\t\t\tvar x2 = this.selection_x;\n\t\t\t\tvar y2 = this.selection_y;\n\t\t\t}\n\n\t\t\tvar line_count = y2 - y1;\n\n\t\t\tfor (var i = 0; i < line_count + 1; i++) {\n\t\t\t\tvar x_start = 0;\n\t\t\t\tvar y = y1 + i;\n\t\t\t\tvar line = this.getLine(y);\n\t\t\t\tvar x_end = line.length - ((line.IS_LINKED_LINE) ? 0 : 1);\n\n\t\t\t\tif (i === 0) {\n\t\t\t\t\tx_start = x1;\n\t\t\t\t}\n\n\t\t\t\tif (i == line_count) {\n\n\t\t\t\t\tx_end = Math.min(x2, line.length - ((line.IS_LINKED_LINE) ? 0 : 1));\n\t\t\t\t}\n\n\t\t\t\tthis.createSelection(y, x_start, x_end, xc, yc, scale)\n\t\t\t}\n\n\n\t\t}\n\t}\n\n\n\t//Sets cursor to line givin pixel coordinates\n\tsetX(x) {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\n\t\tif (this.text_fw.font.IS_MONOSPACE) {\n\t\t\tthis.x = Math.min(Math.max(Math.round(x / this.text_fw.font.props[0].width), 0), this.lineLength);\n\t\t} else {\n\t\t\tvar fontData = this.text_fw.font.props;\n\t\t\tvar line = this.line_container.getLine(this.y);\n\t\t\tvar text = line.cache;\n\t\t\tvar l = text.length;\n\t\t\tvar y = 0;\n\n\t\t\tvar diff = this.y - line.index;\n\t\t\tvar offset = 0;\n\t\t\tvar i = 0;\n\n\t\t\tfor (; i < l; i++) {\n\t\t\t\tvar code = text.charCodeAt(i) - 32;\n\t\t\t\tvar char = fontData[code];\n\t\t\t\ty += char.width\n\t\t\t\tif ((x + 2) < y) {\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t\tthis.x = i;\n\t\t}\n\t}\n\n\tsetY(y) {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\t\tvar line = this.line_container.getLineAtPixelOffset(y);\n\t\tthis.y = line.index\n\t\tthis.line_height = line.pixel_height;\n\t}\n\n\tget line_container(){\n\t\treturn this.text_fw.token_container;\n\t}\n\n\n\tsetSelectionX(x) {\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\tif (this.text_fw.font.IS_MONOSPACE) {\n\t\t\tthis.selection_x = Math.min(Math.max(Math.round(x / this.text_fw.font.props[0].width), 0), this.lineLength_Select);\n\t\t} else {\n\t\t\tvar fontData = this.text_fw.font.props;\n\t\t\tvar line = this.line_container.getLine(this.selection_y)\n\t\t\tvar text = line.cache;\n\t\t\tvar l = text.length;\n\t\t\tvar y = 0;\n\n\t\t\tvar diff = this.y - line.index\n\t\t\tvar offset = 0;\n\t\t\tvar i = 0;\n\n\t\t\tfor (; i < l; i++) {\n\t\t\t\tvar code = text.charCodeAt(i) - 32;\n\t\t\t\tvar char = fontData[code];\n\t\t\t\ty += char.width\n\t\t\t\tif ((x + 2) < y) {\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t}\n\t\t\tthis.selection_x = i;\n\t\t}\n\t}\n\n\tsetSelectionY(y) {\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\tthis.selection_y = this.line_container.getLineAtPixelOffset(y).index\n\t}\n\n\tsetToSelectionTail() {\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\n\t\tvar id1 = this.id;\n\t\tvar id2 = (this.selection_y << 10) | this.selection_x\n\n\t\tif (id2 < id1) {\n\t\t\tvar x1 = this.selection_x;\n\t\t\tvar y1 = this.selection_y;\n\t\t\tvar x2 = this.x\n\t\t\tvar y2 = this.y\n\t\t} else {\n\t\t\tvar x1 = this.x;\n\t\t\tvar y1 = this.y;\n\t\t\tvar x2 = this.selection_x;\n\t\t\tvar y2 = this.selection_y;\n\t\t}\n\n\t\tthis.x = x2;\n\t\tthis.y = y2\n\n\t}\n\n\tmoveChar(change) {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\n\t\tvar diff = this.x + change;\n\t\t\n\t\tif (diff < 0) {\n\t\t\tif (this.y <= 0) {\n\t\t\t\tthis.x = 0;\n\t\t\t} else {\n\t\t\t\tthis.y--;\n\t\t\t\tthis.x = this.lineLength;\n\t\t\t}\n\t\t} else if (diff > this.lineLength) {\n\t\t\tif (this.y >= this.line_container.height - 1) {\n\t\t\t\tthis.x = this.lineLength;\n\t\t\t} else {\n\t\t\t\tthis.y++;\n\t\t\t\tthis.x = 0;\n\t\t\t}\n\t\t} else {\n\t\t\tthis.x = diff;\n\t\t}\n\t}\n\n\tmoveSelectChar(change) {\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\t//Need to set selection position to cursor if there is not currently a selection\n\t\tif (this.selection_x < 0 || this.selection_y < 0) {\n\t\t\tthis.selection_x = this.x;\n\t\t\tthis.selection_y = this.y;\n\t\t}\n\t\tvar diff = this.selection_x + change;\n\t\tif (diff < 0) {\n\t\t\tif (this.selection_y <= 0) {\n\t\t\t\tthis.selection_x = 0;\n\t\t\t} else {\n\t\t\t\tthis.selection_y--;\n\t\t\t\tthis.selection_x = this.lineLength_Select;\n\t\t\t}\n\t\t} else if (diff > this.lineLength_Select) {\n\t\t\tif (this.selection_y >= this.line_container.length - 1) {\n\t\t\t\tthis.selection_x = this.lineLength_Select;\n\t\t\t} else {\n\t\t\t\tthis.selection_y++;\n\t\t\t\tthis.selection_x = 0;\n\t\t\t}\n\t\t} else {\n\t\t\tthis.selection_x = diff;\n\t\t}\n\t}\n\n\tmoveLine(change) {\n\t\tthis.REAL_POSITION_NEEDS_UPDATE = true;\n\n\t\tvar diff = this.y + change;\n\t\tif (diff <= 0) {\n\t\t\tthis.y = 0;\n\t\t} else if (diff >= this.line_container.height - 1) {\n\t\t\tthis.y = this.line_container.height - 1;\n\t\t} else {\n\t\t\tthis.y = diff;\n\t\t}\n\t}\n\n\tmoveSelectLine(change) {\n\t\tthis.REAL_SELECT_POSITION_NEEDS_UPDATE = true;\n\t\t//Need to set selection position to cursor if there is not currently a selection\n\t\tif (this.selection_x < 0 || this.selection_y < 0) {\n\t\t\tthis.selection_x = this.x;\n\t\t\tthis.selection_y = this.y;\n\t\t}\n\t\tvar diff = this.selection_y + change;\n\t\tif (diff <= 0) {\n\t\t\tthis.selection_y = 0;\n\t\t} else if (diff >= this.line_container.height - 1) {\n\t\t\tthis.selection_y = this.line_container.height - 1;\n\t\t} else {\n\t\t\tthis.selection_y = diff;\n\t\t}\n\t}\n\n\tcharAt() {\n\t\treturn this.charBefore(this.real_position_x + 1)\n\t}\n\n\tcharBefore(x = this.real_position_x) {\n\t\tvar line = this.text_fw.token_container.getRealLine(this.real_position_y);\n\n\t\tif (x < 0) {\n\t\t\tline = line.prev_sib\n\t\t\treturn line.text[line.text.length - 1]\n\t\t}\n\t\twhile (true) {\n\t\t\tif (x >= line.token_length) {\n\t\t\t\tx -= line.token_length;\n\t\t\t\tif (!line.next_sib) {\n\t\t\t\t\t//return last \n\t\t\t\t\treturn line.text[line.text.length - 1];\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\treturn line.text[x];\n\t\t\t}\n\t\t\tline = line.next_sib;\n\t\t}\n\t}\n\n\tset line_container(e){\n\n\t}\n};",
+			"file": "assets/source/text/cursor.js",
+			"file_size": 15096,
+			"file_write_time": 131868706251856240,
 			"settings":
 			{
-				"buffer_size": 776,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "node_modules/wick/package.json",
-			"settings":
-			{
-				"buffer_size": 2404,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"contents": "{\n  \"name\": \"flame\",\n  \"version\": \"0.0.1\",\n  \"description\": \"A web based editing app for wick\",\n  \"main\": \"main.js\",\n  \"scripts\": {\n    \"start\": \"electron .\",\n    \"build\": \"rollup --config ./assets/build/config/main_dev.config.js\",\n    \"build.watch\": \"rollup --watch --config ./assets/build/config/node.config.js\",\n    \"test\": \"mocha\"\n  },\n  \"private\": true,\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"https://www.gitlab.com/anthonycweathersby/flame\"\n  },\n  \"keywords\": [\n    \"wick\",\n    \"PWA\"\n  ],\n  \"author\": \"Anthony C Weathersby\",\n  \"license\": \"ISC\",\n  \"dependencies\": {\n    \"diff\": \"^3.5.0\",\n    \"electron\": \"^3.0.8\",\n    \"paper\": \"^0.11.8\",\n    \"wick\": \"file:../wick\"\n  },\n  \"devDependencies\": {\n    \"chai\": \"^4.2.0\",\n    \"devtron\": \"^1.4.0\",\n    \"electron-packager\": \"^12.2.0\",\n    \"mocha\": \"^5.2.0\",\n    \"rollup\": \"^0.66.6\",\n    \"rollup-plugin-node-resolve\": \"^3.4.0\",\n    \"spectron\": \"^5.0.0\"\n  },\n  \"jshintConfig\": {\n    \"esversion\": 6,\n    \"unused\": true\n  }\n}\n",
-			"file": "package.json",
-			"file_size": 1020,
-			"file_write_time": 131866940879714357,
-			"settings":
-			{
-				"buffer_size": 978,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "test/client_test.js",
-			"settings":
-			{
-				"buffer_size": 58,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
+				"buffer_size": 15095,
+				"line_ending": "Unix"
 			}
 		},
 		{
@@ -332,8 +306,8 @@
 			"file": "node_modules/wick/source/root/config/library.js",
 			"settings":
 			{
-				"buffer_size": 4337,
-				"line_ending": "Windows"
+				"buffer_size": 4364,
+				"line_ending": "Unix"
 			}
 		},
 		{
@@ -342,14 +316,6 @@
 			{
 				"buffer_size": 25257,
 				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "build/flame.node.js",
-			"settings":
-			{
-				"buffer_size": 109051,
 				"line_ending": "Windows"
 			}
 		}
@@ -365,6 +331,14 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			]
 		],
 		"width": 0.0
 	},
@@ -386,11 +360,14 @@
 	},
 	"expanded_folders":
 	[
-		"/D/flame",
-		"/D/flame/source"
 	],
 	"file_history":
 	[
+		"/C/Users/aweathersby/flame/test/client_test.js",
+		"/C/Users/aweathersby/flame/package.json",
+		"/C/Users/aweathersby/flame/node_modules/wick/package.json",
+		"/C/Users/aweathersby/flame/main.js",
+		"/C/Users/aweathersby/flame/build/flame.node.js",
 		"/D/flame/.git/COMMIT_EDITMSG",
 		"/D/flame/main.js",
 		"/D/flame/package.json",
@@ -513,16 +490,11 @@
 		"/D/wick/source/root/config/library.js",
 		"/D/wick/docs/guide/articles/main_page.html",
 		"/D/wick/source/source/source.js",
-		"/D/wick/source/source/manager.js",
-		"/D/wick/docs/guide/QUICK_GUIDE.md.txt",
-		"/D/wick/source/source/io/io.js",
-		"/D/wick/node_modules/lodash/transform.js",
-		"/D/wick/docs/guide/components/container.html",
-		"/D/wick/node_modules/chai/chai.js"
+		"/D/wick/source/source/manager.js"
 	],
 	"find":
 	{
-		"height": 40.0
+		"height": 24.0
 	},
 	"find_in_files":
 	{
@@ -537,6 +509,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Token_Container",
+			"token_container",
 			"div",
 			" \n",
 			"cdase",
@@ -667,7 +641,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -689,6 +663,9 @@
 						],
 						"settings":
 						{
+							"SL.38.region_keys":
+							[
+							],
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
@@ -697,7 +674,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -719,13 +696,16 @@
 						],
 						"settings":
 						{
+							"SL.39.region_keys":
+							[
+							],
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -734,144 +714,65 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11870,
+						"buffer_size": 17167,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5837,
-								5837
+								4556,
+								4556
 							]
 						],
 						"settings":
 						{
+							"SL.40.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"translate_tabs_to_spaces": false
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
-						"translation.x": 26.0,
-						"translation.y": 2415.0,
+						"translation.x": 0.0,
+						"translation.y": 2205.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 3,
-					"file": "main.js",
+					"file": "assets/source/text/cursor.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 776,
+						"buffer_size": 15095,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								417,
-								417
+								2304,
+								2304
 							]
 						],
 						"settings":
 						{
+							"SL.73.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1295.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "node_modules/wick/package.json",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2404,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 741.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "package.json",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 978,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								941,
-								941
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "test/client_test.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 58,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								56,
-								56
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 6,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -881,7 +782,7 @@
 			"sheets":
 			[
 				{
-					"buffer": 7,
+					"buffer": 4,
 					"semi_transient": false,
 					"settings":
 					{
@@ -898,6 +799,9 @@
 						],
 						"settings":
 						{
+							"SL.45.region_keys":
+							[
+							],
 							"auto_name": "Quote for robyn",
 							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
@@ -905,11 +809,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 5,
 					"semi_transient": false,
 					"settings":
 					{
@@ -926,6 +830,9 @@
 						],
 						"settings":
 						{
+							"SL.46.region_keys":
+							[
+							],
 							"auto_name": "Servers (OS) – for all servers",
 							"syntax": "Packages/Text/Plain text.tmLanguage",
 							"translate_tabs_to_spaces": false
@@ -934,16 +841,16 @@
 						"translation.y": 289.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 6,
 					"file": "node_modules/wick/source/root/config/library.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4337,
+						"buffer_size": 4364,
 						"regions":
 						{
 						},
@@ -956,19 +863,23 @@
 						],
 						"settings":
 						{
+							"SL.47.region_keys":
+							[
+							],
+							"history_list_is_closing": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 989.0,
+						"translation.y": 826.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 7,
 					"file": "node_modules/wick/source/common/html/root.js",
 					"semi_transient": false,
 					"settings":
@@ -986,46 +897,19 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 9983.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 7,
-					"type": "text"
-				},
-				{
-					"buffer": 11,
-					"file": "build/flame.node.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 109051,
-						"regions":
-						{
-						},
-						"selection":
-						[
+							"SL.48.region_keys":
 							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"history_list_is_closing": true,
+							],
+							"git_gutter_is_enabled": true,
 							"syntax": "Packages/JavaScript/JavaScript.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 13260.0,
+						"translation.y": 8321.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 4,
 					"type": "text"
 				}
 			]
@@ -1033,11 +917,11 @@
 	],
 	"incremental_find":
 	{
-		"height": 22.0
+		"height": 24.0
 	},
 	"input":
 	{
-		"height": 0.0
+		"height": 39.0
 	},
 	"layout":
 	{
@@ -1069,6 +953,14 @@
 		]
 	},
 	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
+	"output.exec":
+	{
+		"height": 108.0
+	},
 	"output.find_results":
 	{
 		"height": 0.0
@@ -1077,7 +969,7 @@
 	"project": "flame.sublime-project",
 	"replace":
 	{
-		"height": 42.0
+		"height": 44.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1086,6 +978,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"cuso",
+				"flame\\assets\\source\\text\\cursor.js"
+			],
 			[
 				"tex",
 				"flame\\assets\\source\\text\\text_framework.js"
@@ -1593,10 +1489,6 @@
 			[
 				"sourcepackag",
 				"source\\source\\package.js"
-			],
-			[
-				"sourcetempl",
-				"source\\source\\template.js"
 			]
 		],
 		"width": 0.0

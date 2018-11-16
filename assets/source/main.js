@@ -29,6 +29,8 @@ import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
 import { PackageNode } from "./wick_compiler_nodes/package.js";
 import { Script } from "./wick_compiler_nodes/script.js";
 
+//Text Editing
+import {TextFramework} from "./text/text_framework";
 
 
 //Poject system
@@ -94,6 +96,36 @@ const flame = {
           //Load Poject.
         //If user preference allows, open the Splash screen modal. 
     },
+
+     //Initialize a text editor on element
+    initEditor(element){ 
+       
+        let fw = new TextFramework(element);
+
+        
+        element.addEventListener("mouseup",e=>{
+            fw.onMouseUp(e, e.offsetX, e.clientY, 1);
+            e.preventDefault();
+        })
+
+        element.addEventListener("keypress",e=>{
+            fw.onKeyPress(e);
+            fw.updateText();
+            fw.updateCursors();
+            fw.renderToDOM();
+            e.preventDefault();
+        })
+
+        element.addEventListener("keggydown",e=>{ 
+            debugger
+            fw.onKeyDown(e);
+            fw.updateText();
+            fw.updateCursors();
+            fw.renderToDOM();
+        })
+
+        return fw;
+    }
 };
 export default flame;
 

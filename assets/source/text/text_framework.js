@@ -6,6 +6,7 @@ import { string_parse_and_format_functions as SPF } from "./parse_and_format_fun
 
 export class TextFramework {
     constructor(parent_element) {
+        
         this.token_container = new Token_Container();
 
         this.font = null;
@@ -90,7 +91,7 @@ export class TextFramework {
         }
     }
 
-    onMouseUp(event, x, y, scale) {
+    onMouseUp(event, x, y, view) {
         if (event.button !== 0) return;
         if (event.ctrlKey) {
             var cur = this.aquireCursor();
@@ -126,7 +127,7 @@ export class TextFramework {
 
         }
         this.checkForCursorOverlap();
-        this.updateCursors(null, scale);
+        this.updateCursors(null, scale, view);
     }
 
     onKeyPress(event) {
@@ -282,7 +283,7 @@ export class TextFramework {
         this.checkForCursorOverlap();
     }
 
-    renderToDOM(scale = 1) {
+    renderToDOM(scale = 1, view) {
         this.DOM.innerHTML = "";
         this.DOM.style.fontSize = "100%";
         var text = "<div class='small_scale_pre'>";
@@ -318,7 +319,7 @@ export class TextFramework {
                     var length = line.length;
                     if (length > this.max_length) this.max_length = length;
                     if (y >= this.pixel_bottom || t >= height) break;
-                    var line = line.next_line;
+                    var line = line.nxt;
 
                 }
             }
@@ -352,7 +353,7 @@ export class TextFramework {
         var token = this.token_container.getIndexedLine(0);
         while (token) {
             text += this.new_line + token.cache;
-            token = token.next_line;
+            token = token.nxt;
         }
         return text;
     }
@@ -397,8 +398,8 @@ export class TextFramework {
 
     //Releases given token to pool and returns that token's previous sibling.
     releaseToken(token) {
-        var prev_line = token.prev_line;
-        var next_line = token.next_line;
+        var prev_line = token.prv;
+        var next_line = token.nxt;
 
         var prev_sib = token.prev_sib;
         var next_sib = token.next_sib;
@@ -411,16 +412,16 @@ export class TextFramework {
         }
         if (prev_line) {
             if (next_sib && next_sib.IS_NEW_LINE) {
-                prev_line.next_line = next_sib;
+                prev_line.nxt = next_sib;
             } else {
-                prev_line.next_line = next_line;
+                prev_line.nxt = next_line;
             }
         }
         if (next_line) {
             if (prev_sib && prev_sib.IS_NEW_LINE) {
-                next_line.prev_line = prev_sib;
+                next_line.prv = prev_sib;
             } else {
-                next_line.prev_line = prev_line;
+                next_line.prv = prev_line;
             }
         }
 
@@ -494,19 +495,19 @@ export class TextFramework {
     //Inserts token into list of lines after prev_line. Returns new line token
     insertLine(prev_line, new_line) {
         if (!prev_line) {
-            new_line.prev_line = new_line;
-            new_line.next_line = null;
+            new_line.prv = new_line;
+            new_line.nxt = null;
             new_line.index = 0;
             this.token_container.insert(new_line, 0);
         } else {
             new_line.index = prev_line.index + 1;
             this.token_container.insert(new_line, prev_line.index + 1);
-            new_line.next_line = prev_line.next_line;
-            if (new_line.next_line) {
-                new_line.next_line.prev_line = new_line;
+            new_line.nxt = prev_line.nxt;
+            if (new_line.nxt) {
+                new_line.nxt.prv = new_line;
             }
-            new_line.prev_line = prev_line;
-            prev_line.next_line = new_line;
+            new_line.prv = prev_line;
+            prev_line.nxt = new_line;
         }
         this.length++;
         this.setIndexes();
@@ -537,7 +538,6 @@ export class TextFramework {
         line.PROTECT__IN_USE = false;
         return line;
     }
-
 
     insertText(text, li = 0, cursor_ind) {
         if ((this.token_container.height | 0) < 1) {

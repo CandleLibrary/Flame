@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "textedit": "electron . text_edit",
     "build": "rollup --config ./assets/build/config/main_dev.config.js",
     "build.watch": "rollup --watch --config ./assets/build/config/node.config.js",
     "test": "mocha"

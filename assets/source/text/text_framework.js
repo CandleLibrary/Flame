@@ -336,11 +336,13 @@ export class TextFramework {
         this.releaseAllCursors();
 
         var token = this.token_container.getIndexedLine(index);
+
         while (token = token.parse()) {
             if (loop_check++ > 1000000) {
                 break;
             }
         }
+
         this.cursors[0].IN_USE = true;
     }
 
@@ -438,36 +440,21 @@ export class TextFramework {
 
     //Either returns an existing token from pool or creates a new one and returns that.
     aquireToken(prev_token) {
-        var t = this.token_pool;
-
-        if (t) {
-            if (t.next_sib) {
-                this.token_pool = t.next_sib;
-                this.token_pool.prev_sib = null;
-            } else {
-                this.token_pool = new TEXT_TOKEN(this, null);
-            }
-        } else {
-            t = new TEXT_TOKEN(this, null);
-        }
-
-        t.reset();
+        let t = new TEXT_TOKEN(this, null);
 
         if (prev_token) {
-            t.prev_line = prev_token.prev_line;
-            t.next_line = prev_token.next_line;
+            t.prv = prev_token.prv;
+            t.nxt = prev_token.nxt;
 
-            if (prev_token.IS_NEW_LINE) {
-                t.prev_line = prev_token;
-            }
-
-            t.next_sib = prev_token.next_sib;
-            t.prev_sib = prev_token;
-            prev_token.next_sib = t;
-            if (t.next_sib) {
-                t.next_sib.prev_sib = t;
-            }
+            t.nxt = prev_token.nxt;
+            t.prv = prev_token;
+            prev_token.nxt = t;
+            
+            if (t.nxt) 
+                t.nxt.prv = t;
+            
         }
+
         return t;
     }
 

@@ -307,7 +307,7 @@ export class TEXT_CURSOR {
 
 		if (this.HAS_SELECTION) {
 			var id1 = this.id;
-			var id2 = (this.selection_y << 10) | this.selection_x
+			var id2 = (this.selection_y << 10) | this.selection_x;
 
 			if (id2 < id1) {
 				var x1 = this.selection_x;

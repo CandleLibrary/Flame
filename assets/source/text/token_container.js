@@ -29,16 +29,16 @@ class Container_Cell {
 
 	getRealLine(offset) {
 		if (this.IS_LEAF) {
-			for (var i = 0, l = this.keys.length; i < l; i++) {
-				var cell = this.keys[i];
+			for (let i = 0, l = this.keys.length; i < l; i++) {
+				let cell = this.keys[i];
 
 				if (offset < cell.size && cell.size > 0) {
 					return cell;
 				} else offset -= cell.size;
 			}
 		} else {
-			for (var i = 0, l = this.keys.length; i < l; i++) {
-				var cell = this.keys[i];
+			for (let i = 0, l = this.keys.length; i < l; i++) {
+				let cell = this.keys[i];
 				if (offset < cell.num_real_lines) {
 					return cell.getRealLine(offset);
 				} else offset -= cell.num_real_lines;
@@ -49,16 +49,16 @@ class Container_Cell {
 
 	getLineAtPixelOffset(offset) {
 		if (this.IS_LEAF) {
-			for (var i = 0, l = this.keys.length; i < l; i++) {
-				var cell = this.keys[i];
+			for (let i = 0, l = this.keys.length; i < l; i++) {
+				let cell = this.keys[i];
 				if (offset < cell.pixel_height && cell.pixel_height > 0) {
 					return cell;
 				} else offset -= cell.pixel_height;
 			}
-			return cell
+			return cell;
 		} else {
-			for (var i = 0, l = this.keys.length; i < l; i++) {
-				var cell = this.keys[i];
+			for (let i = 0, l = this.keys.length; i < l; i++) {
+				let cell = this.keys[i];
 				if (offset < cell.pixel_offset) {
 					return cell.getLineAtPixelOffset(offset);
 				} else offset -= cell.pixel_offset;
@@ -71,13 +71,14 @@ class Container_Cell {
 
 	getLineIndex(index, line, id) {
 		if (this.IS_LEAF) {
-			for (var i = 0, l = this.num_lines; i < l; i++) {
+			let i = 0;
+			for (let l = this.num_lines; i < l; i++) {
 				if (this.keys[i] === line) break;
 			}
 			index = i;
 		} else {
 			var sibs = this.keys;
-			var i = id;
+			let i = id;
 			while (i > 0) {
 				i--;
 				index += sibs[i].num_lines;
@@ -93,14 +94,14 @@ class Container_Cell {
 	getRealLineIndex(index, line, id) {
 		if (this.IS_LEAF) {
 			index = -1; //WTF
-			for (var i = 0, l = this.num_lines; i < l; i++) {
+			for (let i = 0, l = this.num_lines; i < l; i++) {
 				var key = this.keys[i];
 				index += key.size;
 				if (key === line) break;
 			}
 		} else {
 			var sibs = this.keys;
-			var i = id;
+			let i = id;
 			while (i > 0) {
 				i--;
 				index += sibs[i].num_real_lines;
@@ -116,14 +117,14 @@ class Container_Cell {
 	getPixelOffset(pixel_top, line, id) {
 		if (this.IS_LEAF) {
 			//pixel_top = -1; //WTF
-			for (var i = 0, l = this.num_lines; i < l; i++) {
+			for (let i = 0, l = this.num_lines; i < l; i++) {
 				var key = this.keys[i];
 				if (key === line) break;
 				pixel_top += key.pixel_height;
 			}
 		} else {
 			var sibs = this.keys;
-			var i = id;
+			let i = id;
 			while (i > 0) {
 				i--;
 				pixel_top += sibs[i].pixel_offset;
@@ -158,7 +159,7 @@ class Container_Cell {
 
 		this.getLineCount();
 		sib.getLineCount();
-		this.setAsParent()
+		this.setAsParent();
 
 		this.parent.balance();
 	}
@@ -209,7 +210,7 @@ class Container_Cell {
 	remove(line) {
 		for (var i = 0, l = this.keys.length; i < l; i++) {
 			if (this.keys[i] === line) {
-				this.keys.splice(i, 1)
+				this.keys.splice(i, 1);
 				this.decrementNumOfLines();
 				this.decrementNumOfRealLines(line.size);
 				this.decrementPixelOffset(line.pixel_height);

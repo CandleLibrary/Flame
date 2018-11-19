@@ -4,7 +4,8 @@ import fs from "fs";
 import {flame_scheme} from "./scheme";
 
 //Text Editing
-import {TextFramework} from "../text/text_framework";
+import charc from "charc";
+
 import {ColorFramework} from "../color/color_framework";
 
 /**
@@ -31,7 +32,8 @@ export class Project {
                 actions : system.actions,
                 ui : system.ui,
                 classes : {
-                    textedit : TextFramework,
+                    textio : charc.TextIO,
+                    textfw : charc.TextFramework,
                     coloredit : ColorFramework
                 },
                 system

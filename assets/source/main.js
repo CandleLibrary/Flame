@@ -29,15 +29,13 @@ import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
 import { PackageNode } from "./wick_compiler_nodes/package.js";
 import { Script } from "./wick_compiler_nodes/script.js";
 
-//Text Editing
-import {TextFramework} from "./text/text_framework";
-
-
 //Poject system
 import { Project } from "./project/project";
 
 //Actions 
 import {actions} from "./interface/actions/action";
+
+import charc from "charc";
 
 class System {
     constructor() {
@@ -100,31 +98,17 @@ const flame = {
      //Initialize a text editor on element
     initEditor(element){ 
        
-        let fw = new TextFramework(element);
-
+        let fw = new charc.TextFramework();
+        let io = new charc.TextIO(element);
         
-        element.addEventListener("mouseup",e=>{
-            fw.onMouseUp(e, e.offsetX, e.clientY, 1);
-            e.preventDefault();
-        })
+        io.fw = fw;
 
-        element.addEventListener("keypress",e=>{
-            fw.onKeyPress(e);
-            fw.updateText();
-            fw.updateCursors();
-            fw.renderToDOM();
-            e.preventDefault();
-        })
+        element.addEventListener("mouseup",e => io.onMouseUp(e));
+        element.addEventListener("keypress",e=> io.onKeyPress(e));
+        element.addEventListener("keydown",e=> io.onKeyDown(e));
+        element.addEventListener("wheel",e=> io.onMouseWheel(e));
 
-        element.addEventListener("keggydown",e=>{ 
-            debugger
-            fw.onKeyDown(e);
-            fw.updateText();
-            fw.updateCursors();
-            fw.renderToDOM();
-        })
-
-        return fw;
+        return {fw, io};
     }
 };
 export default flame;

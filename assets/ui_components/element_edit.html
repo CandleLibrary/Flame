@@ -12,46 +12,36 @@
 	></div>
 
 	<script on=((created))>
-		this.t = new presets.custom.classes.textedit(this.badges.data);
-		//this.t.insertText("This is the test text");
-		//this.t.setFont("comic sans").then(()=>this.t.renderToDOM());
+		this.fw = new presets.custom.classes.textfw();
+		this.io = new presets.custom.classes.textio(this.badges.data);
+		this.io.fw = this.fw;
 	</script>
 
 	<script on=((target)) >
-		src.wick_element = target.element.wick_node; 
-		this.t.clearContents();
-		this.t.insertText(target.element.wick_node + "");
-		this.t.updateText();
-		this.t.renderToDOM();
+		this.wick_element = target.element.wick_node; 
+		this.fw.clearContents();
+		this.fw.insertText(target.element.wick_node + "");
+		this.fw.updateText();
+		this.io.render();
 		emit("data", target.element.wick_node + "");
 	</script>
 
 	<script on=((change))>
-		console.log(change)
-		src.wick_element.reparse(change).then(n=>src.wick_element = n);
+		this.wick_element.reparse(change).then(n=>this.wick_element = n);
 	</script>
 
 	<script on=((mouseup))>
 		this.badges.data.focus();
-		this.t.onMouseUp(event, event.offsetX, event.clientY, 1);
+		this.io.onMouseUp(event);
 	</script>
 
 	<script on=((keypress))>
-		this.t.onKeyPress(event);
-		this.t.moveCursorsByX(1);
-		this.t.updateText();
-		this.t.updateCursors();
-		this.t.renderToDOM();
-		event.preventDefault();
-		emit.change = this.t + "";
+		this.io.onKeyPress(event);
+		emit.change = this.fw + "";
 	</script>
 
 	<script on=((keydown))>
-		this.t.onKeyDown(event);
-		this.t.updateText();
-		this.t.updateCursors();
-		this.t.renderToDOM();
-		event.preventDefault();
+		this.io.onKeyDown(event);
 	</script>
 
 	<style>

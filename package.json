@@ -11,7 +11,6 @@
     "prepare": "rollup --config ./assets/build/config/config.js",
     "test": "mocha"
   },
-  "private": true,
   "repository": {
     "type": "git",
     "url": "https://www.gitlab.com/anthonycweathersby/flame"

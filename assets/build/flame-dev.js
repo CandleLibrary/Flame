@@ -4473,7 +4473,7 @@ var flame = (function (fs,path) {
       _getQuery_() {
           let map = (this.map) ? this.map : (this.map = new Map());
 
-          let lex = whind(this.query);
+          let lex = whind$1(this.query);
 
           const get_map = (k, m) => (m.has(k)) ? m.get(k) : m.set(k, new Map).get(k);
 
@@ -7092,17 +7092,17 @@ var flame = (function (fs,path) {
 
       
       /* Box Model https://www.w3.org/TR/css-box-3 */
-      margin: `[<length>|<percentage>|auto]{1,4}`,
+      margin: `[<length>|<percentage>|0|auto]{1,4}`,
       margin_top: `<length>|<percentage>|auto`,
       margin_right: `<length>|<percentage>|auto`,
       margin_bottom: `<length>|<percentage>|auto`,
       margin_left: `<length>|<percentage>|auto`,
 
-      padding: `[<length>|<percentage>|auto]{1,4}`,
-      padding_top: `<length>|<percentage>|auto`,
-      padding_right: `<length>|<percentage>|auto`,
-      padding_bottom: `<length>|<percentage>|auto`,
-      padding_left: `<length>|<percentage>|auto`,
+      padding: `[<length>|<percentage>|0|auto]{1,4}`,
+      padding_top: `<length>|<percentage>|0|auto`,
+      padding_right: `<length>|<percentage>|0|auto`,
+      padding_bottom: `<length>|<percentage>|0|auto`,
+      padding_left: `<length>|<percentage>|0|auto`,
 
       min_width: `<length>|<percentage>|inherit`,
       max_width: `<length>|<percentage>|none|inherit`,
@@ -8917,7 +8917,7 @@ var flame = (function (fs,path) {
           this._event_bind_ = new IOBase(source.getTap(event_bind.tap_name));
           this._event_ = event.replace("on", "");
 
-          this.prevent_defaults = true;
+          this.prevent_defaults = false;
           if (this._event_ == "dragstart") this.prevent_defaults = false;
           this._msg_ = null;
           this.data = null;
@@ -9148,7 +9148,7 @@ var flame = (function (fs,path) {
       }
       set type(v) {}
 
-      toString(){return `((${this.tap_name}))`}
+      toString(){return `((${this.tap_name}))`;}
   }
 
   class RawValueBinding {
@@ -9175,7 +9175,7 @@ var flame = (function (fs,path) {
       set _value_(v) {}
       get type() { return RAW_VALUE_BINDING_ID; }
       set type(v) {}
-      toString(){return this.txt}
+      toString(){return this.txt;}
   }
 
   /**
@@ -17477,8 +17477,8 @@ var flame = (function (fs,path) {
           this.fw = null;
           this.gutter_width = 30;
 
-          //Pixel width limit to apply to allow word wrapping;
-          this.pixel_width = 150;
+          //Pixel width limitation to apply to allow word wrapping;
+          this.pixel_width = 1500;
 
           //Amount of pixel padding to add to top and height
           this.pre_roll = 50;
@@ -17608,7 +17608,7 @@ var flame = (function (fs,path) {
 
 
 
-          return x + (line.IS_LINKED_LINE|0) - 1 - line.linked_offset;
+          return x + (line.IS_LINKED_LINE | 0) - 1 - line.linked_offset;
       }
 
       getYFromPixelCoord(y_pixel, fw = this.fw) {
@@ -17646,7 +17646,13 @@ var flame = (function (fs,path) {
 
           while (!lex.END) {
               if (lex.ty !== lex.types.data_link) {
-                  text += lex.tx;
+
+                  if (lex.ch == "<")
+                      text += "&lt;";
+                  else if (lex.ch == ">")
+                      text += "&gt;";
+                  else
+                      text += lex.tx;
 
               } else {
                   let code = lex.code;
@@ -17656,7 +17662,7 @@ var flame = (function (fs,path) {
               lex.n();
           }
 
-          return text + font_size_close; //lex.slice().replace(/\</g, "&lt;").replace(/\>/g, "&gt;");
+          return text + font_size_close;
       }
 
       renderLines(lines, offset_top) {
@@ -17766,6 +17772,7 @@ var flame = (function (fs,path) {
 
       onKeyPress(event, fw = this.fw) {
           if (!fw) return;
+          console.log("keypress");
 
           var keycode = event.keyCode;
           var text = String.fromCharCode(keycode);
@@ -17794,6 +17801,7 @@ var flame = (function (fs,path) {
 
       onKeyDown(event, fw = this.fw) {
           if (!fw) return;
+          console.log("keydown");
 
           var keycode = event.keyCode;
           var UPDATED = false;
@@ -17834,10 +17842,6 @@ var flame = (function (fs,path) {
           if (Math.abs(delta) < 5) return;
           this.top += delta;
           this.render(fw);
-      }
-
-      createControl(font_size) {
-
       }
   }
 
@@ -19751,7 +19755,6 @@ var flame = (function (fs,path) {
       REDO
   };
 
-  const wick$1 = require("wick");
   /**
    * This module is responsible for storing, updating, and caching compents. 
    * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
@@ -19773,7 +19776,7 @@ var flame = (function (fs,path) {
                   e.target.contentDocument.body.appendChild(children[i]);
               }
 
-              e.target.contentWindow.wick = wick$1;
+              e.target.contentWindow.wick = client;
 
               this.window = e.target.contentWindow;
 
@@ -22469,7 +22472,7 @@ var flame = (function (fs,path) {
    */
 
   const flame = {
-      init: (wick) => {
+      init: () => {
           //Get testing and development flags. 
           const DEV = !!require('electron').remote.process.env.FLAME_DEV;
           const TEST = !!require('electron').remote.process.env.FLAME_TEST;

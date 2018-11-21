@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 import { CacheFactory } from "./cache";
 import { getFirstPositionedAncestor } from "./common";
 import {

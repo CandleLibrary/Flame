@@ -1,4 +1,5 @@
-const wick = require("wick");
+import wick from "@galactrax/wick";
+
 
 /**
  * This module is responsible for storing, updating, and caching compents. 

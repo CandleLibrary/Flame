@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 export function TEXTEDITOR(system, element, component, x, y){}
 
 

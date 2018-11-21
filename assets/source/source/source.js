@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 let Source = wick.core.source.constructor;
 

@@ -1,10 +1,12 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 import path from "path";
 import fs from "fs";
 import {flame_scheme} from "./scheme";
 
 //Text Editing
-import charc from "charc";
+import {TextFramework, TextIO} from "@galactrax/charcoal";
 
 import {ColorFramework} from "../color/color_framework";
 
@@ -32,8 +34,8 @@ export class Project {
                 actions : system.actions,
                 ui : system.ui,
                 classes : {
-                    textio : charc.TextIO,
-                    textfw : charc.TextFramework,
+                    textio : TextIO,
+                    textfw : TextFramework,
                     coloredit : ColorFramework
                 },
                 system

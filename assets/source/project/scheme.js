@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 const scheme = wick.scheme;
 const core = wick.core;

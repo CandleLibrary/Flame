@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 let RootNode = wick.core.source.compiler.nodes.root;
 let SourceNode = wick.core.source.compiler.nodes.source;

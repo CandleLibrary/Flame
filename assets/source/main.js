@@ -1,9 +1,9 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+import {TextFramework, TextIO} from "@galactrax/charcoal";
 
 //Amend the prototype of the HTML
 HTMLElement.prototype.wick_node = null;
-
-window.wick = wick;
 
 import { UI_Manager } from "./interface/ui_manager";
 import { JSManager } from "./js/js_manager";
@@ -35,7 +35,6 @@ import { Project } from "./project/project";
 //Actions 
 import {actions} from "./interface/actions/action";
 
-import charc from "charc";
 
 class System {
     constructor() {
@@ -56,7 +55,7 @@ class System {
  */
 
 const flame = {
-    init: (wick) => {
+    init: () => {
         //Get testing and development flags. 
         const DEV = !!require('electron').remote.process.env.FLAME_DEV;
         const TEST = !!require('electron').remote.process.env.FLAME_TEST;
@@ -98,8 +97,8 @@ const flame = {
      //Initialize a text editor on element
     initEditor(element){ 
        
-        let fw = new charc.TextFramework();
-        let io = new charc.TextIO(element);
+        let fw = new TextFramework();
+        let io = new TextIO(element);
         
         io.fw = fw;
 

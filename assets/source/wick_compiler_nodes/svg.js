@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 let SVGNode = wick.core.source.compiler.nodes.svg;
 import {RootNode} from "./root";
 

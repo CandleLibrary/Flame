@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 let StyleNode = wick.core.source.compiler.nodes.style;
 

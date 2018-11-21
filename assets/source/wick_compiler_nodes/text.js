@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 let RootText = wick.core.source.compiler.nodes.text;
 import {RootNode} from "./root";
 

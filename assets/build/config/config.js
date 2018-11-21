@@ -1,3 +1,4 @@
+import commonjs from 'rollup-plugin-commonjs';
 import resolve from 'rollup-plugin-node-resolve';
 
 export default {
@@ -7,11 +8,11 @@ export default {
             pureExternalModules: true,
         },
     },
-    output: {
+    output: [{
         name: "flame",
         file: "./assets/build/flame-dev.js",
         format: "iife"
-    },
-
-    plugins: [resolve()]
+    }],
+    external : ["path", "fs"],
+    plugins: [commonjs({ include: ['./main.js', './node_modules/*.*'] }),            resolve()]
 };

@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 let Script = wick.core.source.compiler.nodes.script;
 

@@ -7,7 +7,7 @@
 	<div badge="data" id="text_container"
 		onmouseup="((mouseup)())"
 		onkeypress="((keypress)())"
-		onkeydown="((keypress)())"
+		onkeydown="((keydown)())"
 		tabindex=1 
 	></div>
 
@@ -36,11 +36,13 @@
 	</script>
 
 	<script on=((keypress))>
+		console.log("set")
 		this.io.onKeyPress(event);
 		emit.change = this.fw + "";
 	</script>
 
 	<script on=((keydown))>
+		console.log("set")
 		this.io.onKeyDown(event);
 	</script>
 
@@ -63,6 +65,8 @@
 		    position: absolute;
 		    font-family: unset;
 		    font-size: 100%;
+		    margin: 0;
+		    padding: 0px;
 		}
 
 		.txt_cursor {

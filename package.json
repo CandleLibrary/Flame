@@ -1,13 +1,14 @@
 {
   "name": "flame",
   "version": "0.0.1",
-  "description": "A web based editing app for wick",
+  "description": "A browser tech web editing app based on wick and electron",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "textedit": "electron . text_edit",
-    "build": "rollup --config ./assets/build/config/main_dev.config.js",
-    "build.watch": "rollup --watch --config ./assets/build/config/node.config.js",
+    "build": "rollup --config ./assets/build/config/dev.config.js",
+    "build.watch": "rollup --watch --config ./assets/build/config/dev.config.js",
+    "prepare": "rollup --config ./assets/build/config/config.js",
     "test": "mocha"
   },
   "private": true,
@@ -23,19 +24,21 @@
   "license": "ISC",
   "dependencies": {
     "diff": "^3.5.0",
-    "electron": "^3.0.8",
+    "electron": "^3.0.10",
     "paper": "^0.11.8"
   },
   "devDependencies": {
+    "@galactrax/charcoal": ">=0.0.4",
+    "@galactrax/wick": ">=0.4.8-a",
     "chai": "^4.2.0",
-    "charc": "file:../charc",
     "devtron": "^1.4.0",
     "electron-packager": "^12.2.0",
     "mocha": "^5.2.0",
     "rollup": "^0.66.6",
+    "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^3.4.0",
     "spectron": "^5.0.0",
-    "wick": "file:../wick"
+    "whind": ">=0.0.2"
   },
   "jshintConfig": {
     "esversion": 6,

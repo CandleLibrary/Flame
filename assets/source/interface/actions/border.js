@@ -3,7 +3,9 @@ import {SETDELTALEFT, SETDELTATOP} from "./position";
 
 import { CacheFactory } from "./cache";
 
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 let types = wick.core.css.types;
 
 function resetBorder(system, element, component) {

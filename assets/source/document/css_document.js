@@ -2,7 +2,9 @@ import {
 	Document
 } from "./document";
 
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 export class CSSDocument extends Document {
 

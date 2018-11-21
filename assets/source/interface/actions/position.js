@@ -9,7 +9,9 @@ import {
     SETDELTAWIDTH,
     SETDELTAHEIGHT
 } from "./dimensions";
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 const types = wick.core.css.types;
 
 export function SETLEFT(system, element, component, x, LINKED = false, type = "") {

@@ -1,5 +1,7 @@
 //*********** Actions ******************
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 import { actions } from "./actions/action";
 import { UIComponent } from "./ui_component";
 import { LineMachine } from "./system/line_machine";

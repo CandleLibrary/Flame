@@ -1,4 +1,6 @@
-import wick from "wick";
+import wick from "@galactrax/wick";
+
+
 
 let CSS_Rule_Constructor = wick.core.css.prop;
 

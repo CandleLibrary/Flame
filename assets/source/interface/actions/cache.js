@@ -1,9 +1,6 @@
-import wick from "@galactrax/wick";
+import CSSRule from "@galactrax/wick";
 
-
-
-let CSS_Rule_Constructor = wick.core.css.prop;
-
+let CSS_Rule_Constructor = CSSRule;
 
 let cache_de_cache = null;
 
@@ -15,11 +12,8 @@ export function getUniqueRule(system, element, component) {
     return system.css.getUnique(element, component);
 }
 
-function mergeRules(css) {
-    let rule = new CSS_Rule_Constructor();
-    for (let i = 0; i < css.length; i++)
-        rule.merge(css[i].r);
-    return rule;
+function mergeRules(system, css) {
+    return system.css.mergeRules(css);
 }
 
 class Cache {
@@ -59,7 +53,7 @@ class Cache {
 
         let unique_rule = getUniqueRule(system, element, component),
             css_r = getApplicableRules(system, element, component),
-            css = mergeRules(css_r);
+            css = mergeRules(system, css_r);
 
         //test for presence of rules. 
         let POS_R = false,
@@ -145,7 +139,7 @@ class Cache {
                 unique_rule.addProp('position:absolute');
             } else if (move_type == "relative") {
                 v |= 1;
-                unique_rule.addProp('position:relative;top:0px;left:0px');
+                unique_rule.addProp('position:relative;');
             }
         }
 
@@ -203,8 +197,9 @@ class Cache {
 
         this.unique = unique_rule;
         css_r = getApplicableRules(system, element, component);
-        this.rules = mergeRules(css_r);
+        this.rules = mergeRules(system, css_r);
         this.cssflagsA = v;
+        this.original_rules =css_r;
         //calculate horizontal and vertical rations. also width and height ratios.  
     }
 

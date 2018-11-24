@@ -1,8 +1,4 @@
-import wick from "@galactrax/wick";
-
-
-
-let CSSRule = wick.core.css.prop;
+import {CSSRule} from "@galactrax/wick";
 
 /**
  * @brief This will replace the default rule.merge with a reactive system that updates the respective selector. 

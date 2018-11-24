@@ -1,4 +1,5 @@
 import {
+    setValue,
     setNumericalValue,
     getRatio
 } from "./common";
@@ -9,10 +10,10 @@ import {
     SETDELTAWIDTH,
     SETDELTAHEIGHT
 } from "./dimensions";
-import wick from "@galactrax/wick";
+import {CSSParser} from "@galactrax/wick";
 
 
-const types = wick.core.css.types;
+const types = CSSParser.types;
 
 export function SETLEFT(system, element, component, x, LINKED = false, type = "") {
     let cache = CacheFactory(system, element, component);
@@ -68,6 +69,8 @@ export function SETBOTTOM(system, element, component, x, LINKED = false) {
 export function SETDELTALEFT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).left);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+
     if (ratio > 0)
         SETLEFT(system, element, component, start_x + dx / ratio, true);
     else
@@ -80,6 +83,8 @@ export function SETDELTALEFT(system, element, component, dx, ratio = 0, LINKED =
 
 export function SETDELTATOP(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).top);
+
+    start_x = isNaN(start_x) ? 0 : start_x;
 
     if (ratio > 0)
         SETTOP(system, element, component, start_x + dx / ratio, true);
@@ -94,6 +99,8 @@ export function SETDELTATOP(system, element, component, dx, ratio = 0, LINKED = 
 export function SETDELTARIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).right);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+
     if (ratio > 0)
         SETRIGHT(system, element, component, start_x + dx / ratio, true);
     else
@@ -107,6 +114,8 @@ export function SETDELTARIGHT(system, element, component, dx, ratio = 0, LINKED 
 export function SETDELTABOTTOM(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).bottom);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+    
     if (ratio > 0)
         SETBOTTOM(system, element, component, start_x + dx / ratio, true);
     else

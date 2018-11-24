@@ -1,4 +1,5 @@
-import wick from "@galactrax/wick";
+//import wick from "@galactrax/wick";
+
 import {
     Component
 } from "../component/component";
@@ -23,7 +24,7 @@ class UIComponent extends Component {
                 e.target.contentDocument.body.appendChild(children[i]);
             }
 
-            e.target.contentWindow.wick = wick;
+            //e.target.contentWindow.wick = wick;
 
             this.window = e.target.contentWindow;
 

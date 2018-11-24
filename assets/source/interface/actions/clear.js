@@ -22,7 +22,27 @@ export function CLEARTOP(system, element, component, LINKED = false) {
     if (!LINKED) element.wick_node.setRebuild();
 }
 //clear right
+export function CLEARIGHT(system, element, component, LINKED = false) {
+    let cache = CacheFactory(system, element, component);
+    let css = cache.rules;
+    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    if (css.props.right) {
+        if (KEEP_UNIQUE) cache.unique.addProp(`right:auto`);
+        else css.props.right = "auto";
+    }
+    if (!LINKED) element.wick_node.setRebuild();
+}
 //clear bottom
+export function CLEABOTTOM(system, element, component, LINKED = false) {
+    let cache = CacheFactory(system, element, component);
+    let css = cache.rules;
+    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    if (css.props.bottom) {
+        if (KEEP_UNIQUE) cache.unique.addProp(`bottom:auto`);
+        else css.props.bottom = "auto";
+    }
+    if (!LINKED) element.wick_node.setRebuild();
+}
 
 //clear margin-top
 export function CLEARMARGINTOP(system, element, component, LINKED = false) {
@@ -30,7 +50,7 @@ export function CLEARMARGINTOP(system, element, component, LINKED = false) {
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     if (css.props.margin_left) {
-        if (KEEP_UNIQUE) cache.unique.addProp(`margin-left:0`);
+        if (KEEP_UNIQUE) cache.unique.addProp(`margin-top:0`);
         else css.props.margin_left = 0;
     }
     if (!LINKED) element.wick_node.setRebuild();
@@ -46,7 +66,18 @@ export function CLEARMARGINLEFT(system, element, component, LINKED = false) {
     }
     if (!LINKED) element.wick_node.setRebuild();
 }
+
 //clear margin-right
+export function CLEARMARGINRIGHT(system, element, component, LINKED = false) {
+    let cache = CacheFactory(system, element, component);
+    let css = cache.rules;
+    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    if (css.props.margin_right) {
+        if (KEEP_UNIQUE) cache.unique.addProp(`margin-right:0`);
+        else css.props.margin_right = 0;
+    }
+    if (!LINKED) element.wick_node.setRebuild();
+}
 //clear margin-bottom
 //clear padding-left
 //clear padding-right

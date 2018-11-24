@@ -1,6 +1,8 @@
-import wick from "@galactrax/wick";
+import {CSSRootNode, CSSRule} from "@galactrax/wick";
+import {StyleNode} from "../wick_compiler_nodes/style"
+import whind from "whind";
 
-
+const CSS_Rule_Constructor = CSSRule;
 
 import {
 	CSSComponent
@@ -10,7 +12,7 @@ import {
  *  This module maintains CSS documents and handles the updating of their contents. 
  */
 
-let CSS_Root_Constructor = wick.core.css.root;
+let CSS_Root_Constructor = CSSRootNode;
 
 export class CSSManager {
 
@@ -30,18 +32,27 @@ export class CSSManager {
 		if (!component)
 			return [];
 
+		let win = component.window;
+
 		let css_docs = component.local_css;
 
 		let selectors = [];
 
 		for (let i = 0; i < css_docs.length; i++) {
-			let gen = css_docs[i].getApplicableSelectors(element),
+			let gen = css_docs[i].getApplicableSelectors(element, win),
 				sel = null;
 			while (sel = gen.next().value)
 				selectors.push(sel);
 		}
 
 		return selectors;
+	}
+
+	createStyleDocument(name){
+		let id = "./temp.css"
+		this.docs.load({path:"./", name:"temp.css"}, true);
+		let doc = this.docs.get(id);
+		debugger
 	}
 
 	/**
@@ -52,12 +63,13 @@ export class CSSManager {
 	 */
 	getUnique(element, component) {
 		let css_docs = component.local_css;
+		let win = component.window;
 
 		let selector = null,
 			best_score = 0;
 
 		for (let i = 0; i < css_docs.length; i++) {
-			let gen = css_docs[i].getApplicableSelectors(element),
+			let gen = css_docs[i].getApplicableSelectors(element, win),
 				sel = null;
 			while (sel = gen.next().value) {
 				let score = sel.v.length * -20.5;
@@ -111,14 +123,32 @@ export class CSSManager {
 			//Create new CSS document and create identifier for this document best matching the element. 
 			//Add new class to element if there is none present. 
 
-			//The last selector in the component CSS has the highest precedent.
+			//The last selector in the component CSS has the highest default precedent.
 			let tree = css_docs[css_docs.length - 1];
 
 			if (css_docs.length == 0) {
-				//create new css tree.
-				tree = new CSS_Root_Constructor();
-				component.addStyle(tree);
+            	 tree = new CSS_Root_Constructor();
+				
+				let ast = component.sources[0].ast;
+            	
+            	let style = new StyleNode();
+            	style.tag = "style";
+            	
+            	ast.css = (ast.css) ? ast.css : [];
+            	ast.addC(style)
+            	ast.css.push(tree)
+            	
+            	style.css = tree;
+            	tree.addObserver(style);
+				
+				this.css_files.push(tree);
+				component.local_css.push(tree);
 			}
+
+
+
+
+				//create new css document. it should be located at the same location as the component. Or at a temp location
 
 			let class_name = "n" +((Math.random() * 10000000) | 0) + "";
 			let classes = element.wick_node.getAttrib("class");
@@ -129,8 +159,7 @@ export class CSSManager {
 				else
 					classes.value.txt += ` ${class_name}`;
 			}else{
-				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", wick.core.lexer(class_name)));
-				console.log(element.wick_node.classList);
+				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", whind(class_name)));
 			}
 
 			element.classList.add(class_name);
@@ -138,8 +167,6 @@ export class CSSManager {
 			let body = tree.fch;
 
 			selector = body.createSelector(`.${class_name}`);
-
-			console.log(selector, selector.r);
 		}
 
 		return selector;
@@ -184,5 +211,12 @@ export class CSSManager {
 		doc.bind(component);
 		this.css_files.push(css_file);
 		return component;
+	}
+
+	mergeRules(css) {
+	    let rule = new CSS_Rule_Constructor();
+	    for (let i = 0; i < css.length; i++)
+	        rule.merge(css[i].r);
+	    return rule;
 	}
 }

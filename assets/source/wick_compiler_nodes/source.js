@@ -1,11 +1,6 @@
-import wick from "@galactrax/wick";
+import {SourceNode} from "@galactrax/wick";
 
-
-
-let SourceNode = wick.core.source.compiler.nodes.source;
-let Lexer = wick.core.lexer;
-
-SourceNode.prototype.buildExisting = function(element, source, presets, taps) {
+SourceNode.prototype.buildExisting = function(element, source, presets, taps, win = window, css) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
@@ -37,7 +32,7 @@ SourceNode.prototype.buildExisting = function(element, source, presets, taps) {
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getN(node)) {
                 let child = children[i];
-                if (node.buildExisting(child, source, presets, taps)) i++;
+                if (node.buildExisting(child, source, presets, taps, null, win, this.css)) i++;
             }
         }
     }

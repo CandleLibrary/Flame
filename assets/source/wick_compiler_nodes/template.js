@@ -1,10 +1,8 @@
-import wick from "@galactrax/wick";
+import {SourceTemplateNode} from "@galactrax/wick";
 
+import whind from "whind";
 
-
-let SourceTemplateNode = wick.core.source.compiler.nodes.template;
-
-let Lexer = wick.core.lexer;
+let Lexer = whind;
 
 SourceTemplateNode.prototype.buildExisting = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {

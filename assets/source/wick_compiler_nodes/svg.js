@@ -1,7 +1,5 @@
-import wick from "@galactrax/wick";
+import {SVGNode} from "@galactrax/wick";
 
-
-let SVGNode = wick.core.source.compiler.nodes.svg;
 import {RootNode} from "./root";
 
 SVGNode.prototype.createElement = function(presets, source){

@@ -2,7 +2,7 @@ import {
 	Document
 } from "./document";
 
-import wick from "@galactrax/wick";
+import whind from "whind";
 
 
 
@@ -17,7 +17,7 @@ export class CSSDocument extends Document {
 		this.data = string;
 
 		if(this.tree){
-			this.tree._parse_(wick.core.lexer(string)).catch((e) => {
+			this.tree._parse_(whind(string)).catch((e) => {
 		        throw e;
 		    }).then((css) => {
 		    	this.old = string;
@@ -30,7 +30,7 @@ export class CSSDocument extends Document {
 
 			if (ALLOW_SEAL){
 				this.PENDING_SAVE = true;
-				this.system.doc_man.seal();
+				this.system.docs.seal();
 			}
 		}
 	}

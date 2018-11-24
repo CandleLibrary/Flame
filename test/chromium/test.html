@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="../../node_modules/mocha/mocha.css" rel="stylesheet" />
+    <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
+    <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
+    <script type="text/javascript" src="./load.js"></script>
+    <script type="text/javascript" src="./move.js"></script>
+    <script type="text/javascript" src="./border_box.js"></script>
+</head>
+
+<body>
+	<div id="mocha"></div>
+	<script>
+		function run(system){
+			mocha.setup("bdd");
+			chai.should();
+	  		
+	  		/** Loading Test Modules **/
+	  		LOAD(system);
+	  		MOVE(system);
+	  		BB(system);
+
+	  		mocha.checkLeaks();
+	  		mocha.run();
+		}
+		window.run = run;
+	</script>
+</body>
+
+</html>

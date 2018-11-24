@@ -1,4 +1,4 @@
-import wick from "@galactrax/wick";
+import {Presets} from "@galactrax/wick";
 
 
 import path from "path";
@@ -25,7 +25,7 @@ export class Project {
         
         this.flame_data = new flame_scheme();
 
-        this.presets = wick.core.presets({
+        this.presets = new Presets({
             models:{
                 flame: this.flame_data,
                 settings: this.flame_data.settings,
@@ -64,12 +64,11 @@ export class Project {
     }
 
     setDefaults(){
-
         this.flame_data.creation_date = Date.now();
         this.flame_data.default.component.width = 360;
         this.flame_data.default.component.height = 920;
-
         this.flame_data.settings.move_type = "relative";
+        this.flame_data.settings.KEEP_UNIQUE = true;
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 

@@ -61,7 +61,8 @@ function resetPadding(system, element, component) {
 export function SETPADDINGLEFT(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_left", system, element, component, x, setNumericalValue.parent_width);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 export function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -72,7 +73,10 @@ export function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, L
     else
         ratio = getRatio(system, element, component, SETPADDINGLEFT, start_x, dx, "padding-left");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAWIDTH(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -80,7 +84,8 @@ export function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, L
 export function SETPADDINGTOP(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_top", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 export function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -91,7 +96,11 @@ export function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LI
     else
         ratio = getRatio(system, element, component, SETPADDINGTOP, start_x, dx, "padding-top");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAHEIGHT(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -99,7 +108,8 @@ export function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LI
 export function SETPADDINGRIGHT(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_right", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 
@@ -111,7 +121,11 @@ export function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, 
     else
         ratio = getRatio(system, element, component, SETPADDINGRIGHT, start_x, dx, "padding-right");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAWIDTH(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+    
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -119,7 +133,8 @@ export function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, 
 export function SETPADDINGBOTTOM(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_bottom", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 
@@ -133,59 +148,68 @@ export function SETDELTAPADDINGBOTTOM(system, element, component, dx, ratio = 0,
 
     SETDELTAHEIGHT(system, element, component, -dx, true);
 
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
     
     return ratio;
 }
 
-export function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-export function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT) {
+export function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }

@@ -1,18 +1,14 @@
-import wick from "@galactrax/wick";
-
-
-
 import fs from "fs";
 
 import {actions} from "../interface/actions/action";
 
 export class Document {
 
-    constructor(file_name, path, system) {
+    constructor(file_name, path, system, IS_NEW_FILE) {
         this.path = path;
         this.name = file_name;
         this.data = null;
-        this.LOADED = false;
+        this.LOADED = (IS_NEW_FILE) ? true: false;
         this.UPDATED = true;
         this.SAVING = false;
         this.PENDING_SAVE = false;
@@ -43,19 +39,21 @@ export class Document {
     }
 
     load() {
-        fs.open(this.path + "/" + this.name, "r", (err, fd) => {
-            if (err) throw err;
-            fs.readFile(fd, "utf8", (err, data) => {
-                
-                fs.close(fd, (err) => {if (err) throw err});
-                
-                if (err) 
-                    throw err;
-                
-                this.LOADED = true;
-                this.fromString(data);    
+        if(!this.LOADED){
+            fs.open(this.path + "/" + this.name, "r", (err, fd) => {
+                if (err) throw err;
+                fs.readFile(fd, "utf8", (err, data) => {
+                    
+                    fs.close(fd, (err) => {if (err) throw err});
+                    
+                    if (err) 
+                        throw err;
+                    
+                    this.LOADED = true;
+                    this.fromString(data);    
+                });
             });
-        });
+        }
     }
 
     save() {

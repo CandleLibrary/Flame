@@ -1,4 +1,4 @@
-import wick from "@galactrax/wick";
+import {CSSParser} from "@galactrax/wick";
 
 
 import { CacheFactory } from "./cache";
@@ -9,6 +9,8 @@ import {
     SETDELTARIGHT,
     SETDELTABOTTOM
 } from "./position";
+
+const types = CSSParser.types;
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
@@ -75,8 +77,8 @@ export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL =
     switch (cache.move_hori_type) {
         case "left right":
             //get the width of the parent element
-            css.props.left = new wick.core.css.types.length(diff, "px");
-            css.props.right = new wick.core.css.types.length(diff, "px");
+            css.props.left = new types.length(diff, "px");
+            css.props.right = new types.length(diff, "px");
             cache.unique.addProp(`margin-left:auto; margin-right:auto`);
             break;
         case "left":

@@ -1,5 +1,4 @@
-import wick from "@galactrax/wick";
-
+//import wick from "@galactrax/wick";
 
 /**
  * This module is responsible for storing, updating, and caching compents. 
@@ -28,7 +27,7 @@ class Component {
         this.iframe.onload = (e) => {
             this.mountListeners();
             //e.target.contentDocument.body.appendChild(this.data);
-            e.target.contentWindow.wick = wick;
+            //e.target.contentWindow.wick = wick;
             this.window = e.target.contentWindow;
             this.IFRAME_LOADED = true;
         };
@@ -74,11 +73,17 @@ class Component {
         return this.style_frame;
     }
 
-    addStyle(style, INLINE = false) {
+    addStyle(tree, INLINE) {
         if (!INLINE) {
-            this.local_css.splice(this.css_split, 0, style)
+            let style = new StyleNode();
+            style.tag = "style"
+            this.sources[0].ast.addC(style);
+            style.css = tree;
+            tree.addObserver(style);
+            this.local_css.splice(this.css_split, 0, tree);
             this.css_split++;
         } else {
+            //insert the style into the root of the tree;
             this.local_css.push(style);
         }
     }
@@ -155,6 +160,15 @@ class Component {
         return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
     }
 
+    rebuild(){
+        if(this.sources)
+            this.sources[0].rebuild();
+    }
+
+    query(query){
+        return this.window.document.querySelector(query);
+    }
+
     set x(x) {
         this.element.style.left = x + "px";
     }
@@ -194,11 +208,6 @@ class Component {
 
     get target() {
         return this.element;
-    }
-
-    rebuild(){
-        if(this.sources)
-            this.sources[0].rebuild();
     }
 }
 

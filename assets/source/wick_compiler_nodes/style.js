@@ -1,8 +1,4 @@
-import wick from "@galactrax/wick";
-
-
-
-let StyleNode = wick.core.source.compiler.nodes.style;
+import {StyleNode} from "@galactrax/wick";
 
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;

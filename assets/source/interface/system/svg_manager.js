@@ -51,11 +51,7 @@ export class SVGManager {
             return;
             POINTER_DOWN = true;
 
-            console.log(x, y)
-
             this.selection = this.proj.hitTest(point, { fill: true, stroke: true });
-
-            console.log(this.selection)
 
             if (this.selection) {
                 this.selection.item.selected = true;
@@ -68,7 +64,7 @@ export class SVGManager {
             if (!POINTER_DOWN) return;
             let x = dx - e.offsetX;
             let y = dy - e.offsetY;
-            console.log(x, y, this.selection)
+
             dx = e.offsetX;
             dy = e.offsetY;
             let selection = this.selection;
@@ -99,7 +95,7 @@ export class SVGManager {
         paper.project.view.viewSize.set(this.width, this.height);
         paper.project.view.translate(new Point(-20, -20));
         let output = paper.project.exportSVG({ asString: true });
-        console.log(output)
+
         this.wick_node.reparse(output).then(n => this.wick_node = n);
         paper.project.view.translate(new Point(20, 20));
         paper.project.view.viewSize.set(this.width + 40, this.height + 40);

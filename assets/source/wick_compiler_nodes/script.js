@@ -1,15 +1,12 @@
-import wick from "@galactrax/wick";
-
-
-
-let Script = wick.core.source.compiler.nodes.script;
-
-Script.prototype.cssInject = Script.prototype._processTextNodeHook_;
+import {ScriptNode} from "@galactrax/wick";
 
 const path = require("path");
+
+ScriptNode.prototype.cssInject = ScriptNode.prototype._processTextNodeHook_;
+
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 /*Script.prototype._processTextNodeHook_ = function(lex) {
-    //Feed the lexer to a new CSS Builder
+    //Feed the lexer toString a new CSS Builder
     this.css = this.getCSS();
     lex.IWS = true;
     lex.tl = 0;
@@ -34,14 +31,14 @@ const path = require("path");
     this.css.addObserver(this);
 };*/
 
-Script.prototype.toString = function(off) {
-    return off + "script";
+ScriptNode.prototype.toString = function(off) {
+    return ("    ").repeat(off) + `<script>${this.innerText}<script/>\n`;
 };
 
-Script.prototype.updatedCSS = function() {
+ScriptNode.prototype.updatedCSS = function() {
     this.rebuild();
 };
 
-Script.prototype.buildExisting = () => { return false };
+ScriptNode.prototype.buildExisting = () => { return false };
 
-export { Script };
+export { ScriptNode };

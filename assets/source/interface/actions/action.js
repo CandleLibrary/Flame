@@ -3,6 +3,10 @@ import { TEXTEDITOR } from "./text";
 import { MOVE, CENTER } from "./move";
 import { COMPLETE } from "./complete";
 import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./create";
+import {SETWIDTH,
+SETHEIGHT,
+SETDELTAWIDTH,
+SETDELTAHEIGHT} from "./dimensions";
 import {
     SETBACKGROUNDCOLOR,
     SETCOLOR
@@ -145,6 +149,11 @@ const actions = {
     RESIZER,
     RESIZEL,
     RESIZEB,
+    //Width Height
+    SETWIDTH,
+    SETHEIGHT,
+    SETDELTAWIDTH,
+    SETDELTAHEIGHT,
     //Border
     //Margin
     SETMARGINLEFT,

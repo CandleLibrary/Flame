@@ -1,10 +1,6 @@
-import wick from "@galactrax/wick";
+import {RootNode, SourceNode} from "@galactrax/wick";
+import whind from "whind";
 
-
-
-let RootNode = wick.core.source.compiler.nodes.root;
-let SourceNode = wick.core.source.compiler.nodes.source;
-let Lexer = wick.core.lexer;
 let id = 0;
 
 RootNode.id = 0;
@@ -44,7 +40,7 @@ RootNode.prototype.reparse = function(text, element) {
 
     Root.par = this.par;
 
-    let promise = Root._parse_(Lexer(text), false, false, this.par);
+    let promise = Root._parse_(whind(text), false, false, this.par);
 
     promise.then(node => {
 
@@ -64,8 +60,6 @@ RootNode.prototype.reparse = function(text, element) {
 // Rebuild all sources relying on this node
 RootNode.prototype.rebuild = function(win = window) {
 
-    //if (!this.par)
-    //    this.updated();
 
     if (this.observing_sources) {
         
@@ -87,13 +81,13 @@ RootNode.prototype.extract = function() {
 };
 
 
-RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window) {
+RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window, css = this.css) {
     
     if (true || this.CHANGED !== 0) {
 
         element.style.cssText = "";
 
-        this._linkCSS_(null, win);
+        this._linkCSS_(css, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
@@ -198,10 +192,10 @@ RootNode.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TILL
 
     if (CAN_FETCH) {
         return this.url.fetchText().then((text) => {
-            let lexer = wick.core.lexer(text);
+            let lexer = whind(text);
             return this._parseRunner_(lexer, true, IGNORE_TEXT_TILL_CLOSE_TAG, this);
         }).catch((e) => {
-            console.log(e);
+            console.error(e);
         });
     }
     return null;

@@ -1,6 +1,3 @@
-import wick from "@galactrax/wick";
-
-
 import {
     Component
 } from "../../component/component";

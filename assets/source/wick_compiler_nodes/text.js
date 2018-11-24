@@ -1,7 +1,5 @@
-import wick from "@galactrax/wick";
+import {RootText} from "@galactrax/wick";
 
-
-let RootText = wick.core.source.compiler.nodes.text;
 import {RootNode} from "./root";
 
 RootText.prototype.createElement = RootNode.prototype.createElement;

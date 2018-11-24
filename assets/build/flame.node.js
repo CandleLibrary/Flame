@@ -5,6 +5,3340 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var fs = _interopDefault(require('fs'));
 var path = _interopDefault(require('path'));
 
+//Main dna for containing line tokens
+class Container_Cell {
+    constructor(IS_LEAF = true) {
+        this.keys = [];
+        this.parent = null;
+        this.IS_LEAF = IS_LEAF;
+        this.IS_ROOT = false;
+        this.num_lines = 0;
+        this.num_virtual_lines = 0;
+        this.pixel_offset = 0;
+    }
+
+    getIndex() {
+        var keys = this.parent.keys;
+        for (var i = 0, l = keys.length; i < l; i++) {
+            if (keys[i] === this) return i;
+        }
+        return -1;
+    }
+
+    getLine(offset) {
+        if (this.IS_LEAF) {
+            if (offset > this.num_lines) offset = this.num_lines - 1;
+            return this.keys[offset];
+        } else {
+            for (var i = 0, l = this.keys.length; i < l; i++) {
+                var key = this.keys[i];
+                if (offset < key.num_lines) {
+                    return key.getLine(offset);
+                } else offset -= key.num_lines;
+            }
+            return this.keys[this.keys.length - 1].getLine(offset);
+        }
+    }
+
+    getVirtualLine(offset) {
+        if (this.IS_LEAF) {
+            for (let i = 0, l = this.keys.length; i < l; i++) {
+                let line = this.keys[i];
+
+                if (offset < line.virtual_line_size && line.virtual_line_size > 0) {
+                    return line;
+                } else offset -= line.virtual_line_size;
+            }
+        } else {
+            for (let i = 0, l = this.keys.length; i < l; i++) {
+                let cell = this.keys[i];
+                if (offset < cell.num_virtual_lines) {
+                    return cell.getVirtualLine(offset);
+                } else offset -= cell.num_virtual_lines;
+            }
+            return this.keys[this.keys.length - 1].getVirtualLine(offset);
+        }
+    }
+
+    getLineAtPixelOffset(offset) {
+        if (this.IS_LEAF) {
+            for (let i = 0, l = this.keys.length; i < l; i++) {
+                let cell = this.keys[i];
+                if (offset < cell.pixel_height && cell.pixel_height > 0) {
+                    return cell;
+                } else offset -= cell.pixel_height;
+            }
+            return cell;
+        } else {
+            for (let i = 0, l = this.keys.length; i < l; i++) {
+                let cell = this.keys[i];
+                if (offset < cell.pixel_offset) {
+                    return cell.getLineAtPixelOffset(offset);
+                } else offset -= cell.pixel_offset;
+            }
+            return cell.getLineAtPixelOffset(offset);
+        }
+    }
+
+    getLineIndex(index, line, id) {
+        if (this.IS_LEAF) {
+            let i = 0;
+            for (let l = this.num_lines; i < l; i++) {
+                if (this.keys[i] === line) break;
+            }
+            index = i;
+        } else {
+            var sibs = this.keys;
+            let i = id;
+            while (i > 0) {
+                i--;
+                index += sibs[i].num_lines;
+            }
+        }
+
+        if (!this.parent.IS_ROOT) return this.parent.getLineIndex(index, null, this.getIndex());
+
+        return index;
+    }
+
+    getVirtualLineIndex(index, line, id) {
+        if (this.IS_LEAF) {
+            index = -1; //WTF
+            for (let i = 0, l = this.num_lines; i < l; i++) {
+                var key = this.keys[i];
+                index += key.virtual_line_size;
+                if (key === line) break;
+            }
+        } else {
+            var sibs = this.keys;
+            let i = id;
+            while (i > 0) {
+                i--;
+                index += sibs[i].num_virtual_lines;
+            }
+        }
+
+        if (!this.parent.IS_ROOT) return this.parent.getVirtualLineIndex(index, null, this.getIndex());
+
+
+        return index;
+    }
+
+    getPixelOffset(pixel_top, line, id) {
+        if (this.IS_LEAF) {
+            //pixel_top = -1; //WTF
+            for (let i = 0, l = this.num_lines; i < l; i++) {
+                var key = this.keys[i];
+                if (key === line) break;
+                pixel_top += key.pixel_height;
+            }
+        } else {
+            var sibs = this.keys;
+            let i = id;
+            while (i > 0) {
+                i--;
+                pixel_top += sibs[i].pixel_offset;
+            }
+        }
+
+        if (!this.parent.IS_ROOT) return this.parent.getPixelOffset(pixel_top, null, this.getIndex());
+
+        return pixel_top;
+    }
+
+    balanceInsert(max_size, IS_ROOT = false) {
+
+        if (this.keys.length >= max_size) {
+            //need to split this up!
+            let vl = this.num_virtual_lines,
+                nl = this.num_lines,
+                pl = this.pixel_offset;
+
+            let right = new Container_Cell(this.IS_LEAF);
+
+            let split = (max_size >> 1) | 0;
+            
+            let right_keys = this.keys.slice(split);
+            right_keys.forEach(k=>k.parent = right);
+            right.keys = right_keys;
+
+
+            let left_keys = this.keys.slice(0, split);
+            this.keys = left_keys;
+
+            //console.log(split, this.keys[this.keys.length-1].str, right.keys[0].str)
+
+            this.getLineCount();
+
+            right.num_lines = nl - this.num_lines;
+            right.num_virtual_lines = vl - this.num_virtual_lines;
+            right.pixel_offset = pl - this.pixel_offset;
+
+            if (IS_ROOT) {
+                let root = new Container_Cell(false);
+
+                root.num_lines = nl;
+                root.num_virtual_lines = vl;
+                root.pixel_offset = pl;
+
+                root.keys.push(this, right);
+                this.parent = root;
+                right.parent = root;
+                return root;
+            }
+
+            right.parent = this.parent;
+
+            return right;
+        }
+
+        return this;
+    }
+
+    /**
+        Inserts model into the tree, sorted by identifier. 
+    */
+    insert(index, line, max_size, IS_ROOT = false) {
+
+
+        let l = this.keys.length;
+
+        if (!this.IS_LEAF) {
+            let key;
+
+            for (var i = 0; i < l; i++) {
+
+                key = this.keys[i];
+
+                if (index < key.num_lines) {
+                    let out_key = key.insert(index, line, max_size, false);
+
+                    if (out_key !== key)
+                        this.keys.splice(i+1, 0, out_key);
+
+                    this.num_lines++;
+                    this.num_virtual_lines += line.virtual_line_size;
+                    this.pixel_offset += line.pixel_height;
+
+                    return this.balanceInsert(max_size, IS_ROOT);
+                } else
+                    index -= key.num_lines;
+            }
+
+            let out_key = key.insert(Infinity, line, max_size, false);
+
+            if (out_key !== key)
+                this.keys.push(out_key);
+
+            this.num_lines++;
+            this.num_virtual_lines += line.virtual_line_size;
+            this.pixel_offset += line.pixel_height;
+
+            return this.balanceInsert(max_size, IS_ROOT);
+
+        } else {
+
+            line.parent = this;
+
+            this.keys.splice(index, 0, line);
+
+            this.num_lines++;
+            this.num_virtual_lines += line.virtual_line_size;
+            this.pixel_offset += line.pixel_height;
+
+            return this.balanceInsert(max_size, IS_ROOT);
+        }
+    }
+
+    remove(start, end, min_size, IS_ROOT = false) {
+        let l = this.keys.length,
+            nl, vl, pl;
+
+        if (!this.IS_LEAF) {
+            let n = 0,
+                p = 0,
+                v = 0;
+
+            var key;
+
+            for (var i = 0; i < l; i++) {
+
+                key = this.keys[i];
+
+                if (start < key.num_lines) {
+                    let { nl, vl, pl } = key.remove(start, end, min_size, false);
+                    n += nl;
+                    v += vl;
+                    p += pl;
+                    break;
+                }
+
+                start -= key.num_lines;
+                end -= key.num_lines;
+            }
+            /*
+            if (start <= key.num_lines && end >= 0) {
+                let { nl, vl, pl } = key.remove(start, end, min_size, false);
+                n += nl;
+                v += vl;
+                p += pl;
+            }*/
+
+            for (i = 0; i < this.keys.length; i++) {
+                if (this.keys[i].keys.length < min_size) {
+                    if (this.balanceRemove(i, min_size)) {
+                        l--;
+                        i--;
+                    }
+                }
+            }
+
+            nl = n;
+            pl = p;
+            vl = v;
+
+        } else {
+            let v = 0,
+                p = 0,
+                n = 0;
+            let line = this.keys[start];
+            this.keys.splice(start, 1);
+            n++;
+            v += line.virtual_line_size;
+            p += line.pixel_height;
+
+            /*
+            for (let i = 0, j = 0, l = this.keys.length; i < l && j <= end; i++, j++) {
+                if (j >= start && j <= end) {
+                    let line = this.keys[i];
+                    this.keys.splice(i, 1);
+                    l--;
+                    i--;
+                    n++;
+                    v += line.virtual_line_size;
+                    p += line.pixel_height;
+                }
+            }
+            */
+            nl = n;
+            pl = p;
+            vl = v;
+        }
+
+        this.num_lines -= nl;
+        this.num_virtual_lines -= vl;
+        this.pixel_offset -= pl;
+
+        return { nl, vl, pl };
+    }
+
+    balanceRemove(index, min_size) {
+        let left = this.keys[index - 1];
+        let right = this.keys[index + 1];
+        let key = this.keys[index];
+        let n = 1,
+            v = 0,
+            p = 0;
+
+        //Left rotate
+        if (left && left.keys.length > min_size) {
+            let lk = left.keys.length;
+            let tsfr = left.keys[lk - 1];
+            key.keys.unshift(tsfr);
+            left.keys.length = lk - 1;
+            
+            tsfr.parent = key;
+
+            if (key.IS_LEAF)
+                v = tsfr.virtual_line_size, p = tsfr.pixel_height;
+            else
+                n = tsfr.num_lines, v = tsfr.num_virtual_lines, p = tsfr.pixel_offset;
+
+            key.num_lines += n;
+            key.num_virtual_lines += v;
+            key.pixel_offset += p;
+
+            left.num_lines -= n;
+            left.num_virtual_lines -= v;
+            left.pixel_offset -= p;
+
+            return false;
+        } else if (right && right.keys.length > min_size) {
+            //Right rotate
+            let tsfr = right.keys[0];
+            key.keys.push(tsfr);
+            right.keys.splice(0, 1);
+            
+            tsfr.parent = key;
+
+            if (key.IS_LEAF)
+                v = tsfr.virtual_line_size, p = tsfr.pixel_height;
+            else
+                n = tsfr.num_lines, v = tsfr.num_virtual_lines, p = tsfr.pixel_offset;
+
+            key.num_lines += n;
+            key.num_virtual_lines += v;
+            key.pixel_offset += p;
+
+            right.num_lines -= n;
+            right.num_virtual_lines -= v;
+            right.pixel_offset -= p;
+
+            return false;
+
+        } else {
+            //Left or Right Merge
+            if (!left) {
+                index++;
+                left = key;
+                key = right;
+            }
+
+            key.keys.forEach(k=>k.parent = left);
+
+            left.keys = left.keys.concat(key.keys);
+            left.num_lines += key.num_lines;
+            left.num_virtual_lines += key.num_virtual_lines;
+            left.pixel_offset += key.pixel_offset;
+            
+            this.keys.splice(index, 1);
+
+            return true;
+        }
+    }
+
+    getLineCount() {
+        var num = 0,
+            num2 = 0,
+            num3 = 0;
+        if (this.IS_LEAF) {
+            for (var i = 0, l = this.keys.length; i < l; i++) {
+                num += this.keys[i].virtual_line_size;
+                num2 += this.keys[i].pixel_height;
+            }
+            this.num_lines = this.keys.length;
+            this.num_virtual_lines = num;
+            this.pixel_offset = num2;
+        } else {
+            for (var i = 0, l = this.keys.length; i < l; i++) {
+                num += this.keys[i].num_lines;
+                num2 += this.keys[i].num_virtual_lines;
+                num3 += this.keys[i].pixel_offset;
+            }
+            this.num_lines = num;
+            this.num_virtual_lines = num2;
+            this.pixel_offset = num3;
+        }
+
+        return this.num_lines;
+    }
+
+    setAsParent() {
+        for (var i = 0, l = this.keys.length; i < l; i++) 
+            this.keys[i].parent = this;
+    }
+
+    incrementNumOfVirtualLines(i) {
+        if (i < 1) return;
+        this.num_virtual_lines += i;
+        this.parent.incrementNumOfVirtualLines(i);
+    }
+
+    decrementNumOfVirtualLines(i) {
+        if (i < 1) return;
+        this.num_virtual_lines -= i;
+        this.parent.decrementNumOfVirtualLines(i);
+    }
+
+    incrementNumOfLines() {
+        this.num_lines++;
+        this.parent.incrementNumOfLines();
+    }
+
+    decrementNumOfLines() {
+        this.num_lines--;
+        this.parent.decrementNumOfLines();
+    }
+
+    incrementPixelOffset(px) {
+        this.pixel_offset += px;
+        this.parent.incrementPixelOffset(px);
+    }
+
+    decrementPixelOffset(px) {
+        this.pixel_offset -= px;
+        this.parent.decrementPixelOffset(px);
+    }
+
+    updateHeight(diff) {
+        if (diff) {
+            this.pixel_offset += diff;
+            this.parent.updateHeight(diff);
+        }
+    }
+}
+
+
+
+class LineContainer {
+    constructor() {
+        this.root = null;
+        this.IS_ROOT = true;
+        this.num_lines = 0;
+        this.num_virtual_lines = 0;
+        this.max_size = 60;
+        this.min_size = (this.max_size / 2) | 0;
+    }
+
+    incrementNumOfLines() {
+        this.num_lines++;
+    }
+
+    decrementNumOfLines() {
+        this.num_lines--;
+    }
+
+    incrementNumOfVirtualLines(i) {
+        this.num_virtual_lines += i;
+    }
+
+    decrementNumOfVirtualLines(i) {
+        this.num_virtual_lines -= i;
+    }
+
+    incrementPixelOffset(px) {
+        this.pixel_offset += px;
+    }
+
+    decrementPixelOffset(px) {
+        this.pixel_offset -= px;
+    }
+
+    getLine(index) {
+        if (index >= this.length) index = this.length - 1;
+        return this.root.getLine(index);
+    }
+
+    getVirtualLine(index) {
+        if (index >= this.num_virtual_lines) index = this.num_virtual_lines - 1;
+        return this.root.getVirtualLine(index);
+    }
+
+    getLineAtPixelOffset(pixel_height) {
+        if (pixel_height >= this.pixel_offset) {
+            pixel_height = this.pixel_offset - 1;
+        }
+
+        if (!this.root) return 0;
+        return this.root.getLineAtPixelOffset(pixel_height);
+    }
+
+    //Transition ****************************
+    getIndexedLine(offset) {
+        return this.getLine(offset);
+    }
+
+    get count() {
+        return this.root.num_lines;
+    }
+
+    get countWL() {
+        return this.root.num_lines;
+    }
+    setIndexes() {}
+
+    getHeight() {
+        return this.num_lines;
+    }
+
+    get height() {
+        return this.num_lines;
+    }
+
+    get pixel_offset(){
+        return this.root.pixel_offset;
+    }
+
+    updateHeight(diff) {}
+
+
+    //**********************************************************
+    get length() {
+        return (this.root) ? this.root.num_lines : 0;
+    }
+
+    insert(line, index = Infinity) {
+        if (!this.root)
+            this.root = new Container_Cell();
+
+        let root = this.root.insert(index, line, this.max_size, true);
+        this.root = root;
+        this.root.parent = this;
+        this.num_lines = this.root.num_lines;
+        this.pixel_height = this.root.pixel_offset;
+        this.num_virtual_lines = this.root.num_virtual_lines;
+    }
+
+    remove(line) {
+        let index = line.index;
+
+        this.root.remove(index, index, this.min_size, true);
+
+        if (this.root.keys.length == 1 && this.root.keys[0] instanceof Container_Cell) {
+            this.root = this.root.keys[0];
+            this.root.parent = this;
+        }
+    }
+}
+
+const HORIZONTAL_TAB = 9;
+const SPACE = 32;
+
+/**
+ * Lexer Jump table reference 
+ * 0. NUMBER
+ * 1. IDENTIFIER
+ * 2. QUOTE STRING
+ * 3. SPACE SET
+ * 4. TAB SET
+ * 5. CARIAGE RETURN
+ * 6. LINEFEED
+ * 7. SYMBOL
+ * 8. OPERATOR
+ * 9. OPEN BRACKET
+ * 10. CLOSE BRACKET 
+ * 11. DATA_LINK
+ */ 
+const jump_table = [
+7, 	 	/* A */
+7, 	 	/* a */
+7, 	 	/* ACKNOWLEDGE */
+7, 	 	/* AMPERSAND */
+7, 	 	/* ASTERISK */
+7, 	 	/* AT */
+7, 	 	/* B */
+7, 	 	/* b */
+7, 	 	/* BACKSLASH */
+4, 	 	/* BACKSPACE */
+6, 	 	/* BELL */
+7, 	 	/* C */
+7, 	 	/* c */
+5, 	 	/* CANCEL */
+7, 	 	/* CARET */
+11, 	/* CARRIAGE_RETURN */
+7, 	 	/* CLOSE_CURLY */
+7, 	 	/* CLOSE_PARENTH */
+7, 	 	/* CLOSE_SQUARE */
+7, 	 	/* COLON */
+7, 	 	/* COMMA */
+7, 	 	/* d */
+7, 	 	/* D */
+7, 	 	/* DATA_LINK_ESCAPE */
+7, 	 	/* DELETE */
+7, 	 	/* DEVICE_CTRL_1 */
+7, 	 	/* DEVICE_CTRL_2 */
+7, 	 	/* DEVICE_CTRL_3 */
+7, 	 	/* DEVICE_CTRL_4 */
+7, 	 	/* DOLLAR */
+7, 	 	/* DOUBLE_QUOTE */
+7, 	 	/* e */
+3, 	 	/* E */
+8, 	 	/* EIGHT */
+2, 	 	/* END_OF_MEDIUM */
+7, 	 	/* END_OF_TRANSMISSION */
+7, 	 	/* END_OF_TRANSMISSION_BLOCK */
+8, 	 	/* END_OF_TXT */
+8, 	 	/* ENQUIRY */
+2, 	 	/* EQUAL */
+9, 	 	/* ESCAPE */
+10, 	 /* EXCLAMATION */
+8, 	 	/* f */
+8, 	 	/* F */
+7, 	 	/* FILE_SEPERATOR */
+7, 	 	/* FIVE */
+7, 	 	/* FORM_FEED */
+7, 	 	/* FORWARD_SLASH */
+0, 	 	/* FOUR */
+0, 	 	/* g */
+0, 	 	/* G */
+0, 	 	/* GRAVE */
+0, 	 	/* GREATER_THAN */
+0, 	 	/* GROUP_SEPERATOR */
+0, 	 	/* h */
+0, 	 	/* H */
+0, 	 	/* HASH */
+0, 	 	/* HORIZONTAL_TAB */
+8, 	 	/* HYPHEN */
+7, 	 	/* i */
+8, 	 	/* I */
+8, 	 	/* j */
+8, 	 	/* J */
+7, 	 	/* k */
+7, 	 	/* K */
+1, 	 	/* l */
+1, 	 	/* L */
+1, 	 	/* LESS_THAN */
+1, 	 	/* LINE_FEED */
+1, 	 	/* m */
+1, 	 	/* M */
+1, 	 	/* n */
+1, 	 	/* N */
+1, 	 	/* NEGATIVE_ACKNOWLEDGE */
+1, 	 	/* NINE */
+1, 	 	/* NULL */
+1, 	 	/* o */
+1, 	 	/* O */
+1, 	 	/* ONE */
+1, 	 	/* OPEN_CURLY */
+1, 	 	/* OPEN_PARENTH */
+1, 	 	/* OPEN_SQUARE */
+1, 	 	/* p */
+1, 	 	/* P */
+1, 	 	/* PERCENT */
+1, 	 	/* PERIOD */
+1, 	 	/* PLUS */
+1, 	 	/* q */
+1, 	 	/* Q */
+1, 	 	/* QMARK */
+1, 	 	/* QUOTE */
+9, 	 	/* r */
+7, 	 	/* R */
+10, 	/* RECORD_SEPERATOR */
+7, 	 	/* s */
+7, 	 	/* S */
+2, 	 	/* SEMICOLON */
+1, 	 	/* SEVEN */
+1, 	 	/* SHIFT_IN */
+1, 	 	/* SHIFT_OUT */
+1, 	 	/* SIX */
+1, 	 	/* SPACE */
+1, 	 	/* START_OF_HEADER */
+1, 	 	/* START_OF_TEXT */
+1, 	 	/* SUBSTITUTE */
+1, 	 	/* SYNCH_IDLE */
+1, 	 	/* t */
+1, 	 	/* T */
+1, 	 	/* THREE */
+1, 	 	/* TILDE */
+1, 	 	/* TWO */
+1, 	 	/* u */
+1, 	 	/* U */
+1, 	 	/* UNDER_SCORE */
+1, 	 	/* UNIT_SEPERATOR */
+1, 	 	/* v */
+1, 	 	/* V */
+1, 	 	/* VERTICAL_BAR */
+1, 	 	/* VERTICAL_TAB */
+1, 	 	/* w */
+1, 	 	/* W */
+1, 	 	/* x */
+1, 	 	/* X */
+9, 	 	/* y */
+7, 	 	/* Y */
+10,  	/* z */
+7,  	/* Z */
+7 		/* ZERO */
+];	
+
+/**
+ * LExer Number and Identifier jump table reference
+ * Number are masked by 12(4|8) and Identifiers are masked by 10(2|8)
+ * entries marked as `0` are not evaluated as either being in the number set or the identifier set.
+ * entries marked as `2` are in the identifier set but not the number set
+ * entries marked as `4` are in the number set but not the identifier set
+ * entries marked as `8` are in both number and identifier sets
+ */
+const number_and_identifier_table = [
+0, 		/* A */
+0, 		/* a */
+0, 		/* ACKNOWLEDGE */
+0, 		/* AMPERSAND */
+0, 		/* ASTERISK */
+0, 		/* AT */
+0,		/* B */
+0,		/* b */
+0,		/* BACKSLASH */
+0,		/* BACKSPACE */
+0,		/* BELL */
+0,		/* C */
+0,		/* c */
+0,		/* CANCEL */
+0,		/* CARET */
+0,		/* CARRIAGE_RETURN */
+0,		/* CLOSE_CURLY */
+0,		/* CLOSE_PARENTH */
+0,		/* CLOSE_SQUARE */
+0,		/* COLON */
+0,		/* COMMA */
+0,		/* d */
+0,		/* D */
+0,		/* DATA_LINK_ESCAPE */
+0,		/* DELETE */
+0,		/* DEVICE_CTRL_1 */
+0,		/* DEVICE_CTRL_2 */
+0,		/* DEVICE_CTRL_3 */
+0,		/* DEVICE_CTRL_4 */
+0,		/* DOLLAR */
+0,		/* DOUBLE_QUOTE */
+0,		/* e */
+0,		/* E */
+0,		/* EIGHT */
+0,		/* END_OF_MEDIUM */
+0,		/* END_OF_TRANSMISSION */
+8,		/* END_OF_TRANSMISSION_BLOCK */
+0,		/* END_OF_TXT */
+0,		/* ENQUIRY */
+0,		/* EQUAL */
+0,		/* ESCAPE */
+0,		/* EXCLAMATION */
+0,		/* f */
+0,		/* F */
+0,		/* FILE_SEPERATOR */
+2,		/* FIVE */
+4,		/* FORM_FEED */
+0,		/* FORWARD_SLASH */
+8,		/* FOUR */
+8,		/* g */
+8,		/* G */
+8,		/* GRAVE */
+8,		/* GREATER_THAN */
+8,		/* GROUP_SEPERATOR */
+8,		/* h */
+8,		/* H */
+8,		/* HASH */
+8,		/* HORIZONTAL_TAB */
+0,		/* HYPHEN */
+0,		/* i */
+0,		/* I */
+0,		/* j */
+0,		/* J */
+0,		/* k */
+0,		/* K */
+2,		/* l */
+8,		/* L */
+2,		/* LESS_THAN */
+2,		/* LINE_FEED */
+8,		/* m */
+2,		/* M */
+2,		/* n */
+2,		/* N */
+2,		/* NEGATIVE_ACKNOWLEDGE */
+2,		/* NINE */
+2,		/* NULL */
+2,		/* o */
+2,		/* O */
+2,		/* ONE */
+8,		/* OPEN_CURLY */
+2,		/* OPEN_PARENTH */
+2,		/* OPEN_SQUARE */
+2,		/* p */
+2,		/* P */
+2,		/* PERCENT */
+2,		/* PERIOD */
+2,		/* PLUS */
+2,		/* q */
+8,		/* Q */
+2,		/* QMARK */
+2,		/* QUOTE */
+0,		/* r */
+0,		/* R */
+0,		/* RECORD_SEPERATOR */
+0,		/* s */
+2,		/* S */
+0,		/* SEMICOLON */
+2,		/* SEVEN */
+8,		/* SHIFT_IN */
+2,		/* SHIFT_OUT */
+2,		/* SIX */
+2,		/* SPACE */
+2,		/* START_OF_HEADER */
+2,		/* START_OF_TEXT */
+2,		/* SUBSTITUTE */
+2,		/* SYNCH_IDLE */
+2,		/* t */
+2,		/* T */
+2,		/* THREE */
+2,		/* TILDE */
+2,		/* TWO */
+8,		/* u */
+2,		/* U */
+2,		/* UNDER_SCORE */
+2,		/* UNIT_SEPERATOR */
+2,		/* v */
+2,		/* V */
+2,		/* VERTICAL_BAR */
+2,		/* VERTICAL_TAB */
+2,		/* w */
+8,		/* W */
+2,		/* x */
+2,		/* X */
+0,		/* y */
+0,		/* Y */
+0,		/* z */
+0,		/* Z */
+0		/* ZERO */
+];
+
+/**
+ * The types object bound to Lexer#types
+ * @type       {Object}
+ * @alias module:wick~internals.lexer.Types
+ * @see {@link module:wick.core.common.Lexer}
+ */
+const number = 1,
+    identifier = 2,
+    string = 4,
+    white_space = 8,
+    open_bracket = 16,
+    close_bracket = 32,
+    operator = 64,
+    symbol = 128,
+    new_line = 256,
+    data_link = 512,
+    alpha_numeric = (identifier | number),
+    white_space_new_line = (white_space | new_line),
+    Types = {
+        num: number,
+        number,
+        id: identifier,
+        identifier,
+        str: string,
+        string,
+        ws: white_space,
+        white_space,
+        ob: open_bracket,
+        open_bracket,
+        cb: close_bracket,
+        close_bracket,
+        op: operator,
+        operator,
+        sym: symbol,
+        symbol,
+        nl: new_line,
+        new_line,
+        dl: data_link,
+        data_link,
+        alpha_numeric,
+        white_space_new_line,
+    };
+
+
+
+/**
+ * @classdesc A simple Lexical tokenizer for use with text processing. 
+ * 
+ * The Lexer parses an input string and yield lexical tokens.  It also provides methods for looking ahead and asserting token values. 
+ *
+ * There are 9 types of tokens that the Lexer will create:
+ * 
+ * > 1. **Identifier** - `types.identifier` or `types.id`
+ * >    - Any set of characters beginning with `_`|`a-z`|`A-Z`, and followed by `0-9`|`a-z`|`A-Z`|`-`|`_`|`#`|`$`.
+ * > 2. **Number** - `types.number` or `types.num`
+ * >    - Any set of characters beginning with `0-9`|`.`, and followed by `0-9`|`.`.
+ * > 3. **String**: 2 - `types.string` or `types.str`
+ * >    - A set of characters beginning with either `'` or `"` and ending with a matching `'` or `"`.
+ * > 4. **Open Bracket** - `types.open_bracket` or `types.ob`
+ * >    - A single character from the set `<`|`(`|`{`|`[`.
+ * > 5. **Close Bracket** - `types.close_bracket` or `types.cb`
+ * >    - A single character from the set `>`|`)`|`}`|`]`.
+ * > 7. **Operator**: 
+ * >    - A single character from the set `*`|`+`|`<`|`=`|`>`|`\`|`&`|`%`|`!`|`|`|`^`|`:`.
+ * > 8. **New Line**: 
+ * >    - A single `newline` (`LF` or `NL`) character. It may also be `LFCR` if the text is formated for Windows.
+ * > 9. **White Space**: 
+ * >    - An uninterrupted set of `tab` or `space` characters.
+ * > 10. **Symbol**:
+ * >        - All other characters not defined by the the above, with each symbol token being comprised of one character.
+ * 
+ * Types are identified by a binary index value and are defined in Lexer.prototype.types. A token's type can be verified by with 
+ * ```js
+ * Lexer.token.type === Lexer.types.*`
+ * ```
+ * @alias Lexer
+ * @memberof module:wick.core.common
+ * @param {String} string - The string to parse. 
+ * @param {Boolean} [IGNORE_WHITE_SPACE=true] - If set to true, the Lexer will not generate tokens for newline and whitespace characters, and instead skip to the next no whitespace/newline token. 
+ * @throws     {Error} Throws "String value must be passed to Lexer" if a non-string value is passed as `string`.
+ */
+class Lexer {
+
+    constructor(string = "", IGNORE_WHITE_SPACE = true, PEEKING = false) {
+
+        if (typeof(string) !== "string") throw new Error("String value must be passed to Lexer");
+
+        /**
+         * The string that the Lexer tokenizes.
+         */
+        this.str = string;
+
+        /**
+         * Reference to the peeking Lexer.
+         */
+        this.p = null;
+
+        /**
+         * The type id of the current token.
+         */
+        this.type = -1;
+
+        /**
+         * The offset in the string of the start of the current token.
+         */
+        this.off = 0;
+
+        /**
+         * The length of the current token.
+         */
+        this.tl = 0;
+
+        /**
+         * The character offset of the current token within a line.
+         */
+        this.char = 0;
+
+        /**
+         * The line position of the current token.
+         */
+        this.line = 0;
+
+        /**
+         * The length of the string being parsed
+         */
+        this.sl = string.length;
+
+
+        /**
+         * Flag to ignore white spaced.
+         */
+        this.IWS = IGNORE_WHITE_SPACE;
+
+        /**
+         * Flag set to true if the end of the string is met.
+         */
+        this.END = false;
+
+        /**
+         * Flag to force the lexer to parse string contents
+         */
+         this.PARSE_STRING = false;
+
+        if (!PEEKING) this.next();
+    }
+
+    /**
+     * Restricts max parse distance to the other Lexer's current position.
+     * @param      {Lexer}  Lexer   The Lexer to limit parse distance by.
+     */
+    fence(lexer = this) {
+        if (lexer.str !== this.str)
+            return;
+        this.sl = lexer.off;
+        return this;
+    }
+
+    /**
+     * Reference to token id types.
+     */
+    get types() {
+        return Types;
+    }
+
+    /**
+     * Copies the Lexer.
+     * @return     {Lexer}  Returns a new Lexer instance with the same property values.
+     */
+    copy() {
+        let out = new Lexer(this.str, this.IWS, true);
+        out.type = this.type;
+        out.off = this.off;
+        out.tl = this.tl;
+        out.char = this.char;
+        out.line = this.line;
+        out.sl = this.sl;
+        out.END = this.END;
+        return out;
+    }
+
+    /**
+     * Given another Lexer with the same `str` property value, it will copy the state of that Lexer.
+     * @param      {Lexer}  [marker=this.peek]  The Lexer to clone the state from. 
+     * @throws     {Error} Throws an error if the Lexers reference different strings.
+     * @public
+     */
+    sync(marker = this.p) {
+
+        if (marker instanceof Lexer) {
+            if (marker.str !== this.str) throw new Error("Cannot sync Lexers with different strings!");
+            this.type = marker.type;
+            this.off = marker.off;
+            this.tl = marker.tl;
+            this.char = marker.char;
+            this.line = marker.line;
+            this.END = marker.END;
+        }
+
+        return this;
+    }
+
+    /**
+     * Will throw a new Error, appending the parsed string line and position information to the the error message passed into the function.
+     * @instance
+     * @public
+     * @param {String} message - The error message.
+     */
+    throw (message) {
+        let t$$1 = ("________________________________________________"),
+            n$$1 = "\n",
+            is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
+        this.IWS = false;
+        let pk = this.copy();
+        while (!pk.END && pk.ty !== Types.nl) { pk.n(); }
+        let end = pk.off;
+        throw new Error(message + "at " + this.line + ":" + this.char + n$$1 + t$$1 + n$$1 + this.str.slice(this.off - this.char, end) + n$$1 + ("").padStart(this.char - 2) + "^" + n$$1 + t$$1 + is_iws);
+    }
+
+    /**
+     * Proxy for Lexer.prototype.reset
+     * @public
+     */
+    r() { return this.reset(); }
+
+    /**
+     * Restore the Lexer back to it's initial state.
+     * @public
+     */
+    reset() {
+        this.p = null;
+        this.type = -1;
+        this.off = 0;
+        this.tl = 0;
+        this.char = 0;
+        this.line = 0;
+        this.END = false;
+        this.n();
+        return this;
+    }
+
+    resetHead() {
+        this.off = 0;
+        this.tl = 0;
+        this.char = 0;
+        this.line = 0;
+        this.END = false;
+        this.p = null;
+        this.type = -1;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.next
+     * @public
+     */
+    n() { return this.next(); }
+
+    /**
+     * Sets the internal state to point to the next token. Sets Lexer.prototype.END to `true` if the end of the string is hit.
+     * @public
+     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
+     */
+    next(marker = this) {
+
+        let str = marker.str;
+
+        if (marker.sl < 1) {
+            marker.off = -1;
+            marker.type = -1;
+            marker.tl = 0;
+            marker.END = true;
+            return marker;
+        }
+
+        //Token builder
+        let length = marker.tl;
+        let off = marker.off + length;
+        let l$$1 = marker.sl;
+        let IWS = marker.IWS;
+        let type = symbol;
+        let char = marker.char + length;
+        let line = marker.line;
+        let base = off;
+
+        if (off >= l$$1) {
+
+            marker.END = true;
+            length = 0;
+            base = l$$1;
+            char -= base - off;
+
+            marker.type = type;
+            marker.off = base;
+            marker.tl = length;
+            marker.char = char;
+            marker.line = line;
+
+            return marker;
+        }
+
+        while (true) {
+
+            base = off;
+
+            length = 1;
+
+            let code = str.charCodeAt(off);
+
+            if (code < 128) {
+
+                switch (jump_table[code]) {
+                    case 0: //NUMBER
+                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) {}
+
+                        if (str[off] == "e" || str[off] == "E") {
+                            off++;
+                            if (str[off] == "-") off++;
+                            marker.off = off;
+                            marker.tl = 0;
+                            marker.n();
+                            off = marker.off + marker.tl;
+                            //Add e to the number string
+                        }
+
+                        type = number;
+                        length = off - base;
+
+                        break;
+                    case 1: //IDENTIFIER
+                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) {}
+                        type = identifier;
+                        length = off - base;
+                        break;
+                    case 2: //QUOTED STRING
+                        if (this.PARSE_STRING) {
+                            type = symbol;
+                        } else {
+                            while (++off < l$$1 && str.charCodeAt(off) !== code) {}
+                            type = string;
+                            length = off - base + 1;
+                        }
+                        break;
+                    case 3: //SPACE SET
+                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) {}
+                        type = white_space;
+                        length = off - base;
+                        break;
+                    case 4: //TAB SET
+                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) {}
+                        type = white_space;
+                        length = off - base;
+                        break;
+                    case 5: //CARIAGE RETURN
+                        length = 2;
+                    case 6: //LINEFEED
+                        type = new_line;
+                        char = 0;
+                        line++;
+                        off += length;
+                        break;
+                    case 7: //SYMBOL
+                        type = symbol;
+                        break;
+                    case 8: //OPERATOR
+                        type = operator;
+
+                        break;
+                    case 9: //OPEN BRACKET
+                        type = open_bracket;
+                        break;
+                    case 10: //CLOSE BRACKET
+                        type = close_bracket;
+                        break;
+                    case 11: //Data Link Escape
+                        type = data_link;
+                        length = 4; //Stores two UTF16 values and a data link sentinel
+                        break;
+                }
+            }
+
+            if (IWS && (type & white_space_new_line)) {
+                if (off < l$$1) {
+                    char += length;
+                    type = symbol;
+                    continue;
+                } else {
+                    length = 0;
+                    base = l$$1;
+                    char -= base - off;
+                    marker.END = true;
+                }
+            }
+
+            break;
+        }
+
+        marker.type = type;
+        marker.off = base;
+        marker.tl = length;
+        marker.char = char;
+        marker.line = line;
+
+        return marker;
+    }
+    
+
+    /**
+     * Proxy for Lexer.prototype.assert
+     * @public
+     */
+    a(text) {
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.text == text)
+            this.next();
+        else
+            this.throw(`Expecting "${text}" got "${this.text}"`);
+
+        return this;
+    }
+
+    /**
+     * Compares the string value of the current token to the value passed in. Advances to next token if the two are equal.
+     * @public
+     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
+     * @param {String} text - The string to compare.
+     */
+    assert(text) {
+
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.text == text)
+            this.next();
+        else
+            this.throw(`Expecting "${text}" got "${this.text}"`);
+
+        return this;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.assertChcatever
+     * @public
+     */
+    _appendChild_(text) { return this.assert(text); }
+    /**
+     * Compares the character value of the current token to the value passed in. Advances to next token if the two are equal.
+     * @public
+     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
+     * @param {String} text - The string to compare.
+     */
+    assertCharacer(char) {
+
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.tx[this.off] == char)
+            this.next();
+        else
+            this.throw(`Expecting "${char}" got "${this.tx}"`);
+
+        return this;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.peek
+     * @public
+     * @readonly
+     * @type {Lexer}
+     */
+    get pk() { return this.peek(); }
+
+    /**
+     * Returns the Lexer bound to Lexer.prototype.p, or creates and binds a new Lexer to Lexer.prototype.p. Advences the other Lexer to the token ahead of the calling Lexer.
+     * @public
+     * @type {Lexer}
+     * @param {Lexer} [marker=this] - The marker to originate the peek from. 
+     * @param {Lexer} [peek_marker=this.p] - The Lexer to set to the next token state.
+     * @return {Lexer} - The Lexer that contains the peeked at token.
+     */
+    peek(marker = this, peek_marker = this.p) {
+
+        if (!peek_marker) {
+            if (!marker) return null;
+            if (!this.p) {
+                this.p = new Lexer(this.str, this.IWS, true);
+                peek_marker = this.p;
+            }
+        }
+
+        peek_marker.type = marker.type;
+        peek_marker.off = marker.off;
+        peek_marker.tl = marker.tl;
+        peek_marker.char = marker.char;
+        peek_marker.line = marker.line;
+        this.next(peek_marker);
+        return peek_marker;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.text
+     * @public
+     * @type {String}
+     * @readonly
+     */
+    get tx() { return this.text; }
+    /**
+     * The string value of the current token.
+     * @type {String}
+     * @public
+     * @readonly
+     */
+    get text() {
+        return (this.off < 0) ? "" : this.str.slice(this.off, this.off + this.tl);
+    }
+
+    /**
+     * The type id of the current token.
+     * @type {Number}
+     * @public
+     * @readonly
+     */
+    get ty() { return this.type; }
+
+    /**
+     * The current token's offset position from the start of the string.
+     * @type {Number}
+     * @public
+     * @readonly
+     */
+    get pos() {
+        return this.off;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.slice
+     * @public
+     */
+    s(start) { return this.slice(start); }
+
+    /**
+     * Returns a slice of the parsed string beginning at `start` and ending at the current token.
+     * @param {Number | LexerBeta} start - The offset in this.str to begin the slice. If this value is a LexerBeta, sets the start point to the value of start.off.
+     * @return {String} A substring of the parsed string.
+     * @public
+     */
+    slice(start) {
+
+        if (typeof start === "number" || typeof start === "object") {
+            if (start instanceof Lexer) start = start.off;
+            return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
+        }
+        return this.str.slice(this.off, this.sl);
+    }
+
+    get ch() {
+        return this.str[this.off];
+    }
+
+    /**
+     * The current token in the form of a new Lexer with the current state.
+     * Proxy property for Lexer.prototype.copy
+     * @type {Lexer}
+     * @public
+     * @readonly
+     */
+    get token() {
+        return this.copy();
+    }
+    /**
+     * Skips to the end of a comment section.
+     * @param {boolean} ASSERT - If set to true, will through an error if there is not a comment line or block to skip.
+     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
+     */
+    comment(ASSERT = false, marker = this) {
+
+        if (!(marker instanceof Lexer)) return marker;
+
+        if (marker.tx == "/") {
+            if (marker.pk.tx == "*") {
+                marker.sync();
+                while (!marker.END && (marker.n().tx != "*" || marker.pk.tx != "/")) { /* NO OP */ }
+                marker.sync().a("/");
+            } else if (marker.pk.tx == "/") {
+                let IWS = marker.IWS;
+                while (marker.n().ty != types.new_line && !marker.END) { /* NO OP */ }
+                marker.IWS = IWS;
+                marker.n();
+            } else
+            if (ASSERT) marker.throw("Expecting the start of a comment");
+        }
+
+        return marker;
+    }
+
+    get string() {
+        return this.str;
+    }
+
+    setString(string, reset = true) {
+        this.str = string;
+        this.sl = string.length;
+        if (reset) this.resetHead();
+    }
+
+    toString(){
+        return this.slice();
+    }
+}
+
+function whind$1(string, INCLUDE_WHITE_SPACE_TOKENS) { return new Lexer(string, INCLUDE_WHITE_SPACE_TOKENS); }
+whind$1.constructor = Lexer;
+
+//[Singleton]  Store unused tokens, preventing garbage collection of tokens
+const DL_CHAR = String.fromCharCode(15);
+
+//Returns an index position that does not intersect with data_link blocks
+function getCodePositionOffset(is, str) {
+
+    let ie = is,
+        dg = is,
+        dl = is,
+        ON_DL = (str[ie] == DL_CHAR),
+        i = ie + (ON_DL | 0),
+        lim = Math.min(ie + 4, str.length);
+
+
+    for (; i < lim; i++)
+        if (str[i] == DL_CHAR) { dg = i; break; }
+
+    i = ie - (ON_DL | 0);
+    lim = Math.max(ie - 4, 0);
+
+    for (; i >= lim; i--)
+        if (str[i] == DL_CHAR) { dl = i; break; }
+
+    let INSIDE_DL = (dg - dl == 3) && ((str.charCodeAt(dl + 1) & 32768) == 32768);
+
+    if (INSIDE_DL || str[is + 1] == DL_CHAR || ON_DL) {
+        if (INSIDE_DL) {
+            ie = dg;
+            is = dl;
+        } else if (ON_DL) {
+            if (dg - is == 3) {
+                ie = dg;
+            } else {
+                ie = is;
+                is = dl;
+            }
+        } else {
+            ie = is + 4;
+            is++;
+        }
+
+        while (str[is] == str[is - 1] == DL_CHAR)
+            is -= 4;
+
+        while (str[ie + 1] == DL_CHAR)
+            ie += 4;
+    } else
+        is++;
+
+
+    return { is, ie };
+}
+
+class TEXT_LINE extends whind$1.constructor {
+
+    constructor(fw) {
+
+        if (TEXT_LINE.Pool) {
+            let out = TEXT_LINE.Pool;
+            TEXT_LINE.Pool = out.nxt;
+            out.nxt = null;
+            out.fw = fw;
+            out.IWS = false;
+            return out;
+        }
+
+        super("");
+
+        this.fw = fw;
+        this.nxt = null;
+        this.prv = null;
+        this.text_insert = null;
+        this.parent = null;
+        this.PARSE_STRING = true;
+        this.pixel_width = 0;
+        this.linked_offset = 0;
+        this.link = null;
+
+        //container variables
+        this.virtual_line_size = 1;
+        this.h = 13;
+
+        this.IWS = false;
+    }
+
+
+
+    slice(start){
+        this.str = this.string;
+        return super.slice(start);
+    }
+
+    next(marker = this){
+        this.str = this.string;
+        return super.next(marker);
+    }
+
+    resetHead() {
+        super.resetHead();
+        this.off = this.linked_offset;
+        this.IWS = false;
+        if (this.p) {
+            this.p.release();
+            this.p = null;
+        }
+    }
+
+    release() {
+        let prv = this.prv;
+
+        if (this.nxt)
+            this.nxt.prv = prv;
+
+        if (prv)
+            prv.nxt = this.nxt;
+
+        this.reset();
+
+        if (TEXT_LINE.Pool)
+            this.nxt = TEXT_LINE.Pool;
+
+        TEXT_LINE.Pool = this;
+
+        return prv;
+    }
+
+    reset() {
+        super.reset();
+        this.nxt = null;
+        this.prv = null;
+        this.link = null;
+        //container variables
+        this.virtual_line_size = 1;
+        this.linked_offset = 0;
+        this.IS_LINKED_LINE = false;
+        this.h = 13;
+        this.pixel_width = 0;
+        this.setString("");
+        this.resetHead();
+        this.str = "";
+    }
+
+    peek(marker = this, peek_marker = new TEXT_LINE(this.fw)) {
+        peek_marker.END = false;
+        peek_marker.str = marker.str;
+        peek_marker.sl = marker.sl;
+        peek_marker.type = marker.type;
+        peek_marker.off = marker.off;
+        peek_marker.tl = marker.tl;
+        peek_marker.char = marker.char;
+        peek_marker.line = marker.line;
+        peek_marker.h = marker.h;
+        if(!this.IS_LINKED_LINE) this.next(peek_marker);
+        return peek_marker;
+    }
+
+    removeSection(offset_shift = 0, length_shift = 0) {
+        let node = (this.IS_LINKED_LINE) ? this.link : this;
+        
+        if(this.IS_LINKED_LINE)
+            this.string = node.str.slice(0, this.off - offset_shift) + node.str.slice(this.off + this.tl + length_shift);
+        else
+            node.setString(node.str.slice(0, this.off - offset_shift) + node.str.slice(this.off + this.tl + length_shift), false);
+
+        this.off -= offset_shift;
+
+        this.tl = 0;
+        
+        return this;
+    }
+
+    /** LINKED LINE HANDLING **/
+
+    traceToRootLine(char) {
+        if (this.IS_LINKED_LINE) {
+            let node = this;
+            do {
+                node = node.prv;
+                char += node.length + (node.IS_LINKED_LINE | 0) - 1;
+            } while (node.IS_LINKED_LINE);
+
+            return { node, char };
+        }
+
+        return { node: this, char };
+    }
+
+    flushLinkedLines() {
+        //Remove all linked lines at this point
+        let node = this.nxt;
+
+        while (node && node.IS_LINKED_LINE) {
+            let nxt = node.nxt;
+            this.fw.line_container.remove(node);
+            node.release();
+            node = nxt;
+        }
+
+        //this.virtual_line_size = 1;
+        //this.parent.decrementNumOfVirtualLines(vl);
+        this.setString(this.str);
+    }
+
+    /*** DATA CODE ***/
+
+    get code() {
+        if (this.ty == this.types.data_link) {
+            let code_a = this.str.charCodeAt(this.off + 1) ^ 32768;
+            let code_b = this.str.charCodeAt(this.off + 2);
+            return (code_b << 16 | code_a);
+        }
+        return 0;
+    }
+
+    insertCode(value = 0, index = 0) {
+        let { node, char } = this.traceToRootLine(index);
+
+        if (node !== this) return node.insertCode(value, char);
+
+        this.NEED_PARSE = true;
+
+        if (char < this.off)
+            this.off += 3;
+
+        let code_a = (value & 65535) | 32768;
+        let code_b = (value >> 16) & 65535;
+        let { is, ie } = getCodePositionOffset(char, this.str);
+
+        this.setString(this.str.slice(0, is) + String.fromCharCode(15, code_a, code_b, 15) + this.str.slice(ie + 1), false);
+    }
+
+    //Store new inserted text into temporary tokens, whose contents will be merged into the actual token list when parsed.
+    insertText(text, char_pos = this.length-1) {
+        let { node, char } = this.traceToRootLine(char_pos);
+
+        if (node !== this) return node.insertText(text, char);
+
+        var l = this.str.length;
+        
+        //Account for new line character
+
+        if (char_pos > l) {
+            if (this.nxt) {
+                return this.nxt.insertText(text, char_pos - l);
+            } else {
+                char_pos = l;
+            }
+        } else if (char_pos < 0) {
+            if (this.prv) {
+                return this.prv.insertText(text, this.prv.sl - char_pos);
+            } else {
+                char_pos = 0;
+            }
+        }
+
+        return this.addTextCell(text, char_pos);
+    }
+
+    addTextCell(text, offset) {
+        var temp = new TEXT_LINE(this.fw);
+        temp.prv = null;
+        temp.off = offset;
+        temp.setString(text, false);
+        var temp_prev = null;
+        var temp_next = this.text_insert;
+
+        if (!this.text_insert) {
+            this.text_insert = temp;
+        } else {
+            while (true) {
+                if (temp_next) {
+                    if (temp_next.off <= temp.off) {
+                        //insert before;
+                        if (temp_prev) {
+                            temp.prv = temp_next;
+                            temp_prev.prv = temp;
+                        } else {
+                            temp.prv = temp_next;
+                            this.text_insert = temp;
+                        }
+                        break;
+                    }
+                    if (!temp_next.prv) {
+                        temp_next.prv = temp;
+                        break;
+                    }
+                    temp_prev = temp_next;
+                    temp_next = temp_prev.prv;
+                }
+            }
+        }
+
+        this.NEED_PARSE = true;
+
+        return this;
+    }
+
+    mergeLeft(str) {
+
+        let prv = this.prv;
+
+        if (prv) {
+            prv.NEED_PARSE = true;
+            prv.setString(prv.str + str);
+        }
+
+        this.parent.remove(this);
+
+        this.release();
+
+        return prv;
+    }
+
+    //Takes the token text string and breaks it down into individual pieces, linking resulting tokens into a linked list.
+    parse(FORCE, view) {
+
+        if (view && view.pixel_width !== this.pixel_width)
+            FORCE = true;
+
+        if (!this.NEED_PARSE && !FORCE) return this.nxt;
+
+        //CACHE parse functions variables
+        var temp = null;
+
+        //This function will change structure of tokens, thus resetting cache.
+        this.NEED_PARSE = false;
+
+        //Flush virtual lines;
+        this.flushLinkedLines();
+
+        //Walk the temporary text chain and insert strings into the text variable : History is also appended to through here
+        if (this.text_insert) {
+            //These get added to history
+            var i = 0;
+
+            temp = this.text_insert;
+
+            while (temp) {
+                let text = temp.str;
+                let index = temp.off;
+                let prev_sib = temp.prv;
+
+                temp.release();
+
+                //add saved text to history object in framework
+
+                //text inserts get separated as character insertions, delete characters, and cursors
+                let { is } = getCodePositionOffset(index, this.str);
+
+                if (index < this.str.length && index > 0) {
+                    this.setString(this.str.slice(0, is) + text + this.str.slice(is));
+                } else if (index > 0) {
+                    this.setString(this.str + text);
+                } else {
+                    //Handle new line character
+                    this.setString(this.str.slice(0,1) +  text + this.str.slice(1));
+                }
+
+                temp = prev_sib;
+            }
+
+            this.text_insert = null;
+
+            this.resetHead();
+
+            for (i = 1; i < this.text.length; i++) {
+                if (i === 0) continue;
+                var s = this.text.charCodeAt(i);
+                var f = this.text.charCodeAt(i - 1);
+                if (( /*f !== this.fw.new_line_code && */ f !== this.fw.del_code) && s === this.fw.del_code) {
+                    if (f === this.fw.new_line_code && !this.prev_sib) {
+                        break;
+                    }
+
+
+                    i--;
+                    this.text = this.text.slice(0, i) + this.text.slice(i + 2);
+                    i--;
+                }
+            }
+        }
+
+        let types = this.types;
+
+        this.n().n(); //new line
+
+        let size = this.h;
+        let total_length = 0;
+
+
+        while (!this.END) {
+
+            if (this.ty & (types.symbol | types.new_line | types.operator | types.data_link)) {
+
+                switch (this.ch.charCodeAt(0)) {
+
+                    case this.fw.data_link:
+
+                        let code = this.code;
+
+                        let font_size = (code >> 8) & 255;
+
+                        size = Math.max(size, font_size);
+
+                        this.n();
+
+                        continue;
+
+                    case this.fw.del_code: // Backspace Character
+
+                        if (this.off == 1) { //This will delete the new line character;
+                            if (this.index == 0) {
+                                //Can't delete newline of first line.
+                                this.removeSection();
+                                break;
+                            }
+                            //reinsert this into the previous line
+
+                            var prev_sib = this.prv;
+
+                            if (prev_sib) {
+                                //Linked lines don't have a length, so the delete character would not be exausted.
+                                if (!prev_sib.IS_LINKED_LINE)
+                                    return this.mergeLeft(this.str.slice(2));
+
+                                prev_sib.setString(prev_sib.str + this.str.slice(2));
+
+                                return this.release().parse(true);
+                            }
+
+                        } else
+                            this.removeSection(1, 0);
+                        break;
+
+                    case this.fw.new_line_code: // Line Feed
+
+                        this.IS_LINKED_LINE = false;
+
+                        let str = this.str,
+                            off = this.off;
+
+                        this.setString(str.slice(0, off));
+
+                        this.pixel_height = size;
+
+                        let nl = new TEXT_LINE(this.fw);
+
+                        nl.setString(str.slice(off));
+
+                        this.fw.insertLine(this, nl);
+
+                        nl.NEED_PARSE = true;
+
+                        return nl;
+
+                    case this.fw.curs_code:
+                        //Update cursor position;
+                        var cursor = this.fw.aquireCursor();
+
+                        if (cursor) {
+                            cursor.y = this.index;
+                            cursor.x = this.off + (this.IS_LINKED_LINE|0) - 1 - this.linked_offset;
+                        }
+
+                        //Remove cursor section from text
+                        this.removeSection();
+
+                        console.log(this.string, this.index);
+
+                        this.n();
+
+                        continue;
+                }
+            }
+            //*
+            //
+            if(view){
+                // test for the need to split the line up if its size is more than the max length;
+                total_length += view.font.calcSize(this.str, this.off, this.off + this.tl);
+
+                if (total_length > view.pixel_width && this.ty !== this.types.white_space) {
+
+                    console.log(this.slice(0), this.index);
+
+                    let ll = new TEXT_LINE(this.fw);
+                    ll.IS_LINKED_LINE = true;
+                    ll.linked_offset = this.off;
+                    ll.virtual_line_size = 0;
+                    ll.size = this.size;
+                    ll.h = size;
+                    ll.sl = this.sl;
+                    ll.resetHead();
+                    ll.link = (this.link) ? this.link : this;
+
+                    let node = this;
+                    while (node.IS_LINKED_LINE)
+                        node = node.prv;
+
+                   // node.virtual_line_size++;
+                   // node.parent.incrementNumOfVirtualLines(1);
+
+                    this.sl = this.off;
+                    this.resetHead();
+
+                    this.pixel_width = (view) ? view.pixel_width : 0;
+                    this.pixel_height = size;
+                    this.fw.insertLine(this, ll);
+
+                    console.log(ll.slice(), ll.index);
+
+                    ll.NEED_PARSE = true;
+
+                    return ll;
+                    //split up line and continue parsing in new line. be sure to pass current state as code. 
+                }
+            }
+            //*/
+            this.n();
+        }
+
+        this.pixel_width = (view) ? view.pixel_width : 0;
+        
+        this.pixel_height = size;
+
+        this.resetHead();
+
+        //Continue down chain of cells
+        return this.nxt;
+    }
+
+    get string() {return (this.IS_LINKED_LINE) ? this.link.str : this.str;}
+    set string(string) {if (this.IS_LINKED_LINE)  {this.link.str = string; this.sl = string.length;} else this.str = string;}
+
+    get length() { return this.sl - this.linked_offset; }
+    set length(a) {}
+    get cache() { return this.str.slice(1); }
+    set cache(a) {}
+    get index() {
+        return this.parent.getLineIndex(0, this);
+    }
+    set index(e) {
+        this.fw.line_container.remove(this);
+        this.fw.line_container.insert(this, e);
+    }
+    get virtual_index() { return this.parent.getVirtualLineIndex(0, this); }
+    set virtual_index(e) {}
+    get pixel_offset() { return this.parent.getPixelOffset(0, this); }
+    set pixel_height(h) {
+        if (this.parent) this.parent.updateHeight(this.h - h);
+        this.h = h;
+    }
+    get pixel_height() { return this.h; }
+    charAt(index) { return this.str[index]; }
+}
+
+TEXT_LINE.Pool = null;
+
+const DL_CHAR$1 = String.fromCharCode(15);
+
+function getRealPosition(x, y, fw) {
+    let line = fw.line_container.getLine(y),
+        str = line.string,
+        data = 0;
+
+    let end = Math.min(x, str.length);
+
+    for (let i = 0; i < end; i++)
+        if (str.charCodeAt(i) == 15)
+            i += 4, data++;
+
+    return x - data * 4;
+}
+
+function setDeltaX(x, y, dx, fw, CLAMP = false) {
+
+    //retrieve line info
+    let line = fw.line_container.getLine(y),
+        xd = x + dx,
+        str = line.string,
+        line_length = line.length + ((line.IS_LINKED_LINE | 0) - 1);
+
+    if (dx > 0) {
+        for (let i = x; i <= xd && i < str.length;)
+            if (str.charCodeAt(i) == 15)
+                xd += 4, i += 4;
+            else
+                i++;
+    } else {
+        for (let i = x; i >= xd && i > -1;)
+            if (str.charCodeAt(i) == 15)
+                xd -= 4, i -= 4;
+            else
+                i--;
+    }
+
+    if (xd < 0) {
+        if (y <= 0) {
+            x = 0;
+        } else {
+            y--;
+            line = fw.line_container.getLine(y);
+            return setDeltaX(line.length, y, xd, fw, CLAMP);
+        }
+    } else if (xd > line_length) {
+        // Need to trace number of data_links between new site and old and increment the
+        if (CLAMP || y >= fw.line_container.height - 1) {
+            x = line_length;
+        } else {
+            x = 0;
+            y++;
+            return setDeltaX(x, y, xd - line_length - 1, fw, CLAMP);
+        }
+    } else
+        x = xd;
+
+    return { x, y };
+}
+
+function setDeltaY(x, y, dy, fw, defaultX) {
+
+    var diff = y + dy;
+
+    if (diff <= 0)
+        y = 0;
+    else if (diff >= fw.line_container.height - 1) {
+        y = fw.line_container.height - 1;
+        defaultX = Infinity;
+    } else
+        y = diff;
+
+    return setDeltaX(0, y, defaultX, fw, true);
+}
+
+class TEXT_CURSOR {
+    constructor(fw) {
+
+        //Character and Line position of cursor
+        this.x = 0;
+        this.y = 0;
+
+        this.cx = 0;
+
+        //Character and Line position of cursor selection bound
+        this.selection_x = -1;
+        this.selection_y = -1;
+
+
+        //Real position of cursor line and character. These values is related to the total number of non Linked Lines found in the
+        //line container object. Lines that are linked are treated as character indexes extending from non Linked Lines.
+        this.rpx = 0;
+        this.rpy = 0;
+
+        //Same for selection bounds. 
+        this.rpsx = 0;
+        this.rpsy = 0;
+
+
+        this.index = 0;
+        this.fw = fw;
+        //this.line_container = fw.line_container;
+        this.char_code = fw.curs_char;
+        this.selections = [];
+        this.line_height = 0;
+
+        this.defaultX = 0;
+
+        //FLAGS
+        this.IU = false;
+        this.REAL_POSITION_NEEDS_UPDATE = true;
+        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+    }
+
+    get rx() {
+        return getRealPosition(this.x, this.y, this.fw);
+    }
+
+    setX(posx) {
+        this.moveX(posx - this.x);
+    }
+
+    setY(posy) {
+        this.moveY(posy - this.y);
+    }
+
+    moveX(change) {
+        let { x, y } = setDeltaX(this.x, this.y, change, this.fw);
+        this.defaultX = x;
+        this.x = x;
+        this.y = y;
+        this.REAL_POSITION_NEEDS_UPDATE = true;
+
+    }
+
+    moveY(change) {
+        let { x, y } = setDeltaY(this.x, this.y, change, this.fw, this.defaultX);
+        this.x = x;
+        this.y = y;
+        this.REAL_POSITION_NEEDS_UPDATE = true;
+    }
+
+    setSelX(posx) {
+        if (this.selection_x < 0) this.selection_x = 0;
+        if (this.selection_y < 0) this.selection_y = 0;
+        this.moveSelectChar(posx - this.selection_x);
+    }
+
+    setSelY(posy) {
+        if (this.selection_y < 0) this.selection_y = 0;
+        if (this.selection_x < 0) this.selection_x = 0;
+        this.moveSelectLine(posy - this.selection_y);
+    }
+
+
+    moveSelectChar(change) {
+        let { x, y } = setDeltaX(this.selection_x, this.selection_y, change, this.fw);
+        this.selection_x = x;
+        this.selection_y = y;
+        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+    }
+
+    moveSelectLine(change) {
+        let { x, y } = setDeltaY(this.selection_x, this.selection_y, change, this.fw, this.defaultX);
+        this.selection_x = x;
+        this.selection_y = y;
+        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+    }
+
+    charAt() {
+        return this.charBefore(this.real_position_x + 1);
+    }
+
+    charBefore(x = this.real_position_x) {
+        var line = this.fw.line_container.getVirtualLine(this.real_position_y);
+
+        if (x < 0) {
+            line = line.prev_sib;
+            return line.text[line.text.length - 1];
+        }
+        while (true) {
+            if (x >= line.token_length) {
+                x -= line.token_length;
+                if (!line.next_sib) {
+                    //return last 
+                    return line.text[line.text.length - 1];
+                }
+            } else {
+                return line.text[x];
+            }
+            line = line.next_sib;
+        }
+    }
+    get HAS_SELECTION() {
+        return (this.selection_x > -1 && this.selection_y > -1);
+    }
+
+    set HAS_SELECTION(p) {}
+
+    get IN_USE() { return this.IU; }
+
+    set IN_USE(bool) {
+        this.IU = bool;
+        if (!bool) {
+            this.selection_x = -1;
+            this.selection_y = -1;
+            this.x = 0;
+            this.y = 0;
+        }
+    }
+
+    resetSel() {
+        this.selection_x = -1;
+        this.selection_y = -1;
+
+        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+
+        for (var i = 0; i < this.selections.length; i++) {
+            var div = this.selections[i];
+            div.hide();
+        }
+    }
+
+    get id() { return this.x | (this.y << 10); }
+    get sid() { return this.selection_x | (this.selection_y << 10); }
+
+    get lineLength() {
+        var line = this.fw.line_container.getLine(this.y);
+        if (line) {
+            return line.length + ((line.IS_LINKED_LINE | 0) - 1);
+        } else {
+            return 0;
+        }
+    }
+
+    get lineLength_Select() {
+        var line = this.fw.line_container.getLine(this.selection_y);
+        if (line) {
+            return line.length + ((line.IS_LINKED_LINE | 0) - 1);
+        } else {
+            return 0;
+        }
+    }
+
+    getXCharOffset(x_in, y_in, view = this.fw.default_view) {
+        return view.getXoffsetAtPixelCoords(x, y, this.fw);
+    }
+
+    getSortedPositions() {
+        this.REAL_POSITION_NEEDS_UPDATE = true;
+        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
+
+        var id1 = this.id;
+
+        var id2 = (this.selection_y << 10) | this.selection_x;
+        var x1 = 0,
+            y1 = 0,
+            x2 = 0,
+            y2 = 0;
+        if (id2 < id1) {
+            x1 = this.selection_x;
+            y1 = this.selection_y;
+            x2 = this.x;
+            y2 = this.y;
+        } else {
+            x1 = this.x;
+            y1 = this.y;
+            x2 = this.selection_x;
+            y2 = this.selection_y;
+        }
+
+        return {
+            x1,
+            y1,
+            x2,
+            y2
+        };
+    }
+
+    arrangeSel() {
+        if (!this.HAS_SELECTION) return;
+        let { x1, y1, x2, y2 } = this.getSortedPositions();
+
+        this.x = x1;
+        this.y = y1;
+        this.selection_x = x2;
+        this.selection_y = y2;
+
+    }
+
+    getLine(y_in) { return this.fw.line_container.getIndexedLine(y_in || this.y); }
+
+    getYCharOffset(y_in) { return (((y_in) * this.fw.line_height) - 1); }
+    //Returns string of concated lines between [x,y] and [x2,y2]. Returns empty string if [x2.selection_y] is less then 0;
+    getTextFromSel() {
+        var string = [];
+
+        if (this.HAS_SELECTION) {
+
+            //Sets each tokens selected attribute to true
+            let { x1, y1, x2, y2 } = this.getSortedPositions();
+
+            for (var i = y1; i <= y2; i++) {
+
+                let line = this.getLine(i).pk;
+                let limX1 = (i == y1) ? x1 : 0;
+                let limX2 = (i == y2) ? x2 : line.string.length;
+                let j = limX1;
+                let str = line.string;
+
+                while (j <= limX2) {
+
+                    if (str[j] == DL_CHAR$1) {
+                        j += 4;
+                        continue;
+                    }
+
+                    string.push(str[j++]);
+                }
+            }
+        }
+
+        return string.join("");
+    }
+
+    get line_container() {
+        return this.fw.line_container;
+    }
+
+    //Places cursor at the select position.
+    setCurToSel() {
+        let { x2, y2 } = this.getSortedPositions();
+        this.x = x2;
+        this.y = y2;
+    }
+
+    toString() {
+        console.log(22);
+        this.fw.line_container.getLine(this.y).insertText(this.char_code, this.x);
+    }
+
+}
+
+class TextFramework {
+    constructor() {
+
+        this.line_container = new LineContainer();
+        this.length = 0;
+        this.char_width = 24;
+        this.max_length = 0;
+        this.scroll_top = 0;
+        this.max_line_width = 0;
+        this.del_code = 8; // should be 127 or 8
+        this.del_char = String.fromCharCode(this.del_code);
+        this.new_line_code = 10; // should be 10
+        this.new_line = String.fromCharCode(this.new_line_code);
+        this.linked_line_code = 13; // should be 13
+        this.linked_line = String.fromCharCode(this.linked_line_code);
+        this.curs_code = 2; // should be 31
+        this.curs_char = String.fromCharCode(this.curs_code);
+        this.data_link = 15; // Data Link Character
+
+        //Fixed character width for scaling
+        this.width = 0;
+        this.height = 0;
+
+        this.last_keycode = 0;
+        this.cursors = [new TEXT_CURSOR(this)];
+
+        //UINT flag to allow parsing pausing.
+        this.NEED_UPDATE = 0;
+
+        this.aquireCursor();
+    }
+
+    unload() {
+        this.releaseAllCursors();
+        //this.parent_element.removeChild(this.DOM);
+        this.line_container = null;
+        this.DOM = null;
+        this.parent_element = null;
+        this.cursors = null;
+    }
+
+    get HAS_SELECTION() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            if (this.cursors[i].HAS_SELECTION) return true;
+        }
+        return false;
+    }
+
+    /** RENDERING **/
+
+    * getLines(pixel_start, pixel_end, view = null) {
+
+        if (this.line_container.length > 0) {
+
+            var line = this.line_container.getLineAtPixelOffset(pixel_start | 0);
+
+            // Offset to prevent y jitter as lines are added and removed.
+            let offset = line.pixel_offset - pixel_start;
+
+            var t = offset;
+
+            yield offset; 
+
+            while (line) {
+
+                if(line.NEED_UPDATE)
+                    this.updateText(view, line.index, 10);
+
+                yield line;
+
+                t += line.pixel_height;
+
+                if (t >= pixel_end) break;
+
+                line = line.nxt;
+            }
+        }
+    }
+
+    renderView(view) {
+
+        if(this.NEED_UPDATE > 0)
+            this.updateText(view, this.NEED_UPDATE);
+
+        if (!view) return;
+
+        if (view !== this.cached_view) ;
+        let gen = this.getLines(view.getTop(), view.getHeight());
+        let offset = gen.next().value;
+
+        view.renderLines(gen, offset);
+
+        for (var i = 0; i < this.cursors.length; i++) {
+            let cur = this.cursors[i];
+            if(cur.IN_USE)
+                view.renderCursor(cur, this, offset);
+        }
+    }
+
+    /*** CURSORS ***/
+
+    aquireCursor() {
+        var temp = null;
+        if (this.cursors.length > 0) {
+            for (var i = 0; i < this.cursors.length; i++) {
+                temp = this.cursors[i];
+                if (!temp.IU)
+                    break;
+                temp = null;
+            }
+        }
+        if (!temp) {
+            temp = new TEXT_CURSOR(this);
+            temp.index = this.cursors.push(temp) - 1;
+        }
+
+        temp.IN_USE = true;
+
+        return temp;
+    }
+    
+    releaseAllCursors() {
+        for (var i = 0; i < this.cursors.length; i++) 
+            this.cursors[i].IN_USE = false;           
+    }
+
+    releaseCursor(cursor) {
+        cursor.IN_USE = false;
+        this.sortCursors();
+    }
+
+    moveCursorsByX(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
+        } else {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveX(change);
+        }
+
+        this.checkForCursorOverlap();
+    }
+
+    moveCursorsByY(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
+            }
+        } else {
+
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveY(change);
+            }
+        }
+        this.checkForCursorOverlap();
+    }
+
+
+    checkForCursorOverlap() {
+        var cur1 = null,
+            cur2 = null;
+        
+        for (var i = 0; i < this.cursors.length; i++) {
+
+            cur1 = this.cursors[i];
+            
+            if (!cur1.IU) continue;
+
+            let {x1:c1x1, y1:c1y1, x2:c1x2, y2:c1y2} = cur1.getSortedPositions();
+
+            let sel1 = c1x1 + c1y1;
+            let min1 = (c1y1 << 10)  | c1x1;
+            let max1 = (c1y2 << 10)  | c1x2;
+
+
+            for (var j = i + 1; j < this.cursors.length; j++) {
+                cur2 = this.cursors[j];
+                
+                if (!cur2.IU) continue;
+
+                let {x1:c2x1, y1:c2y1, x2:c2x2, y2:c2y2} = cur2.getSortedPositions();
+
+                let sel2 = c2x1 + c2y1;
+
+                if(sel1 >= 0 || sel2 >= 0){
+                    let min2 = (c2y1 << 10)  | c2x1;
+                    let max2 = (c2y2 << 10)  | c2x2; 
+                    
+                    if(sel1 >= 0 && sel2 >= 0){    
+                        if(max1 >= min2 && min1 <= max2){
+                            cur1.x = Math.min(c1x1,c2x1);
+                            cur1.y = Math.min(c1y1,c2y1);
+                            cur1.selction_x = Math.max(c1x2,c2x2);
+                            cur1.selction_y = Math.max(c1y2,c2y2);
+                            cur2.IN_USE = false;
+                        }
+                    }else if(sel1 >= 0){
+                        if(min2 <= max1 && min2 >= min1)
+                            cur2.IN_USE = false;
+                    }else{
+                        if(min1 <= max2 && min1 >= min2){
+                            cur1.x = c2x1;
+                            cur1.y = c2y1;
+                            cur1.selction_x = c2x2;
+                            cur1.selction_y = c2y2;
+                            cur2.IN_USE = false;  
+                        }
+                    }
+                }
+
+                if (cur1.id == cur2.id) 
+                    cur2.IN_USE = false;                
+            }
+        }
+
+        return this.sortCursors();
+    }
+
+    sortCursors() {
+        let last = 0;
+        
+        for (var i = 0; i < this.cursors.length - 1; i++) {
+            var
+                cur1 = this.cursors[i],
+                cur2 = this.cursors[i + 1];
+            //move data from cur2 to cur1
+            if (!cur1.IU && cur2.IU) {
+                this.cursors[i] = cur2;
+                this.cursors[i + 1] = cur1;
+            }
+        }
+
+        return last;
+    }
+
+    /** LINES **/
+
+    getLineAtPixelOffset(y){
+        return this.line_container.getLineAtPixelOffset(y);
+    }
+
+    getLine(y){
+        return this.line_container.getLine(y);
+    }
+
+    //Inserts line into list of lines after prev_line. Returns new line line
+    insertLine(prev_line, new_line) {
+        if (!prev_line) {
+            new_line.prv = new_line;
+            new_line.nxt = null;
+            this.line_container.insert(new_line, 0);
+        } else {
+            this.line_container.insert(new_line, prev_line.index + 1);
+            new_line.nxt = prev_line.nxt;
+            if (new_line.nxt) {
+                new_line.nxt.prv = new_line;
+            }
+            new_line.prv = prev_line;
+            prev_line.nxt = new_line;
+        }
+
+        this.length++;
+
+        new_line.IS_NEW_LINE = true;
+
+        return new_line;
+    }
+
+    /** TEXT and CODE **/
+
+    insertText(text, li = this.line_container.length-1, index) {
+        if ((this.line_container.height | 0) < 1) {
+            if (text.charCodeAt(0) !== this.new_line_code) 
+                text = this.new_line + text;
+            
+            this.insertLine(null, new TEXT_LINE(this)).insertText(text, 1);
+            this.updateText(0);
+        } else {
+            this.line_container.getLine(li).insertText(text, index);
+        }
+    }
+
+    insertCodeAtCursor(code, index){
+
+        var l = this.cursors.length;
+        var j = 0;
+
+        if (typeof index === "number") {
+            l = index + 1;
+            j = index;
+        }
+
+        for (; j < l; j++) {
+            if (this.cursors[j].IN_USE) {
+                var cursor = this.cursors[j];
+                var line = cursor.y;
+                var i = cursor.x;
+                this.line_container.getLine(line).insertCode(code, i);
+                cursor.resetSel();
+            }
+        }
+    }
+
+    insertTextAtCursor(char, deletekey, index) {
+        var l = this.cursors.length;
+        var j = 0;
+
+        if (typeof index === "number") {
+            l = index + 1;
+            j = index;
+        }
+
+        for (; j < l; j++) {
+            if (this.cursors[j].IN_USE) {
+                var cursor = this.cursors[j];
+                var select = cursor.getTextFromSel().length;
+                cursor.arrangeSel();
+                cursor.setCurToSel();
+                var line = cursor.y;
+                var i = cursor.x;
+                var c = char;
+
+                if (select > 0) 
+                    c = this.del_char.repeat(select) + char;
+
+                this.line_container.getLine(line).insertText(c, i);
+                cursor.toString();
+                cursor.resetSel();
+                cursor.IN_USE = false;
+            }
+        }
+    }
+
+    updateText(view = null, index = 0, timeout_limit = 2500) {
+        
+        this.NEED_UPDATE = 0;
+
+        var line = this.line_container.getIndexedLine(index);
+
+        let timeout = 0;
+        
+        while (line) {
+
+            line.parse(false, view);
+
+            if(timeout++ > timeout_limit) {
+                this.NEED_UPDATE = index + timeout_limit + 1;
+                break;
+            }
+
+            if(line)
+                line = line.nxt;
+        }
+    }
+
+    toString() {
+        var text = "";
+
+        var line = this.line_container.getIndexedLine(0);
+        
+        while (line) {
+            text += this.new_line + line.cache;
+            line = line.nxt;
+        }
+
+        return text;
+    }
+
+    clearContents() {
+        this.line_container = new LineContainer();
+    }
+}
+
+//Object to cache fonts in program;
+
+
+//Font range UTF8 = 33 - 126 ; 93 Characters
+
+const canvas_size = 1024;
+// This dna handless the loading and conversion of HTML fonts into font atlases for consumption by text framework. 
+class Font {
+
+    static createBackEnd() {
+        if (Font.canvas) return;
+
+        Font.existing_fonts = {};
+
+        Font.b_size = 64;
+        //No need to create multiple canvas elements
+        var canvas = document.createElement("canvas");
+        canvas.width = canvas_size;
+        canvas.height = canvas_size;
+        Font.ctx = canvas.getContext("2d");
+
+
+        canvas.style.position = "absolute";
+        canvas.style.zIndex = 200000;
+
+        Font.canvas = canvas;
+    }
+
+    constructor(font_name, mono_space_size = 0) {
+
+        this.IS_MONOSPACE = (mono_space_size > 0);
+        this.mono_space_size = mono_space_size;
+
+        this.name = font_name;
+
+        this.atlas_start = 32;
+        this.atlas_end = 127;
+        this.IS_READY = false;
+        this.props = null;
+
+
+        if (!this.IS_MONOSPACE) {
+            Font.createBackEnd();
+
+            if (Font.existing_fonts[font_name]) return Font.existing_fonts[font_name];
+
+            var num_of_workers = 15;
+
+            this.workers = new Array(num_of_workers);
+            this.props = new Array(this.atlas_end - this.atlas_start);
+
+            for (var i = 0, l = this.atlas_end - this.atlas_start; i < l; i++) {
+                this.props[i] = {};
+            }
+
+            Font.existing_fonts[this.name] = this;
+
+            var cache = sessionStorage.getItem(this.name);
+            if (cache) {
+                cache = JSON.parse(cache);
+                this.props = cache.props;
+                this.calc_index = Infinity;
+                //  this.drawField()
+                this.IS_READY = true;
+            } else {
+
+                this.calc_index = 0;
+                this.finished_index = 0;
+
+                for (var i = 0; i < num_of_workers; i++) {
+                    this.finished_index++;
+                    this.calcSection(i);
+                }
+            }
+        } else
+            this.IS_READY = true;
+
+        this.onComplete();
+    }
+
+    calcSize(str, start = 0, end = str.length) {
+        let total_size = 0;
+        if (this.IS_MONOSPACE) {
+            for (let i = start; i < end; i++) {
+                let code = str.charCodeAt(i) - 32;
+
+                if (code < 0)
+                    continue;
+
+                total_size += this.mono_space_size;
+            }
+        } else {
+            let font_data = this.props;
+
+            for (let i = start; i < end; i++) {
+                let code = str.charCodeAt(i) - 32;
+
+                if (code < 0)
+                    continue;
+
+                let char = font_data[code];
+
+                total_size += char.width;
+            }
+        }
+        return total_size;
+    }
+
+    onComplete() {}
+
+    startCalc() {
+        for (var i = 0; i < this.workers.length; i++)
+            this.calcSection(i);
+    }
+
+    calcSection() {
+        var start = this.atlas_start;
+        var end = this.atlas_end;
+        var length = end - start;
+        var i = this.calc_index;
+        var font_size = canvas_size * 0.8;
+
+        if (this.calc_index >= length) return;
+
+        Font.canvas.width = canvas_size;
+        Font.ctx.font = `${12}px  "${this.name}"`;
+        Font.ctx.textBaseline = "middle";
+        Font.ctx.textAlign = "center";
+        var char = String.fromCharCode(start + i);
+        Font.ctx.fillStyle = "black";
+        var width = Font.ctx.measureText(char).width; // * (12/300)
+
+        this.props[i] = {
+            char: char,
+            code: start + i,
+            width: width,
+            width2: width,
+            ratio: width / font_size
+        };
+
+        this.calc_index++;
+
+        this.calcSection(i);
+    }
+
+    calculateMonospace() {
+        return;
+        var DIV = document.createElement("pre");
+
+        DIV.style.fontFamily = `${this.name}`;
+        DIV.style.fontSize = 12 + "px";
+        DIV.style.letterSpacing = 0;
+        DIV.style.wordSpacing = 0;
+        DIV.style.padding = 0;
+        DIV.style.border = 0;
+        DIV.style.margin = 0;
+        DIV.style.position = "fixed";
+        DIV.innerHTML = "A";
+
+        var IS_MONOSPACE = true;
+        var last_width = 0;
+        var width = 0;
+
+        document.body.appendChild(DIV);
+
+        last_width = DIV.getBoundingClientRect().width;
+
+        for (var i = this.atlas_start, d = 0; i < this.atlas_end; i++, d++) {
+            var char = String.fromCharCode(i);
+            DIV.innerHTML = char;
+
+            width = DIV.getBoundingClientRect().width;
+            this.props[i - this.atlas_start].width = width;
+            if (last_width !== width) {
+                IS_MONOSPACE = false;
+            }
+        }
+
+        document.body.removeChild(DIV);
+
+        this.IS_MONOSPACE = IS_MONOSPACE;
+    }
+}
+
+let k = 0;
+
+class TextIO {
+
+    constructor(element, font) {
+
+        if (element) {
+            this.parent_element = element;
+            this.DOM = document.createElement("div");
+            this.DOM.classList.add("text_edit");
+            this.DOM.style.font_kerning = "none";
+            element.appendChild(this.DOM);
+        }
+
+        this.top = 0;
+        this.height = 500;
+
+        this.font = null;
+        this.font_size = 12;
+        this.letter_spacing = 0;
+        this.IS_MONOSPACE = false;
+        this.setFont(font || "Times New Roman");
+
+        this.fw = null;
+        this.gutter_width = 30;
+
+        //Pixel width limitation to apply to allow word wrapping;
+        this.pixel_width = 1500;
+
+        //Amount of pixel padding to add to top and height
+        this.pre_roll = 50;
+    }
+
+
+    /*** POSITIONING ***/
+
+    getGutterWidth(line) { return this.gutter_width; }
+
+    getTop() { return this.top - this.pre_roll; }
+
+    getHeight() { return this.height + this.pre_roll * 2; }
+
+    getLineHeight(line) { return 13; }
+
+    setLineHeight() {
+
+    }
+
+    getPixelFromX(x, line) {
+        let x_pixel = 0;
+        let font_data = this.font.props;
+
+        let size = 13 / 12;
+
+
+        if (line) {
+
+            var text = line.string;
+            let lex = line.pk;
+            var i = 0;
+            outer:
+                while (!lex.END && x > -1) {
+
+                    if (lex.ty == lex.types.data_link) {
+
+                        let code = lex.code;
+
+                        let font_size = (code >> 8) & 255;
+
+                        size = font_size / 12;
+
+                        lex.n();
+
+                        x -= 4;
+
+                        continue;
+                    }
+
+                    //Cap to end of line to prevent out of bounds reference
+                    let len = lex.off + lex.tl;
+
+                    i = lex.off;
+
+                    for (; x > 0 && i < len; i++) {
+                        var code = text.charCodeAt(i);
+                        var char = font_data[code - 32];
+
+                        if (code < 32) ; else {
+                            x--;
+                            x_pixel += char.width * size;
+                        }
+                    }
+
+
+                    lex.n();
+                }
+
+        }
+
+        return x_pixel + this.getGutterWidth(line);
+    }
+
+    getXFromPixelCoord(x_pixel, line) {
+        let x = 1;
+        let font_data = this.font.props;
+
+        let size = 13 / 12;
+
+        if (line) {
+
+            let lex = line.pk;
+            var text = line.string;
+            let total_x = 0;
+
+
+            outer:
+                while (!lex.END) {
+
+                    if (lex.ty == lex.types.data_link) {
+                        let code = lex.code;
+
+                        let font_size = code >> 8 & 255;
+
+                        size = font_size / 12;
+
+                        lex.n();
+
+                        continue;
+                    }
+
+                    //Cap to end of line to prevent out of bounds reference
+
+                    let l = lex.off + lex.tl;
+
+                    x = lex.off;
+
+                    for (; x < l; x++) {
+                        var code = text.charCodeAt(x) - 32;
+
+                        if (code < 0)
+                            continue;
+
+                        var char = font_data[code];
+
+                        total_x += char.width * size;
+
+                        if ((x_pixel) < total_x)
+                            break outer;
+                    }
+
+                    lex.n();
+                }
+
+        }
+
+
+
+        return x + (line.IS_LINKED_LINE | 0) - 1 - line.linked_offset;
+    }
+
+    getYFromPixelCoord(y_pixel, fw = this.fw) {
+        let line = this.getLineAtPixelCoord(y_pixel, fw);
+        return line.index;
+    }
+
+    getLineAtPixelCoord(y_pixel, fw = this.fw) {
+        return fw.getLineAtPixelOffset(y_pixel);
+    }
+
+    scanToX(x, y_pixel, fw = this.fw) {
+        let line = this.getLineAtPixelOffset(y_pixel, fw);
+        return this.getPixelFromX(x, line, fw);
+    }
+
+    /*** INSERTION HOOKS ***/
+
+    /*** RENDERING ***/
+
+    render(fw = this.fw) {
+        fw.renderView(this);
+    }
+
+    /**
+     * Used to output a rendered text line, which may include markup to handle styling.
+     *
+     * @param      {Lexer}  lex     A lexer object that will create tokens from an input line. 
+     * @return     {String}  The return parsed and formated string.
+     */
+    parseLine(lex) {
+        //render out data links
+        let text = `<span style="font-size:${lex.h}px">`;
+        let font_size_close = `</span>`;
+
+        while (!lex.END) {
+            if (lex.ty !== lex.types.data_link) {
+
+                if (lex.ch == "<")
+                    text += "&lt;";
+                else if (lex.ch == ">")
+                    text += "&gt;";
+                else
+                    text += lex.tx;
+
+            } else {
+                let code = lex.code;
+                let font_size = code >> 8 & 255;
+                text += `</span><span style="font-size:${font_size}px"><span style="display:inline-block; width:1px; height:100%; margin-left:-1px; background-color:green"></span>`;
+            }
+            lex.n();
+        }
+
+        return text + font_size_close;
+    }
+
+    renderLines(lines, offset_top) {
+
+        this.DOM.innerHTML = "";
+        this.DOM.style.fontSize = "100%";
+        var text = "<div class='small_scale_pre'>";
+        let line = null;
+        let y = -50;
+
+        while ((line = lines.next().value)) {
+            let pk = line.pk.n();
+            text += `<pre class='small_scale_pre' style='top:${(y + offset_top)}px'><span style='width:30px; display:inline-block; margin-top:0'>${line.index}</span>${this.parseLine(pk)}</pre>`;
+            y += line.pixel_height;
+        }
+
+        text += "</div>";
+
+        this.DOM.innerHTML = text;
+    }
+
+    renderCursor(cur, fw = this.fw, offset_top) {
+        let line = fw.getLine(cur.y);
+        let height = line.pixel_height;
+        let px = this.getPixelFromX(cur.x, line, fw);
+        let py = line.pixel_offset;
+
+        this.DOM.innerHTML += `<div class="txt_cursor" style="top:${py  -  this.top}px; left:${px}px; width:1px; height:${height}px">
+        <div style="position:absolute; top:-10px; left:0; font-size10px; color:red; background-color:white">${cur.x}|${cur.rx}|${cur.rx - cur.x}</div>
+        </div>`;
+
+        if (cur.HAS_SELECTION) ;
+    }
+
+    /*** FONTS ***/
+
+    setFont(font) {
+        if (font instanceof Font) {
+            this.font = font;
+            if (this.DOM)
+                this.DOM.style.fontFamily = this.font.name;
+        } else {
+            this.font = new Font(font);
+            if (this.DOM)
+                this.DOM.style.fontFamily = this.font.name;
+            return new Promise((res, rej) => {
+                this.font.onComplete = () => {
+                    res();
+                };
+
+                if (this.font.IS_READY)
+                    res();
+                else
+                    this.font.startCalc();
+            });
+        }
+    }
+
+    /*** CURSORS ***/
+
+    setCursor(cur, fw = this.fw, pixel_x = 0, pixel_y = 0) {
+        let line = this.getLineAtPixelCoord(pixel_y, fw);
+        cur.y = line.index;
+        cur.line_height = line.pixel_height;
+        cur.x = this.getXFromPixelCoord(pixel_x - this.getGutterWidth(line), line, fw);
+        cur.defaultX = cur.x;
+    }
+
+    /*** EVENT SYSTEMS ***/
+
+    onMouseUp(event, fw = this.fw, x = event.offsetX, y = event.y - this.parent_element.getBoundingClientRect().y) {
+        if (!fw) return;
+        y += this.top;
+        if (event.button !== 0) return;
+        if (event.ctrlKey) {
+
+            var cur = fw.aquireCursor();
+
+            this.setCursor(cur, fw, x, y);
+
+            for (var i = 0; i < fw.cursors.length; i++) {
+                var c1 = fw.cursors[i];
+                if (c1.IN_USE)
+                    for (var j = i + 1; j < fw.cursors.length; j++) {
+                        var c2 = fw.cursors[j];
+                        if (c2.IN_USE && c1.id > c2.id) {
+                            let x = c1.x;
+                            c1.x = c2.x;
+                            c2.x = x;
+                            x = c1.y;
+                            c1.y = c2.y;
+                            c2.y = x;
+                        }
+                    }
+            }
+        } else {
+            for (let i = 1; i < fw.cursors.length; i++)
+                fw.releaseCursor(fw.cursors[i]);
+
+            this.setCursor(fw.cursors[0], fw, x, y);
+        }
+
+        fw.checkForCursorOverlap();
+        this.render(fw);
+        event.preventDefault();
+    }
+
+    onKeyPress(event, fw = this.fw) {
+        if (!fw) return;
+
+        var keycode = event.keyCode;
+        var text = String.fromCharCode(keycode);
+        if (event.ctrlKey) {
+            return;
+        } else {
+            if (text.length > 0) {
+                switch (keycode) {
+                    case 13:
+                        text = fw.new_line;
+                        break;
+                    default:
+
+                        break;
+                }
+
+                fw.insertTextAtCursor(text);
+
+                fw.last_keycode = keycode;
+            }
+        }
+
+        fw.updateText(this);
+        this.render(fw);
+    }
+
+    onKeyDown(event, fw = this.fw) {
+        if (!fw) return;
+
+        var keycode = event.keyCode;
+        var UPDATED = false;
+        //if delete key is pressed. 
+        if (keycode === 8 || keycode === 46) {
+            if (keycode === 46)
+                fw.moveCursorsByX(1);
+            fw.insertTextAtCursor(String.fromCharCode(8), (keycode === 46));
+            fw.updateText(this);
+            event.preventDefault();
+            UPDATED = true;
+        } else if (keycode == 37) { //left
+            fw.moveCursorsByX(-1);
+            UPDATED = true;
+        } else if (keycode == 38) { //top
+            fw.moveCursorsByY(-1);
+            UPDATED = true;
+        } else if (keycode == 39) { //right
+            fw.moveCursorsByX(1);
+            UPDATED = true;
+        } else if (keycode == 40) { //bottom
+            //fw.moveCursorsByY(1);
+            let font_size = 25 + (k -= 5);
+            let code = font_size << 8;
+            fw.insertCodeAtCursor(code);
+            fw.updateText(this);
+            event.preventDefault();
+            UPDATED = true;
+        }
+
+        if (UPDATED)
+            this.render(fw);
+    }
+
+    onMouseWheel(event, fw = this.fw) {
+        let delta = event.deltaY * 0.05;
+
+        if (Math.abs(delta) < 5) return;
+        this.top += delta;
+        this.render(fw);
+    }
+}
+
 /**
  * Global Document instance short name
  * @property DOC
@@ -1200,7 +4534,7 @@ class NumberSchemeConstructor extends SchemeConstructor {
     }
 }
 
-let number = new NumberSchemeConstructor();
+let number$1 = new NumberSchemeConstructor();
 
 let scape_date = new Date();
 scape_date.setHours(0);
@@ -1372,7 +4706,7 @@ class StringSchemeConstructor extends SchemeConstructor {
     }
 }
 
-let string = new StringSchemeConstructor();
+let string$1 = new StringSchemeConstructor();
 
 class BoolSchemeConstructor extends SchemeConstructor {
 
@@ -1412,7 +4746,7 @@ class BoolSchemeConstructor extends SchemeConstructor {
 
 let bool = new BoolSchemeConstructor();
 
-let schemes = { date, string, number, bool, time };
+let schemes = { date, string: string$1, number: number$1, bool, time };
 
 class BTreeModelContainer extends ModelContainerBase {
 
@@ -2968,8 +6302,8 @@ class SourceManager {
     }
 }
 
-const HORIZONTAL_TAB = 9;
-const SPACE = 32;
+const HORIZONTAL_TAB$1 = 9;
+const SPACE$1 = 32;
 
 /**
  * Lexer Jump table reference 
@@ -2986,7 +6320,7 @@ const SPACE = 32;
  * 10. CLOSE BRACKET 
  * 11. DATA_LINK
  */ 
-const jump_table = [
+const jump_table$1 = [
 7, 	 	/* A */
 7, 	 	/* a */
 7, 	 	/* ACKNOWLEDGE */
@@ -3125,7 +6459,7 @@ const jump_table = [
  * entries marked as `4` are in the number set but not the identifier set
  * entries marked as `8` are in both number and identifier sets
  */
-const number_and_identifier_table = [
+const number_and_identifier_table$1 = [
 0, 		/* A */
 0, 		/* a */
 0, 		/* ACKNOWLEDGE */
@@ -3262,41 +6596,41 @@ const number_and_identifier_table = [
  * @alias module:wick~internals.lexer.Types
  * @see {@link module:wick.core.common.Lexer}
  */
-const number$1 = 1,
-    identifier = 2,
-    string$1 = 4,
-    white_space = 8,
-    open_bracket = 16,
-    close_bracket = 32,
-    operator = 64,
-    symbol = 128,
-    new_line = 256,
-    data_link = 512,
-    alpha_numeric = (identifier | number$1),
-    white_space_new_line = (white_space | new_line),
-    Types = {
-        num: number$1,
-        number: number$1,
-        id: identifier,
-        identifier,
-        str: string$1,
-        string: string$1,
-        ws: white_space,
-        white_space,
-        ob: open_bracket,
-        open_bracket,
-        cb: close_bracket,
-        close_bracket,
-        op: operator,
-        operator,
-        sym: symbol,
-        symbol,
-        nl: new_line,
-        new_line,
-        dl: data_link,
-        data_link,
-        alpha_numeric,
-        white_space_new_line,
+const number$1$1 = 1,
+    identifier$1 = 2,
+    string$1$1 = 4,
+    white_space$1 = 8,
+    open_bracket$1 = 16,
+    close_bracket$1 = 32,
+    operator$1 = 64,
+    symbol$1 = 128,
+    new_line$1 = 256,
+    data_link$1 = 512,
+    alpha_numeric$1 = (identifier$1 | number$1$1),
+    white_space_new_line$1 = (white_space$1 | new_line$1),
+    Types$1 = {
+        num: number$1$1,
+        number: number$1$1,
+        id: identifier$1,
+        identifier: identifier$1,
+        str: string$1$1,
+        string: string$1$1,
+        ws: white_space$1,
+        white_space: white_space$1,
+        ob: open_bracket$1,
+        open_bracket: open_bracket$1,
+        cb: close_bracket$1,
+        close_bracket: close_bracket$1,
+        op: operator$1,
+        operator: operator$1,
+        sym: symbol$1,
+        symbol: symbol$1,
+        nl: new_line$1,
+        new_line: new_line$1,
+        dl: data_link$1,
+        data_link: data_link$1,
+        alpha_numeric: alpha_numeric$1,
+        white_space_new_line: white_space_new_line$1,
     };
 
 
@@ -3337,7 +6671,7 @@ const number$1 = 1,
  * @param {Boolean} [IGNORE_WHITE_SPACE=true] - If set to true, the Lexer will not generate tokens for newline and whitespace characters, and instead skip to the next no whitespace/newline token. 
  * @throws     {Error} Throws "String value must be passed to Lexer" if a non-string value is passed as `string`.
  */
-class Lexer {
+class Lexer$1 {
 
     constructor(string = "", IGNORE_WHITE_SPACE = true, PEEKING = false) {
 
@@ -3417,7 +6751,7 @@ class Lexer {
      * Reference to token id types.
      */
     get types() {
-        return Types;
+        return Types$1;
     }
 
     /**
@@ -3425,7 +6759,7 @@ class Lexer {
      * @return     {Lexer}  Returns a new Lexer instance with the same property values.
      */
     copy() {
-        let out = new Lexer(this.str, this.IWS, true);
+        let out = new Lexer$1(this.str, this.IWS, true);
         out.type = this.type;
         out.off = this.off;
         out.tl = this.tl;
@@ -3444,7 +6778,7 @@ class Lexer {
      */
     sync(marker = this.p) {
 
-        if (marker instanceof Lexer) {
+        if (marker instanceof Lexer$1) {
             if (marker.str !== this.str) throw new Error("Cannot sync Lexers with different strings!");
             this.type = marker.type;
             this.off = marker.off;
@@ -3469,7 +6803,7 @@ class Lexer {
             is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
         this.IWS = false;
         let pk = this.copy();
-        while (!pk.END && pk.ty !== Types.nl) { pk.n(); }
+        while (!pk.END && pk.ty !== Types$1.nl) { pk.n(); }
         let end = pk.off;
         throw new Error(message + "at " + this.line + ":" + this.char + n$$1 + t$$1 + n$$1 + this.str.slice(this.off - this.char, end) + n$$1 + ("").padStart(this.char - 2) + "^" + n$$1 + t$$1 + is_iws);
     }
@@ -3534,7 +6868,7 @@ class Lexer {
         let off = marker.off + length;
         let l$$1 = marker.sl;
         let IWS = marker.IWS;
-        let type = symbol;
+        let type = symbol$1;
         let char = marker.char + length;
         let line = marker.line;
         let base = off;
@@ -3565,9 +6899,9 @@ class Lexer {
 
             if (code < 128) {
 
-                switch (jump_table[code]) {
+                switch (jump_table$1[code]) {
                     case 0: //NUMBER
-                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) {}
+                        while (++off < l$$1 && (12 & number_and_identifier_table$1[str.charCodeAt(off)])) {}
 
                         if (str[off] == "e" || str[off] == "E") {
                             off++;
@@ -3579,66 +6913,66 @@ class Lexer {
                             //Add e to the number string
                         }
 
-                        type = number$1;
+                        type = number$1$1;
                         length = off - base;
 
                         break;
                     case 1: //IDENTIFIER
-                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) {}
-                        type = identifier;
+                        while (++off < l$$1 && ((10 & number_and_identifier_table$1[str.charCodeAt(off)]))) {}
+                        type = identifier$1;
                         length = off - base;
                         break;
                     case 2: //QUOTED STRING
                         if (this.PARSE_STRING) {
-                            type = symbol;
+                            type = symbol$1;
                         } else {
                             while (++off < l$$1 && str.charCodeAt(off) !== code) {}
-                            type = string$1;
+                            type = string$1$1;
                             length = off - base + 1;
                         }
                         break;
                     case 3: //SPACE SET
-                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) {}
-                        type = white_space;
+                        while (++off < l$$1 && str.charCodeAt(off) === SPACE$1) {}
+                        type = white_space$1;
                         length = off - base;
                         break;
                     case 4: //TAB SET
-                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) {}
-                        type = white_space;
+                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB$1) {}
+                        type = white_space$1;
                         length = off - base;
                         break;
                     case 5: //CARIAGE RETURN
                         length = 2;
                     case 6: //LINEFEED
-                        type = new_line;
+                        type = new_line$1;
                         char = 0;
                         line++;
                         off += length;
                         break;
                     case 7: //SYMBOL
-                        type = symbol;
+                        type = symbol$1;
                         break;
                     case 8: //OPERATOR
-                        type = operator;
+                        type = operator$1;
 
                         break;
                     case 9: //OPEN BRACKET
-                        type = open_bracket;
+                        type = open_bracket$1;
                         break;
                     case 10: //CLOSE BRACKET
-                        type = close_bracket;
+                        type = close_bracket$1;
                         break;
                     case 11: //Data Link Escape
-                        type = data_link;
+                        type = data_link$1;
                         length = 4; //Stores two UTF16 values and a data link sentinel
                         break;
                 }
             }
 
-            if (IWS && (type & white_space_new_line)) {
+            if (IWS && (type & white_space_new_line$1)) {
                 if (off < l$$1) {
                     char += length;
-                    type = symbol;
+                    type = symbol$1;
                     continue;
                 } else {
                     length = 0;
@@ -3738,7 +7072,7 @@ class Lexer {
         if (!peek_marker) {
             if (!marker) return null;
             if (!this.p) {
-                this.p = new Lexer(this.str, this.IWS, true);
+                this.p = new Lexer$1(this.str, this.IWS, true);
                 peek_marker = this.p;
             }
         }
@@ -3802,7 +7136,7 @@ class Lexer {
     slice(start) {
 
         if (typeof start === "number" || typeof start === "object") {
-            if (start instanceof Lexer) start = start.off;
+            if (start instanceof Lexer$1) start = start.off;
             return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
         }
         return this.str.slice(this.off, this.sl);
@@ -3829,7 +7163,7 @@ class Lexer {
      */
     comment(ASSERT = false, marker = this) {
 
-        if (!(marker instanceof Lexer)) return marker;
+        if (!(marker instanceof Lexer$1)) return marker;
 
         if (marker.tx == "/") {
             if (marker.pk.tx == "*") {
@@ -3863,11 +7197,11 @@ class Lexer {
     }
 }
 
-function whind$1(string, INCLUDE_WHITE_SPACE_TOKENS) { return new Lexer(string, INCLUDE_WHITE_SPACE_TOKENS); }
-whind$1.constructor = Lexer;
+function whind$1$1(string, INCLUDE_WHITE_SPACE_TOKENS) { return new Lexer$1(string, INCLUDE_WHITE_SPACE_TOKENS); }
+whind$1$1.constructor = Lexer$1;
 
 var whind$2 = /*#__PURE__*/Object.freeze({
-    default: whind$1
+    default: whind$1$1
 });
 
 // Mode Flag
@@ -4474,7 +7808,7 @@ class WURL {
     _getQuery_() {
         let map = (this.map) ? this.map : (this.map = new Map());
 
-        let lex = whind$1(this.query);
+        let lex = whind$1$1(this.query);
 
         const get_map = (k, m) => (m.has(k)) ? m.get(k) : m.set(k, new Map).get(k);
 
@@ -5765,7 +9099,7 @@ createHTMLNodeHook(tag, start) { return new HTMLNode(tag); }
 
         if (CAN_FETCH) {
             return this.url.fetchText().then((text) => {
-                let lexer = whind$1(text);
+                let lexer = whind$1$1(text);
                 return this._parseRunner_(lexer, true, IGNORE_TEXT_TILL_CLOSE_TAG, this, this.url);
             }).catch((e) => {
                 console.log(e);
@@ -5868,7 +9202,7 @@ LinkedList.setGettersAndSetters(HTMLNode.prototype);
  * @memberof module:wick.core
  * @alias html
  */
-const HTMLParser = (html_string, root = null, url) => (root = (!root || !(root instanceof HTMLNode)) ? new HTMLNode() : root, root._parse_(whind$1(html_string.replace(/\&lt;/g, "<").replace(/\&gt;/g, ">"), true, false, null, url)));
+const HTMLParser = (html_string, root = null, url) => (root = (!root || !(root instanceof HTMLNode)) ? new HTMLNode() : root, root._parse_(whind$1$1(html_string.replace(/\&lt;/g, "<").replace(/\&gt;/g, ">"), true, false, null, url)));
 
 class Color extends Float64Array {
 
@@ -6029,8 +9363,8 @@ class CSS_Color extends Color {
 
         let c;
 
-        if (!(l instanceof whind$1.constructor))
-            l = whind$1(l);
+        if (!(l instanceof whind$1$1.constructor))
+            l = whind$1$1(l);
 
         let out = null;
 
@@ -7076,7 +10410,7 @@ const property_definitions = {
 
     /* Classification */
 
-    display: `block|inline|list-item|none`,
+    display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
     white_space: `normal|pre|nowrap`,
     list_style_type: `disc|circle|square|decimal|decimal-leading-zero|lower-roman|upper-roman|lower-greek|lower-latin|upper-latin|armenian|georgian|lower-alpha|upper-alpha|none|inherit`,
     list_style_image: `<url>|none`,
@@ -7094,10 +10428,10 @@ const property_definitions = {
     
     /* Box Model https://www.w3.org/TR/css-box-3 */
     margin: `[<length>|<percentage>|0|auto]{1,4}`,
-    margin_top: `<length>|<percentage>|auto`,
-    margin_right: `<length>|<percentage>|auto`,
-    margin_bottom: `<length>|<percentage>|auto`,
-    margin_left: `<length>|<percentage>|auto`,
+    margin_top: `<length>|<percentage>|0|auto`,
+    margin_right: `<length>|<percentage>|0|auto`,
+    margin_bottom: `<length>|<percentage>|0|auto`,
+    margin_left: `<length>|<percentage>|0|auto`,
 
     padding: `[<length>|<percentage>|0|auto]{1,4}`,
     padding_top: `<length>|<percentage>|0|auto`,
@@ -7213,6 +10547,14 @@ const virtual_property_definitions = {
     discretionary_lig_values : `[ discretionary-ligatures | no-discretionary-ligatures ]`,
     historical_lig_values    : `[ historical-ligatures | no-historical-ligatures ]`,
     contextual_alt_values    : `[ contextual | no-contextual ]`,
+
+    //Display
+    display_outside  : `block | inline | run-in`,
+    display_inside   : `flow | flow-root | table | flex | grid | ruby`,
+    display_listitem : `<display-outside>? && [ flow | flow-root ]? && list-item`,
+    display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
+    display_box      : `contents | none`,
+    display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
 };
 
 const media_feature_definitions = {
@@ -7296,7 +10638,7 @@ class CSSSelector {
     addProp(string) {
         let root = this.r.root;
         if (root) {
-            let lex = whind$1(string);
+            let lex = whind$1$1(string);
             while (!lex.END)
                 root.parseProperty(lex, this.r, property_definitions);
         }
@@ -7384,7 +10726,7 @@ class NR { //Notation Rule
 
     _parse_(lx, rule, out_val) {
         if (typeof(lx) == "string")
-            lx = whind$1(lx);
+            lx = whind$1$1(lx);
 
         let r = out_val || { v: null },
             start = isNaN(this.r[0]) ? 1 : this.r[0],
@@ -7503,7 +10845,7 @@ class ValueTerm {
 
     _parse_(l, rule, r) {
         if (typeof(l) == "string")
-            l = whind$1(l);
+            l = whind$1$1(l);
 
         let rn = { v: null };
 
@@ -7560,7 +10902,7 @@ class LiteralTerm {
     _parse_(l, rule, r) {
 
         if (typeof(l) == "string")
-            l = whind$1(l);
+            l = whind$1$1(l);
 
         let v = l.tx;
         if (v == this._value_) {
@@ -7589,7 +10931,7 @@ class LiteralTerm {
 class SymbolTerm extends LiteralTerm {
     _parse_(l, rule, r) {
         if (typeof(l) == "string")
-            l = whind$1(l);
+            l = whind$1$1(l);
 
         if (l.tx == this._value_) {
             l.n();
@@ -7630,7 +10972,7 @@ function _getPropertyParser_(property_name, IS_VIRTUAL = { is: false }, definiti
 
 function _CreatePropertyParser_(notation, name, definitions) {
 
-    const l = whind$1(notation);
+    const l = whind$1$1(notation);
 
     const important = { is: false };
 
@@ -7900,7 +11242,7 @@ class CSSRuleBody {
             let ss = criteria.ss[i];
             switch (ss.t) {
                 case "attribute":
-                    let lex = whind$1(ss.v);
+                    let lex = whind$1$1(ss.v);
                     if (lex.ch == "[" && lex.pk.ty == lex.types.id) {
                         let id = lex.sync().tx;
                         let attrib = ele.getAttribute(id);
@@ -7925,6 +11267,36 @@ class CSSRuleBody {
             }
         }
         return true;
+    }
+
+    matchMedia(win = window){
+        if (this.media_selector) {
+            for(let i = 0; i < this.media_selector.length; i++){
+                let m = this.media_selector[i];
+                   let props = m.props;
+                for (let a in props) {
+                    let prop = props[a];
+                    if (!prop(win))
+                        return false;
+                }
+            }        }
+
+        return true;
+    }
+
+        /**
+     * Retrieves the set of rules from all matching selectors for an element.
+     * @param      {HTMLElement}  element - An element to retrieve CSS rules.
+     * @public
+     */
+    getApplicableRules(element, rule = new CSSRule(), win = window) {
+
+        if(!this.matchMedia(win)) return;
+
+        let gen = this.getApplicableSelectors(element),
+            sel = null;
+
+        while (sel = gen.next().value) rule.merge(sel.r);
     }
 
     * getApplicableSelectors(element) {
@@ -8191,7 +11563,7 @@ class CSSRuleBody {
                                     return type.fetchText().then((str) =>
                                         //Successfully fetched content, proceed to _parse_ in the current root.
                                         //let import_lexer = ;
-                                        res(this._parse_(whind$1(str, true), this).then((r) => this._parse_(lexer, r)))
+                                        res(this._parse_(whind$1$1(str, true), this).then((r) => this._parse_(lexer, r)))
                                         //_Parse_ returns Promise. 
                                         // return;
                                     ).catch((e) => res(this._parse_(lexer)));
@@ -8272,7 +11644,7 @@ class CSSRuleBody {
     }
 
     createSelector(selector_value) {
-        let selector = this.parseSelector(whind$1(selector_value));
+        let selector = this.parseSelector(whind$1$1(selector_value));
 
         if (selector)
             if (!this._selectors_[selector.id]) {
@@ -8283,30 +11655,6 @@ class CSSRuleBody {
                 selector = this._selectors_[selector.id];
 
         return selector;
-    }
-
-    /**
-     * Retrieves the set of rules from all matching selectors for an element.
-     * @param      {HTMLElement}  element - An element to retrieve CSS rules.
-     * @public
-     */
-    getApplicableRules(element, rule = new CSSRule(), win = window) {
-
-        if (this.media_selector) {
-            for(let i = 0; i < this.media_selector.length; i++){
-                let m = this.media_selector[i];
-                   let props = m.props;
-                for (let a in props) {
-                    let prop = props[a];
-                    if (!prop(win))
-                        return;
-                }
-            }        }
-
-        let gen = this.getApplicableSelectors(element),
-            sel = null;
-
-        while (sel = gen.next().value) rule.merge(sel.r);
     }
 }
 
@@ -8373,10 +11721,12 @@ class CSSRootNode {
 
         for (let node = this.fch; node; node = this.getN(node)) {
 
-            let gen = node.getApplicableSelectors(element, win);
-            let v = null;
-            while (v = gen.next().value)
-                yield v;
+            if(node.matchMedia(win)){
+                let gen = node.getApplicableSelectors(element, win);
+                let v = null;
+                while (v = gen.next().value)
+                    yield v;
+            }
         }
     }
 
@@ -9728,6 +13078,7 @@ class RootNode extends HTMLNode {
 
             //parse rules and createBindings.
             if (rule && rule.LOADED) {
+
 
                 //Link into the binding for style. if there is no binding, create one. 
                 //Link in the rule properties to the tap system. 
@@ -12685,19 +16036,19 @@ function parseText(lex, SourcePackage, presets, url, win) {
  * @memberof module:wick~internals.templateCompiler
  * @alias CompileSource
  */
-function CompileSource(SourcePackage, presets, element, url, win = window) {
+function CompileSource$1(SourcePackage, presets, element, url, win = window) {
     let lex;
-    if (element instanceof whind$1.constructor) {
+    if (element instanceof whind$1$1.constructor) {
         lex = element;
     } else if (typeof(element) == "string")
-        lex = whind$1(element);
+        lex = whind$1$1(element);
     else if (element instanceof EL) {
         if (element.tagName == "TEMPLATE") {
             let temp = document.createElement("div");
             temp.appendChild(element.content);
             element = temp;
         }
-        lex = whind$1(element.innerHTML);
+        lex = whind$1$1(element.innerHTML);
     } else {
         let e = new Error("Cannot compile component");
         SourcePackage._addError_(e);
@@ -12759,7 +16110,7 @@ class SourcePackage {
         this._HAVE_ERRORS_ = false;
 
         if (element instanceof Promise) {
-            element.then((data) => CompileSource(this, presets, data, url, win));
+            element.then((data) => CompileSource$1(this, presets, data, url, win));
             if (RETURN_PROMISE) return element;
             return this;
         } else if (element instanceof RootNode) {
@@ -12767,7 +16118,7 @@ class SourcePackage {
             this._skeletons_.push(new Skeleton(element, presets));
             this._complete_();
             return;
-        } else if (!(element instanceof EL) && typeof(element) !== "string" && !(element instanceof whind$1.constructor)) {
+        } else if (!(element instanceof EL) && typeof(element) !== "string" && !(element instanceof whind$1$1.constructor)) {
             let err = new Error("Could not create package. element is not an HTMLElement");
             this._addError_(err);
             this._complete_();
@@ -12777,7 +16128,7 @@ class SourcePackage {
         }
 
         //Start the compiling of the component.
-        let promise = CompileSource(this, presets, element, url, win);
+        let promise = CompileSource$1(this, presets, element, url, win);
 
         OB.seal(this);
 
@@ -14415,7 +17766,7 @@ const core = {
     presets: a => new Presets(a),
     scheduler: scheduler,
     common: Common,
-    lexer: whind$1,
+    lexer: whind$1$1,
     animation: Animation,
     view: View,
     css: CSSParser,
@@ -14432,9 +17783,9 @@ const core = {
     source: (...a) => new SourcePackage(...a)
 };
 
-core.source.compiler = CompileSource;
-core.lexer.constr = whind$1.constructor;
-CompileSource.nodes = {
+core.source.compiler = CompileSource$1;
+core.lexer.constr = whind$1$1.constructor;
+CompileSource$1.nodes = {
     root: RootNode,
     style: StyleNode$1,
     script: ScriptNode$1,
@@ -14445,3409 +17796,11 @@ CompileSource.nodes = {
     svg:SVGNode
 };
 
-let internals = { /* Empty if production */ };
-internals.lexer = whind$1.constructor;
-internals.scheduler = scheduler;
-
 core.source.package = SourcePackage;
 core.source.constructor = Source;
 
 Object.freeze(core.source);
 Object.freeze(core);
-
-let source = core.source;
-
-const wick_vanity = "\ \(\ \ \(\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \)\n\ \)\\\)\)\(\ \ \ \'\ \(\ \ \ \ \ \ \ \ \ \ \(\ \/\(\n\(\(\_\)\(\)\\\ \)\ \ \)\\\ \ \ \ \(\ \ \ \ \)\\\(\)\)\n\_\(\(\)\)\\\_\)\(\)\(\(\_\)\ \ \ \)\\\ \ \(\(\_\)\\\n\\\ \\\(\(\_\)\/\ \/\ \(\_\)\ \ \(\(\_\)\ \|\ \|\(\_\)\n\ \\\ \\\/\\\/\ \/\ \ \|\ \|\ \/\ \_\|\ \ \|\ \/\ \/\n\ \ \\\_\/\\\_\/\ \ \ \|\_\|\ \\\_\_\|\ \ \|\_\\\_\\\n";
-
-
-let LINKER_LOADED = false;
-
-
-/**
- *    Creates a new Router instance, passing any presets from the client.
- *    It will then wait for the document to complete loading then starts the Router and loads the current page into the Router.
- *
- *    Note: This function should only be called once. Any subsequent calls will not do anything.
- *    @method startRouting
- *    @param {Object} presets_options - An object of configuration data to pass to the Presets. {@link Presets}.
- */
-function startRouting(preset_options = {}) {
-
-    if (LINKER_LOADED) return;
-
-    LINKER_LOADED = true;
-
-    let presets = core.presets(preset_options);
-
-    let router = new core.network.router(presets);
-
-    window.addEventListener("load", () => {
-        //router.parseURL(document.location)
-        router.loadNewPage(document.location.pathname, document, new core.network.url(document.location), false).then(page =>
-            router.loadPage(page, new core.network.url(document.location), true)
-        );
-        /*
-            router.loadNewPage(document.location.pathname, document),
-            new core.network.url(document.location),
-            false
-        );
-        */
-    });
-
-    console.log(`${wick_vanity}Copyright 2018 Anthony C Weathersby\nhttps://github.com/galactrax/wick`);
-
-    wick.router = router;
-
-    return { presets, router };
-}
-var client = {
-    anim,
-    source,
-    scheme,
-    model: model$1,
-    core,
-    internals,
-    startRouting
-};
-
-//Main dna for containing line tokens
-class Container_Cell {
-    constructor(IS_LEAF = true) {
-        this.keys = [];
-        this.parent = null;
-        this.IS_LEAF = IS_LEAF;
-        this.IS_ROOT = false;
-        this.num_lines = 0;
-        this.num_virtual_lines = 0;
-        this.pixel_offset = 0;
-    }
-
-    getIndex() {
-        var keys = this.parent.keys;
-        for (var i = 0, l = keys.length; i < l; i++) {
-            if (keys[i] === this) return i;
-        }
-        return -1;
-    }
-
-    getLine(offset) {
-        if (this.IS_LEAF) {
-            if (offset > this.num_lines) offset = this.num_lines - 1;
-            return this.keys[offset];
-        } else {
-            for (var i = 0, l = this.keys.length; i < l; i++) {
-                var key = this.keys[i];
-                if (offset < key.num_lines) {
-                    return key.getLine(offset);
-                } else offset -= key.num_lines;
-            }
-            return this.keys[this.keys.length - 1].getLine(offset);
-        }
-    }
-
-    getVirtualLine(offset) {
-        if (this.IS_LEAF) {
-            for (let i = 0, l = this.keys.length; i < l; i++) {
-                let line = this.keys[i];
-
-                if (offset < line.virtual_line_size && line.virtual_line_size > 0) {
-                    return line;
-                } else offset -= line.virtual_line_size;
-            }
-        } else {
-            for (let i = 0, l = this.keys.length; i < l; i++) {
-                let cell = this.keys[i];
-                if (offset < cell.num_virtual_lines) {
-                    return cell.getVirtualLine(offset);
-                } else offset -= cell.num_virtual_lines;
-            }
-            return this.keys[this.keys.length - 1].getVirtualLine(offset);
-        }
-    }
-
-    getLineAtPixelOffset(offset) {
-        if (this.IS_LEAF) {
-            for (let i = 0, l = this.keys.length; i < l; i++) {
-                let cell = this.keys[i];
-                if (offset < cell.pixel_height && cell.pixel_height > 0) {
-                    return cell;
-                } else offset -= cell.pixel_height;
-            }
-            return cell;
-        } else {
-            for (let i = 0, l = this.keys.length; i < l; i++) {
-                let cell = this.keys[i];
-                if (offset < cell.pixel_offset) {
-                    return cell.getLineAtPixelOffset(offset);
-                } else offset -= cell.pixel_offset;
-            }
-            return cell.getLineAtPixelOffset(offset);
-        }
-    }
-
-    getLineIndex(index, line, id) {
-        if (this.IS_LEAF) {
-            let i = 0;
-            for (let l = this.num_lines; i < l; i++) {
-                if (this.keys[i] === line) break;
-            }
-            index = i;
-        } else {
-            var sibs = this.keys;
-            let i = id;
-            while (i > 0) {
-                i--;
-                index += sibs[i].num_lines;
-            }
-        }
-
-        if (!this.parent.IS_ROOT) return this.parent.getLineIndex(index, null, this.getIndex());
-
-        return index;
-    }
-
-    getVirtualLineIndex(index, line, id) {
-        if (this.IS_LEAF) {
-            index = -1; //WTF
-            for (let i = 0, l = this.num_lines; i < l; i++) {
-                var key = this.keys[i];
-                index += key.virtual_line_size;
-                if (key === line) break;
-            }
-        } else {
-            var sibs = this.keys;
-            let i = id;
-            while (i > 0) {
-                i--;
-                index += sibs[i].num_virtual_lines;
-            }
-        }
-
-        if (!this.parent.IS_ROOT) return this.parent.getVirtualLineIndex(index, null, this.getIndex());
-
-
-        return index;
-    }
-
-    getPixelOffset(pixel_top, line, id) {
-        if (this.IS_LEAF) {
-            //pixel_top = -1; //WTF
-            for (let i = 0, l = this.num_lines; i < l; i++) {
-                var key = this.keys[i];
-                if (key === line) break;
-                pixel_top += key.pixel_height;
-            }
-        } else {
-            var sibs = this.keys;
-            let i = id;
-            while (i > 0) {
-                i--;
-                pixel_top += sibs[i].pixel_offset;
-            }
-        }
-
-        if (!this.parent.IS_ROOT) return this.parent.getPixelOffset(pixel_top, null, this.getIndex());
-
-        return pixel_top;
-    }
-
-    balanceInsert(max_size, IS_ROOT = false) {
-
-        if (this.keys.length >= max_size) {
-            //need to split this up!
-            let vl = this.num_virtual_lines,
-                nl = this.num_lines,
-                pl = this.pixel_offset;
-
-            let right = new Container_Cell(this.IS_LEAF);
-
-            let split = (max_size >> 1) | 0;
-            
-            let right_keys = this.keys.slice(split);
-            right_keys.forEach(k=>k.parent = right);
-            right.keys = right_keys;
-
-
-            let left_keys = this.keys.slice(0, split);
-            this.keys = left_keys;
-
-            //console.log(split, this.keys[this.keys.length-1].str, right.keys[0].str)
-
-            this.getLineCount();
-
-            right.num_lines = nl - this.num_lines;
-            right.num_virtual_lines = vl - this.num_virtual_lines;
-            right.pixel_offset = pl - this.pixel_offset;
-
-            if (IS_ROOT) {
-                let root = new Container_Cell(false);
-
-                root.num_lines = nl;
-                root.num_virtual_lines = vl;
-                root.pixel_offset = pl;
-
-                root.keys.push(this, right);
-                this.parent = root;
-                right.parent = root;
-                return root;
-            }
-
-            right.parent = this.parent;
-
-            return right;
-        }
-
-        return this;
-    }
-
-    /**
-        Inserts model into the tree, sorted by identifier. 
-    */
-    insert(index, line, max_size, IS_ROOT = false) {
-
-
-        let l = this.keys.length;
-
-        if (!this.IS_LEAF) {
-            let key;
-
-            for (var i = 0; i < l; i++) {
-
-                key = this.keys[i];
-
-                if (index < key.num_lines) {
-                    let out_key = key.insert(index, line, max_size, false);
-
-                    if (out_key !== key)
-                        this.keys.splice(i+1, 0, out_key);
-
-                    this.num_lines++;
-                    this.num_virtual_lines += line.virtual_line_size;
-                    this.pixel_offset += line.pixel_height;
-
-                    return this.balanceInsert(max_size, IS_ROOT);
-                } else
-                    index -= key.num_lines;
-            }
-
-            let out_key = key.insert(Infinity, line, max_size, false);
-
-            if (out_key !== key)
-                this.keys.push(out_key);
-
-            this.num_lines++;
-            this.num_virtual_lines += line.virtual_line_size;
-            this.pixel_offset += line.pixel_height;
-
-            return this.balanceInsert(max_size, IS_ROOT);
-
-        } else {
-
-            line.parent = this;
-
-            this.keys.splice(index, 0, line);
-
-            this.num_lines++;
-            this.num_virtual_lines += line.virtual_line_size;
-            this.pixel_offset += line.pixel_height;
-
-            return this.balanceInsert(max_size, IS_ROOT);
-        }
-    }
-
-    remove(start, end, min_size, IS_ROOT = false) {
-        let l = this.keys.length,
-            nl, vl, pl;
-
-        if (!this.IS_LEAF) {
-            let n = 0,
-                p = 0,
-                v = 0;
-
-            var key;
-
-            for (var i = 0; i < l; i++) {
-
-                key = this.keys[i];
-
-                if (start < key.num_lines) {
-                    let { nl, vl, pl } = key.remove(start, end, min_size, false);
-                    n += nl;
-                    v += vl;
-                    p += pl;
-                    break;
-                }
-
-                start -= key.num_lines;
-                end -= key.num_lines;
-            }
-            /*
-            if (start <= key.num_lines && end >= 0) {
-                let { nl, vl, pl } = key.remove(start, end, min_size, false);
-                n += nl;
-                v += vl;
-                p += pl;
-            }*/
-
-            for (i = 0; i < this.keys.length; i++) {
-                if (this.keys[i].keys.length < min_size) {
-                    if (this.balanceRemove(i, min_size)) {
-                        l--;
-                        i--;
-                    }
-                }
-            }
-
-            nl = n;
-            pl = p;
-            vl = v;
-
-        } else {
-            let v = 0,
-                p = 0,
-                n = 0;
-            let line = this.keys[start];
-            this.keys.splice(start, 1);
-            n++;
-            v += line.virtual_line_size;
-            p += line.pixel_height;
-
-            /*
-            for (let i = 0, j = 0, l = this.keys.length; i < l && j <= end; i++, j++) {
-                if (j >= start && j <= end) {
-                    let line = this.keys[i];
-                    this.keys.splice(i, 1);
-                    l--;
-                    i--;
-                    n++;
-                    v += line.virtual_line_size;
-                    p += line.pixel_height;
-                }
-            }
-            */
-            nl = n;
-            pl = p;
-            vl = v;
-        }
-
-        this.num_lines -= nl;
-        this.num_virtual_lines -= vl;
-        this.pixel_offset -= pl;
-
-        return { nl, vl, pl };
-    }
-
-    balanceRemove(index, min_size) {
-        let left = this.keys[index - 1];
-        let right = this.keys[index + 1];
-        let key = this.keys[index];
-        let n = 1,
-            v = 0,
-            p = 0;
-
-        //Left rotate
-        if (left && left.keys.length > min_size) {
-            let lk = left.keys.length;
-            let tsfr = left.keys[lk - 1];
-            key.keys.unshift(tsfr);
-            left.keys.length = lk - 1;
-            
-            tsfr.parent = key;
-
-            if (key.IS_LEAF)
-                v = tsfr.virtual_line_size, p = tsfr.pixel_height;
-            else
-                n = tsfr.num_lines, v = tsfr.num_virtual_lines, p = tsfr.pixel_offset;
-
-            key.num_lines += n;
-            key.num_virtual_lines += v;
-            key.pixel_offset += p;
-
-            left.num_lines -= n;
-            left.num_virtual_lines -= v;
-            left.pixel_offset -= p;
-
-            return false;
-        } else if (right && right.keys.length > min_size) {
-            //Right rotate
-            let tsfr = right.keys[0];
-            key.keys.push(tsfr);
-            right.keys.splice(0, 1);
-            
-            tsfr.parent = key;
-
-            if (key.IS_LEAF)
-                v = tsfr.virtual_line_size, p = tsfr.pixel_height;
-            else
-                n = tsfr.num_lines, v = tsfr.num_virtual_lines, p = tsfr.pixel_offset;
-
-            key.num_lines += n;
-            key.num_virtual_lines += v;
-            key.pixel_offset += p;
-
-            right.num_lines -= n;
-            right.num_virtual_lines -= v;
-            right.pixel_offset -= p;
-
-            return false;
-
-        } else {
-            //Left or Right Merge
-            if (!left) {
-                index++;
-                left = key;
-                key = right;
-            }
-
-            key.keys.forEach(k=>k.parent = left);
-
-            left.keys = left.keys.concat(key.keys);
-            left.num_lines += key.num_lines;
-            left.num_virtual_lines += key.num_virtual_lines;
-            left.pixel_offset += key.pixel_offset;
-            
-            this.keys.splice(index, 1);
-
-            return true;
-        }
-    }
-
-    getLineCount() {
-        var num = 0,
-            num2 = 0,
-            num3 = 0;
-        if (this.IS_LEAF) {
-            for (var i = 0, l = this.keys.length; i < l; i++) {
-                num += this.keys[i].virtual_line_size;
-                num2 += this.keys[i].pixel_height;
-            }
-            this.num_lines = this.keys.length;
-            this.num_virtual_lines = num;
-            this.pixel_offset = num2;
-        } else {
-            for (var i = 0, l = this.keys.length; i < l; i++) {
-                num += this.keys[i].num_lines;
-                num2 += this.keys[i].num_virtual_lines;
-                num3 += this.keys[i].pixel_offset;
-            }
-            this.num_lines = num;
-            this.num_virtual_lines = num2;
-            this.pixel_offset = num3;
-        }
-
-        return this.num_lines;
-    }
-
-    setAsParent() {
-        for (var i = 0, l = this.keys.length; i < l; i++) 
-            this.keys[i].parent = this;
-    }
-
-    incrementNumOfVirtualLines(i) {
-        if (i < 1) return;
-        this.num_virtual_lines += i;
-        this.parent.incrementNumOfVirtualLines(i);
-    }
-
-    decrementNumOfVirtualLines(i) {
-        if (i < 1) return;
-        this.num_virtual_lines -= i;
-        this.parent.decrementNumOfVirtualLines(i);
-    }
-
-    incrementNumOfLines() {
-        this.num_lines++;
-        this.parent.incrementNumOfLines();
-    }
-
-    decrementNumOfLines() {
-        this.num_lines--;
-        this.parent.decrementNumOfLines();
-    }
-
-    incrementPixelOffset(px) {
-        this.pixel_offset += px;
-        this.parent.incrementPixelOffset(px);
-    }
-
-    decrementPixelOffset(px) {
-        this.pixel_offset -= px;
-        this.parent.decrementPixelOffset(px);
-    }
-
-    updateHeight(diff) {
-        if (diff) {
-            this.pixel_offset += diff;
-            this.parent.updateHeight(diff);
-        }
-    }
-}
-
-
-
-class LineContainer {
-    constructor() {
-        this.root = null;
-        this.IS_ROOT = true;
-        this.num_lines = 0;
-        this.num_virtual_lines = 0;
-        this.max_size = 60;
-        this.min_size = (this.max_size / 2) | 0;
-    }
-
-    incrementNumOfLines() {
-        this.num_lines++;
-    }
-
-    decrementNumOfLines() {
-        this.num_lines--;
-    }
-
-    incrementNumOfVirtualLines(i) {
-        this.num_virtual_lines += i;
-    }
-
-    decrementNumOfVirtualLines(i) {
-        this.num_virtual_lines -= i;
-    }
-
-    incrementPixelOffset(px) {
-        this.pixel_offset += px;
-    }
-
-    decrementPixelOffset(px) {
-        this.pixel_offset -= px;
-    }
-
-    getLine(index) {
-        if (index >= this.length) index = this.length - 1;
-        return this.root.getLine(index);
-    }
-
-    getVirtualLine(index) {
-        if (index >= this.num_virtual_lines) index = this.num_virtual_lines - 1;
-        return this.root.getVirtualLine(index);
-    }
-
-    getLineAtPixelOffset(pixel_height) {
-        if (pixel_height >= this.pixel_offset) {
-            pixel_height = this.pixel_offset - 1;
-        }
-
-        if (!this.root) return 0;
-        return this.root.getLineAtPixelOffset(pixel_height);
-    }
-
-    //Transition ****************************
-    getIndexedLine(offset) {
-        return this.getLine(offset);
-    }
-
-    get count() {
-        return this.root.num_lines;
-    }
-
-    get countWL() {
-        return this.root.num_lines;
-    }
-    setIndexes() {}
-
-    getHeight() {
-        return this.num_lines;
-    }
-
-    get height() {
-        return this.num_lines;
-    }
-
-    get pixel_offset(){
-        return this.root.pixel_offset;
-    }
-
-    updateHeight(diff) {}
-
-
-    //**********************************************************
-    get length() {
-        return (this.root) ? this.root.num_lines : 0;
-    }
-
-    insert(line, index = Infinity) {
-        if (!this.root)
-            this.root = new Container_Cell();
-
-        let root = this.root.insert(index, line, this.max_size, true);
-        this.root = root;
-        this.root.parent = this;
-        this.num_lines = this.root.num_lines;
-        this.pixel_height = this.root.pixel_offset;
-        this.num_virtual_lines = this.root.num_virtual_lines;
-    }
-
-    remove(line) {
-        let index = line.index;
-
-        this.root.remove(index, index, this.min_size, true);
-
-        if (this.root.keys.length == 1 && this.root.keys[0] instanceof Container_Cell) {
-            this.root = this.root.keys[0];
-            this.root.parent = this;
-        }
-    }
-}
-
-const HORIZONTAL_TAB$1 = 9;
-const SPACE$1 = 32;
-
-/**
- * Lexer Jump table reference 
- * 0. NUMBER
- * 1. IDENTIFIER
- * 2. QUOTE STRING
- * 3. SPACE SET
- * 4. TAB SET
- * 5. CARIAGE RETURN
- * 6. LINEFEED
- * 7. SYMBOL
- * 8. OPERATOR
- * 9. OPEN BRACKET
- * 10. CLOSE BRACKET 
- * 11. DATA_LINK
- */ 
-const jump_table$1 = [
-7, 	 	/* A */
-7, 	 	/* a */
-7, 	 	/* ACKNOWLEDGE */
-7, 	 	/* AMPERSAND */
-7, 	 	/* ASTERISK */
-7, 	 	/* AT */
-7, 	 	/* B */
-7, 	 	/* b */
-7, 	 	/* BACKSLASH */
-4, 	 	/* BACKSPACE */
-6, 	 	/* BELL */
-7, 	 	/* C */
-7, 	 	/* c */
-5, 	 	/* CANCEL */
-7, 	 	/* CARET */
-11, 	/* CARRIAGE_RETURN */
-7, 	 	/* CLOSE_CURLY */
-7, 	 	/* CLOSE_PARENTH */
-7, 	 	/* CLOSE_SQUARE */
-7, 	 	/* COLON */
-7, 	 	/* COMMA */
-7, 	 	/* d */
-7, 	 	/* D */
-7, 	 	/* DATA_LINK_ESCAPE */
-7, 	 	/* DELETE */
-7, 	 	/* DEVICE_CTRL_1 */
-7, 	 	/* DEVICE_CTRL_2 */
-7, 	 	/* DEVICE_CTRL_3 */
-7, 	 	/* DEVICE_CTRL_4 */
-7, 	 	/* DOLLAR */
-7, 	 	/* DOUBLE_QUOTE */
-7, 	 	/* e */
-3, 	 	/* E */
-8, 	 	/* EIGHT */
-2, 	 	/* END_OF_MEDIUM */
-7, 	 	/* END_OF_TRANSMISSION */
-7, 	 	/* END_OF_TRANSMISSION_BLOCK */
-8, 	 	/* END_OF_TXT */
-8, 	 	/* ENQUIRY */
-2, 	 	/* EQUAL */
-9, 	 	/* ESCAPE */
-10, 	 /* EXCLAMATION */
-8, 	 	/* f */
-8, 	 	/* F */
-7, 	 	/* FILE_SEPERATOR */
-7, 	 	/* FIVE */
-7, 	 	/* FORM_FEED */
-7, 	 	/* FORWARD_SLASH */
-0, 	 	/* FOUR */
-0, 	 	/* g */
-0, 	 	/* G */
-0, 	 	/* GRAVE */
-0, 	 	/* GREATER_THAN */
-0, 	 	/* GROUP_SEPERATOR */
-0, 	 	/* h */
-0, 	 	/* H */
-0, 	 	/* HASH */
-0, 	 	/* HORIZONTAL_TAB */
-8, 	 	/* HYPHEN */
-7, 	 	/* i */
-8, 	 	/* I */
-8, 	 	/* j */
-8, 	 	/* J */
-7, 	 	/* k */
-7, 	 	/* K */
-1, 	 	/* l */
-1, 	 	/* L */
-1, 	 	/* LESS_THAN */
-1, 	 	/* LINE_FEED */
-1, 	 	/* m */
-1, 	 	/* M */
-1, 	 	/* n */
-1, 	 	/* N */
-1, 	 	/* NEGATIVE_ACKNOWLEDGE */
-1, 	 	/* NINE */
-1, 	 	/* NULL */
-1, 	 	/* o */
-1, 	 	/* O */
-1, 	 	/* ONE */
-1, 	 	/* OPEN_CURLY */
-1, 	 	/* OPEN_PARENTH */
-1, 	 	/* OPEN_SQUARE */
-1, 	 	/* p */
-1, 	 	/* P */
-1, 	 	/* PERCENT */
-1, 	 	/* PERIOD */
-1, 	 	/* PLUS */
-1, 	 	/* q */
-1, 	 	/* Q */
-1, 	 	/* QMARK */
-1, 	 	/* QUOTE */
-9, 	 	/* r */
-7, 	 	/* R */
-10, 	/* RECORD_SEPERATOR */
-7, 	 	/* s */
-7, 	 	/* S */
-2, 	 	/* SEMICOLON */
-1, 	 	/* SEVEN */
-1, 	 	/* SHIFT_IN */
-1, 	 	/* SHIFT_OUT */
-1, 	 	/* SIX */
-1, 	 	/* SPACE */
-1, 	 	/* START_OF_HEADER */
-1, 	 	/* START_OF_TEXT */
-1, 	 	/* SUBSTITUTE */
-1, 	 	/* SYNCH_IDLE */
-1, 	 	/* t */
-1, 	 	/* T */
-1, 	 	/* THREE */
-1, 	 	/* TILDE */
-1, 	 	/* TWO */
-1, 	 	/* u */
-1, 	 	/* U */
-1, 	 	/* UNDER_SCORE */
-1, 	 	/* UNIT_SEPERATOR */
-1, 	 	/* v */
-1, 	 	/* V */
-1, 	 	/* VERTICAL_BAR */
-1, 	 	/* VERTICAL_TAB */
-1, 	 	/* w */
-1, 	 	/* W */
-1, 	 	/* x */
-1, 	 	/* X */
-9, 	 	/* y */
-7, 	 	/* Y */
-10,  	/* z */
-7,  	/* Z */
-7 		/* ZERO */
-];	
-
-/**
- * LExer Number and Identifier jump table reference
- * Number are masked by 12(4|8) and Identifiers are masked by 10(2|8)
- * entries marked as `0` are not evaluated as either being in the number set or the identifier set.
- * entries marked as `2` are in the identifier set but not the number set
- * entries marked as `4` are in the number set but not the identifier set
- * entries marked as `8` are in both number and identifier sets
- */
-const number_and_identifier_table$1 = [
-0, 		/* A */
-0, 		/* a */
-0, 		/* ACKNOWLEDGE */
-0, 		/* AMPERSAND */
-0, 		/* ASTERISK */
-0, 		/* AT */
-0,		/* B */
-0,		/* b */
-0,		/* BACKSLASH */
-0,		/* BACKSPACE */
-0,		/* BELL */
-0,		/* C */
-0,		/* c */
-0,		/* CANCEL */
-0,		/* CARET */
-0,		/* CARRIAGE_RETURN */
-0,		/* CLOSE_CURLY */
-0,		/* CLOSE_PARENTH */
-0,		/* CLOSE_SQUARE */
-0,		/* COLON */
-0,		/* COMMA */
-0,		/* d */
-0,		/* D */
-0,		/* DATA_LINK_ESCAPE */
-0,		/* DELETE */
-0,		/* DEVICE_CTRL_1 */
-0,		/* DEVICE_CTRL_2 */
-0,		/* DEVICE_CTRL_3 */
-0,		/* DEVICE_CTRL_4 */
-0,		/* DOLLAR */
-0,		/* DOUBLE_QUOTE */
-0,		/* e */
-0,		/* E */
-0,		/* EIGHT */
-0,		/* END_OF_MEDIUM */
-0,		/* END_OF_TRANSMISSION */
-8,		/* END_OF_TRANSMISSION_BLOCK */
-0,		/* END_OF_TXT */
-0,		/* ENQUIRY */
-0,		/* EQUAL */
-0,		/* ESCAPE */
-0,		/* EXCLAMATION */
-0,		/* f */
-0,		/* F */
-0,		/* FILE_SEPERATOR */
-2,		/* FIVE */
-4,		/* FORM_FEED */
-0,		/* FORWARD_SLASH */
-8,		/* FOUR */
-8,		/* g */
-8,		/* G */
-8,		/* GRAVE */
-8,		/* GREATER_THAN */
-8,		/* GROUP_SEPERATOR */
-8,		/* h */
-8,		/* H */
-8,		/* HASH */
-8,		/* HORIZONTAL_TAB */
-0,		/* HYPHEN */
-0,		/* i */
-0,		/* I */
-0,		/* j */
-0,		/* J */
-0,		/* k */
-0,		/* K */
-2,		/* l */
-8,		/* L */
-2,		/* LESS_THAN */
-2,		/* LINE_FEED */
-8,		/* m */
-2,		/* M */
-2,		/* n */
-2,		/* N */
-2,		/* NEGATIVE_ACKNOWLEDGE */
-2,		/* NINE */
-2,		/* NULL */
-2,		/* o */
-2,		/* O */
-2,		/* ONE */
-8,		/* OPEN_CURLY */
-2,		/* OPEN_PARENTH */
-2,		/* OPEN_SQUARE */
-2,		/* p */
-2,		/* P */
-2,		/* PERCENT */
-2,		/* PERIOD */
-2,		/* PLUS */
-2,		/* q */
-8,		/* Q */
-2,		/* QMARK */
-2,		/* QUOTE */
-0,		/* r */
-0,		/* R */
-0,		/* RECORD_SEPERATOR */
-0,		/* s */
-2,		/* S */
-0,		/* SEMICOLON */
-2,		/* SEVEN */
-8,		/* SHIFT_IN */
-2,		/* SHIFT_OUT */
-2,		/* SIX */
-2,		/* SPACE */
-2,		/* START_OF_HEADER */
-2,		/* START_OF_TEXT */
-2,		/* SUBSTITUTE */
-2,		/* SYNCH_IDLE */
-2,		/* t */
-2,		/* T */
-2,		/* THREE */
-2,		/* TILDE */
-2,		/* TWO */
-8,		/* u */
-2,		/* U */
-2,		/* UNDER_SCORE */
-2,		/* UNIT_SEPERATOR */
-2,		/* v */
-2,		/* V */
-2,		/* VERTICAL_BAR */
-2,		/* VERTICAL_TAB */
-2,		/* w */
-8,		/* W */
-2,		/* x */
-2,		/* X */
-0,		/* y */
-0,		/* Y */
-0,		/* z */
-0,		/* Z */
-0		/* ZERO */
-];
-
-/**
- * The types object bound to Lexer#types
- * @type       {Object}
- * @alias module:wick~internals.lexer.Types
- * @see {@link module:wick.core.common.Lexer}
- */
-const number$2 = 1,
-    identifier$1 = 2,
-    string$2 = 4,
-    white_space$1 = 8,
-    open_bracket$1 = 16,
-    close_bracket$1 = 32,
-    operator$1 = 64,
-    symbol$1 = 128,
-    new_line$1 = 256,
-    data_link$1 = 512,
-    alpha_numeric$1 = (identifier$1 | number$2),
-    white_space_new_line$1 = (white_space$1 | new_line$1),
-    Types$1 = {
-        num: number$2,
-        number: number$2,
-        id: identifier$1,
-        identifier: identifier$1,
-        str: string$2,
-        string: string$2,
-        ws: white_space$1,
-        white_space: white_space$1,
-        ob: open_bracket$1,
-        open_bracket: open_bracket$1,
-        cb: close_bracket$1,
-        close_bracket: close_bracket$1,
-        op: operator$1,
-        operator: operator$1,
-        sym: symbol$1,
-        symbol: symbol$1,
-        nl: new_line$1,
-        new_line: new_line$1,
-        dl: data_link$1,
-        data_link: data_link$1,
-        alpha_numeric: alpha_numeric$1,
-        white_space_new_line: white_space_new_line$1,
-    };
-
-
-
-/**
- * @classdesc A simple Lexical tokenizer for use with text processing. 
- * 
- * The Lexer parses an input string and yield lexical tokens.  It also provides methods for looking ahead and asserting token values. 
- *
- * There are 9 types of tokens that the Lexer will create:
- * 
- * > 1. **Identifier** - `types.identifier` or `types.id`
- * >    - Any set of characters beginning with `_`|`a-z`|`A-Z`, and followed by `0-9`|`a-z`|`A-Z`|`-`|`_`|`#`|`$`.
- * > 2. **Number** - `types.number` or `types.num`
- * >    - Any set of characters beginning with `0-9`|`.`, and followed by `0-9`|`.`.
- * > 3. **String**: 2 - `types.string` or `types.str`
- * >    - A set of characters beginning with either `'` or `"` and ending with a matching `'` or `"`.
- * > 4. **Open Bracket** - `types.open_bracket` or `types.ob`
- * >    - A single character from the set `<`|`(`|`{`|`[`.
- * > 5. **Close Bracket** - `types.close_bracket` or `types.cb`
- * >    - A single character from the set `>`|`)`|`}`|`]`.
- * > 7. **Operator**: 
- * >    - A single character from the set `*`|`+`|`<`|`=`|`>`|`\`|`&`|`%`|`!`|`|`|`^`|`:`.
- * > 8. **New Line**: 
- * >    - A single `newline` (`LF` or `NL`) character. It may also be `LFCR` if the text is formated for Windows.
- * > 9. **White Space**: 
- * >    - An uninterrupted set of `tab` or `space` characters.
- * > 10. **Symbol**:
- * >        - All other characters not defined by the the above, with each symbol token being comprised of one character.
- * 
- * Types are identified by a binary index value and are defined in Lexer.prototype.types. A token's type can be verified by with 
- * ```js
- * Lexer.token.type === Lexer.types.*`
- * ```
- * @alias Lexer
- * @memberof module:wick.core.common
- * @param {String} string - The string to parse. 
- * @param {Boolean} [IGNORE_WHITE_SPACE=true] - If set to true, the Lexer will not generate tokens for newline and whitespace characters, and instead skip to the next no whitespace/newline token. 
- * @throws     {Error} Throws "String value must be passed to Lexer" if a non-string value is passed as `string`.
- */
-class Lexer$1 {
-
-    constructor(string = "", IGNORE_WHITE_SPACE = true, PEEKING = false) {
-
-        if (typeof(string) !== "string") throw new Error("String value must be passed to Lexer");
-
-        /**
-         * The string that the Lexer tokenizes.
-         */
-        this.str = string;
-
-        /**
-         * Reference to the peeking Lexer.
-         */
-        this.p = null;
-
-        /**
-         * The type id of the current token.
-         */
-        this.type = -1;
-
-        /**
-         * The offset in the string of the start of the current token.
-         */
-        this.off = 0;
-
-        /**
-         * The length of the current token.
-         */
-        this.tl = 0;
-
-        /**
-         * The character offset of the current token within a line.
-         */
-        this.char = 0;
-
-        /**
-         * The line position of the current token.
-         */
-        this.line = 0;
-
-        /**
-         * The length of the string being parsed
-         */
-        this.sl = string.length;
-
-
-        /**
-         * Flag to ignore white spaced.
-         */
-        this.IWS = IGNORE_WHITE_SPACE;
-
-        /**
-         * Flag set to true if the end of the string is met.
-         */
-        this.END = false;
-
-        /**
-         * Flag to force the lexer to parse string contents
-         */
-         this.PARSE_STRING = false;
-
-        if (!PEEKING) this.next();
-    }
-
-    /**
-     * Restricts max parse distance to the other Lexer's current position.
-     * @param      {Lexer}  Lexer   The Lexer to limit parse distance by.
-     */
-    fence(lexer = this) {
-        if (lexer.str !== this.str)
-            return;
-        this.sl = lexer.off;
-        return this;
-    }
-
-    /**
-     * Reference to token id types.
-     */
-    get types() {
-        return Types$1;
-    }
-
-    /**
-     * Copies the Lexer.
-     * @return     {Lexer}  Returns a new Lexer instance with the same property values.
-     */
-    copy() {
-        let out = new Lexer$1(this.str, this.IWS, true);
-        out.type = this.type;
-        out.off = this.off;
-        out.tl = this.tl;
-        out.char = this.char;
-        out.line = this.line;
-        out.sl = this.sl;
-        out.END = this.END;
-        return out;
-    }
-
-    /**
-     * Given another Lexer with the same `str` property value, it will copy the state of that Lexer.
-     * @param      {Lexer}  [marker=this.peek]  The Lexer to clone the state from. 
-     * @throws     {Error} Throws an error if the Lexers reference different strings.
-     * @public
-     */
-    sync(marker = this.p) {
-
-        if (marker instanceof Lexer$1) {
-            if (marker.str !== this.str) throw new Error("Cannot sync Lexers with different strings!");
-            this.type = marker.type;
-            this.off = marker.off;
-            this.tl = marker.tl;
-            this.char = marker.char;
-            this.line = marker.line;
-            this.END = marker.END;
-        }
-
-        return this;
-    }
-
-    /**
-     * Will throw a new Error, appending the parsed string line and position information to the the error message passed into the function.
-     * @instance
-     * @public
-     * @param {String} message - The error message.
-     */
-    throw (message) {
-        let t$$1 = ("________________________________________________"),
-            n$$1 = "\n",
-            is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
-        this.IWS = false;
-        let pk = this.copy();
-        while (!pk.END && pk.ty !== Types$1.nl) { pk.n(); }
-        let end = pk.off;
-        throw new Error(message + "at " + this.line + ":" + this.char + n$$1 + t$$1 + n$$1 + this.str.slice(this.off - this.char, end) + n$$1 + ("").padStart(this.char - 2) + "^" + n$$1 + t$$1 + is_iws);
-    }
-
-    /**
-     * Proxy for Lexer.prototype.reset
-     * @public
-     */
-    r() { return this.reset(); }
-
-    /**
-     * Restore the Lexer back to it's initial state.
-     * @public
-     */
-    reset() {
-        this.p = null;
-        this.type = -1;
-        this.off = 0;
-        this.tl = 0;
-        this.char = 0;
-        this.line = 0;
-        this.END = false;
-        this.n();
-        return this;
-    }
-
-    resetHead() {
-        this.off = 0;
-        this.tl = 0;
-        this.char = 0;
-        this.line = 0;
-        this.END = false;
-        this.p = null;
-        this.type = -1;
-    }
-
-    /**
-     * Proxy for Lexer.prototype.next
-     * @public
-     */
-    n() { return this.next(); }
-
-    /**
-     * Sets the internal state to point to the next token. Sets Lexer.prototype.END to `true` if the end of the string is hit.
-     * @public
-     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
-     */
-    next(marker = this) {
-
-        let str = marker.str;
-
-        if (marker.sl < 1) {
-            marker.off = -1;
-            marker.type = -1;
-            marker.tl = 0;
-            marker.END = true;
-            return marker;
-        }
-
-        //Token builder
-        let length = marker.tl;
-        let off = marker.off + length;
-        let l$$1 = marker.sl;
-        let IWS = marker.IWS;
-        let type = symbol$1;
-        let char = marker.char + length;
-        let line = marker.line;
-        let base = off;
-
-        if (off >= l$$1) {
-
-            marker.END = true;
-            length = 0;
-            base = l$$1;
-            char -= base - off;
-
-            marker.type = type;
-            marker.off = base;
-            marker.tl = length;
-            marker.char = char;
-            marker.line = line;
-
-            return marker;
-        }
-
-        while (true) {
-
-            base = off;
-
-            length = 1;
-
-            let code = str.charCodeAt(off);
-
-            if (code < 128) {
-
-                switch (jump_table$1[code]) {
-                    case 0: //NUMBER
-                        while (++off < l$$1 && (12 & number_and_identifier_table$1[str.charCodeAt(off)])) {}
-
-                        if (str[off] == "e" || str[off] == "E") {
-                            off++;
-                            if (str[off] == "-") off++;
-                            marker.off = off;
-                            marker.tl = 0;
-                            marker.n();
-                            off = marker.off + marker.tl;
-                            //Add e to the number string
-                        }
-
-                        type = number$2;
-                        length = off - base;
-
-                        break;
-                    case 1: //IDENTIFIER
-                        while (++off < l$$1 && ((10 & number_and_identifier_table$1[str.charCodeAt(off)]))) {}
-                        type = identifier$1;
-                        length = off - base;
-                        break;
-                    case 2: //QUOTED STRING
-                        if (this.PARSE_STRING) {
-                            type = symbol$1;
-                        } else {
-                            while (++off < l$$1 && str.charCodeAt(off) !== code) {}
-                            type = string$2;
-                            length = off - base + 1;
-                        }
-                        break;
-                    case 3: //SPACE SET
-                        while (++off < l$$1 && str.charCodeAt(off) === SPACE$1) {}
-                        type = white_space$1;
-                        length = off - base;
-                        break;
-                    case 4: //TAB SET
-                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB$1) {}
-                        type = white_space$1;
-                        length = off - base;
-                        break;
-                    case 5: //CARIAGE RETURN
-                        length = 2;
-                    case 6: //LINEFEED
-                        type = new_line$1;
-                        char = 0;
-                        line++;
-                        off += length;
-                        break;
-                    case 7: //SYMBOL
-                        type = symbol$1;
-                        break;
-                    case 8: //OPERATOR
-                        type = operator$1;
-
-                        break;
-                    case 9: //OPEN BRACKET
-                        type = open_bracket$1;
-                        break;
-                    case 10: //CLOSE BRACKET
-                        type = close_bracket$1;
-                        break;
-                    case 11: //Data Link Escape
-                        type = data_link$1;
-                        length = 4; //Stores two UTF16 values and a data link sentinel
-                        break;
-                }
-            }
-
-            if (IWS && (type & white_space_new_line$1)) {
-                if (off < l$$1) {
-                    char += length;
-                    type = symbol$1;
-                    continue;
-                } else {
-                    length = 0;
-                    base = l$$1;
-                    char -= base - off;
-                    marker.END = true;
-                }
-            }
-
-            break;
-        }
-
-        marker.type = type;
-        marker.off = base;
-        marker.tl = length;
-        marker.char = char;
-        marker.line = line;
-
-        return marker;
-    }
-    
-
-    /**
-     * Proxy for Lexer.prototype.assert
-     * @public
-     */
-    a(text) {
-        if (this.off < 0) this.throw(`Expecting ${text} got null`);
-
-        if (this.text == text)
-            this.next();
-        else
-            this.throw(`Expecting "${text}" got "${this.text}"`);
-
-        return this;
-    }
-
-    /**
-     * Compares the string value of the current token to the value passed in. Advances to next token if the two are equal.
-     * @public
-     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
-     * @param {String} text - The string to compare.
-     */
-    assert(text) {
-
-        if (this.off < 0) this.throw(`Expecting ${text} got null`);
-
-        if (this.text == text)
-            this.next();
-        else
-            this.throw(`Expecting "${text}" got "${this.text}"`);
-
-        return this;
-    }
-
-    /**
-     * Proxy for Lexer.prototype.assertChcatever
-     * @public
-     */
-    _appendChild_(text) { return this.assert(text); }
-    /**
-     * Compares the character value of the current token to the value passed in. Advances to next token if the two are equal.
-     * @public
-     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
-     * @param {String} text - The string to compare.
-     */
-    assertCharacer(char) {
-
-        if (this.off < 0) this.throw(`Expecting ${text} got null`);
-
-        if (this.tx[this.off] == char)
-            this.next();
-        else
-            this.throw(`Expecting "${char}" got "${this.tx}"`);
-
-        return this;
-    }
-
-    /**
-     * Proxy for Lexer.prototype.peek
-     * @public
-     * @readonly
-     * @type {Lexer}
-     */
-    get pk() { return this.peek(); }
-
-    /**
-     * Returns the Lexer bound to Lexer.prototype.p, or creates and binds a new Lexer to Lexer.prototype.p. Advences the other Lexer to the token ahead of the calling Lexer.
-     * @public
-     * @type {Lexer}
-     * @param {Lexer} [marker=this] - The marker to originate the peek from. 
-     * @param {Lexer} [peek_marker=this.p] - The Lexer to set to the next token state.
-     * @return {Lexer} - The Lexer that contains the peeked at token.
-     */
-    peek(marker = this, peek_marker = this.p) {
-
-        if (!peek_marker) {
-            if (!marker) return null;
-            if (!this.p) {
-                this.p = new Lexer$1(this.str, this.IWS, true);
-                peek_marker = this.p;
-            }
-        }
-
-        peek_marker.type = marker.type;
-        peek_marker.off = marker.off;
-        peek_marker.tl = marker.tl;
-        peek_marker.char = marker.char;
-        peek_marker.line = marker.line;
-        this.next(peek_marker);
-        return peek_marker;
-    }
-
-    /**
-     * Proxy for Lexer.prototype.text
-     * @public
-     * @type {String}
-     * @readonly
-     */
-    get tx() { return this.text; }
-    /**
-     * The string value of the current token.
-     * @type {String}
-     * @public
-     * @readonly
-     */
-    get text() {
-        return (this.off < 0) ? "" : this.str.slice(this.off, this.off + this.tl);
-    }
-
-    /**
-     * The type id of the current token.
-     * @type {Number}
-     * @public
-     * @readonly
-     */
-    get ty() { return this.type; }
-
-    /**
-     * The current token's offset position from the start of the string.
-     * @type {Number}
-     * @public
-     * @readonly
-     */
-    get pos() {
-        return this.off;
-    }
-
-    /**
-     * Proxy for Lexer.prototype.slice
-     * @public
-     */
-    s(start) { return this.slice(start); }
-
-    /**
-     * Returns a slice of the parsed string beginning at `start` and ending at the current token.
-     * @param {Number | LexerBeta} start - The offset in this.str to begin the slice. If this value is a LexerBeta, sets the start point to the value of start.off.
-     * @return {String} A substring of the parsed string.
-     * @public
-     */
-    slice(start) {
-
-        if (typeof start === "number" || typeof start === "object") {
-            if (start instanceof Lexer$1) start = start.off;
-            return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
-        }
-        return this.str.slice(this.off, this.sl);
-    }
-
-    get ch() {
-        return this.str[this.off];
-    }
-
-    /**
-     * The current token in the form of a new Lexer with the current state.
-     * Proxy property for Lexer.prototype.copy
-     * @type {Lexer}
-     * @public
-     * @readonly
-     */
-    get token() {
-        return this.copy();
-    }
-    /**
-     * Skips to the end of a comment section.
-     * @param {boolean} ASSERT - If set to true, will through an error if there is not a comment line or block to skip.
-     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
-     */
-    comment(ASSERT = false, marker = this) {
-
-        if (!(marker instanceof Lexer$1)) return marker;
-
-        if (marker.tx == "/") {
-            if (marker.pk.tx == "*") {
-                marker.sync();
-                while (!marker.END && (marker.n().tx != "*" || marker.pk.tx != "/")) { /* NO OP */ }
-                marker.sync().a("/");
-            } else if (marker.pk.tx == "/") {
-                let IWS = marker.IWS;
-                while (marker.n().ty != types.new_line && !marker.END) { /* NO OP */ }
-                marker.IWS = IWS;
-                marker.n();
-            } else
-            if (ASSERT) marker.throw("Expecting the start of a comment");
-        }
-
-        return marker;
-    }
-
-    get string() {
-        return this.str;
-    }
-
-    setString(string, reset = true) {
-        this.str = string;
-        this.sl = string.length;
-        if (reset) this.resetHead();
-    }
-
-    toString(){
-        return this.slice();
-    }
-}
-
-function whind$3(string, INCLUDE_WHITE_SPACE_TOKENS) { return new Lexer$1(string, INCLUDE_WHITE_SPACE_TOKENS); }
-whind$3.constructor = Lexer$1;
-
-//[Singleton]  Store unused tokens, preventing garbage collection of tokens
-const DL_CHAR = String.fromCharCode(15);
-
-//Returns an index position that does not intersect with data_link blocks
-function getCodePositionOffset(is, str) {
-
-    let ie = is,
-        dg = is,
-        dl = is,
-        ON_DL = (str[ie] == DL_CHAR),
-        i = ie + (ON_DL | 0),
-        lim = Math.min(ie + 4, str.length);
-
-
-    for (; i < lim; i++)
-        if (str[i] == DL_CHAR) { dg = i; break; }
-
-    i = ie - (ON_DL | 0);
-    lim = Math.max(ie - 4, 0);
-
-    for (; i >= lim; i--)
-        if (str[i] == DL_CHAR) { dl = i; break; }
-
-    let INSIDE_DL = (dg - dl == 3) && ((str.charCodeAt(dl + 1) & 32768) == 32768);
-
-    if (INSIDE_DL || str[is + 1] == DL_CHAR || ON_DL) {
-        if (INSIDE_DL) {
-            ie = dg;
-            is = dl;
-        } else if (ON_DL) {
-            if (dg - is == 3) {
-                ie = dg;
-            } else {
-                ie = is;
-                is = dl;
-            }
-        } else {
-            ie = is + 4;
-            is++;
-        }
-
-        while (str[is] == str[is - 1] == DL_CHAR)
-            is -= 4;
-
-        while (str[ie + 1] == DL_CHAR)
-            ie += 4;
-    } else
-        is++;
-
-
-    return { is, ie };
-}
-
-class TEXT_LINE extends whind$3.constructor {
-
-    constructor(fw) {
-
-        if (TEXT_LINE.Pool) {
-            let out = TEXT_LINE.Pool;
-            TEXT_LINE.Pool = out.nxt;
-            out.nxt = null;
-            out.fw = fw;
-            out.IWS = false;
-            return out;
-        }
-
-        super("");
-
-        this.fw = fw;
-        this.nxt = null;
-        this.prv = null;
-        this.text_insert = null;
-        this.parent = null;
-        this.PARSE_STRING = true;
-        this.pixel_width = 0;
-        this.linked_offset = 0;
-        this.link = null;
-
-        //container variables
-        this.virtual_line_size = 1;
-        this.h = 13;
-
-        this.IWS = false;
-    }
-
-
-
-    slice(start){
-        this.str = this.string;
-        return super.slice(start);
-    }
-
-    next(marker = this){
-        this.str = this.string;
-        return super.next(marker);
-    }
-
-    resetHead() {
-        super.resetHead();
-        this.off = this.linked_offset;
-        this.IWS = false;
-        if (this.p) {
-            this.p.release();
-            this.p = null;
-        }
-    }
-
-    release() {
-        let prv = this.prv;
-
-        if (this.nxt)
-            this.nxt.prv = prv;
-
-        if (prv)
-            prv.nxt = this.nxt;
-
-        this.reset();
-
-        if (TEXT_LINE.Pool)
-            this.nxt = TEXT_LINE.Pool;
-
-        TEXT_LINE.Pool = this;
-
-        return prv;
-    }
-
-    reset() {
-        super.reset();
-        this.nxt = null;
-        this.prv = null;
-        this.link = null;
-        //container variables
-        this.virtual_line_size = 1;
-        this.linked_offset = 0;
-        this.IS_LINKED_LINE = false;
-        this.h = 13;
-        this.pixel_width = 0;
-        this.setString("");
-        this.resetHead();
-        this.str = "";
-    }
-
-    peek(marker = this, peek_marker = new TEXT_LINE(this.fw)) {
-        peek_marker.END = false;
-        peek_marker.str = marker.str;
-        peek_marker.sl = marker.sl;
-        peek_marker.type = marker.type;
-        peek_marker.off = marker.off;
-        peek_marker.tl = marker.tl;
-        peek_marker.char = marker.char;
-        peek_marker.line = marker.line;
-        peek_marker.h = marker.h;
-        if(!this.IS_LINKED_LINE) this.next(peek_marker);
-        return peek_marker;
-    }
-
-    removeSection(offset_shift = 0, length_shift = 0) {
-        let node = (this.IS_LINKED_LINE) ? this.link : this;
-        
-        if(this.IS_LINKED_LINE)
-            this.string = node.str.slice(0, this.off - offset_shift) + node.str.slice(this.off + this.tl + length_shift);
-        else
-            node.setString(node.str.slice(0, this.off - offset_shift) + node.str.slice(this.off + this.tl + length_shift), false);
-
-        this.off -= offset_shift;
-
-        this.tl = 0;
-        
-        return this;
-    }
-
-    /** LINKED LINE HANDLING **/
-
-    traceToRootLine(char) {
-        if (this.IS_LINKED_LINE) {
-            let node = this;
-            do {
-                node = node.prv;
-                char += node.length + (node.IS_LINKED_LINE | 0) - 1;
-            } while (node.IS_LINKED_LINE);
-
-            return { node, char };
-        }
-
-        return { node: this, char };
-    }
-
-    flushLinkedLines() {
-        //Remove all linked lines at this point
-        let node = this.nxt;
-
-        while (node && node.IS_LINKED_LINE) {
-            let nxt = node.nxt;
-            this.fw.line_container.remove(node);
-            node.release();
-            node = nxt;
-        }
-
-        //this.virtual_line_size = 1;
-        //this.parent.decrementNumOfVirtualLines(vl);
-        this.setString(this.str);
-    }
-
-    /*** DATA CODE ***/
-
-    get code() {
-        if (this.ty == this.types.data_link) {
-            let code_a = this.str.charCodeAt(this.off + 1) ^ 32768;
-            let code_b = this.str.charCodeAt(this.off + 2);
-            return (code_b << 16 | code_a);
-        }
-        return 0;
-    }
-
-    insertCode(value = 0, index = 0) {
-        let { node, char } = this.traceToRootLine(index);
-
-        if (node !== this) return node.insertCode(value, char);
-
-        this.NEED_PARSE = true;
-
-        if (char < this.off)
-            this.off += 3;
-
-        let code_a = (value & 65535) | 32768;
-        let code_b = (value >> 16) & 65535;
-        let { is, ie } = getCodePositionOffset(char, this.str);
-
-        this.setString(this.str.slice(0, is) + String.fromCharCode(15, code_a, code_b, 15) + this.str.slice(ie + 1), false);
-    }
-
-    //Store new inserted text into temporary tokens, whose contents will be merged into the actual token list when parsed.
-    insertText(text, char_pos = this.length-1) {
-        let { node, char } = this.traceToRootLine(char_pos);
-
-        if (node !== this) return node.insertText(text, char);
-
-        var l = this.str.length;
-        
-        //Account for new line character
-
-        if (char_pos > l) {
-            if (this.nxt) {
-                return this.nxt.insertText(text, char_pos - l);
-            } else {
-                char_pos = l;
-            }
-        } else if (char_pos < 0) {
-            if (this.prv) {
-                return this.prv.insertText(text, this.prv.sl - char_pos);
-            } else {
-                char_pos = 0;
-            }
-        }
-
-        return this.addTextCell(text, char_pos);
-    }
-
-    addTextCell(text, offset) {
-        var temp = new TEXT_LINE(this.fw);
-        temp.prv = null;
-        temp.off = offset;
-        temp.setString(text, false);
-        var temp_prev = null;
-        var temp_next = this.text_insert;
-
-        if (!this.text_insert) {
-            this.text_insert = temp;
-        } else {
-            while (true) {
-                if (temp_next) {
-                    if (temp_next.off <= temp.off) {
-                        //insert before;
-                        if (temp_prev) {
-                            temp.prv = temp_next;
-                            temp_prev.prv = temp;
-                        } else {
-                            temp.prv = temp_next;
-                            this.text_insert = temp;
-                        }
-                        break;
-                    }
-                    if (!temp_next.prv) {
-                        temp_next.prv = temp;
-                        break;
-                    }
-                    temp_prev = temp_next;
-                    temp_next = temp_prev.prv;
-                }
-            }
-        }
-
-        this.NEED_PARSE = true;
-
-        return this;
-    }
-
-    mergeLeft(str) {
-
-        let prv = this.prv;
-
-        if (prv) {
-            prv.NEED_PARSE = true;
-            prv.setString(prv.str + str);
-        }
-
-        this.parent.remove(this);
-
-        this.release();
-
-        return prv;
-    }
-
-    //Takes the token text string and breaks it down into individual pieces, linking resulting tokens into a linked list.
-    parse(FORCE, view) {
-
-        if (view && view.pixel_width !== this.pixel_width)
-            FORCE = true;
-
-        if (!this.NEED_PARSE && !FORCE) return this.nxt;
-
-        //CACHE parse functions variables
-        var temp = null;
-
-        //This function will change structure of tokens, thus resetting cache.
-        this.NEED_PARSE = false;
-
-        //Flush virtual lines;
-        this.flushLinkedLines();
-
-        //Walk the temporary text chain and insert strings into the text variable : History is also appended to through here
-        if (this.text_insert) {
-            //These get added to history
-            var i = 0;
-
-            temp = this.text_insert;
-
-            while (temp) {
-                let text = temp.str;
-                let index = temp.off;
-                let prev_sib = temp.prv;
-
-                temp.release();
-
-                //add saved text to history object in framework
-
-                //text inserts get separated as character insertions, delete characters, and cursors
-                let { is } = getCodePositionOffset(index, this.str);
-
-                if (index < this.str.length && index > 0) {
-                    this.setString(this.str.slice(0, is) + text + this.str.slice(is));
-                } else if (index > 0) {
-                    this.setString(this.str + text);
-                } else {
-                    //Handle new line character
-                    this.setString(this.str.slice(0,1) +  text + this.str.slice(1));
-                }
-
-                temp = prev_sib;
-            }
-
-            this.text_insert = null;
-
-            this.resetHead();
-
-            for (i = 1; i < this.text.length; i++) {
-                if (i === 0) continue;
-                var s = this.text.charCodeAt(i);
-                var f = this.text.charCodeAt(i - 1);
-                if (( /*f !== this.fw.new_line_code && */ f !== this.fw.del_code) && s === this.fw.del_code) {
-                    if (f === this.fw.new_line_code && !this.prev_sib) {
-                        break;
-                    }
-
-
-                    i--;
-                    this.text = this.text.slice(0, i) + this.text.slice(i + 2);
-                    i--;
-                }
-            }
-        }
-
-        let types = this.types;
-
-        this.n().n(); //new line
-
-        let size = this.h;
-        let total_length = 0;
-
-
-        while (!this.END) {
-
-            if (this.ty & (types.symbol | types.new_line | types.operator | types.data_link)) {
-
-                switch (this.ch.charCodeAt(0)) {
-
-                    case this.fw.data_link:
-
-                        let code = this.code;
-
-                        let font_size = (code >> 8) & 255;
-
-                        size = Math.max(size, font_size);
-
-                        this.n();
-
-                        continue;
-
-                    case this.fw.del_code: // Backspace Character
-
-                        if (this.off == 1) { //This will delete the new line character;
-                            if (this.index == 0) {
-                                //Can't delete newline of first line.
-                                this.removeSection();
-                                break;
-                            }
-                            //reinsert this into the previous line
-
-                            var prev_sib = this.prv;
-
-                            if (prev_sib) {
-                                //Linked lines don't have a length, so the delete character would not be exausted.
-                                if (!prev_sib.IS_LINKED_LINE)
-                                    return this.mergeLeft(this.str.slice(2));
-
-                                prev_sib.setString(prev_sib.str + this.str.slice(2));
-
-                                return this.release().parse(true);
-                            }
-
-                        } else
-                            this.removeSection(1, 0);
-                        break;
-
-                    case this.fw.new_line_code: // Line Feed
-
-                        this.IS_LINKED_LINE = false;
-
-                        let str = this.str,
-                            off = this.off;
-
-                        this.setString(str.slice(0, off));
-
-                        this.pixel_height = size;
-
-                        let nl = new TEXT_LINE(this.fw);
-
-                        nl.setString(str.slice(off));
-
-                        this.fw.insertLine(this, nl);
-
-                        nl.NEED_PARSE = true;
-
-                        return nl;
-
-                    case this.fw.curs_code:
-                        //Update cursor position;
-                        var cursor = this.fw.aquireCursor();
-
-                        if (cursor) {
-                            cursor.y = this.index;
-                            cursor.x = this.off + (this.IS_LINKED_LINE|0) - 1 - this.linked_offset;
-                        }
-
-                        //Remove cursor section from text
-                        this.removeSection();
-
-                        console.log(this.string, this.index);
-
-                        this.n();
-
-                        continue;
-                }
-            }
-            //*
-            //
-            if(view){
-                // test for the need to split the line up if its size is more than the max length;
-                total_length += view.font.calcSize(this.str, this.off, this.off + this.tl);
-
-                if (total_length > view.pixel_width && this.ty !== this.types.white_space) {
-
-                    console.log(this.slice(0), this.index);
-
-                    let ll = new TEXT_LINE(this.fw);
-                    ll.IS_LINKED_LINE = true;
-                    ll.linked_offset = this.off;
-                    ll.virtual_line_size = 0;
-                    ll.size = this.size;
-                    ll.h = size;
-                    ll.sl = this.sl;
-                    ll.resetHead();
-                    ll.link = (this.link) ? this.link : this;
-
-                    let node = this;
-                    while (node.IS_LINKED_LINE)
-                        node = node.prv;
-
-                   // node.virtual_line_size++;
-                   // node.parent.incrementNumOfVirtualLines(1);
-
-                    this.sl = this.off;
-                    this.resetHead();
-
-                    this.pixel_width = (view) ? view.pixel_width : 0;
-                    this.pixel_height = size;
-                    this.fw.insertLine(this, ll);
-
-                    console.log(ll.slice(), ll.index);
-
-                    ll.NEED_PARSE = true;
-
-                    return ll;
-                    //split up line and continue parsing in new line. be sure to pass current state as code. 
-                }
-            }
-            //*/
-            this.n();
-        }
-
-        this.pixel_width = (view) ? view.pixel_width : 0;
-        
-        this.pixel_height = size;
-
-        this.resetHead();
-
-        //Continue down chain of cells
-        return this.nxt;
-    }
-
-    get string() {return (this.IS_LINKED_LINE) ? this.link.str : this.str;}
-    set string(string) {if (this.IS_LINKED_LINE)  {this.link.str = string; this.sl = string.length;} else this.str = string;}
-
-    get length() { return this.sl - this.linked_offset; }
-    set length(a) {}
-    get cache() { return this.str.slice(1); }
-    set cache(a) {}
-    get index() {
-        return this.parent.getLineIndex(0, this);
-    }
-    set index(e) {
-        this.fw.line_container.remove(this);
-        this.fw.line_container.insert(this, e);
-    }
-    get virtual_index() { return this.parent.getVirtualLineIndex(0, this); }
-    set virtual_index(e) {}
-    get pixel_offset() { return this.parent.getPixelOffset(0, this); }
-    set pixel_height(h) {
-        if (this.parent) this.parent.updateHeight(this.h - h);
-        this.h = h;
-    }
-    get pixel_height() { return this.h; }
-    charAt(index) { return this.str[index]; }
-}
-
-TEXT_LINE.Pool = null;
-
-const DL_CHAR$1 = String.fromCharCode(15);
-
-function getRealPosition(x, y, fw) {
-    let line = fw.line_container.getLine(y),
-        str = line.string,
-        data = 0;
-
-    let end = Math.min(x, str.length);
-
-    for (let i = 0; i < end; i++)
-        if (str.charCodeAt(i) == 15)
-            i += 4, data++;
-
-    return x - data * 4;
-}
-
-function setDeltaX(x, y, dx, fw, CLAMP = false) {
-
-    //retrieve line info
-    let line = fw.line_container.getLine(y),
-        xd = x + dx,
-        str = line.string,
-        line_length = line.length + ((line.IS_LINKED_LINE | 0) - 1);
-
-    if (dx > 0) {
-        for (let i = x; i <= xd && i < str.length;)
-            if (str.charCodeAt(i) == 15)
-                xd += 4, i += 4;
-            else
-                i++;
-    } else {
-        for (let i = x; i >= xd && i > -1;)
-            if (str.charCodeAt(i) == 15)
-                xd -= 4, i -= 4;
-            else
-                i--;
-    }
-
-    if (xd < 0) {
-        if (y <= 0) {
-            x = 0;
-        } else {
-            y--;
-            line = fw.line_container.getLine(y);
-            return setDeltaX(line.length, y, xd, fw, CLAMP);
-        }
-    } else if (xd > line_length) {
-        // Need to trace number of data_links between new site and old and increment the
-        if (CLAMP || y >= fw.line_container.height - 1) {
-            x = line_length;
-        } else {
-            x = 0;
-            y++;
-            return setDeltaX(x, y, xd - line_length - 1, fw, CLAMP);
-        }
-    } else
-        x = xd;
-
-    return { x, y };
-}
-
-function setDeltaY(x, y, dy, fw, defaultX) {
-
-    var diff = y + dy;
-
-    if (diff <= 0)
-        y = 0;
-    else if (diff >= fw.line_container.height - 1) {
-        y = fw.line_container.height - 1;
-        defaultX = Infinity;
-    } else
-        y = diff;
-
-    return setDeltaX(0, y, defaultX, fw, true);
-}
-
-class TEXT_CURSOR {
-    constructor(fw) {
-
-        //Character and Line position of cursor
-        this.x = 0;
-        this.y = 0;
-
-        this.cx = 0;
-
-        //Character and Line position of cursor selection bound
-        this.selection_x = -1;
-        this.selection_y = -1;
-
-
-        //Real position of cursor line and character. These values is related to the total number of non Linked Lines found in the
-        //line container object. Lines that are linked are treated as character indexes extending from non Linked Lines.
-        this.rpx = 0;
-        this.rpy = 0;
-
-        //Same for selection bounds. 
-        this.rpsx = 0;
-        this.rpsy = 0;
-
-
-        this.index = 0;
-        this.fw = fw;
-        //this.line_container = fw.line_container;
-        this.char_code = fw.curs_char;
-        this.selections = [];
-        this.line_height = 0;
-
-        this.defaultX = 0;
-
-        //FLAGS
-        this.IU = false;
-        this.REAL_POSITION_NEEDS_UPDATE = true;
-        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
-    }
-
-    get rx() {
-        return getRealPosition(this.x, this.y, this.fw);
-    }
-
-    setX(posx) {
-        this.moveX(posx - this.x);
-    }
-
-    setY(posy) {
-        this.moveY(posy - this.y);
-    }
-
-    moveX(change) {
-        let { x, y } = setDeltaX(this.x, this.y, change, this.fw);
-        this.defaultX = x;
-        this.x = x;
-        this.y = y;
-        this.REAL_POSITION_NEEDS_UPDATE = true;
-
-    }
-
-    moveY(change) {
-        let { x, y } = setDeltaY(this.x, this.y, change, this.fw, this.defaultX);
-        this.x = x;
-        this.y = y;
-        this.REAL_POSITION_NEEDS_UPDATE = true;
-    }
-
-    setSelX(posx) {
-        if (this.selection_x < 0) this.selection_x = 0;
-        if (this.selection_y < 0) this.selection_y = 0;
-        this.moveSelectChar(posx - this.selection_x);
-    }
-
-    setSelY(posy) {
-        if (this.selection_y < 0) this.selection_y = 0;
-        if (this.selection_x < 0) this.selection_x = 0;
-        this.moveSelectLine(posy - this.selection_y);
-    }
-
-
-    moveSelectChar(change) {
-        let { x, y } = setDeltaX(this.selection_x, this.selection_y, change, this.fw);
-        this.selection_x = x;
-        this.selection_y = y;
-        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
-    }
-
-    moveSelectLine(change) {
-        let { x, y } = setDeltaY(this.selection_x, this.selection_y, change, this.fw, this.defaultX);
-        this.selection_x = x;
-        this.selection_y = y;
-        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
-    }
-
-    charAt() {
-        return this.charBefore(this.real_position_x + 1);
-    }
-
-    charBefore(x = this.real_position_x) {
-        var line = this.fw.line_container.getVirtualLine(this.real_position_y);
-
-        if (x < 0) {
-            line = line.prev_sib;
-            return line.text[line.text.length - 1];
-        }
-        while (true) {
-            if (x >= line.token_length) {
-                x -= line.token_length;
-                if (!line.next_sib) {
-                    //return last 
-                    return line.text[line.text.length - 1];
-                }
-            } else {
-                return line.text[x];
-            }
-            line = line.next_sib;
-        }
-    }
-    get HAS_SELECTION() {
-        return (this.selection_x > -1 && this.selection_y > -1);
-    }
-
-    set HAS_SELECTION(p) {}
-
-    get IN_USE() { return this.IU; }
-
-    set IN_USE(bool) {
-        this.IU = bool;
-        if (!bool) {
-            this.selection_x = -1;
-            this.selection_y = -1;
-            this.x = 0;
-            this.y = 0;
-        }
-    }
-
-    resetSel() {
-        this.selection_x = -1;
-        this.selection_y = -1;
-
-        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
-
-        for (var i = 0; i < this.selections.length; i++) {
-            var div = this.selections[i];
-            div.hide();
-        }
-    }
-
-    get id() { return this.x | (this.y << 10); }
-    get sid() { return this.selection_x | (this.selection_y << 10); }
-
-    get lineLength() {
-        var line = this.fw.line_container.getLine(this.y);
-        if (line) {
-            return line.length + ((line.IS_LINKED_LINE | 0) - 1);
-        } else {
-            return 0;
-        }
-    }
-
-    get lineLength_Select() {
-        var line = this.fw.line_container.getLine(this.selection_y);
-        if (line) {
-            return line.length + ((line.IS_LINKED_LINE | 0) - 1);
-        } else {
-            return 0;
-        }
-    }
-
-    getXCharOffset(x_in, y_in, view = this.fw.default_view) {
-        return view.getXoffsetAtPixelCoords(x, y, this.fw);
-    }
-
-    getSortedPositions() {
-        this.REAL_POSITION_NEEDS_UPDATE = true;
-        this.REAL_SELECT_POSITION_NEEDS_UPDATE = true;
-
-        var id1 = this.id;
-
-        var id2 = (this.selection_y << 10) | this.selection_x;
-        var x1 = 0,
-            y1 = 0,
-            x2 = 0,
-            y2 = 0;
-        if (id2 < id1) {
-            x1 = this.selection_x;
-            y1 = this.selection_y;
-            x2 = this.x;
-            y2 = this.y;
-        } else {
-            x1 = this.x;
-            y1 = this.y;
-            x2 = this.selection_x;
-            y2 = this.selection_y;
-        }
-
-        return {
-            x1,
-            y1,
-            x2,
-            y2
-        };
-    }
-
-    arrangeSel() {
-        if (!this.HAS_SELECTION) return;
-        let { x1, y1, x2, y2 } = this.getSortedPositions();
-
-        this.x = x1;
-        this.y = y1;
-        this.selection_x = x2;
-        this.selection_y = y2;
-
-    }
-
-    getLine(y_in) { return this.fw.line_container.getIndexedLine(y_in || this.y); }
-
-    getYCharOffset(y_in) { return (((y_in) * this.fw.line_height) - 1); }
-    //Returns string of concated lines between [x,y] and [x2,y2]. Returns empty string if [x2.selection_y] is less then 0;
-    getTextFromSel() {
-        var string = [];
-
-        if (this.HAS_SELECTION) {
-
-            //Sets each tokens selected attribute to true
-            let { x1, y1, x2, y2 } = this.getSortedPositions();
-
-            for (var i = y1; i <= y2; i++) {
-
-                let line = this.getLine(i).pk;
-                let limX1 = (i == y1) ? x1 : 0;
-                let limX2 = (i == y2) ? x2 : line.string.length;
-                let j = limX1;
-                let str = line.string;
-
-                while (j <= limX2) {
-
-                    if (str[j] == DL_CHAR$1) {
-                        j += 4;
-                        continue;
-                    }
-
-                    string.push(str[j++]);
-                }
-            }
-        }
-
-        return string.join("");
-    }
-
-    get line_container() {
-        return this.fw.line_container;
-    }
-
-    //Places cursor at the select position.
-    setCurToSel() {
-        let { x2, y2 } = this.getSortedPositions();
-        this.x = x2;
-        this.y = y2;
-    }
-
-    toString() {
-        console.log(22);
-        this.fw.line_container.getLine(this.y).insertText(this.char_code, this.x);
-    }
-
-}
-
-class TextFramework {
-    constructor() {
-
-        this.line_container = new LineContainer();
-        this.length = 0;
-        this.char_width = 24;
-        this.max_length = 0;
-        this.scroll_top = 0;
-        this.max_line_width = 0;
-        this.del_code = 8; // should be 127 or 8
-        this.del_char = String.fromCharCode(this.del_code);
-        this.new_line_code = 10; // should be 10
-        this.new_line = String.fromCharCode(this.new_line_code);
-        this.linked_line_code = 13; // should be 13
-        this.linked_line = String.fromCharCode(this.linked_line_code);
-        this.curs_code = 2; // should be 31
-        this.curs_char = String.fromCharCode(this.curs_code);
-        this.data_link = 15; // Data Link Character
-
-        //Fixed character width for scaling
-        this.width = 0;
-        this.height = 0;
-
-        this.last_keycode = 0;
-        this.cursors = [new TEXT_CURSOR(this)];
-
-        //UINT flag to allow parsing pausing.
-        this.NEED_UPDATE = 0;
-
-        this.aquireCursor();
-    }
-
-    unload() {
-        this.releaseAllCursors();
-        //this.parent_element.removeChild(this.DOM);
-        this.line_container = null;
-        this.DOM = null;
-        this.parent_element = null;
-        this.cursors = null;
-    }
-
-    get HAS_SELECTION() {
-        for (var i = 0; i < this.cursors.length; i++) {
-            if (this.cursors[i].HAS_SELECTION) return true;
-        }
-        return false;
-    }
-
-    /** RENDERING **/
-
-    * getLines(pixel_start, pixel_end, view = null) {
-
-        if (this.line_container.length > 0) {
-
-            var line = this.line_container.getLineAtPixelOffset(pixel_start | 0);
-
-            // Offset to prevent y jitter as lines are added and removed.
-            let offset = line.pixel_offset - pixel_start;
-
-            var t = offset;
-
-            yield offset; 
-
-            while (line) {
-
-                if(line.NEED_UPDATE)
-                    this.updateText(view, line.index, 10);
-
-                yield line;
-
-                t += line.pixel_height;
-
-                if (t >= pixel_end) break;
-
-                line = line.nxt;
-            }
-        }
-    }
-
-    renderView(view) {
-
-        if(this.NEED_UPDATE > 0)
-            this.updateText(view, this.NEED_UPDATE);
-
-        if (!view) return;
-
-        if (view !== this.cached_view) ;
-        let gen = this.getLines(view.getTop(), view.getHeight());
-        let offset = gen.next().value;
-
-        view.renderLines(gen, offset);
-
-        for (var i = 0; i < this.cursors.length; i++) {
-            let cur = this.cursors[i];
-            if(cur.IN_USE)
-                view.renderCursor(cur, this, offset);
-        }
-    }
-
-    /*** CURSORS ***/
-
-    aquireCursor() {
-        var temp = null;
-        if (this.cursors.length > 0) {
-            for (var i = 0; i < this.cursors.length; i++) {
-                temp = this.cursors[i];
-                if (!temp.IU)
-                    break;
-                temp = null;
-            }
-        }
-        if (!temp) {
-            temp = new TEXT_CURSOR(this);
-            temp.index = this.cursors.push(temp) - 1;
-        }
-
-        temp.IN_USE = true;
-
-        return temp;
-    }
-    
-    releaseAllCursors() {
-        for (var i = 0; i < this.cursors.length; i++) 
-            this.cursors[i].IN_USE = false;           
-    }
-
-    releaseCursor(cursor) {
-        cursor.IN_USE = false;
-        this.sortCursors();
-    }
-
-    moveCursorsByX(change, SELECT) {
-        if (SELECT) {
-            for (var i = 0; i < this.cursors.length; i++)
-                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
-        } else {
-            for (var i = 0; i < this.cursors.length; i++)
-                if (this.cursors[i].IN_USE) this.cursors[i].moveX(change);
-        }
-
-        this.checkForCursorOverlap();
-    }
-
-    moveCursorsByY(change, SELECT) {
-        if (SELECT) {
-            for (var i = 0; i < this.cursors.length; i++) {
-                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
-            }
-        } else {
-
-            for (var i = 0; i < this.cursors.length; i++) {
-                if (this.cursors[i].IN_USE) this.cursors[i].moveY(change);
-            }
-        }
-        this.checkForCursorOverlap();
-    }
-
-
-    checkForCursorOverlap() {
-        var cur1 = null,
-            cur2 = null;
-        
-        for (var i = 0; i < this.cursors.length; i++) {
-
-            cur1 = this.cursors[i];
-            
-            if (!cur1.IU) continue;
-
-            let {x1:c1x1, y1:c1y1, x2:c1x2, y2:c1y2} = cur1.getSortedPositions();
-
-            let sel1 = c1x1 + c1y1;
-            let min1 = (c1y1 << 10)  | c1x1;
-            let max1 = (c1y2 << 10)  | c1x2;
-
-
-            for (var j = i + 1; j < this.cursors.length; j++) {
-                cur2 = this.cursors[j];
-                
-                if (!cur2.IU) continue;
-
-                let {x1:c2x1, y1:c2y1, x2:c2x2, y2:c2y2} = cur2.getSortedPositions();
-
-                let sel2 = c2x1 + c2y1;
-
-                if(sel1 >= 0 || sel2 >= 0){
-                    let min2 = (c2y1 << 10)  | c2x1;
-                    let max2 = (c2y2 << 10)  | c2x2; 
-                    
-                    if(sel1 >= 0 && sel2 >= 0){    
-                        if(max1 >= min2 && min1 <= max2){
-                            cur1.x = Math.min(c1x1,c2x1);
-                            cur1.y = Math.min(c1y1,c2y1);
-                            cur1.selction_x = Math.max(c1x2,c2x2);
-                            cur1.selction_y = Math.max(c1y2,c2y2);
-                            cur2.IN_USE = false;
-                        }
-                    }else if(sel1 >= 0){
-                        if(min2 <= max1 && min2 >= min1)
-                            cur2.IN_USE = false;
-                    }else{
-                        if(min1 <= max2 && min1 >= min2){
-                            cur1.x = c2x1;
-                            cur1.y = c2y1;
-                            cur1.selction_x = c2x2;
-                            cur1.selction_y = c2y2;
-                            cur2.IN_USE = false;  
-                        }
-                    }
-                }
-
-                if (cur1.id == cur2.id) 
-                    cur2.IN_USE = false;                
-            }
-        }
-
-        return this.sortCursors();
-    }
-
-    sortCursors() {
-        let last = 0;
-        
-        for (var i = 0; i < this.cursors.length - 1; i++) {
-            var
-                cur1 = this.cursors[i],
-                cur2 = this.cursors[i + 1];
-            //move data from cur2 to cur1
-            if (!cur1.IU && cur2.IU) {
-                this.cursors[i] = cur2;
-                this.cursors[i + 1] = cur1;
-            }
-        }
-
-        return last;
-    }
-
-    /** LINES **/
-
-    getLineAtPixelOffset(y){
-        return this.line_container.getLineAtPixelOffset(y);
-    }
-
-    getLine(y){
-        return this.line_container.getLine(y);
-    }
-
-    //Inserts line into list of lines after prev_line. Returns new line line
-    insertLine(prev_line, new_line) {
-        if (!prev_line) {
-            new_line.prv = new_line;
-            new_line.nxt = null;
-            this.line_container.insert(new_line, 0);
-        } else {
-            this.line_container.insert(new_line, prev_line.index + 1);
-            new_line.nxt = prev_line.nxt;
-            if (new_line.nxt) {
-                new_line.nxt.prv = new_line;
-            }
-            new_line.prv = prev_line;
-            prev_line.nxt = new_line;
-        }
-
-        this.length++;
-
-        new_line.IS_NEW_LINE = true;
-
-        return new_line;
-    }
-
-    /** TEXT and CODE **/
-
-    insertText(text, li = this.line_container.length-1, index) {
-        if ((this.line_container.height | 0) < 1) {
-            if (text.charCodeAt(0) !== this.new_line_code) 
-                text = this.new_line + text;
-            
-            this.insertLine(null, new TEXT_LINE(this)).insertText(text, 1);
-            this.updateText(0);
-        } else {
-            this.line_container.getLine(li).insertText(text, index);
-        }
-    }
-
-    insertCodeAtCursor(code, index){
-
-        var l = this.cursors.length;
-        var j = 0;
-
-        if (typeof index === "number") {
-            l = index + 1;
-            j = index;
-        }
-
-        for (; j < l; j++) {
-            if (this.cursors[j].IN_USE) {
-                var cursor = this.cursors[j];
-                var line = cursor.y;
-                var i = cursor.x;
-                this.line_container.getLine(line).insertCode(code, i);
-                cursor.resetSel();
-            }
-        }
-    }
-
-    insertTextAtCursor(char, deletekey, index) {
-        var l = this.cursors.length;
-        var j = 0;
-
-        if (typeof index === "number") {
-            l = index + 1;
-            j = index;
-        }
-
-        for (; j < l; j++) {
-            if (this.cursors[j].IN_USE) {
-                var cursor = this.cursors[j];
-                var select = cursor.getTextFromSel().length;
-                cursor.arrangeSel();
-                cursor.setCurToSel();
-                var line = cursor.y;
-                var i = cursor.x;
-                var c = char;
-
-                if (select > 0) 
-                    c = this.del_char.repeat(select) + char;
-
-                this.line_container.getLine(line).insertText(c, i);
-                cursor.toString();
-                cursor.resetSel();
-                cursor.IN_USE = false;
-            }
-        }
-    }
-
-    updateText(view = null, index = 0, timeout_limit = 2500) {
-        
-        this.NEED_UPDATE = 0;
-
-        var line = this.line_container.getIndexedLine(index);
-
-        let timeout = 0;
-        
-        while (line) {
-
-            line.parse(false, view);
-
-            if(timeout++ > timeout_limit) {
-                this.NEED_UPDATE = index + timeout_limit + 1;
-                break;
-            }
-
-            if(line)
-                line = line.nxt;
-        }
-    }
-
-    toString() {
-        var text = "";
-
-        var line = this.line_container.getIndexedLine(0);
-        
-        while (line) {
-            text += this.new_line + line.cache;
-            line = line.nxt;
-        }
-
-        return text;
-    }
-
-    clearContents() {
-        this.line_container = new LineContainer();
-    }
-}
-
-//Object to cache fonts in program;
-
-
-//Font range UTF8 = 33 - 126 ; 93 Characters
-
-const canvas_size = 1024;
-// This dna handless the loading and conversion of HTML fonts into font atlases for consumption by text framework. 
-class Font {
-
-    static createBackEnd() {
-        if (Font.canvas) return;
-
-        Font.existing_fonts = {};
-
-        Font.b_size = 64;
-        //No need to create multiple canvas elements
-        var canvas = document.createElement("canvas");
-        canvas.width = canvas_size;
-        canvas.height = canvas_size;
-        Font.ctx = canvas.getContext("2d");
-
-
-        canvas.style.position = "absolute";
-        canvas.style.zIndex = 200000;
-
-        Font.canvas = canvas;
-    }
-
-    constructor(font_name, mono_space_size = 0) {
-
-        this.IS_MONOSPACE = (mono_space_size > 0);
-        this.mono_space_size = mono_space_size;
-
-        this.name = font_name;
-
-        this.atlas_start = 32;
-        this.atlas_end = 127;
-        this.IS_READY = false;
-        this.props = null;
-
-
-        if (!this.IS_MONOSPACE) {
-            Font.createBackEnd();
-
-            if (Font.existing_fonts[font_name]) return Font.existing_fonts[font_name];
-
-            var num_of_workers = 15;
-
-            this.workers = new Array(num_of_workers);
-            this.props = new Array(this.atlas_end - this.atlas_start);
-
-            for (var i = 0, l = this.atlas_end - this.atlas_start; i < l; i++) {
-                this.props[i] = {};
-            }
-
-            Font.existing_fonts[this.name] = this;
-
-            var cache = sessionStorage.getItem(this.name);
-            if (cache) {
-                cache = JSON.parse(cache);
-                this.props = cache.props;
-                this.calc_index = Infinity;
-                //  this.drawField()
-                this.IS_READY = true;
-            } else {
-
-                this.calc_index = 0;
-                this.finished_index = 0;
-
-                for (var i = 0; i < num_of_workers; i++) {
-                    this.finished_index++;
-                    this.calcSection(i);
-                }
-            }
-        } else
-            this.IS_READY = true;
-
-        this.onComplete();
-    }
-
-    calcSize(str, start = 0, end = str.length) {
-        let total_size = 0;
-        if (this.IS_MONOSPACE) {
-            for (let i = start; i < end; i++) {
-                let code = str.charCodeAt(i) - 32;
-
-                if (code < 0)
-                    continue;
-
-                total_size += this.mono_space_size;
-            }
-        } else {
-            let font_data = this.props;
-
-            for (let i = start; i < end; i++) {
-                let code = str.charCodeAt(i) - 32;
-
-                if (code < 0)
-                    continue;
-
-                let char = font_data[code];
-
-                total_size += char.width;
-            }
-        }
-        return total_size;
-    }
-
-    onComplete() {}
-
-    startCalc() {
-        for (var i = 0; i < this.workers.length; i++)
-            this.calcSection(i);
-    }
-
-    calcSection() {
-        var start = this.atlas_start;
-        var end = this.atlas_end;
-        var length = end - start;
-        var i = this.calc_index;
-        var font_size = canvas_size * 0.8;
-
-        if (this.calc_index >= length) return;
-
-        Font.canvas.width = canvas_size;
-        Font.ctx.font = `${12}px  "${this.name}"`;
-        Font.ctx.textBaseline = "middle";
-        Font.ctx.textAlign = "center";
-        var char = String.fromCharCode(start + i);
-        Font.ctx.fillStyle = "black";
-        var width = Font.ctx.measureText(char).width; // * (12/300)
-
-        this.props[i] = {
-            char: char,
-            code: start + i,
-            width: width,
-            width2: width,
-            ratio: width / font_size
-        };
-
-        this.calc_index++;
-
-        this.calcSection(i);
-    }
-
-    calculateMonospace() {
-        return;
-        var DIV = document.createElement("pre");
-
-        DIV.style.fontFamily = `${this.name}`;
-        DIV.style.fontSize = 12 + "px";
-        DIV.style.letterSpacing = 0;
-        DIV.style.wordSpacing = 0;
-        DIV.style.padding = 0;
-        DIV.style.border = 0;
-        DIV.style.margin = 0;
-        DIV.style.position = "fixed";
-        DIV.innerHTML = "A";
-
-        var IS_MONOSPACE = true;
-        var last_width = 0;
-        var width = 0;
-
-        document.body.appendChild(DIV);
-
-        last_width = DIV.getBoundingClientRect().width;
-
-        for (var i = this.atlas_start, d = 0; i < this.atlas_end; i++, d++) {
-            var char = String.fromCharCode(i);
-            DIV.innerHTML = char;
-
-            width = DIV.getBoundingClientRect().width;
-            this.props[i - this.atlas_start].width = width;
-            if (last_width !== width) {
-                IS_MONOSPACE = false;
-            }
-        }
-
-        document.body.removeChild(DIV);
-
-        this.IS_MONOSPACE = IS_MONOSPACE;
-    }
-}
-
-let k = 0;
-
-class TextIO {
-
-    constructor(element, font) {
-
-        if (element) {
-            this.parent_element = element;
-            this.DOM = document.createElement("div");
-            this.DOM.classList.add("text_edit");
-            this.DOM.style.font_kerning = "none";
-            element.appendChild(this.DOM);
-        }
-
-        this.top = 0;
-        this.height = 500;
-
-        this.font = null;
-        this.font_size = 12;
-        this.letter_spacing = 0;
-        this.IS_MONOSPACE = false;
-        this.setFont(font || "Times New Roman");
-
-        this.fw = null;
-        this.gutter_width = 30;
-
-        //Pixel width limitation to apply to allow word wrapping;
-        this.pixel_width = 1500;
-
-        //Amount of pixel padding to add to top and height
-        this.pre_roll = 50;
-    }
-
-
-    /*** POSITIONING ***/
-
-    getGutterWidth(line) { return this.gutter_width; }
-
-    getTop() { return this.top - this.pre_roll; }
-
-    getHeight() { return this.height + this.pre_roll * 2; }
-
-    getLineHeight(line) { return 13; }
-
-    setLineHeight() {
-
-    }
-
-    getPixelFromX(x, line) {
-        let x_pixel = 0;
-        let font_data = this.font.props;
-
-        let size = 13 / 12;
-
-
-        if (line) {
-
-            var text = line.string;
-            let lex = line.pk;
-            var i = 0;
-            outer:
-                while (!lex.END && x > -1) {
-
-                    if (lex.ty == lex.types.data_link) {
-
-                        let code = lex.code;
-
-                        let font_size = (code >> 8) & 255;
-
-                        size = font_size / 12;
-
-                        lex.n();
-
-                        x -= 4;
-
-                        continue;
-                    }
-
-                    //Cap to end of line to prevent out of bounds reference
-                    let len = lex.off + lex.tl;
-
-                    i = lex.off;
-
-                    for (; x > 0 && i < len; i++) {
-                        var code = text.charCodeAt(i);
-                        var char = font_data[code - 32];
-
-                        if (code < 32) ; else {
-                            x--;
-                            x_pixel += char.width * size;
-                        }
-                    }
-
-
-                    lex.n();
-                }
-
-        }
-
-        return x_pixel + this.getGutterWidth(line);
-    }
-
-    getXFromPixelCoord(x_pixel, line) {
-        let x = 1;
-        let font_data = this.font.props;
-
-        let size = 13 / 12;
-
-        if (line) {
-
-            let lex = line.pk;
-            var text = line.string;
-            let total_x = 0;
-
-
-            outer:
-                while (!lex.END) {
-
-                    if (lex.ty == lex.types.data_link) {
-                        let code = lex.code;
-
-                        let font_size = code >> 8 & 255;
-
-                        size = font_size / 12;
-
-                        lex.n();
-
-                        continue;
-                    }
-
-                    //Cap to end of line to prevent out of bounds reference
-
-                    let l = lex.off + lex.tl;
-
-                    x = lex.off;
-
-                    for (; x < l; x++) {
-                        var code = text.charCodeAt(x) - 32;
-
-                        if (code < 0)
-                            continue;
-
-                        var char = font_data[code];
-
-                        total_x += char.width * size;
-
-                        if ((x_pixel) < total_x)
-                            break outer;
-                    }
-
-                    lex.n();
-                }
-
-        }
-
-
-
-        return x + (line.IS_LINKED_LINE | 0) - 1 - line.linked_offset;
-    }
-
-    getYFromPixelCoord(y_pixel, fw = this.fw) {
-        let line = this.getLineAtPixelCoord(y_pixel, fw);
-        return line.index;
-    }
-
-    getLineAtPixelCoord(y_pixel, fw = this.fw) {
-        return fw.getLineAtPixelOffset(y_pixel);
-    }
-
-    scanToX(x, y_pixel, fw = this.fw) {
-        let line = this.getLineAtPixelOffset(y_pixel, fw);
-        return this.getPixelFromX(x, line, fw);
-    }
-
-    /*** INSERTION HOOKS ***/
-
-    /*** RENDERING ***/
-
-    render(fw = this.fw) {
-        fw.renderView(this);
-    }
-
-    /**
-     * Used to output a rendered text line, which may include markup to handle styling.
-     *
-     * @param      {Lexer}  lex     A lexer object that will create tokens from an input line. 
-     * @return     {String}  The return parsed and formated string.
-     */
-    parseLine(lex) {
-        //render out data links
-        let text = `<span style="font-size:${lex.h}px">`;
-        let font_size_close = `</span>`;
-
-        while (!lex.END) {
-            if (lex.ty !== lex.types.data_link) {
-
-                if (lex.ch == "<")
-                    text += "&lt;";
-                else if (lex.ch == ">")
-                    text += "&gt;";
-                else
-                    text += lex.tx;
-
-            } else {
-                let code = lex.code;
-                let font_size = code >> 8 & 255;
-                text += `</span><span style="font-size:${font_size}px"><span style="display:inline-block; width:1px; height:100%; margin-left:-1px; background-color:green"></span>`;
-            }
-            lex.n();
-        }
-
-        return text + font_size_close;
-    }
-
-    renderLines(lines, offset_top) {
-
-        this.DOM.innerHTML = "";
-        this.DOM.style.fontSize = "100%";
-        var text = "<div class='small_scale_pre'>";
-        let line = null;
-        let y = -50;
-
-        while ((line = lines.next().value)) {
-            let pk = line.pk.n();
-            text += `<pre class='small_scale_pre' style='top:${(y + offset_top)}px'><span style='width:30px; display:inline-block; margin-top:0'>${line.index}</span>${this.parseLine(pk)}</pre>`;
-            y += line.pixel_height;
-        }
-
-        text += "</div>";
-
-        this.DOM.innerHTML = text;
-    }
-
-    renderCursor(cur, fw = this.fw, offset_top) {
-        let line = fw.getLine(cur.y);
-        let height = line.pixel_height;
-        let px = this.getPixelFromX(cur.x, line, fw);
-        let py = line.pixel_offset;
-
-        this.DOM.innerHTML += `<div class="txt_cursor" style="top:${py  -  this.top}px; left:${px}px; width:1px; height:${height}px">
-        <div style="position:absolute; top:-10px; left:0; font-size10px; color:red; background-color:white">${cur.x}|${cur.rx}|${cur.rx - cur.x}</div>
-        </div>`;
-
-        if (cur.HAS_SELECTION) ;
-    }
-
-    /*** FONTS ***/
-
-    setFont(font) {
-        if (font instanceof Font) {
-            this.font = font;
-            if (this.DOM)
-                this.DOM.style.fontFamily = this.font.name;
-        } else {
-            this.font = new Font(font);
-            if (this.DOM)
-                this.DOM.style.fontFamily = this.font.name;
-            return new Promise((res, rej) => {
-                this.font.onComplete = () => {
-                    res();
-                };
-
-                if (this.font.IS_READY)
-                    res();
-                else
-                    this.font.startCalc();
-            });
-        }
-    }
-
-    /*** CURSORS ***/
-
-    setCursor(cur, fw = this.fw, pixel_x = 0, pixel_y = 0) {
-        let line = this.getLineAtPixelCoord(pixel_y, fw);
-        cur.y = line.index;
-        cur.line_height = line.pixel_height;
-        cur.x = this.getXFromPixelCoord(pixel_x - this.getGutterWidth(line), line, fw);
-        cur.defaultX = cur.x;
-    }
-
-    /*** EVENT SYSTEMS ***/
-
-    onMouseUp(event, fw = this.fw, x = event.offsetX, y = event.y - this.parent_element.getBoundingClientRect().y) {
-        if (!fw) return;
-        y += this.top;
-        if (event.button !== 0) return;
-        if (event.ctrlKey) {
-
-            var cur = fw.aquireCursor();
-
-            this.setCursor(cur, fw, x, y);
-
-            for (var i = 0; i < fw.cursors.length; i++) {
-                var c1 = fw.cursors[i];
-                if (c1.IN_USE)
-                    for (var j = i + 1; j < fw.cursors.length; j++) {
-                        var c2 = fw.cursors[j];
-                        if (c2.IN_USE && c1.id > c2.id) {
-                            let x = c1.x;
-                            c1.x = c2.x;
-                            c2.x = x;
-                            x = c1.y;
-                            c1.y = c2.y;
-                            c2.y = x;
-                        }
-                    }
-            }
-        } else {
-            for (let i = 1; i < fw.cursors.length; i++)
-                fw.releaseCursor(fw.cursors[i]);
-
-            this.setCursor(fw.cursors[0], fw, x, y);
-        }
-
-        fw.checkForCursorOverlap();
-        this.render(fw);
-        event.preventDefault();
-    }
-
-    onKeyPress(event, fw = this.fw) {
-        if (!fw) return;
-        console.log("keypress");
-
-        var keycode = event.keyCode;
-        var text = String.fromCharCode(keycode);
-        if (event.ctrlKey) {
-            return;
-        } else {
-            if (text.length > 0) {
-                switch (keycode) {
-                    case 13:
-                        text = fw.new_line;
-                        break;
-                    default:
-
-                        break;
-                }
-
-                fw.insertTextAtCursor(text);
-
-                fw.last_keycode = keycode;
-            }
-        }
-
-        fw.updateText(this);
-        this.render(fw);
-    }
-
-    onKeyDown(event, fw = this.fw) {
-        if (!fw) return;
-        console.log("keydown");
-
-        var keycode = event.keyCode;
-        var UPDATED = false;
-        //if delete key is pressed. 
-        if (keycode === 8 || keycode === 46) {
-            if (keycode === 46)
-                fw.moveCursorsByX(1);
-            fw.insertTextAtCursor(String.fromCharCode(8), (keycode === 46));
-            fw.updateText(this);
-            event.preventDefault();
-            UPDATED = true;
-        } else if (keycode == 37) { //left
-            fw.moveCursorsByX(-1);
-            UPDATED = true;
-        } else if (keycode == 38) { //top
-            fw.moveCursorsByY(-1);
-            UPDATED = true;
-        } else if (keycode == 39) { //right
-            fw.moveCursorsByX(1);
-            UPDATED = true;
-        } else if (keycode == 40) { //bottom
-            //fw.moveCursorsByY(1);
-            let font_size = 25 + (k -= 5);
-            let code = font_size << 8;
-            fw.insertCodeAtCursor(code);
-            fw.updateText(this);
-            event.preventDefault();
-            UPDATED = true;
-        }
-
-        if (UPDATED)
-            this.render(fw);
-    }
-
-    onMouseWheel(event, fw = this.fw) {
-        let delta = event.deltaY * 0.05;
-
-        if (Math.abs(delta) < 5) return;
-        this.top += delta;
-        this.render(fw);
-    }
-}
-
-let CSS_Rule_Constructor = client.core.css.prop;
-
 
 let cache_de_cache = null;
 
@@ -17859,11 +17812,8 @@ function getUniqueRule(system, element, component) {
     return system.css.getUnique(element, component);
 }
 
-function mergeRules(css) {
-    let rule = new CSS_Rule_Constructor();
-    for (let i = 0; i < css.length; i++)
-        rule.merge(css[i].r);
-    return rule;
+function mergeRules(system, css) {
+    return system.css.mergeRules(css);
 }
 
 class Cache {
@@ -17903,7 +17853,7 @@ class Cache {
 
         let unique_rule = getUniqueRule(system, element, component),
             css_r = getApplicableRules(system, element, component),
-            css = mergeRules(css_r);
+            css = mergeRules(system, css_r);
 
         //test for presence of rules. 
         let POS_R = false,
@@ -17987,7 +17937,7 @@ class Cache {
                 unique_rule.addProp('position:absolute');
             } else if (move_type == "relative") {
                 v |= 1;
-                unique_rule.addProp('position:relative;top:0px;left:0px');
+                unique_rule.addProp('position:relative;');
             }
         }
 
@@ -18045,8 +17995,9 @@ class Cache {
 
         this.unique = unique_rule;
         css_r = getApplicableRules(system, element, component);
-        this.rules = mergeRules(css_r);
+        this.rules = mergeRules(system, css_r);
         this.cssflagsA = v;
+        this.original_rules =css_r;
         //calculate horizontal and vertical rations. also width and height ratios.  
     }
 
@@ -18095,7 +18046,7 @@ CacheFactory.clear = function(element){
 
 function TEXTEDITOR(system, element, component, x, y){}
 
-let types$2 = client.core.css.types;
+let types$2 = CSSParser.types;
 
 function getContentBox(ele, win = window) {
 
@@ -18134,24 +18085,26 @@ function setNumericalValue(propname, system, element, component, value, relative
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     let props = css.props;
-    let prop = props[propname] || cache.unique.r.props[propname];
+    let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
-
+    
     if (!prop) {
-        let type = (system.project.settings.default_unit || "px");
-        let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
-
-        cache.unique.addProp(`${css_name}:${value}`);
-        props = cache.unique.r.props;
-        prop = props[propname];
-    } else if (KEEP_UNIQUE && !cache.unique.r.props[propname]) {
-
-        let type = (system.project.settings.default_unit || "px");
-        let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
-
-        cache.unique.addProp(`${css_name}:${value}`);
-        props = cache.unique.r.props;
-        prop = props[propname];
+        if(cache.unique.r.props[propname]){
+            props = cache.unique.r.props;
+            prop = props[propname];
+        }if(!KEEP_UNIQUE){
+            let type = (system.project.settings.default_unit || "px");
+            let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
+            cache.unique.addProp(`${css_name}:${value}`);
+            props = cache.unique.r.props;
+            prop = props[propname];
+        } else  {
+            let type = (system.project.settings.default_unit || "px");
+            let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
+            cache.unique.addProp(`${css_name}:${value}`);
+            props = cache.unique.r.props;
+            prop = props[propname];
+        }
     }
 
 
@@ -18192,7 +18145,14 @@ function setNumericalValue(propname, system, element, component, value, relative
         
         props[propname] = prop.copy(np * 100);
     } else {
-        props[propname] = prop.copy(value);
+        if(prop.copy)
+            props[propname] = prop.copy(value);
+        else{
+            if(value !== 0)
+                props[propname] = new types$2.length(value, "px");
+            else
+                props[propname] = 0;
+        }
     }
 }
 
@@ -18222,6 +18182,7 @@ function getRatio(system, element, component, funct, original_value, delta_value
 
 function setValue(system, element, component, value_name, value){
     let cache = CacheFactory(system, element, component);
+    
     let props = cache.rules.props;
 
     if(props[value_name]){
@@ -18233,12 +18194,14 @@ function setValue(system, element, component, value_name, value){
 
 function SETWIDTH(system, element, component, x, LINKED = false) {
     setNumericalValue("width", system, element, component, x, setNumericalValue.parent_width);
-    if (!LINKED) element.wick_node.setRebuild();
+        element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild(); 
 }
 
 function SETHEIGHT(system, element, component, x, LINKED = false) {
     setNumericalValue("height", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+        element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild(); 
 }
 
 function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -18249,7 +18212,8 @@ function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED = false
     else
         ratio = getRatio(system, element, component, SETWIDTH, start_x, dx, "width");
 
-    if (!LINKED) element.wick_node.setRebuild();
+        element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild(); 
 
     return ratio;
 }
@@ -18262,12 +18226,11 @@ function SETDELTAHEIGHT(system, element, component, dx, ratio = 0, LINKED = fals
     else
         ratio = getRatio(system, element, component, SETHEIGHT, start_x, dx, "height");
 
-    if (!LINKED) element.wick_node.setRebuild();
+        element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild(); 
 
     return ratio;
 }
-
-const types$3 = client.core.css.types;
 
 function SETLEFT(system, element, component, x, LINKED = false, type = "") {
     let cache = CacheFactory(system, element, component);
@@ -18323,6 +18286,8 @@ function SETBOTTOM(system, element, component, x, LINKED = false) {
 function SETDELTALEFT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).left);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+
     if (ratio > 0)
         SETLEFT(system, element, component, start_x + dx / ratio, true);
     else
@@ -18335,6 +18300,8 @@ function SETDELTALEFT(system, element, component, dx, ratio = 0, LINKED = false)
 
 function SETDELTATOP(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).top);
+
+    start_x = isNaN(start_x) ? 0 : start_x;
 
     if (ratio > 0)
         SETTOP(system, element, component, start_x + dx / ratio, true);
@@ -18349,6 +18316,8 @@ function SETDELTATOP(system, element, component, dx, ratio = 0, LINKED = false) 
 function SETDELTARIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).right);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+
     if (ratio > 0)
         SETRIGHT(system, element, component, start_x + dx / ratio, true);
     else
@@ -18362,6 +18331,8 @@ function SETDELTARIGHT(system, element, component, dx, ratio = 0, LINKED = false
 function SETDELTABOTTOM(system, element, component, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).bottom);
 
+    start_x = isNaN(start_x) ? 0 : start_x;
+    
     if (ratio > 0)
         SETBOTTOM(system, element, component, start_x + dx / ratio, true);
     else
@@ -18497,6 +18468,8 @@ function RESIZEBR(system, element, component, dx, dy, IS_COMPONENT) {
     element.wick_node.setRebuild();
 }
 
+const types$4 = CSSParser.types;
+
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
@@ -18562,8 +18535,8 @@ function CENTER(system, element, component, HORIZONTAL = true, VERTICAL = true) 
     switch (cache.move_hori_type) {
         case "left right":
             //get the width of the parent element
-            css.props.left = new client.core.css.types.length(diff, "px");
-            css.props.right = new client.core.css.types.length(diff, "px");
+            css.props.left = new types$4.length(diff, "px");
+            css.props.right = new types$4.length(diff, "px");
             cache.unique.addProp(`margin-left:auto; margin-right:auto`);
             break;
         case "left":
@@ -18601,8 +18574,10 @@ function COMPLETE(system, element, component) {
 	if(element)
 		CacheFactory.clear(element);
 
-	system.doc_man.seal();
+	system.docs.seal();
 }
+
+//import wick from "@galactrax/wick";
 
 /**
  * This module is responsible for storing, updating, and caching compents. 
@@ -18631,7 +18606,7 @@ class Component$1 {
         this.iframe.onload = (e) => {
             this.mountListeners();
             //e.target.contentDocument.body.appendChild(this.data);
-            e.target.contentWindow.wick = client;
+            //e.target.contentWindow.wick = wick;
             this.window = e.target.contentWindow;
             this.IFRAME_LOADED = true;
         };
@@ -18677,11 +18652,17 @@ class Component$1 {
         return this.style_frame;
     }
 
-    addStyle(style, INLINE = false) {
+    addStyle(tree, INLINE) {
         if (!INLINE) {
-            this.local_css.splice(this.css_split, 0, style);
+            let style = new StyleNode();
+            style.tag = "style";
+            this.sources[0].ast.addC(style);
+            style.css = tree;
+            tree.addObserver(style);
+            this.local_css.splice(this.css_split, 0, tree);
             this.css_split++;
         } else {
+            //insert the style into the root of the tree;
             this.local_css.push(style);
         }
     }
@@ -18758,6 +18739,15 @@ class Component$1 {
         return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
     }
 
+    rebuild(){
+        if(this.sources)
+            this.sources[0].rebuild();
+    }
+
+    query(query){
+        return this.window.document.querySelector(query);
+    }
+
     set x(x) {
         this.element.style.left = x + "px";
     }
@@ -18798,11 +18788,6 @@ class Component$1 {
     get target() {
         return this.element;
     }
-
-    rebuild(){
-        if(this.sources)
-            this.sources[0].rebuild();
-    }
 }
 
 function CREATE_COMPONENT(system, doc, event) {
@@ -18830,18 +18815,18 @@ function CREATE_CSS_DOC(system, doc, event) {
     comp.y = -event.y;
 }
 
-let types$4 = client.core.css.types;
+let types$5 = CSSParser.types;
 
 //set background color
 function SETBACKGROUNDCOLOR(system, element, component, r, g, b, a = 1){
-	let color = new types$4.color(r,g,b,a);
+	let color = new types$5.color(r,g,b,a);
 	setValue(system, element, component, "background_color", color);
 	element.wick_node.setRebuild();
 }
 //set background image
 //set font color
 function SETCOLOR(system, element, component, r, g, b, a = 1){
-	let color = new types$4.color(r,g,b,a);
+	let color = new types$5.color(r,g,b,a);
 	setValue(system, element, component, "color", color);
 	element.wick_node.setRebuild();
 }
@@ -18858,11 +18843,11 @@ function MOVE_PANEL(system, panel, dx, dy) {
 }
 
 function UNDO(system){
-	system.doc_man.stepBack();
+	system.docs.stepBack();
 }
 
 function REDO(system){
-	system.doc_man.stepForward();
+	system.docs.stepForward();
 }
 
 function resetPadding(system, element, component) {
@@ -18914,7 +18899,8 @@ function resetPadding(system, element, component) {
 function SETPADDINGLEFT(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_left", system, element, component, x, setNumericalValue.parent_width);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -18925,7 +18911,10 @@ function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED =
     else
         ratio = getRatio(system, element, component, SETPADDINGLEFT, start_x, dx, "padding-left");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAWIDTH(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -18933,7 +18922,8 @@ function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED =
 function SETPADDINGTOP(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_top", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -18944,7 +18934,11 @@ function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LINKED = 
     else
         ratio = getRatio(system, element, component, SETPADDINGTOP, start_x, dx, "padding-top");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAHEIGHT(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -18952,7 +18946,8 @@ function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LINKED = 
 function SETPADDINGRIGHT(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_right", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 
@@ -18964,7 +18959,11 @@ function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, LINKED 
     else
         ratio = getRatio(system, element, component, SETPADDINGRIGHT, start_x, dx, "padding-right");
 
-    if (!LINKED) element.wick_node.setRebuild();
+    SETDELTAWIDTH(system, element, component, -dx, true);
+
+    element.wick_node.setRebuild();
+    
+    if (!LINKED) element.wick_node.rebuild();
 
     return ratio;
 }
@@ -18972,7 +18971,8 @@ function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, LINKED 
 function SETPADDINGBOTTOM(system, element, component, x, LINKED = false) {
     resetPadding(system, element, component);
     setNumericalValue("padding_bottom", system, element, component, x, setNumericalValue.parent_height);
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 
@@ -18986,61 +18986,70 @@ function SETDELTAPADDINGBOTTOM(system, element, component, dx, ratio = 0, LINKED
 
     SETDELTAHEIGHT(system, element, component, -dx, true);
 
-    if (!LINKED) element.wick_node.setRebuild();
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
     
     return ratio;
 }
 
-function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
-function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT) {
+function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
     SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
     SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
     element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
 }
 
 function resetMargin(system, element, component) {
@@ -19211,8 +19220,6 @@ function CLEARTOP(system, element, component, LINKED = false) {
     }
     if (!LINKED) element.wick_node.setRebuild();
 }
-//clear right
-//clear bottom
 
 //clear margin-top
 function CLEARMARGINTOP(system, element, component, LINKED = false) {
@@ -19220,7 +19227,7 @@ function CLEARMARGINTOP(system, element, component, LINKED = false) {
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     if (css.props.margin_left) {
-        if (KEEP_UNIQUE) cache.unique.addProp(`margin-left:0`);
+        if (KEEP_UNIQUE) cache.unique.addProp(`margin-top:0`);
         else css.props.margin_left = 0;
     }
     if (!LINKED) element.wick_node.setRebuild();
@@ -19236,7 +19243,6 @@ function CLEARMARGINLEFT(system, element, component, LINKED = false) {
     }
     if (!LINKED) element.wick_node.setRebuild();
 }
-//clear margin-right
 //clear margin-bottom
 //clear padding-left
 //clear padding-right
@@ -19247,7 +19253,8 @@ function CLEARMARGINLEFT(system, element, component, LINKED = false) {
 //clear border-bottom
 //clear border-top
 
-let types$5 = client.core.css.types;
+let types$6 = CSSParser.types;
+
 /**
  * Actions for converting position and layout to different forms. 
  */
@@ -19260,8 +19267,43 @@ function TOLEFTRIGHT() {}
 function TOTOP() {}
 function TOTOPBOTTOM() {}
 
+function getNativeDisplay(element){
+    let display = "block";
+
+    switch(element.tagName){
+        case "A":
+        case "SPAN":
+            display ="inline";
+    }
+
+    return display;
+}
+
+
+function setToAbsolute(cache, KEEP_UNIQUE){
+    const css = cache.rules;
+    if (KEEP_UNIQUE) {
+        if (cache.unique.r.props.position) css.props.position = "absolute";
+        else cache.unique.addProp("position:absolute");
+    } else {
+        if (css.props.position) css.props.position = "absolute";
+        else cache.unique.addProp("position:absolute");
+    }
+}
+
+function setToRelative(cache, KEEP_UNIQUE){
+    const css = cache.rules;
+    if (KEEP_UNIQUE) {
+        if (cache.unique.r.props.position) css.props.position = "relative";
+        else cache.unique.addProp("position:relative");
+    } else {
+        if (css.props.position) css.props.position = "relative";
+        else cache.unique.addProp("position:relative");
+    }
+}
+
 /**
- * @brief Convert position to absolute
+ * Convert position to ```absolute```
  */
 function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
@@ -19274,9 +19316,10 @@ function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             */
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
+            rect = element.getBoundingClientRect();
 
             let x = rect.x;
-            let y = rect.y - parseFloat(par_prop["margin-top"]);
+            let y = rect.y; //- parseFloat(par_prop["margin-top"]);
 
             if (css.props.margin) ;
 
@@ -19285,7 +19328,7 @@ function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
 
             SETLEFT(system, element, component, x, true);
             SETTOP(system, element, component, y, true);
-
+            
             break;
         case "absolute":
             /*no op*/
@@ -19298,52 +19341,108 @@ function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             break;
     }
 
-    if (KEEP_UNIQUE) {
-        if (cache.unique.rules.props.position) cache.unique.rules.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
-    } else {
-        if (css.props.position) css.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
-    }
+    setToAbsolute(cache,KEEP_UNIQUE);
 
-    if (!LINKED)
+    if (!LINKED){
         element.wick_node.setRebuild();
+        element.wick_node.rebuild();
+    }
 }
 
 /**
- * Convert position to relative
+ * Convert position to ```relative```
  */
 function TOPOSITIONRELATIVE(system, element, component) {
-    let cache = CacheFactory(system, element, component);
-    let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    const cache = CacheFactory(system, element, component);
+    const css = cache.rules;
+    const KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+
     switch (css.props.position) {
         case "relative":
             /*no op*/
             break;
         case "absolute":
+            //find the last child element that is positioned relative or static
+            //get it's offset top and left + margin left and top
+            let node = element.previousSibling;
+            let offsetX = 0;
+            let offsetY = 0;
 
             let rect = element.getBoundingClientRect();
-            let par_prop = component.window.getComputedStyle(element);
 
-            let x = rect.x - parseFloat(par_prop["border-left-width"]) + 2;
-            let y = rect.y;
+            //Get Parent display type 
+            let par_prop = component.window.getComputedStyle(element.parentElement);
+            let ele_css = component.window.getComputedStyle(element);
 
+            let par_out_dis = par_prop.display;
+            let ele_in_dis = css.props.display || getNativeDisplay(element); 
+            const IS_INLINE = ele_in_dis.includes("inline");
 
-            let sib = element.previousSibling;
+            if(ele_in_dis == "inline")//force inline-block positioning
+                setValue(system, element, component, "display", "block");
 
-            if (sib) {
-                while (sib && (sib.style.position !== "relative" && sib.style.position !== ""))
-                    sib = sib.previousSibling;
-                if (sib) {
-                    y -= sib.offsetTop + sib.offsetHeight;
+            //PARENT positining
+            //TODO handle grid positioning;
+            //TODO handle flex positioning;
+            //TODO handle inline and inline block positioning;
+
+            //Outer positioning
+
+            //Assuming Normal box positioning. 
+            while(node){
+                if(node instanceof HTMLElement){
+                    
+                 let rect = node.getBoundingClientRect();
+                let style = component.window.getComputedStyle(node);
+                if((!style.position || style.position =="relative" || style.position =="static") && style.display !== "none"){
+
+                    if(IS_INLINE)
+                        offsetX = node.offsetLeft + parseFloat(style.width) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth) + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)+ parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+                    
+                    offsetY = node.offsetTop + parseFloat(style.height) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)+ parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+                    
+                    break;
                 }
+                }
+                node = node.previousSibling;
             }
+            let rectp = element.parentElement.getBoundingClientRect();
+
+            let innerWidth = rectp.width  - (   (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0)+
+                        (parseFloat(par_prop.borderRightWidth) || 0) + (parseFloat(par_prop.paddingRight) || 0));
+            
+            if(IS_INLINE && (offsetX + rect.width ) >= innerWidth)
+                offsetX = 0;
+
+            if(offsetX == 0)
+                offsetX += (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0);
+            
+            if(offsetY == 0)
+                offsetY += (parseFloat(par_prop.borderTopWidth) || 0) + (parseFloat(par_prop.paddingTop) || 0);
+            
+
+            let x1 =rect.x, y1 =rect.y,  x = x1 - offsetX, y =y1 - offsetY;
 
             CLEARLEFT(system, element, component, true);
             CLEARTOP(system, element, component, true);
+            
             SETMARGINLEFT(system, element, component, x, true);
             SETMARGINTOP(system, element, component, y, true);
+            
+            setToRelative(cache, KEEP_UNIQUE);
+            
+            element.wick_node.setRebuild();
+            element.wick_node.rebuild();
+            rect = element.getBoundingClientRect();
+            //enforce Position
+            let x2 = rect.x;
+            let y2 = rect.y;
+            
+            if(x2 != x1) 
+               SETMARGINLEFT(system, element, component, x - (x2 - x1), true);
+            if(y2 != y1)
+                SETMARGINTOP(system, element, component, y - (y2 - y1), true); 
+            
             break;
         case "fixed":
             //add parent offset values to current position to keep it predictably in place. 
@@ -19353,15 +19452,8 @@ function TOPOSITIONRELATIVE(system, element, component) {
             break;
     }
 
-    if (KEEP_UNIQUE) {
-        if (cache.unique.rules.props.position) cache.unique.rules.props.position = "relative";
-        else cache.unique.addProp("position:relative");
-    } else {
-        if (css.props.position) css.props.position = "relative";
-        else cache.unique.addProp("position:relative");
-    }
-
     element.wick_node.setRebuild();
+    element.wick_node.rebuild();
 }
 
 
@@ -19371,25 +19463,25 @@ function CONVERT_TOP(system, element, component, type) {
     
     switch (type) {
         case "%":
-            cache.rules.props.top = new types$5.percentage(1);
+            cache.rules.props.top = new types$6.percentage(1);
             break;
         case "em":
-            cache.rules.props.top = new types$5.length(1, "em");
+            cache.rules.props.top = new types$6.length(1, "em");
             break;
         case "vh":
-            cache.rules.props.top = new types$5.length(1, "vh");
+            cache.rules.props.top = new types$6.length(1, "vh");
             break;
         case "vw":
-            cache.rules.props.top = new types$5.length(1, "vw");
+            cache.rules.props.top = new types$6.length(1, "vw");
             break;
         case "vmin":
-            cache.rules.props.top = new types$5.length(1, "vmin");
+            cache.rules.props.top = new types$6.length(1, "vmin");
             break;
         case "vmax":
-            cache.rules.props.top = new types$5.length(1, "vmax");
+            cache.rules.props.top = new types$6.length(1, "vmax");
             break;
         default:
-            cache.rules.props.top = new types$5.length(1, 'px');
+            cache.rules.props.top = new types$6.length(1, 'px');
             break;
     }
     SETTOP(system, element, component, position);
@@ -19403,25 +19495,25 @@ function CONVERT_LEFT(system, element, component, type) {
 
     switch (type) {
         case "%":
-            cache.rules.props.left = new types$5.percentage(1);
+            cache.rules.props.left = new types$6.percentage(1);
             break;
         case "em":
-            cache.rules.props.left = new types$5.length(1, "em");
+            cache.rules.props.left = new types$6.length(1, "em");
             break;
         case "vh":
-            cache.rules.props.left = new types$5.length(1, "vh");
+            cache.rules.props.left = new types$6.length(1, "vh");
             break;
         case "vw":
-            cache.rules.props.left = new types$5.length(1, "vw");
+            cache.rules.props.left = new types$6.length(1, "vw");
             break;
         case "vmin":
-            cache.rules.props.left = new types$5.length(1, "vmin");
+            cache.rules.props.left = new types$6.length(1, "vmin");
             break;
         case "vmax":
-            cache.rules.props.left = new types$5.length(1, "vmax");
+            cache.rules.props.left = new types$6.length(1, "vmax");
             break;
         default:
-            cache.rules.props.left = new types$5.length(1, 'px');
+            cache.rules.props.left = new types$6.length(1, 'px');
             break;
     }
     SETLEFT(system, element, component, position);
@@ -19456,23 +19548,23 @@ function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
         switch (cache.move_hori_type) {
             case "left right":
             case "left right margin":
-                if (css.props.right instanceof types$5.length) {
-                    css.props.right = new types$5.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$6.length) {
+                    css.props.right = new types$6.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$5.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$6.length(rect.width * (css.props.right / 100), "px");
                 } /** Intentional fall through **/
             case "left":
-                if (css.props.left instanceof types$5.length) {
-                    css.props.left = new types$5.percentage((css.props.left / rect.width) * 100);
+                if (css.props.left instanceof types$6.length) {
+                    css.props.left = new types$6.percentage((css.props.left / rect.width) * 100);
                 } else {
-                    css.props.left = new types$5.length(rect.width * (css.props.left / 100), "px");
+                    css.props.left = new types$6.length(rect.width * (css.props.left / 100), "px");
                 }
                 break;
             case "right":
-                if (css.props.right instanceof types$5.length) {
-                    css.props.right = new types$5.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$6.length) {
+                    css.props.right = new types$6.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$5.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$6.length(rect.width * (css.props.right / 100), "px");
                 }
                 break;
         }
@@ -19480,7 +19572,7 @@ function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
     element.wick_node.setRebuild();
 }
 
-let types$6 = client.core.css.types;
+let types$7 = CSSParser.types;
 
 function resetBorder(system, element, component) {
     let cache = CacheFactory(system, element, component);
@@ -19629,22 +19721,22 @@ function RESIZEBORDERBR(system, element, component, dx, dy, IS_COMPONENT) {
 }
 
 function BORDERRADIUSTL(system, element, component, d){
-    setValue(system, element, component, "border_top_left_radius", new types$6.length(d, "px"));
+    setValue(system, element, component, "border_top_left_radius", new types$7.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSTR(system, element, component, d){
-    setValue(system, element, component, "border_top_right_radius", new types$6.length(d, "px"));
+    setValue(system, element, component, "border_top_right_radius", new types$7.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSBL(system, element, component, d){
-    setValue(system, element, component, "border_bottom_left_radius", new types$6.length(d, "px"));
+    setValue(system, element, component, "border_bottom_left_radius", new types$7.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
 function BORDERRADIUSBR(system, element, component, d){
-    setValue(system, element, component, "border_bottom_right_radius", new types$6.length(d, "px"));
+    setValue(system, element, component, "border_bottom_right_radius", new types$7.length(d, "px"));
     element.wick_node.setRebuild();
 }
 
@@ -19689,6 +19781,11 @@ const actions = {
     RESIZER,
     RESIZEL,
     RESIZEB,
+    //Width Height
+    SETWIDTH,
+    SETHEIGHT,
+    SETDELTAWIDTH,
+    SETDELTAHEIGHT,
     //Border
     //Margin
     SETMARGINLEFT,
@@ -19756,6 +19853,7 @@ const actions = {
     REDO
 };
 
+//import wick from "@galactrax/wick";
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
@@ -19777,7 +19875,7 @@ class UIComponent extends Component$1 {
                 e.target.contentDocument.body.appendChild(children[i]);
             }
 
-            e.target.contentWindow.wick = client;
+            //e.target.contentWindow.wick = wick;
 
             this.window = e.target.contentWindow;
 
@@ -20144,11 +20242,7 @@ class SVGManager {
             return;
             POINTER_DOWN = true;
 
-            console.log(x, y);
-
             this.selection = this.proj.hitTest(point, { fill: true, stroke: true });
-
-            console.log(this.selection);
 
             if (this.selection) {
                 this.selection.item.selected = true;
@@ -20161,7 +20255,7 @@ class SVGManager {
             if (!POINTER_DOWN) return;
             let x = dx - e.offsetX;
             let y = dy - e.offsetY;
-            console.log(x, y, this.selection);
+
             dx = e.offsetX;
             dy = e.offsetY;
             let selection = this.selection;
@@ -20192,7 +20286,7 @@ class SVGManager {
         paper.project.view.viewSize.set(this.width, this.height);
         paper.project.view.translate(new Point(-20, -20));
         let output = paper.project.exportSVG({ asString: true });
-        console.log(output);
+
         this.wick_node.reparse(output).then(n => this.wick_node = n);
         paper.project.view.translate(new Point(20, 20));
         paper.project.view.viewSize.set(this.width + 40, this.height + 40);
@@ -20668,7 +20762,7 @@ class UI_Manager {
         this.ACTIVE_POINTER_INPUT = false;
         this.origin_x = 0;
         this.origin_y = 0;
-        this.transform = new(client.core.common.Transform2D)();
+        this.transform = new(Common     .Transform2D)();
         this.last_action = Date.now();
         this.ui_target = null;
 
@@ -20750,7 +20844,7 @@ class UI_Manager {
 
     addComponent(wick_component_file_path) {
 
-        let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
+        let doc = this.system.docs.get(this.system.docs.load(wick_component_file_path));
 
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
@@ -20933,7 +21027,7 @@ class UI_Manager {
         e.preventDefault();
 
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
-            let doc = this.system.doc_man.get(this.system.doc_man.load(f));
+            let doc = this.system.docs.get(this.system.docs.load(f));
 
             if (doc) switch (doc.type) {
                 case "wick":
@@ -21006,9 +21100,967 @@ class JSManager{
 
 }
 
+let proto$1 = StyleNode$1.prototype;
+proto$1.cssInject = proto$1._processTextNodeHook_;
+
+const path$1 = require("path");
+//Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
+proto$1._processTextNodeHook_ = function(lex) {
+    //Feed the lexer to a new CSS Builder
+    this.css = this.getCSS();
+    lex.IWS = true;
+    lex.tl = 0;
+    lex.n();
+
+    let URL = "";
+
+    let IS_DOCUMENT = !!this.url;
+
+    if (this.url) {
+        URL = this.url.path;
+        if (!path$1.isAbsolute(URL))
+            URL = path$1.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
+    }
+
+    this.css._parse_(lex).catch((e) => {
+        throw e;
+    }).then((css) => {
+        this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);
+    });
+
+    this.css.addObserver(this);
+};
+
+proto$1.toString = function(off) {
+    let str = `${("    ").repeat(off)}<${this.tag}`,
+        atr = this._attributes_,
+        i = -1,
+        l = atr.length;
+
+
+
+    while (++i < l) {
+        let attr = atr[i];
+        str += ` ${attr.name}="${attr.value}"`;
+    }
+
+    if (!this.url && this.css) {
+        str += ">\n";
+        str += this.css.toString(off + 1);
+        str += `${("    ").repeat(off)}</${this.tag}>\n`;
+    } else {
+        str += `></${this.tag}>\n`;
+    }
+
+    return str;
+};
+
+proto$1.updatedCSS = function() {
+    this.rebuild();
+};
+
+proto$1.buildExisting = () => { return false };
+
+const HORIZONTAL_TAB$2 = 9;
+const SPACE$2 = 32;
+
+/**
+ * Lexer Jump table reference 
+ * 0. NUMBER
+ * 1. IDENTIFIER
+ * 2. QUOTE STRING
+ * 3. SPACE SET
+ * 4. TAB SET
+ * 5. CARIAGE RETURN
+ * 6. LINEFEED
+ * 7. SYMBOL
+ * 8. OPERATOR
+ * 9. OPEN BRACKET
+ * 10. CLOSE BRACKET 
+ * 11. DATA_LINK
+ */ 
+const jump_table$2 = [
+7, 	 	/* A */
+7, 	 	/* a */
+7, 	 	/* ACKNOWLEDGE */
+7, 	 	/* AMPERSAND */
+7, 	 	/* ASTERISK */
+7, 	 	/* AT */
+7, 	 	/* B */
+7, 	 	/* b */
+7, 	 	/* BACKSLASH */
+4, 	 	/* BACKSPACE */
+6, 	 	/* BELL */
+7, 	 	/* C */
+7, 	 	/* c */
+5, 	 	/* CANCEL */
+7, 	 	/* CARET */
+11, 	/* CARRIAGE_RETURN */
+7, 	 	/* CLOSE_CURLY */
+7, 	 	/* CLOSE_PARENTH */
+7, 	 	/* CLOSE_SQUARE */
+7, 	 	/* COLON */
+7, 	 	/* COMMA */
+7, 	 	/* d */
+7, 	 	/* D */
+7, 	 	/* DATA_LINK_ESCAPE */
+7, 	 	/* DELETE */
+7, 	 	/* DEVICE_CTRL_1 */
+7, 	 	/* DEVICE_CTRL_2 */
+7, 	 	/* DEVICE_CTRL_3 */
+7, 	 	/* DEVICE_CTRL_4 */
+7, 	 	/* DOLLAR */
+7, 	 	/* DOUBLE_QUOTE */
+7, 	 	/* e */
+3, 	 	/* E */
+8, 	 	/* EIGHT */
+2, 	 	/* END_OF_MEDIUM */
+7, 	 	/* END_OF_TRANSMISSION */
+7, 	 	/* END_OF_TRANSMISSION_BLOCK */
+8, 	 	/* END_OF_TXT */
+8, 	 	/* ENQUIRY */
+2, 	 	/* EQUAL */
+9, 	 	/* ESCAPE */
+10, 	 /* EXCLAMATION */
+8, 	 	/* f */
+8, 	 	/* F */
+7, 	 	/* FILE_SEPERATOR */
+7, 	 	/* FIVE */
+7, 	 	/* FORM_FEED */
+7, 	 	/* FORWARD_SLASH */
+0, 	 	/* FOUR */
+0, 	 	/* g */
+0, 	 	/* G */
+0, 	 	/* GRAVE */
+0, 	 	/* GREATER_THAN */
+0, 	 	/* GROUP_SEPERATOR */
+0, 	 	/* h */
+0, 	 	/* H */
+0, 	 	/* HASH */
+0, 	 	/* HORIZONTAL_TAB */
+8, 	 	/* HYPHEN */
+7, 	 	/* i */
+8, 	 	/* I */
+8, 	 	/* j */
+8, 	 	/* J */
+7, 	 	/* k */
+7, 	 	/* K */
+1, 	 	/* l */
+1, 	 	/* L */
+1, 	 	/* LESS_THAN */
+1, 	 	/* LINE_FEED */
+1, 	 	/* m */
+1, 	 	/* M */
+1, 	 	/* n */
+1, 	 	/* N */
+1, 	 	/* NEGATIVE_ACKNOWLEDGE */
+1, 	 	/* NINE */
+1, 	 	/* NULL */
+1, 	 	/* o */
+1, 	 	/* O */
+1, 	 	/* ONE */
+1, 	 	/* OPEN_CURLY */
+1, 	 	/* OPEN_PARENTH */
+1, 	 	/* OPEN_SQUARE */
+1, 	 	/* p */
+1, 	 	/* P */
+1, 	 	/* PERCENT */
+1, 	 	/* PERIOD */
+1, 	 	/* PLUS */
+1, 	 	/* q */
+1, 	 	/* Q */
+1, 	 	/* QMARK */
+1, 	 	/* QUOTE */
+9, 	 	/* r */
+7, 	 	/* R */
+10, 	/* RECORD_SEPERATOR */
+7, 	 	/* s */
+7, 	 	/* S */
+2, 	 	/* SEMICOLON */
+1, 	 	/* SEVEN */
+1, 	 	/* SHIFT_IN */
+1, 	 	/* SHIFT_OUT */
+1, 	 	/* SIX */
+1, 	 	/* SPACE */
+1, 	 	/* START_OF_HEADER */
+1, 	 	/* START_OF_TEXT */
+1, 	 	/* SUBSTITUTE */
+1, 	 	/* SYNCH_IDLE */
+1, 	 	/* t */
+1, 	 	/* T */
+1, 	 	/* THREE */
+1, 	 	/* TILDE */
+1, 	 	/* TWO */
+1, 	 	/* u */
+1, 	 	/* U */
+1, 	 	/* UNDER_SCORE */
+1, 	 	/* UNIT_SEPERATOR */
+1, 	 	/* v */
+1, 	 	/* V */
+1, 	 	/* VERTICAL_BAR */
+1, 	 	/* VERTICAL_TAB */
+1, 	 	/* w */
+1, 	 	/* W */
+1, 	 	/* x */
+1, 	 	/* X */
+9, 	 	/* y */
+7, 	 	/* Y */
+10,  	/* z */
+7,  	/* Z */
+7 		/* ZERO */
+];	
+
+/**
+ * LExer Number and Identifier jump table reference
+ * Number are masked by 12(4|8) and Identifiers are masked by 10(2|8)
+ * entries marked as `0` are not evaluated as either being in the number set or the identifier set.
+ * entries marked as `2` are in the identifier set but not the number set
+ * entries marked as `4` are in the number set but not the identifier set
+ * entries marked as `8` are in both number and identifier sets
+ */
+const number_and_identifier_table$2 = [
+0, 		/* A */
+0, 		/* a */
+0, 		/* ACKNOWLEDGE */
+0, 		/* AMPERSAND */
+0, 		/* ASTERISK */
+0, 		/* AT */
+0,		/* B */
+0,		/* b */
+0,		/* BACKSLASH */
+0,		/* BACKSPACE */
+0,		/* BELL */
+0,		/* C */
+0,		/* c */
+0,		/* CANCEL */
+0,		/* CARET */
+0,		/* CARRIAGE_RETURN */
+0,		/* CLOSE_CURLY */
+0,		/* CLOSE_PARENTH */
+0,		/* CLOSE_SQUARE */
+0,		/* COLON */
+0,		/* COMMA */
+0,		/* d */
+0,		/* D */
+0,		/* DATA_LINK_ESCAPE */
+0,		/* DELETE */
+0,		/* DEVICE_CTRL_1 */
+0,		/* DEVICE_CTRL_2 */
+0,		/* DEVICE_CTRL_3 */
+0,		/* DEVICE_CTRL_4 */
+0,		/* DOLLAR */
+0,		/* DOUBLE_QUOTE */
+0,		/* e */
+0,		/* E */
+0,		/* EIGHT */
+0,		/* END_OF_MEDIUM */
+0,		/* END_OF_TRANSMISSION */
+8,		/* END_OF_TRANSMISSION_BLOCK */
+0,		/* END_OF_TXT */
+0,		/* ENQUIRY */
+0,		/* EQUAL */
+0,		/* ESCAPE */
+0,		/* EXCLAMATION */
+0,		/* f */
+0,		/* F */
+0,		/* FILE_SEPERATOR */
+2,		/* FIVE */
+4,		/* FORM_FEED */
+0,		/* FORWARD_SLASH */
+8,		/* FOUR */
+8,		/* g */
+8,		/* G */
+8,		/* GRAVE */
+8,		/* GREATER_THAN */
+8,		/* GROUP_SEPERATOR */
+8,		/* h */
+8,		/* H */
+8,		/* HASH */
+8,		/* HORIZONTAL_TAB */
+0,		/* HYPHEN */
+0,		/* i */
+0,		/* I */
+0,		/* j */
+0,		/* J */
+0,		/* k */
+0,		/* K */
+2,		/* l */
+8,		/* L */
+2,		/* LESS_THAN */
+2,		/* LINE_FEED */
+8,		/* m */
+2,		/* M */
+2,		/* n */
+2,		/* N */
+2,		/* NEGATIVE_ACKNOWLEDGE */
+2,		/* NINE */
+2,		/* NULL */
+2,		/* o */
+2,		/* O */
+2,		/* ONE */
+8,		/* OPEN_CURLY */
+2,		/* OPEN_PARENTH */
+2,		/* OPEN_SQUARE */
+2,		/* p */
+2,		/* P */
+2,		/* PERCENT */
+2,		/* PERIOD */
+2,		/* PLUS */
+2,		/* q */
+8,		/* Q */
+2,		/* QMARK */
+2,		/* QUOTE */
+0,		/* r */
+0,		/* R */
+0,		/* RECORD_SEPERATOR */
+0,		/* s */
+2,		/* S */
+0,		/* SEMICOLON */
+2,		/* SEVEN */
+8,		/* SHIFT_IN */
+2,		/* SHIFT_OUT */
+2,		/* SIX */
+2,		/* SPACE */
+2,		/* START_OF_HEADER */
+2,		/* START_OF_TEXT */
+2,		/* SUBSTITUTE */
+2,		/* SYNCH_IDLE */
+2,		/* t */
+2,		/* T */
+2,		/* THREE */
+2,		/* TILDE */
+2,		/* TWO */
+8,		/* u */
+2,		/* U */
+2,		/* UNDER_SCORE */
+2,		/* UNIT_SEPERATOR */
+2,		/* v */
+2,		/* V */
+2,		/* VERTICAL_BAR */
+2,		/* VERTICAL_TAB */
+2,		/* w */
+8,		/* W */
+2,		/* x */
+2,		/* X */
+0,		/* y */
+0,		/* Y */
+0,		/* z */
+0,		/* Z */
+0		/* ZERO */
+];
+
+/**
+ * The types object bound to Lexer#types
+ * @type       {Object}
+ * @alias module:wick~internals.lexer.Types
+ * @see {@link module:wick.core.common.Lexer}
+ */
+const number$2 = 1,
+    identifier$2 = 2,
+    string$2 = 4,
+    white_space$2 = 8,
+    open_bracket$2 = 16,
+    close_bracket$2 = 32,
+    operator$2 = 64,
+    symbol$2 = 128,
+    new_line$2 = 256,
+    data_link$2 = 512,
+    alpha_numeric$2 = (identifier$2 | number$2),
+    white_space_new_line$2 = (white_space$2 | new_line$2),
+    Types$2 = {
+        num: number$2,
+        number: number$2,
+        id: identifier$2,
+        identifier: identifier$2,
+        str: string$2,
+        string: string$2,
+        ws: white_space$2,
+        white_space: white_space$2,
+        ob: open_bracket$2,
+        open_bracket: open_bracket$2,
+        cb: close_bracket$2,
+        close_bracket: close_bracket$2,
+        op: operator$2,
+        operator: operator$2,
+        sym: symbol$2,
+        symbol: symbol$2,
+        nl: new_line$2,
+        new_line: new_line$2,
+        dl: data_link$2,
+        data_link: data_link$2,
+        alpha_numeric: alpha_numeric$2,
+        white_space_new_line: white_space_new_line$2,
+    };
+
+
+
+/**
+ * @classdesc A simple Lexical tokenizer for use with text processing. 
+ * 
+ * The Lexer parses an input string and yield lexical tokens.  It also provides methods for looking ahead and asserting token values. 
+ *
+ * There are 9 types of tokens that the Lexer will create:
+ * 
+ * > 1. **Identifier** - `types.identifier` or `types.id`
+ * >    - Any set of characters beginning with `_`|`a-z`|`A-Z`, and followed by `0-9`|`a-z`|`A-Z`|`-`|`_`|`#`|`$`.
+ * > 2. **Number** - `types.number` or `types.num`
+ * >    - Any set of characters beginning with `0-9`|`.`, and followed by `0-9`|`.`.
+ * > 3. **String**: 2 - `types.string` or `types.str`
+ * >    - A set of characters beginning with either `'` or `"` and ending with a matching `'` or `"`.
+ * > 4. **Open Bracket** - `types.open_bracket` or `types.ob`
+ * >    - A single character from the set `<`|`(`|`{`|`[`.
+ * > 5. **Close Bracket** - `types.close_bracket` or `types.cb`
+ * >    - A single character from the set `>`|`)`|`}`|`]`.
+ * > 7. **Operator**: 
+ * >    - A single character from the set `*`|`+`|`<`|`=`|`>`|`\`|`&`|`%`|`!`|`|`|`^`|`:`.
+ * > 8. **New Line**: 
+ * >    - A single `newline` (`LF` or `NL`) character. It may also be `LFCR` if the text is formated for Windows.
+ * > 9. **White Space**: 
+ * >    - An uninterrupted set of `tab` or `space` characters.
+ * > 10. **Symbol**:
+ * >        - All other characters not defined by the the above, with each symbol token being comprised of one character.
+ * 
+ * Types are identified by a binary index value and are defined in Lexer.prototype.types. A token's type can be verified by with 
+ * ```js
+ * Lexer.token.type === Lexer.types.*`
+ * ```
+ * @alias Lexer
+ * @memberof module:wick.core.common
+ * @param {String} string - The string to parse. 
+ * @param {Boolean} [IGNORE_WHITE_SPACE=true] - If set to true, the Lexer will not generate tokens for newline and whitespace characters, and instead skip to the next no whitespace/newline token. 
+ * @throws     {Error} Throws "String value must be passed to Lexer" if a non-string value is passed as `string`.
+ */
+class Lexer$2 {
+
+    constructor(string = "", IGNORE_WHITE_SPACE = true, PEEKING = false) {
+
+        if (typeof(string) !== "string") throw new Error("String value must be passed to Lexer");
+
+        /**
+         * The string that the Lexer tokenizes.
+         */
+        this.str = string;
+
+        /**
+         * Reference to the peeking Lexer.
+         */
+        this.p = null;
+
+        /**
+         * The type id of the current token.
+         */
+        this.type = -1;
+
+        /**
+         * The offset in the string of the start of the current token.
+         */
+        this.off = 0;
+
+        /**
+         * The length of the current token.
+         */
+        this.tl = 0;
+
+        /**
+         * The character offset of the current token within a line.
+         */
+        this.char = 0;
+
+        /**
+         * The line position of the current token.
+         */
+        this.line = 0;
+
+        /**
+         * The length of the string being parsed
+         */
+        this.sl = string.length;
+
+
+        /**
+         * Flag to ignore white spaced.
+         */
+        this.IWS = IGNORE_WHITE_SPACE;
+
+        /**
+         * Flag set to true if the end of the string is met.
+         */
+        this.END = false;
+
+        /**
+         * Flag to force the lexer to parse string contents
+         */
+         this.PARSE_STRING = false;
+
+        if (!PEEKING) this.next();
+    }
+
+    /**
+     * Restricts max parse distance to the other Lexer's current position.
+     * @param      {Lexer}  Lexer   The Lexer to limit parse distance by.
+     */
+    fence(lexer = this) {
+        if (lexer.str !== this.str)
+            return;
+        this.sl = lexer.off;
+        return this;
+    }
+
+    /**
+     * Reference to token id types.
+     */
+    get types() {
+        return Types$2;
+    }
+
+    /**
+     * Copies the Lexer.
+     * @return     {Lexer}  Returns a new Lexer instance with the same property values.
+     */
+    copy() {
+        let out = new Lexer$2(this.str, this.IWS, true);
+        out.type = this.type;
+        out.off = this.off;
+        out.tl = this.tl;
+        out.char = this.char;
+        out.line = this.line;
+        out.sl = this.sl;
+        out.END = this.END;
+        return out;
+    }
+
+    /**
+     * Given another Lexer with the same `str` property value, it will copy the state of that Lexer.
+     * @param      {Lexer}  [marker=this.peek]  The Lexer to clone the state from. 
+     * @throws     {Error} Throws an error if the Lexers reference different strings.
+     * @public
+     */
+    sync(marker = this.p) {
+
+        if (marker instanceof Lexer$2) {
+            if (marker.str !== this.str) throw new Error("Cannot sync Lexers with different strings!");
+            this.type = marker.type;
+            this.off = marker.off;
+            this.tl = marker.tl;
+            this.char = marker.char;
+            this.line = marker.line;
+            this.END = marker.END;
+        }
+
+        return this;
+    }
+
+    /**
+     * Will throw a new Error, appending the parsed string line and position information to the the error message passed into the function.
+     * @instance
+     * @public
+     * @param {String} message - The error message.
+     */
+    throw (message) {
+        let t$$1 = ("________________________________________________"),
+            n$$1 = "\n",
+            is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
+        this.IWS = false;
+        let pk = this.copy();
+        while (!pk.END && pk.ty !== Types$2.nl) { pk.n(); }
+        let end = pk.off;
+        throw new Error(message + "at " + this.line + ":" + this.char + n$$1 + t$$1 + n$$1 + this.str.slice(this.off - this.char, end) + n$$1 + ("").padStart(this.char - 2) + "^" + n$$1 + t$$1 + is_iws);
+    }
+
+    /**
+     * Proxy for Lexer.prototype.reset
+     * @public
+     */
+    r() { return this.reset(); }
+
+    /**
+     * Restore the Lexer back to it's initial state.
+     * @public
+     */
+    reset() {
+        this.p = null;
+        this.type = -1;
+        this.off = 0;
+        this.tl = 0;
+        this.char = 0;
+        this.line = 0;
+        this.END = false;
+        this.n();
+        return this;
+    }
+
+    resetHead() {
+        this.off = 0;
+        this.tl = 0;
+        this.char = 0;
+        this.line = 0;
+        this.END = false;
+        this.p = null;
+        this.type = -1;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.next
+     * @public
+     */
+    n() { return this.next(); }
+
+    /**
+     * Sets the internal state to point to the next token. Sets Lexer.prototype.END to `true` if the end of the string is hit.
+     * @public
+     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
+     */
+    next(marker = this) {
+
+        let str = marker.str;
+
+        if (marker.sl < 1) {
+            marker.off = -1;
+            marker.type = -1;
+            marker.tl = 0;
+            marker.END = true;
+            return marker;
+        }
+
+        //Token builder
+        let length = marker.tl;
+        let off = marker.off + length;
+        let l$$1 = marker.sl;
+        let IWS = marker.IWS;
+        let type = symbol$2;
+        let char = marker.char + length;
+        let line = marker.line;
+        let base = off;
+
+        if (off >= l$$1) {
+
+            marker.END = true;
+            length = 0;
+            base = l$$1;
+            char -= base - off;
+
+            marker.type = type;
+            marker.off = base;
+            marker.tl = length;
+            marker.char = char;
+            marker.line = line;
+
+            return marker;
+        }
+
+        while (true) {
+
+            base = off;
+
+            length = 1;
+
+            let code = str.charCodeAt(off);
+
+            if (code < 128) {
+
+                switch (jump_table$2[code]) {
+                    case 0: //NUMBER
+                        while (++off < l$$1 && (12 & number_and_identifier_table$2[str.charCodeAt(off)])) {}
+
+                        if (str[off] == "e" || str[off] == "E") {
+                            off++;
+                            if (str[off] == "-") off++;
+                            marker.off = off;
+                            marker.tl = 0;
+                            marker.n();
+                            off = marker.off + marker.tl;
+                            //Add e to the number string
+                        }
+
+                        type = number$2;
+                        length = off - base;
+
+                        break;
+                    case 1: //IDENTIFIER
+                        while (++off < l$$1 && ((10 & number_and_identifier_table$2[str.charCodeAt(off)]))) {}
+                        type = identifier$2;
+                        length = off - base;
+                        break;
+                    case 2: //QUOTED STRING
+                        if (this.PARSE_STRING) {
+                            type = symbol$2;
+                        } else {
+                            while (++off < l$$1 && str.charCodeAt(off) !== code) {}
+                            type = string$2;
+                            length = off - base + 1;
+                        }
+                        break;
+                    case 3: //SPACE SET
+                        while (++off < l$$1 && str.charCodeAt(off) === SPACE$2) {}
+                        type = white_space$2;
+                        length = off - base;
+                        break;
+                    case 4: //TAB SET
+                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB$2) {}
+                        type = white_space$2;
+                        length = off - base;
+                        break;
+                    case 5: //CARIAGE RETURN
+                        length = 2;
+                    case 6: //LINEFEED
+                        type = new_line$2;
+                        char = 0;
+                        line++;
+                        off += length;
+                        break;
+                    case 7: //SYMBOL
+                        type = symbol$2;
+                        break;
+                    case 8: //OPERATOR
+                        type = operator$2;
+
+                        break;
+                    case 9: //OPEN BRACKET
+                        type = open_bracket$2;
+                        break;
+                    case 10: //CLOSE BRACKET
+                        type = close_bracket$2;
+                        break;
+                    case 11: //Data Link Escape
+                        type = data_link$2;
+                        length = 4; //Stores two UTF16 values and a data link sentinel
+                        break;
+                }
+            }
+
+            if (IWS && (type & white_space_new_line$2)) {
+                if (off < l$$1) {
+                    char += length;
+                    type = symbol$2;
+                    continue;
+                } else {
+                    length = 0;
+                    base = l$$1;
+                    char -= base - off;
+                    marker.END = true;
+                }
+            }
+
+            break;
+        }
+
+        marker.type = type;
+        marker.off = base;
+        marker.tl = length;
+        marker.char = char;
+        marker.line = line;
+
+        return marker;
+    }
+    
+
+    /**
+     * Proxy for Lexer.prototype.assert
+     * @public
+     */
+    a(text) {
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.text == text)
+            this.next();
+        else
+            this.throw(`Expecting "${text}" got "${this.text}"`);
+
+        return this;
+    }
+
+    /**
+     * Compares the string value of the current token to the value passed in. Advances to next token if the two are equal.
+     * @public
+     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
+     * @param {String} text - The string to compare.
+     */
+    assert(text) {
+
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.text == text)
+            this.next();
+        else
+            this.throw(`Expecting "${text}" got "${this.text}"`);
+
+        return this;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.assertChcatever
+     * @public
+     */
+    _appendChild_(text) { return this.assert(text); }
+    /**
+     * Compares the character value of the current token to the value passed in. Advances to next token if the two are equal.
+     * @public
+     * @throws {Error} - `Expecting "${text}" got "${this.text}"`
+     * @param {String} text - The string to compare.
+     */
+    assertCharacer(char) {
+
+        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+
+        if (this.tx[this.off] == char)
+            this.next();
+        else
+            this.throw(`Expecting "${char}" got "${this.tx}"`);
+
+        return this;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.peek
+     * @public
+     * @readonly
+     * @type {Lexer}
+     */
+    get pk() { return this.peek(); }
+
+    /**
+     * Returns the Lexer bound to Lexer.prototype.p, or creates and binds a new Lexer to Lexer.prototype.p. Advences the other Lexer to the token ahead of the calling Lexer.
+     * @public
+     * @type {Lexer}
+     * @param {Lexer} [marker=this] - The marker to originate the peek from. 
+     * @param {Lexer} [peek_marker=this.p] - The Lexer to set to the next token state.
+     * @return {Lexer} - The Lexer that contains the peeked at token.
+     */
+    peek(marker = this, peek_marker = this.p) {
+
+        if (!peek_marker) {
+            if (!marker) return null;
+            if (!this.p) {
+                this.p = new Lexer$2(this.str, this.IWS, true);
+                peek_marker = this.p;
+            }
+        }
+
+        peek_marker.type = marker.type;
+        peek_marker.off = marker.off;
+        peek_marker.tl = marker.tl;
+        peek_marker.char = marker.char;
+        peek_marker.line = marker.line;
+        this.next(peek_marker);
+        return peek_marker;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.text
+     * @public
+     * @type {String}
+     * @readonly
+     */
+    get tx() { return this.text; }
+    /**
+     * The string value of the current token.
+     * @type {String}
+     * @public
+     * @readonly
+     */
+    get text() {
+        return (this.off < 0) ? "" : this.str.slice(this.off, this.off + this.tl);
+    }
+
+    /**
+     * The type id of the current token.
+     * @type {Number}
+     * @public
+     * @readonly
+     */
+    get ty() { return this.type; }
+
+    /**
+     * The current token's offset position from the start of the string.
+     * @type {Number}
+     * @public
+     * @readonly
+     */
+    get pos() {
+        return this.off;
+    }
+
+    /**
+     * Proxy for Lexer.prototype.slice
+     * @public
+     */
+    s(start) { return this.slice(start); }
+
+    /**
+     * Returns a slice of the parsed string beginning at `start` and ending at the current token.
+     * @param {Number | LexerBeta} start - The offset in this.str to begin the slice. If this value is a LexerBeta, sets the start point to the value of start.off.
+     * @return {String} A substring of the parsed string.
+     * @public
+     */
+    slice(start) {
+
+        if (typeof start === "number" || typeof start === "object") {
+            if (start instanceof Lexer$2) start = start.off;
+            return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
+        }
+        return this.str.slice(this.off, this.sl);
+    }
+
+    get ch() {
+        return this.str[this.off];
+    }
+
+    /**
+     * The current token in the form of a new Lexer with the current state.
+     * Proxy property for Lexer.prototype.copy
+     * @type {Lexer}
+     * @public
+     * @readonly
+     */
+    get token() {
+        return this.copy();
+    }
+    /**
+     * Skips to the end of a comment section.
+     * @param {boolean} ASSERT - If set to true, will through an error if there is not a comment line or block to skip.
+     * @param {Lexer} [marker=this] - If another Lexer is passed into this method, it will advance the token state of that Lexer.
+     */
+    comment(ASSERT = false, marker = this) {
+
+        if (!(marker instanceof Lexer$2)) return marker;
+
+        if (marker.tx == "/") {
+            if (marker.pk.tx == "*") {
+                marker.sync();
+                while (!marker.END && (marker.n().tx != "*" || marker.pk.tx != "/")) { /* NO OP */ }
+                marker.sync().a("/");
+            } else if (marker.pk.tx == "/") {
+                let IWS = marker.IWS;
+                while (marker.n().ty != types.new_line && !marker.END) { /* NO OP */ }
+                marker.IWS = IWS;
+                marker.n();
+            } else
+            if (ASSERT) marker.throw("Expecting the start of a comment");
+        }
+
+        return marker;
+    }
+
+    get string() {
+        return this.str;
+    }
+
+    setString(string, reset = true) {
+        this.str = string;
+        this.sl = string.length;
+        if (reset) this.resetHead();
+    }
+
+    toString(){
+        return this.slice();
+    }
+}
+
+function whind$3(string, INCLUDE_WHITE_SPACE_TOKENS) { return new Lexer$2(string, INCLUDE_WHITE_SPACE_TOKENS); }
+whind$3.constructor = Lexer$2;
+
 class CSSComponent{
 	constructor(tree, manager){
-		debugger
 		this.manager = manager;
 		this.tree = tree;
 		this.doc = null;
@@ -21032,11 +22084,13 @@ class CSSComponent{
 	}
 }
 
+const CSS_Rule_Constructor$1 = CSSRule;
+
 /**
  *  This module maintains CSS documents and handles the updating of their contents. 
  */
 
-let CSS_Root_Constructor = client.core.css.root;
+let CSS_Root_Constructor = CSSRootNode;
 
 class CSSManager {
 
@@ -21056,18 +22110,27 @@ class CSSManager {
 		if (!component)
 			return [];
 
+		let win = component.window;
+
 		let css_docs = component.local_css;
 
 		let selectors = [];
 
 		for (let i = 0; i < css_docs.length; i++) {
-			let gen = css_docs[i].getApplicableSelectors(element),
+			let gen = css_docs[i].getApplicableSelectors(element, win),
 				sel = null;
 			while (sel = gen.next().value)
 				selectors.push(sel);
 		}
 
 		return selectors;
+	}
+
+	createStyleDocument(name){
+		let id = "./temp.css";
+		this.docs.load({path:"./", name:"temp.css"}, true);
+		let doc = this.docs.get(id);
+		debugger
 	}
 
 	/**
@@ -21078,12 +22141,13 @@ class CSSManager {
 	 */
 	getUnique(element, component) {
 		let css_docs = component.local_css;
+		let win = component.window;
 
 		let selector = null,
 			best_score = 0;
 
 		for (let i = 0; i < css_docs.length; i++) {
-			let gen = css_docs[i].getApplicableSelectors(element),
+			let gen = css_docs[i].getApplicableSelectors(element, win),
 				sel = null;
 			while (sel = gen.next().value) {
 				let score = sel.v.length * -20.5;
@@ -21137,14 +22201,32 @@ class CSSManager {
 			//Create new CSS document and create identifier for this document best matching the element. 
 			//Add new class to element if there is none present. 
 
-			//The last selector in the component CSS has the highest precedent.
+			//The last selector in the component CSS has the highest default precedent.
 			let tree = css_docs[css_docs.length - 1];
 
 			if (css_docs.length == 0) {
-				//create new css tree.
-				tree = new CSS_Root_Constructor();
-				component.addStyle(tree);
+            	 tree = new CSS_Root_Constructor();
+				
+				let ast = component.sources[0].ast;
+            	
+            	let style = new StyleNode$1();
+            	style.tag = "style";
+            	
+            	ast.css = (ast.css) ? ast.css : [];
+            	ast.addC(style);
+            	ast.css.push(tree);
+            	
+            	style.css = tree;
+            	tree.addObserver(style);
+				
+				this.css_files.push(tree);
+				component.local_css.push(tree);
 			}
+
+
+
+
+				//create new css document. it should be located at the same location as the component. Or at a temp location
 
 			let class_name = "n" +((Math.random() * 10000000) | 0) + "";
 			let classes = element.wick_node.getAttrib("class");
@@ -21155,8 +22237,7 @@ class CSSManager {
 				else
 					classes.value.txt += ` ${class_name}`;
 			}else{
-				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", client.core.lexer(class_name)));
-				console.log(element.wick_node.classList);
+				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", whind$3(class_name)));
 			}
 
 			element.classList.add(class_name);
@@ -21164,8 +22245,6 @@ class CSSManager {
 			let body = tree.fch;
 
 			selector = body.createSelector(`.${class_name}`);
-
-			console.log(selector, selector.r);
 		}
 
 		return selector;
@@ -21173,7 +22252,7 @@ class CSSManager {
 
 	addFile(css_text, scope, file_id) {
 		let css_file = new CSS_Root_Constructor();
-		css_file._parse_(new client.core.lexer(css_text), true, null, null);
+		css_file._parse_(new wick.core.lexer(css_text), true, null, null);
 		this.css_file.push(css_text);
 		css_file.file_id = file_id;
 	}
@@ -21211,14 +22290,19 @@ class CSSManager {
 		this.css_files.push(css_file);
 		return component;
 	}
-}
 
-let CSSRule$1 = client.core.css.prop;
+	mergeRules(css) {
+	    let rule = new CSS_Rule_Constructor$1();
+	    for (let i = 0; i < css.length; i++)
+	        rule.merge(css[i].r);
+	    return rule;
+	}
+}
 
 /**
  * @brief This will replace the default rule.merge with a reactive system that updates the respective selector. 
  */
-CSSRule$1.prototype.merge = function(rule) {
+CSSRule.prototype.merge = function(rule) {
     if (rule.props) {
         for (let n in rule.props) {
             ((n) => {
@@ -21248,11 +22332,11 @@ CSSRule$1.prototype.merge = function(rule) {
 
 class Document {
 
-    constructor(file_name, path$$1, system) {
+    constructor(file_name, path$$1, system, IS_NEW_FILE) {
         this.path = path$$1;
         this.name = file_name;
         this.data = null;
-        this.LOADED = false;
+        this.LOADED = (IS_NEW_FILE) ? true: false;
         this.UPDATED = true;
         this.SAVING = false;
         this.PENDING_SAVE = false;
@@ -21283,19 +22367,21 @@ class Document {
     }
 
     load() {
-        fs.open(this.path + "/" + this.name, "r", (err, fd) => {
-            if (err) throw err;
-            fs.readFile(fd, "utf8", (err, data) => {
-                
-                fs.close(fd, (err) => {if (err) throw err});
-                
-                if (err) 
-                    throw err;
-                
-                this.LOADED = true;
-                this.fromString(data);    
+        if(!this.LOADED){
+            fs.open(this.path + "/" + this.name, "r", (err, fd) => {
+                if (err) throw err;
+                fs.readFile(fd, "utf8", (err, data) => {
+                    
+                    fs.close(fd, (err) => {if (err) throw err});
+                    
+                    if (err) 
+                        throw err;
+                    
+                    this.LOADED = true;
+                    this.fromString(data);    
+                });
             });
-        });
+        }
     }
 
     save() {
@@ -21349,7 +22435,7 @@ class WickDocument extends Document{
 
     fromString(string, ALLOW_SEAL = true) {
 
-        (new client.core.source.package(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
+        (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
 
             if(this.data)
                 this.data.removeObserver(this);
@@ -21362,7 +22448,7 @@ class WickDocument extends Document{
 
             if(ALLOW_SEAL){
                 this.PENDING_SAVE = true;
-                this.system.doc_man.seal();
+                this.system.docs.seal();
             }
         });
     }
@@ -21387,7 +22473,7 @@ class CSSDocument extends Document {
 		this.data = string;
 
 		if(this.tree){
-			this.tree._parse_(client.core.lexer(string)).catch((e) => {
+			this.tree._parse_(whind$3(string)).catch((e) => {
 		        throw e;
 		    }).then((css) => {
 		    	this.old = string;
@@ -21400,7 +22486,7 @@ class CSSDocument extends Document {
 
 			if (ALLOW_SEAL){
 				this.PENDING_SAVE = true;
-				this.system.doc_man.seal();
+				this.system.docs.seal();
 			}
 		}
 	}
@@ -21472,7 +22558,7 @@ class DocumentManager {
     /*
      * Loads file into project
      */
-    load(file) {
+    load(file, NEW_FILE = false) {
         switch (typeof(file)) {
             case "string": // Load from file system or DB
                 let p = path.parse(file);
@@ -21480,7 +22566,7 @@ class DocumentManager {
                     path : p.dir,
                     name: p.base
                 };
-            case "object": // Load data 
+            case "object": // Londead data 
                 if (file.name && file.path) {
                     let path$$1 = file.path;
                     let name = file.name;
@@ -21495,10 +22581,10 @@ class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path$$1, this.system);
+                                doc = new WickDocument(name, path$$1, this.system, NEW_FILE);
                                 break
                             default:
-                                doc = new CSSDocument(name, path$$1, this.system);
+                                doc = new CSSDocument(name, path$$1, this.system, NEW_FILE);
                         }
                         this.docs.set(id, doc);
                         doc.load();
@@ -21560,21 +22646,16 @@ class DocumentManager {
 
 var version = 0;
 
-let Source$1 = client.core.source.constructor;
-
-Source$1.prototype.rebuild = function (){
-	this.ast.buildExisting(this.ele, this, this.presets, this.taps,null,  this.window);
+Source.prototype.rebuild = function (){
+	this.ast.buildExisting(this.ele, this, this.presets, this.taps,null, this.window);
 };
 
-let RootNode$1 = client.core.source.compiler.nodes.root;
-let SourceNode$2 = client.core.source.compiler.nodes.source;
-let Lexer$2 = client.core.lexer;
 let id = 0;
 
-RootNode$1.id = 0;
+RootNode.id = 0;
 
 
-SourceNode$2.prototype.createElement = function(presets, source$$1) {
+SourceNode$1.prototype.createElement = function(presets, source$$1) {
     let element = document.createElement(this.getAttribute("element") || "div");
     element.wick_source = source$$1;
     element.wick_node = this;
@@ -21582,17 +22663,17 @@ SourceNode$2.prototype.createElement = function(presets, source$$1) {
     return element;
 };
 
-RootNode$1.prototype.reparse_type = RootNode$1;
+RootNode.prototype.reparse_type = RootNode;
 
-RootNode$1.prototype.createElement = function(presets, source$$1) {
+RootNode.prototype.createElement = function(presets, source$$1) {
     let element = document.createElement(this.tag);
     element.wick_source = source$$1;
     element.wick_node = this;
-    element.wick_id = RootNode$1.id++;
+    element.wick_id = RootNode.id++;
     return element;
 };
 
-RootNode$1.prototype.setSource = function(source$$1) {
+RootNode.prototype.setSource = function(source$$1) {
 
     if (!this.observing_sources)
         this.observing_sources = [];
@@ -21602,13 +22683,13 @@ RootNode$1.prototype.setSource = function(source$$1) {
     source$$1.ast = this;
 };
 
-RootNode$1.prototype.reparse = function(text, element) {
+RootNode.prototype.reparse = function(text, element) {
 
     let Root = new this.reparse_type();
 
     Root.par = this.par;
 
-    let promise = Root._parse_(Lexer$2(text), false, false, this.par);
+    let promise = Root._parse_(whind$3(text), false, false, this.par);
 
     promise.then(node => {
 
@@ -21626,10 +22707,8 @@ RootNode$1.prototype.reparse = function(text, element) {
 };
 
 // Rebuild all sources relying on this node
-RootNode$1.prototype.rebuild = function(win = window) {
+RootNode.prototype.rebuild = function(win = window) {
 
-    //if (!this.par)
-    //    this.updated();
 
     if (this.observing_sources) {
         
@@ -21645,19 +22724,19 @@ RootNode$1.prototype.rebuild = function(win = window) {
         this.par.rebuild(win);
 };
 
-RootNode$1.prototype.extract = function() {
+RootNode.prototype.extract = function() {
     if (this.par)
         this.par.replace(this, new DeleteNode());
 };
 
 
-RootNode$1.prototype.buildExisting = function(element, source$$1, presets, taps, parent_element, win = window) {
+RootNode.prototype.buildExisting = function(element, source$$1, presets, taps, parent_element, win = window, css = this.css) {
     
     {
 
         element.style.cssText = "";
 
-        this._linkCSS_(null, win);
+        this._linkCSS_(css, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
@@ -21705,7 +22784,7 @@ RootNode$1.prototype.buildExisting = function(element, source$$1, presets, taps,
     return true;
 };
 
-RootNode$1.prototype.setRebuild = function(child = false, REBUILT = false, INSERTED = false) {
+RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTED = false) {
     if (child) {
         this.CHANGED |= 2;
     } else {
@@ -21728,7 +22807,7 @@ RootNode$1.prototype.setRebuild = function(child = false, REBUILT = false, INSER
     }
 };
 
-RootNode$1.prototype.resetRebuild = function() {
+RootNode.prototype.resetRebuild = function() {
     this.CHANGED = 0;
 
     if (!this.parent)
@@ -21738,14 +22817,14 @@ RootNode$1.prototype.resetRebuild = function() {
         node.resetRebuild();
 };
 
-RootNode$1.prototype.build = RootNode$1.prototype._build_;
-RootNode$1.prototype._build_ = function(element, source$$1, presets, errors, taps, statics) {
+RootNode.prototype.build = RootNode.prototype._build_;
+RootNode.prototype._build_ = function(element, source$$1, presets, errors, taps, statics) {
     this.BUILT = true;
     return this.build(element, source$$1, presets, errors, taps, statics);
 };
 
 
-RootNode$1.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
+RootNode.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
 
     let path$$1 = this.url.path,
         CAN_FETCH = true;
@@ -21762,17 +22841,17 @@ RootNode$1.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TI
 
     if (CAN_FETCH) {
         return this.url.fetchText().then((text) => {
-            let lexer = client.core.lexer(text);
+            let lexer = whind$3(text);
             return this._parseRunner_(lexer, true, IGNORE_TEXT_TILL_CLOSE_TAG, this);
         }).catch((e) => {
-            console.log(e);
+            console.error(e);
         });
     }
     return null;
 };
 
 
-RootNode$1.prototype._mergeComponent_ = function() {
+RootNode.prototype._mergeComponent_ = function() {
     let component = this._presets_.components[this.tag];
 
     if (component) {
@@ -21788,30 +22867,30 @@ RootNode$1.prototype._mergeComponent_ = function() {
 
 
 
-RootNode$1.prototype.addObserver = function(observer) {
+RootNode.prototype.addObserver = function(observer) {
     if (!this.observers)
         this.observers = [];
     this.observers.push(observer);
 };
 
-RootNode$1.prototype.addView = function(view) {
+RootNode.prototype.addView = function(view) {
     if (!this.views)
         this.views = [];
     this.views.push(view);
     view._model_ = this;
 };
 
-RootNode$1.prototype.removeObserver = function(observer) {
+RootNode.prototype.removeObserver = function(observer) {
     for (let i = 0; i < this.observers.length; i++)
         if (this.observers[i] == observer) return this.observers.splice(i, 1);
 };
 
-RootNode$1.prototype.removeView = function(view) {
+RootNode.prototype.removeView = function(view) {
     for (let i = 0; i < this.views.length; i++)
         if (this.views[i] == view) return this.views.splice(i, 1);
 };
 
-RootNode$1.prototype.updated = function() {
+RootNode.prototype.updated = function() {
     if (this.observers)
         for (let i = 0; i < this.observers.length; i++)
             this.observers[i].updatedWickASTTree(this);
@@ -21822,12 +22901,12 @@ RootNode$1.prototype.updated = function() {
 
 };
 
-RootNode$1.prototype.BUILT = false;
+RootNode.prototype.BUILT = false;
 
 /**
  * This node allows an existing element to be removed from DOM trees that were created from the Wick AST. 
  */
-class DeleteNode extends SourceNode$2 {
+class DeleteNode extends SourceNode$1 {
     buildExisting(element) {
         element.parentElement.removeChild(element);
         return false;
@@ -21842,104 +22921,74 @@ class DeleteNode extends SourceNode$2 {
     }
 }
 
-let SVGNode$1 = client.core.source.compiler.nodes.svg;
-
-SVGNode$1.prototype.createElement = function(presets, source$$1){
+SVGNode.prototype.createElement = function(presets, source$$1){
 	let element = document.createElementNS("http://www.w3.org/2000/svg", this.tag);
 	element.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
     element.wick_source = source$$1;
     element.wick_node = this;
-    element.wick_id = RootNode$1.id++;
+    element.wick_id = RootNode.id++;
     return element;
 };
 
-SVGNode$1.prototype.setSource = RootNode$1.prototype.setSource;
+SVGNode.prototype.setSource = RootNode.prototype.setSource;
 // Rebuild all sources relying on this node
-SVGNode$1.prototype.rebuild = RootNode$1.prototype.rebuild;
-SVGNode$1.prototype.buildExisting = RootNode$1.prototype.buildExisting;
-SVGNode$1.prototype.setRebuild = RootNode$1.prototype.setRebuild;
-SVGNode$1.prototype.resetRebuild = RootNode$1.prototype.resetRebuild;
-SVGNode$1.prototype.updated = RootNode$1.prototype.updated;
-SVGNode$1.prototype.reparse_type = SVGNode$1;
+SVGNode.prototype.rebuild = RootNode.prototype.rebuild;
+SVGNode.prototype.buildExisting = RootNode.prototype.buildExisting;
+SVGNode.prototype.setRebuild = RootNode.prototype.setRebuild;
+SVGNode.prototype.resetRebuild = RootNode.prototype.resetRebuild;
+SVGNode.prototype.updated = RootNode.prototype.updated;
+SVGNode.prototype.reparse_type = SVGNode;
 
-let StyleNode$2 = client.core.source.compiler.nodes.style;
-
-let proto$1 = StyleNode$2.prototype;
-proto$1.cssInject = proto$1._processTextNodeHook_;
-
-const path$1 = require("path");
-//Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
-proto$1._processTextNodeHook_ = function(lex) {
-    //Feed the lexer to a new CSS Builder
-    this.css = this.getCSS();
-    lex.IWS = true;
-    lex.tl = 0;
-    lex.n();
-
-    let URL = "";
-
-    let IS_DOCUMENT = !!this.url;
-
-    if (this.url) {
-        URL = this.url.path;
-        if (!path$1.isAbsolute(URL))
-            URL = path$1.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
-    }
-
-    this.css._parse_(lex).catch((e) => {
-        throw e;
-    }).then((css) => {
-        this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);
-    });
-
-    this.css.addObserver(this);
-};
-
-proto$1.toString = function(off) {
-    let str = `${("    ").repeat(off)}<${this.tag}`,
-        atr = this._attributes_,
-        i = -1,
-        l = atr.length;
-
-
-
-    while (++i < l) {
-        let attr = atr[i];
-        str += ` ${attr.name}="${attr.value}"`;
-    }
-
-    if (!this.url && this.css) {
-        str += ">\n";
-        str += this.css.toString(off + 1);
-        str += `${("    ").repeat(off)}</${this.tag}>\n`;
-    } else {
-        str += `></${this.tag}>\n`;
-    }
-
-    return str;
-};
-
-proto$1.updatedCSS = function() {
-    this.rebuild();
-};
-
-proto$1.buildExisting = () => { return false };
-
-let RootText$1 = client.core.source.compiler.nodes.text;
-
-RootText$1.prototype.createElement = RootNode$1.prototype.createElement;
-RootText$1.prototype.setSource = RootNode$1.prototype.setSource;
+RootText.prototype.createElement = RootNode.prototype.createElement;
+RootText.prototype.setSource = RootNode.prototype.setSource;
 // Rebuild all sources relying on this node
-RootText$1.prototype.rebuild = RootNode$1.prototype.rebuild;
-RootText$1.prototype.buildExisting = ()=>{return true}; RootNode$1.prototype.build_existing;
-RootText$1.prototype.setRebuild = RootNode$1.prototype.setRebuild;
-RootText$1.prototype.resetRebuild = RootNode$1.prototype.resetRebuild;
-RootText$1.prototype.updated = function(){};
+RootText.prototype.rebuild = RootNode.prototype.rebuild;
+RootText.prototype.buildExisting = ()=>{return true}; RootNode.prototype.build_existing;
+RootText.prototype.setRebuild = RootNode.prototype.setRebuild;
+RootText.prototype.resetRebuild = RootNode.prototype.resetRebuild;
+RootText.prototype.updated = function(){};
 
-let SourceNode$3 = client.core.source.compiler.nodes.source;
-let Lexer$3 = client.core.lexer;
+SourceNode$1.prototype.buildExisting = function(element, source$$1, presets, taps, win = window, css) {
+    {
+        //IO CHANGE 
+        //Attributes
+        if (this.CHANGED & 4) {
 
-SourceNode$3.prototype.buildExisting = function(element, source$$1, presets, taps) {
+            let span = document.createElement("span");
+
+            this._build_(span, source$$1, presets, [], taps, {});
+
+            let ele = span.firstChild;
+
+            element.parentElement.replaceChild(ele, element);
+
+            return true;
+        }
+
+        if (this._merged_)
+            this._merged_.buildExisting(element, source$$1, presets, taps);
+
+        {
+            //redo IOs that have changed (TODO)
+            for (let i = 0, l = this._bindings_.length; i < l; i++) {
+                this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
+            }
+        }
+
+        {
+            //rebuild children
+            let children = element.childNodes;
+            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
+                let child = children[i];
+                if (node.buildExisting(child, source$$1, presets, taps, null, win, this.css)) i++;
+            }
+        }
+    }
+
+    return true;
+};
+
+SourceTemplateNode$1.prototype.buildExisting = function(element, source$$1, presets, taps) {
     {
         //IO CHANGE 
         //Attributes
@@ -21979,66 +23028,17 @@ SourceNode$3.prototype.buildExisting = function(element, source$$1, presets, tap
     return true;
 };
 
-let SourceTemplateNode$2 = client.core.source.compiler.nodes.template;
-
-let Lexer$4 = client.core.lexer;
-
-SourceTemplateNode$2.prototype.buildExisting = function(element, source$$1, presets, taps) {
-    {
-        //IO CHANGE 
-        //Attributes
-        if (this.CHANGED & 4) {
-
-            let span = document.createElement("span");
-
-            this._build_(span, source$$1, presets, [], taps, {});
-
-            let ele = span.firstChild;
-
-            element.parentElement.replaceChild(ele, element);
-
-            return true;
-        }
-
-        if (this._merged_)
-            this._merged_.buildExisting(element, source$$1, presets, taps);
-
-        {
-            //redo IOs that have changed (TODO)
-            for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
-            }
-        }
-
-        {
-            //rebuild children
-            let children = element.childNodes;
-            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
-                let child = children[i];
-                if (node.buildExisting(child, source$$1, presets, taps)) i++;
-            }
-        }
-    }
-
-    return true;
-};
-
-let PackageNode$1 = client.core.source.compiler.nodes.package;
-
-let Lexer$5 = client.core.lexer;
-
-PackageNode$1.prototype.buildExisting = function(element, source$$1, presets, taps) {
+PackageNode.prototype.buildExisting = function(element, source$$1, presets, taps) {
     return false;
 };
 
-let Script = client.core.source.compiler.nodes.script;
-
-Script.prototype.cssInject = Script.prototype._processTextNodeHook_;
-
 const path$2 = require("path");
+
+ScriptNode$1.prototype.cssInject = ScriptNode$1.prototype._processTextNodeHook_;
+
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 /*Script.prototype._processTextNodeHook_ = function(lex) {
-    //Feed the lexer to a new CSS Builder
+    //Feed the lexer toString a new CSS Builder
     this.css = this.getCSS();
     lex.IWS = true;
     lex.tl = 0;
@@ -22063,38 +23063,28 @@ const path$2 = require("path");
     this.css.addObserver(this);
 };*/
 
-Script.prototype.toString = function(off) {
-    return off + "script";
+ScriptNode$1.prototype.toString = function(off) {
+    return ("    ").repeat(off) + `<script>${this.innerText}<script/>\n`;
 };
 
-Script.prototype.updatedCSS = function() {
+ScriptNode$1.prototype.updatedCSS = function() {
     this.rebuild();
 };
 
-Script.prototype.buildExisting = () => { return false };
+ScriptNode$1.prototype.buildExisting = () => { return false };
 
-const scheme$1 = client.scheme;
-const core$1 = client.core;
-
-const Model$1 = core$1.model;
-const ModelContainer = core$1.model.container;
-const BinaryTreeModelContainer = core$1.model.container.btree;
-const ArrayModelContainer$1 = core$1.model.container.array;
-const DateModelContainer = core$1.model.container.btree;
-const MultiIndexedContainer$1 = core$1.model.container.multi;
-
-const EPOCH_Date = scheme$1.date;
-const EPOCH_Time = scheme$1.time;
-const Longitude = scheme$1.number;
-const Latitude = scheme$1.number;
-const $Number = scheme$1.number;
-const $String = scheme$1.string;
-const $Boolean = scheme$1.bool;
-
+const schemed = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
+const EPOCH_Date = new DateSchemeConstructor;
+const EPOCH_Time = new TimeSchemeConstructor;
+const Longitude = new NumberSchemeConstructor;
+const Latitude = new NumberSchemeConstructor;
+const $Number = new NumberSchemeConstructor;
+const $String = new StringSchemeConstructor;
+const $Boolean = new BoolSchemeConstructor;
 /**
  * Schema for flame_data model
  */
-const schemed = client.model.scheme;
+//const schemed = wick.model.scheme;
 const flame_scheme = schemed({
 	project : schemed({
 		name : $String,
@@ -22390,7 +23380,7 @@ class Project {
         
         this.flame_data = new flame_scheme();
 
-        this.presets = client.core.presets({
+        this.presets = new Presets({
             models:{
                 flame: this.flame_data,
                 settings: this.flame_data.settings,
@@ -22429,12 +23419,11 @@ class Project {
     }
 
     setDefaults(){
-
         this.flame_data.creation_date = Date.now();
         this.flame_data.default.component.width = 360;
         this.flame_data.default.component.height = 920;
-
         this.flame_data.settings.move_type = "relative";
+        this.flame_data.settings.KEEP_UNIQUE = true;
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
@@ -22450,17 +23439,16 @@ class Project {
     }
 }
 
-//Amend the prototype of the HTML
 HTMLElement.prototype.wick_node = null;
 
 
 class System {
     constructor() {
-        this.doc_man = new DocumentManager(this);
-        this.css = new CSSManager(this.doc_man);
-        this.html = new HTMLManager(this.doc_man);
-        this.js = new JSManager(this.doc_man);
-        this.presets = client.core.presets();
+        this.docs = new DocumentManager(this);
+        this.css = new CSSManager(this.docs);
+        this.html = new HTMLManager(this.docs);
+        this.js = new JSManager(this.docs);
+        this.presets = new Presets();
         this.actions = actions;
         this.project = new Project(this);
     }
@@ -22471,16 +23459,19 @@ class System {
  * @details Contains methods necessary to start a flame session.
  * @return Object
  */
-
 const flame = {
     init: () => {
-        //Get testing and development flags. 
-        const DEV = !!require('electron').remote.process.env.FLAME_DEV;
-        const TEST = !!require('electron').remote.process.env.FLAME_TEST;
 
+        //Get testing and development flags. 
+        const DEV = !!require('electron').remote.process.env.FLAME_DEV.includes("true");
+        const TEST = !!require('electron').remote.process.env.FLAME_TEST.includes("true");
+
+        if(TEST)
+            require("chai").should();
+        
         let system = new System();
 
-        StyleNode$2.prototype.flame_system = system;
+        StyleNode$1.prototype.flame_system = system;
 
         //connect to the ui_group element
         const ui_group = document.querySelector("#ui_group");
@@ -22489,21 +23480,38 @@ const flame = {
         if (!ui_group)
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
-        const ui_man = new UI_Manager(ui_group, view_group, system);
+        system.ui = new UI_Manager(ui_group, view_group, system);
         
-        system.ui = ui_man;
-
-
-        if(DEV){
+        if(DEV && !TEST){
             //Load in the development component.
             let path$$1 = require("path").join(process.cwd(),"assets/components/test.html");
-            let doc = system.doc_man.get(system.doc_man.load(path$$1));
+            let doc = system.docs.get(system.docs.load(path$$1));
             actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
             window.flame = flame;
-        }
+        }else if(TEST){
+            //Load in HTML test runner
+            const test_iframe = document.createElement("iframe");
+            test_iframe.src = "../../test/chromium/test.html";
 
-        if(TEST){
-            const test = require("../../test/client_test.js")(system);
+            test_iframe.width = "100%";
+            test_iframe.height = "100%";
+
+            test_iframe.style.position = "absolute";
+            test_iframe.style.left = 0;
+            test_iframe.style.top = 0;
+            test_iframe.style.zIndex = 100000; // Keep on top
+            test_iframe.style.backgroundColor = "rgba(255,255,255,0.90)";
+            test_iframe.style.border = "solid 1px black";
+            test_iframe.style.borderRadius = "5px";
+
+            document.body.appendChild(test_iframe);
+
+            test_iframe.onload = (e) => {
+                test_iframe.contentWindow.require = require;
+                test_iframe.contentWindow.fs = require("fs");
+                test_iframe.contentWindow.path = require("path");
+                test_iframe.contentWindow.run(system, require("chai"));
+            };
         }
         
         //Connect to server or local file system and load projects

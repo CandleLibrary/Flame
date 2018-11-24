@@ -1,8 +1,8 @@
-import wick from "@galactrax/wick";
+import {CSSParser} from "@galactrax/wick";
 
 
 
-let types = wick.core.css.types;
+let types = CSSParser.types;
 
 import { CacheFactory } from "./cache";
 
@@ -44,24 +44,26 @@ export function setNumericalValue(propname, system, element, component, value, r
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
     let props = css.props;
-    let prop = props[propname] || cache.unique.r.props[propname];
+    let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
-
+    
     if (!prop) {
-        let type = (system.project.settings.default_unit || "px");
-        let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
-
-        cache.unique.addProp(`${css_name}:${value}`);
-        props = cache.unique.r.props;
-        prop = props[propname];
-    } else if (KEEP_UNIQUE && !cache.unique.r.props[propname]) {
-
-        let type = (system.project.settings.default_unit || "px");
-        let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
-
-        cache.unique.addProp(`${css_name}:${value}`);
-        props = cache.unique.r.props;
-        prop = props[propname];
+        if(cache.unique.r.props[propname]){
+            props = cache.unique.r.props;
+            prop = props[propname];
+        }if(!KEEP_UNIQUE){
+            let type = (system.project.settings.default_unit || "px");
+            let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
+            cache.unique.addProp(`${css_name}:${value}`);
+            props = cache.unique.r.props;
+            prop = props[propname];
+        } else  {
+            let type = (system.project.settings.default_unit || "px");
+            let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
+            cache.unique.addProp(`${css_name}:${value}`);
+            props = cache.unique.r.props;
+            prop = props[propname];
+        }
     }
 
 
@@ -102,7 +104,14 @@ export function setNumericalValue(propname, system, element, component, value, r
         
         props[propname] = prop.copy(np * 100);
     } else {
-        props[propname] = prop.copy(value);
+        if(prop.copy)
+            props[propname] = prop.copy(value);
+        else{
+            if(value !== 0)
+                props[propname] = new types.length(value, "px");
+            else
+                props[propname] = 0;
+        }
     }
 }
 
@@ -132,6 +141,7 @@ export function getRatio(system, element, component, funct, original_value, delt
 
 export function setValue(system, element, component, value_name, value){
     let cache = CacheFactory(system, element, component);
+    
     let props = cache.rules.props;
 
     if(props[value_name]){

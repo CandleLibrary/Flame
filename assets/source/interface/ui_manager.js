@@ -1,5 +1,5 @@
 //*********** Actions ******************
-import wick from "@galactrax/wick";
+import { Common } from "@galactrax/wick";
 
 
 import { actions } from "./actions/action";
@@ -28,7 +28,7 @@ export class UI_Manager {
         this.ACTIVE_POINTER_INPUT = false;
         this.origin_x = 0;
         this.origin_y = 0;
-        this.transform = new(wick.core.common.Transform2D)();
+        this.transform = new(Common     .Transform2D)();
         this.last_action = Date.now();
         this.ui_target = null;
 
@@ -110,7 +110,7 @@ export class UI_Manager {
 
     addComponent(wick_component_file_path) {
 
-        let doc = this.system.doc_man.get(this.system.doc_man.load(wick_component_file_path));
+        let doc = this.system.docs.get(this.system.docs.load(wick_component_file_path));
 
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
@@ -293,7 +293,7 @@ export class UI_Manager {
         e.preventDefault();
 
         Array.prototype.forEach.call(e.dataTransfer.files, f => {
-            let doc = this.system.doc_man.get(this.system.doc_man.load(f));
+            let doc = this.system.docs.get(this.system.docs.load(f));
 
             if (doc) switch (doc.type) {
                 case "wick":

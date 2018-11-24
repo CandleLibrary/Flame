@@ -26,6 +26,7 @@ app.on("ready", () => {
         console.log('f5 is pressed');
         win.reload();
     });
+    
     globalShortcut.register('CommandOrControl+R', function() {
         console.log('CommandOrControl+R is pressed');
         win.reload();

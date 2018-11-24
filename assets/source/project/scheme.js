@@ -1,29 +1,29 @@
-import wick from "@galactrax/wick";
+import {SchemedModel,
+Model,
+ModelContainerBase,
+BTreeModelContainer,
+ArrayModelContainer,
+MultiIndexedContainer,
+SchemeConstructor, 
+DateSchemeConstructor, 
+TimeSchemeConstructor, 
+StringSchemeConstructor, 
+NumberSchemeConstructor, 
+BoolSchemeConstructor
+} from "@galactrax/wick";
 
-
-
-const scheme = wick.scheme;
-const core = wick.core;
-
-const Model = core.model;
-const ModelContainer = core.model.container;
-const BinaryTreeModelContainer = core.model.container.btree;
-const ArrayModelContainer = core.model.container.array;
-const DateModelContainer = core.model.container.btree;
-const MultiIndexedContainer = core.model.container.multi;
-
-const EPOCH_Date = scheme.date;
-const EPOCH_Time = scheme.time;
-const Longitude = scheme.number;
-const Latitude = scheme.number;
-const $Number = scheme.number;
-const $String = scheme.string;
-const $Boolean = scheme.bool;
-
+const schemed = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
+const EPOCH_Date = new DateSchemeConstructor;
+const EPOCH_Time = new TimeSchemeConstructor;
+const Longitude = new NumberSchemeConstructor;
+const Latitude = new NumberSchemeConstructor;
+const $Number = new NumberSchemeConstructor;
+const $String = new StringSchemeConstructor;
+const $Boolean = new BoolSchemeConstructor;
 /**
  * Schema for flame_data model
  */
-const schemed = wick.model.scheme;
+//const schemed = wick.model.scheme;
 const flame_scheme = schemed({
 	project : schemed({
 		name : $String,

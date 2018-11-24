@@ -1,9 +1,5 @@
-import wick from "@galactrax/wick";
-
 
 export function TEXTEDITOR(system, element, component, x, y){}
-
-
 
 export function TEXT(system, element, component, dx, dy) {
     let pos = event.cursor;

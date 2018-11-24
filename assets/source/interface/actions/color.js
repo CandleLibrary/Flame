@@ -1,8 +1,6 @@
-import wick from "@galactrax/wick";
+import {CSSParser} from "@galactrax/wick";
 
-
-
-let types = wick.core.css.types;
+let types = CSSParser.types;
 
 import {setValue} from "./common";
 

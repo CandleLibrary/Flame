@@ -1,9 +1,7 @@
-import wick from "@galactrax/wick";
+HTMLElement.prototype.wick_node = null;
 
 import {TextFramework, TextIO} from "@galactrax/charcoal";
-
 //Amend the prototype of the HTML
-HTMLElement.prototype.wick_node = null;
 
 import { UI_Manager } from "./interface/ui_manager";
 import { JSManager } from "./js/js_manager";
@@ -27,7 +25,7 @@ import { RootText } from "./wick_compiler_nodes/text.js";
 import { SourceNode } from "./wick_compiler_nodes/source.js";
 import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
 import { PackageNode } from "./wick_compiler_nodes/package.js";
-import { Script } from "./wick_compiler_nodes/script.js";
+import { ScriptNode } from "./wick_compiler_nodes/script.js";
 
 //Poject system
 import { Project } from "./project/project";
@@ -35,14 +33,17 @@ import { Project } from "./project/project";
 //Actions 
 import {actions} from "./interface/actions/action";
 
+//Presets
+import {Presets} from "@galactrax/wick"
+
 
 class System {
     constructor() {
-        this.doc_man = new DocumentManager(this);
-        this.css = new CSSManager(this.doc_man);
-        this.html = new HTMLManager(this.doc_man);
-        this.js = new JSManager(this.doc_man);
-        this.presets = wick.core.presets();
+        this.docs = new DocumentManager(this);
+        this.css = new CSSManager(this.docs);
+        this.html = new HTMLManager(this.docs);
+        this.js = new JSManager(this.docs);
+        this.presets = new Presets();
         this.actions = actions;
         this.project = new Project(this);
     }
@@ -53,13 +54,16 @@ class System {
  * @details Contains methods necessary to start a flame session.
  * @return Object
  */
-
 const flame = {
     init: () => {
-        //Get testing and development flags. 
-        const DEV = !!require('electron').remote.process.env.FLAME_DEV;
-        const TEST = !!require('electron').remote.process.env.FLAME_TEST;
 
+        //Get testing and development flags. 
+        const DEV = !!require('electron').remote.process.env.FLAME_DEV.includes("true");
+        const TEST = !!require('electron').remote.process.env.FLAME_TEST.includes("true");
+
+        if(TEST)
+            require("chai").should();
+        
         let system = new System();
 
         StyleNode.prototype.flame_system = system;
@@ -71,21 +75,38 @@ const flame = {
         if (!ui_group)
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
-        const ui_man = new UI_Manager(ui_group, view_group, system);
+        system.ui = new UI_Manager(ui_group, view_group, system);
         
-        system.ui = ui_man;
-
-
-        if(DEV){
+        if(DEV && !TEST){
             //Load in the development component.
             let path = require("path").join(process.cwd(),"assets/components/test.html");
-            let doc = system.doc_man.get(system.doc_man.load(path));
+            let doc = system.docs.get(system.docs.load(path));
             actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
             window.flame = flame;
-        }
+        }else if(TEST){
+            //Load in HTML test runner
+            const test_iframe = document.createElement("iframe");
+            test_iframe.src = "../../test/chromium/test.html";
 
-        if(TEST){
-            const test = require("../../test/client_test.js")(system);
+            test_iframe.width = "100%";
+            test_iframe.height = "100%";
+
+            test_iframe.style.position = "absolute";
+            test_iframe.style.left = 0;
+            test_iframe.style.top = 0;
+            test_iframe.style.zIndex = 100000; // Keep on top
+            test_iframe.style.backgroundColor = "rgba(255,255,255,0.90)"
+            test_iframe.style.border = "solid 1px black";
+            test_iframe.style.borderRadius = "5px";
+
+            document.body.appendChild(test_iframe);
+
+            test_iframe.onload = (e) => {
+                test_iframe.contentWindow.require = require;
+                test_iframe.contentWindow.fs = require("fs");
+                test_iframe.contentWindow.path = require("path");
+                test_iframe.contentWindow.run(system, require("chai"));
+            }
         }
         
         //Connect to server or local file system and load projects

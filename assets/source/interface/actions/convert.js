@@ -1,12 +1,16 @@
-import wick from "@galactrax/wick";
-
-
-import * as clear from "./clear";
+import {
+CLEARMARGINTOP,
+CLEARMARGINLEFT,
+CLEARLEFT,
+CLEARTOP
+} from "./clear";
+import {CSSParser} from "@galactrax/wick"
 import {
     CacheFactory
 } from "./cache";
 import {
-    getFirstPositionedAncestor
+    getFirstPositionedAncestor,
+    setValue
 } from "./common";
 import {
     SETLEFT,
@@ -16,7 +20,8 @@ import {
     SETMARGINLEFT,
     SETMARGINTOP
 } from "./margin";
-let types = wick.core.css.types;
+let types = CSSParser.types;
+
 /**
  * Actions for converting position and layout to different forms. 
  */
@@ -29,8 +34,43 @@ export function TOLEFTRIGHT() {}
 export function TOTOP() {}
 export function TOTOPBOTTOM() {}
 
+function getNativeDisplay(element){
+    let display = "block";
+
+    switch(element.tagName){
+        case "A":
+        case "SPAN":
+            display ="inline";
+    }
+
+    return display;
+}
+
+
+function setToAbsolute(cache, KEEP_UNIQUE){
+    const css = cache.rules;
+    if (KEEP_UNIQUE) {
+        if (cache.unique.r.props.position) css.props.position = "absolute";
+        else cache.unique.addProp("position:absolute");
+    } else {
+        if (css.props.position) css.props.position = "absolute";
+        else cache.unique.addProp("position:absolute");
+    }
+}
+
+function setToRelative(cache, KEEP_UNIQUE){
+    const css = cache.rules;
+    if (KEEP_UNIQUE) {
+        if (cache.unique.r.props.position) css.props.position = "relative";
+        else cache.unique.addProp("position:relative");
+    } else {
+        if (css.props.position) css.props.position = "relative";
+        else cache.unique.addProp("position:relative");
+    }
+}
+
 /**
- * @brief Convert position to absolute
+ * Convert position to ```absolute```
  */
 export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
@@ -43,18 +83,19 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             */
             let rect = element.getBoundingClientRect();
             let par_prop = component.window.getComputedStyle(element);
+            rect = element.getBoundingClientRect();
 
             let x = rect.x;
-            let y = rect.y - parseFloat(par_prop["margin-top"]);
+            let y = rect.y //- parseFloat(par_prop["margin-top"]);
 
             if (css.props.margin) {}
 
-            clear.CLEARMARGINTOP(system, element, component, true);
-            clear.CLEARMARGINLEFT(system, element, component, true);
+            CLEARMARGINTOP(system, element, component, true);
+            CLEARMARGINLEFT(system, element, component, true);
 
             SETLEFT(system, element, component, x, true);
             SETTOP(system, element, component, y, true);
-
+            
             break;
         case "absolute":
             /*no op*/
@@ -67,52 +108,108 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
             break;
     }
 
-    if (KEEP_UNIQUE) {
-        if (cache.unique.rules.props.position) cache.unique.rules.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
-    } else {
-        if (css.props.position) css.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
-    }
+    setToAbsolute(cache,KEEP_UNIQUE)
 
-    if (!LINKED)
+    if (!LINKED){
         element.wick_node.setRebuild();
+        element.wick_node.rebuild();
+    }
 }
 
 /**
- * Convert position to relative
+ * Convert position to ```relative```
  */
 export function TOPOSITIONRELATIVE(system, element, component) {
-    let cache = CacheFactory(system, element, component);
-    let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    const cache = CacheFactory(system, element, component);
+    const css = cache.rules;
+    const KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+
     switch (css.props.position) {
         case "relative":
             /*no op*/
             break;
         case "absolute":
+            //find the last child element that is positioned relative or static
+            //get it's offset top and left + margin left and top
+            let node = element.previousSibling;
+            let offsetX = 0;
+            let offsetY = 0;
 
             let rect = element.getBoundingClientRect();
-            let par_prop = component.window.getComputedStyle(element);
 
-            let x = rect.x - parseFloat(par_prop["border-left-width"]) + 2;
-            let y = rect.y;
+            //Get Parent display type 
+            let par_prop = component.window.getComputedStyle(element.parentElement);
+            let ele_css = component.window.getComputedStyle(element);
 
+            let par_out_dis = par_prop.display;
+            let ele_in_dis = css.props.display || getNativeDisplay(element); 
+            const IS_INLINE = ele_in_dis.includes("inline");
 
-            let sib = element.previousSibling;
+            if(ele_in_dis == "inline")//force inline-block positioning
+                setValue(system, element, component, "display", "block");
 
-            if (sib) {
-                while (sib && (sib.style.position !== "relative" && sib.style.position !== ""))
-                    sib = sib.previousSibling;
-                if (sib) {
-                    y -= sib.offsetTop + sib.offsetHeight;
+            //PARENT positining
+            //TODO handle grid positioning;
+            //TODO handle flex positioning;
+            //TODO handle inline and inline block positioning;
+
+            //Outer positioning
+
+            //Assuming Normal box positioning. 
+            while(node){
+                if(node instanceof HTMLElement){
+                    
+                 let rect = node.getBoundingClientRect();
+                let style = component.window.getComputedStyle(node);
+                if((!style.position || style.position =="relative" || style.position =="static") && style.display !== "none"){
+
+                    if(IS_INLINE)
+                        offsetX = node.offsetLeft + parseFloat(style.width) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth) + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)+ parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+                    
+                    offsetY = node.offsetTop + parseFloat(style.height) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth) + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)+ parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+                    
+                    break;
                 }
+                }
+                node = node.previousSibling;
             }
+            let rectp = element.parentElement.getBoundingClientRect();
 
-            clear.CLEARLEFT(system, element, component, true);
-            clear.CLEARTOP(system, element, component, true);
+            let innerWidth = rectp.width  - (   (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0)+
+                        (parseFloat(par_prop.borderRightWidth) || 0) + (parseFloat(par_prop.paddingRight) || 0));
+            
+            if(IS_INLINE && (offsetX + rect.width ) >= innerWidth)
+                offsetX = 0;
+
+            if(offsetX == 0)
+                offsetX += (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0)
+            
+            if(offsetY == 0)
+                offsetY += (parseFloat(par_prop.borderTopWidth) || 0) + (parseFloat(par_prop.paddingTop) || 0)
+            
+
+            let x1 =rect.x, y1 =rect.y,  x = x1 - offsetX, y =y1 - offsetY;
+
+            CLEARLEFT(system, element, component, true);
+            CLEARTOP(system, element, component, true);
+            
             SETMARGINLEFT(system, element, component, x, true);
             SETMARGINTOP(system, element, component, y, true);
+            
+            setToRelative(cache, KEEP_UNIQUE);
+            
+            element.wick_node.setRebuild();
+            element.wick_node.rebuild();
+            rect = element.getBoundingClientRect();
+            //enforce Position
+            let x2 = rect.x;
+            let y2 = rect.y;
+            
+            if(x2 != x1) 
+               SETMARGINLEFT(system, element, component, x - (x2 - x1), true);
+            if(y2 != y1)
+                SETMARGINTOP(system, element, component, y - (y2 - y1), true); 
+            
             break;
         case "fixed":
             //add parent offset values to current position to keep it predictably in place. 
@@ -122,15 +219,8 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             break;
     }
 
-    if (KEEP_UNIQUE) {
-        if (cache.unique.rules.props.position) cache.unique.rules.props.position = "relative";
-        else cache.unique.addProp("position:relative");
-    } else {
-        if (css.props.position) css.props.position = "relative";
-        else cache.unique.addProp("position:relative");
-    }
-
     element.wick_node.setRebuild();
+    element.wick_node.rebuild();
 }
 
 

@@ -1,6 +1,3 @@
-import wick from "@galactrax/wick";
-
-
 import {
     WickDocument
 } from "./wick_document";
@@ -44,7 +41,7 @@ export class DocumentManager {
     /*
      * Loads file into project
      */
-    load(file) {
+    load(file, NEW_FILE = false) {
         switch (typeof(file)) {
             case "string": // Load from file system or DB
                 let p = path.parse(file);
@@ -52,7 +49,7 @@ export class DocumentManager {
                     path : p.dir,
                     name: p.base
                 };
-            case "object": // Load data 
+            case "object": // Londead data 
                 if (file.name && file.path) {
                     let path = file.path;
                     let name = file.name;
@@ -67,10 +64,10 @@ export class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path, this.system);
+                                doc = new WickDocument(name, path, this.system, NEW_FILE);
                                 break
                             default:
-                                doc = new CSSDocument(name, path, this.system);
+                                doc = new CSSDocument(name, path, this.system, NEW_FILE);
                         }
                         this.docs.set(id, doc);
                         doc.load();

@@ -1,4 +1,4 @@
-import wick from "@galactrax/wick";
+import {SourcePackage} from "@galactrax/wick";
 
 
 
@@ -13,7 +13,7 @@ export class WickDocument extends Document{
 
     fromString(string, ALLOW_SEAL = true) {
 
-        (new wick.core.source.package(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
+        (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
 
             if(this.data)
                 this.data.removeObserver(this);
@@ -26,7 +26,7 @@ export class WickDocument extends Document{
 
             if(ALLOW_SEAL){
                 this.PENDING_SAVE = true;
-                this.system.doc_man.seal();
+                this.system.docs.seal();
             }
         });
     }

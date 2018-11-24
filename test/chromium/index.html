@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="../../node_modules/mocha/mocha.css" rel="stylesheet" />
+    <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
+    <script type="text/javascript" src="./move.js"></script>
+</head>
+
+<body>
+	HELOW!
+	<script>
+		function run(system){
+			mocha.setup("bdd");
+			console.log("AAAAAAAAAAAAAs")
+			//Incorporate chai and mocha
+			
+	  		const chai = require("chai");
+			chai.should();
+
+	  		mocha.setup("bdd");
+	  		
+	  		/** Loading Test Modules **/
+	  		
+
+	  		mocha.checkLeaks():
+	  		mocha.run();
+		}
+		window.run = run;
+	</script>
+</body>
+
+</html>

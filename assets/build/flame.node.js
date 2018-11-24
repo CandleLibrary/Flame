@@ -18904,7 +18904,12 @@ function SETPADDINGLEFT(system, element, component, x, LINKED = false) {
 }
 
 function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(component.window.getComputedStyle(element)["padding-left"]);
+    let style = component.window.getComputedStyle(element);    let start_x = parseFloat(style.paddingLeft) || 0;
+    let width = (parseFloat(style.width) || 0) + start_x;
+
+    if(dx > 0 && start_x + dx > width - 20) return ratio;
+
+    if(start_x+dx > 0){
 
     if (ratio > 0)
         SETPADDINGLEFT(system, element, component, start_x + dx / ratio, true);
@@ -18915,6 +18920,7 @@ function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED =
 
     element.wick_node.setRebuild();
     if (!LINKED) element.wick_node.rebuild();
+}
 
     return ratio;
 }
@@ -18926,19 +18932,25 @@ function SETPADDINGTOP(system, element, component, x, LINKED = false) {
     if (!LINKED) element.wick_node.rebuild();
 }
 
-function SETDELTAPADDINGTOP(system, element, component, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(component.window.getComputedStyle(element)["padding-top"]);
+function SETDELTAPADDINGTOP(system, element, component, dy, ratio = 0, LINKED = false) {
+    let style = component.window.getComputedStyle(element);
+    let start_y = parseFloat(style.paddingTop) || 0;
+    let height = (parseFloat(style.height) || 0) + start_y;
 
-    if (ratio > 0)
-        SETPADDINGTOP(system, element, component, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, element, component, SETPADDINGTOP, start_x, dx, "padding-top");
+    if(dy > 0 && start_y + dy > height - 20) return ratio;
 
-    SETDELTAHEIGHT(system, element, component, -dx, true);
+    if(start_y+dy > 0){
+        if (ratio > 0)
+            SETPADDINGTOP(system, element, component, start_y + dy / ratio, true);
+        else
+            ratio = getRatio(system, element, component, SETPADDINGTOP, start_y, dy, "padding-top");
 
-    element.wick_node.setRebuild();
+        SETDELTAHEIGHT(system, element, component, -dy, true);
 
-    if (!LINKED) element.wick_node.rebuild();
+        element.wick_node.setRebuild();
+
+        if (!LINKED) element.wick_node.rebuild();
+    }
 
     return ratio;
 }
@@ -18952,7 +18964,13 @@ function SETPADDINGRIGHT(system, element, component, x, LINKED = false) {
 
 
 function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(component.window.getComputedStyle(element)["padding-right"]);
+    let style = component.window.getComputedStyle(element);
+    let start_x = parseFloat(style.paddingRight) || 0;
+    let width = (parseFloat(style.width) || 0) + start_x;
+
+    if(dx > 0 && start_x + dx > width - 20) return ratio;
+
+    if(start_x+dx > 0){
 
     if (ratio > 0)
         SETPADDINGRIGHT(system, element, component, start_x + dx / ratio, true);
@@ -18964,7 +18982,7 @@ function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, LINKED 
     element.wick_node.setRebuild();
     
     if (!LINKED) element.wick_node.rebuild();
-
+}
     return ratio;
 }
 
@@ -18976,18 +18994,24 @@ function SETPADDINGBOTTOM(system, element, component, x, LINKED = false) {
 }
 
 
-function SETDELTAPADDINGBOTTOM(system, element, component, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(component.window.getComputedStyle(element)["padding-bottom"]);
+function SETDELTAPADDINGBOTTOM(system, element, component, dy, ratio = 0, LINKED = false) {
+    let style = component.window.getComputedStyle(element);
+    let start_y = parseFloat(style.paddingBottom) || 0;
+    let height = (parseFloat(style.height) || 0) + start_y;
 
-    if (ratio > 0)
-        SETPADDINGBOTTOM(system, element, component, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_x, dx, "padding-bottom");
+    if(dy > 0 && dy + start_y > height - 20) return ratio;
+    
+    if(start_y + dy >= 0){        
+        if (ratio > 0)
+            SETPADDINGBOTTOM(system, element, component, start_y + dy / ratio, true);
+        else
+            ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_y, dy, "padding-bottom");
 
-    SETDELTAHEIGHT(system, element, component, -dx, true);
+        SETDELTAHEIGHT(system, element, component, -dy, true);
 
-    element.wick_node.setRebuild();
-    if (!LINKED) element.wick_node.rebuild();
+        element.wick_node.setRebuild();
+        if (!LINKED) element.wick_node.rebuild();
+    }
     
     return ratio;
 }
@@ -21003,7 +21027,7 @@ class UI_Manager {
         } else if (this.target) {
             let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
             let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            let { dx, dy } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            let { dx, dy } = {dx:diffx, dy:diffy};//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -23461,10 +23485,11 @@ class System {
  */
 const flame = {
     init: () => {
-
+        const env = require('electron').remote.process.env;
         //Get testing and development flags. 
-        const DEV = !!require('electron').remote.process.env.FLAME_DEV.includes("true");
-        const TEST = !!require('electron').remote.process.env.FLAME_TEST.includes("true");
+        
+        const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
+        const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
 
         if(TEST)
             require("chai").should();

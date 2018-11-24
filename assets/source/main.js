@@ -56,10 +56,11 @@ class System {
  */
 const flame = {
     init: () => {
-
+        const env = require('electron').remote.process.env;
         //Get testing and development flags. 
-        const DEV = !!require('electron').remote.process.env.FLAME_DEV.includes("true");
-        const TEST = !!require('electron').remote.process.env.FLAME_TEST.includes("true");
+        
+        const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
+        const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
 
         if(TEST)
             require("chai").should();

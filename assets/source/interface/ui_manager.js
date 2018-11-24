@@ -269,7 +269,7 @@ export class UI_Manager {
         } else if (this.target) {
             let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
             let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            let { dx, dy } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            let { dx, dy } = {dx:diffx, dy:diffy}//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger

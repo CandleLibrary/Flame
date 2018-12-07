@@ -1,5 +1,5 @@
-import {RootNode, SourceNode} from "@galactrax/wick";
-import whind from "whind";
+import {RootNode, SourceNode} from "@candlefw/wick";
+import whind from "@candlefw/whind";
 
 let id = 0;
 
@@ -40,7 +40,7 @@ RootNode.prototype.reparse = function(text, element) {
 
     Root.par = this.par;
 
-    let promise = Root._parse_(whind(text), false, false, this.par);
+    let promise = Root.parse(whind(text), false, false, this.par);
 
     promise.then(node => {
 
@@ -87,7 +87,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 
         element.style.cssText = "";
 
-        this._linkCSS_(css, win);
+        this.linkCSS(css, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
@@ -125,7 +125,7 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
         if (true || this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
-            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
+            for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
                 let child = children[i];
                 if (node.buildExisting(child, source, presets, taps, element, win)) i++;
             }
@@ -164,14 +164,14 @@ RootNode.prototype.resetRebuild = function() {
     if (!this.parent)
         this.updated();
 
-    for (let node = this.fch; node; node = this.getN(node))
+    for (let node = this.fch; node; node = this.getNextChild(node))
         node.resetRebuild();
 };
 
-RootNode.prototype.build = RootNode.prototype._build_;
-RootNode.prototype._build_ = function(element, source, presets, errors, taps, statics) {
+RootNode.prototype._build_ = RootNode.prototype.build;
+RootNode.prototype.build = function(element, source, presets, errors, taps, statics) {
     this.BUILT = true;
-    return this.build(element, source, presets, errors, taps, statics);
+    return this._build_(element, source, presets, errors, taps, statics);
 };
 
 
@@ -248,7 +248,7 @@ RootNode.prototype.updated = function() {
 
     if (this.views)
         for (let i = 0; i < this.views.length; i++)
-            this.views[i]._update_(this);
+            this.views[i].update(this);
 
 };
 

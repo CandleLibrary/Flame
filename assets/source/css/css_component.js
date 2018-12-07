@@ -8,7 +8,7 @@ export class CSSComponent{
 	}
 
 	documentReady(data){
-		this.tree._parse_(wick.core.lexer(data, true));
+		this.tree.parse(wick.core.lexer(data, true));
 		this.manager.updateStyle("zzz", data);
 		this.element.innerHTML = this.tree + "";
 	}

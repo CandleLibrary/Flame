@@ -1,4 +1,4 @@
-import {StyleNode} from "@galactrax/wick";
+import {StyleNode} from "@candlefw/wick";
 
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;
@@ -22,7 +22,7 @@ proto._processTextNodeHook_ = function(lex) {
             URL = path.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
     }
 
-    this.css._parse_(lex).catch((e) => {
+    this.css.parse(lex).catch((e) => {
         throw e;
     }).then((css) => {
         this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);
@@ -33,7 +33,7 @@ proto._processTextNodeHook_ = function(lex) {
 
 proto.toString = function(off) {
     let str = `${("    ").repeat(off)}<${this.tag}`,
-        atr = this._attributes_,
+        atr = this.attributes,
         i = -1,
         l = atr.length;
 

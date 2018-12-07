@@ -1,7 +1,5 @@
 //*********** Actions ******************
-import { Common } from "@galactrax/wick";
-
-
+import css from "@candlefw/css";
 import { actions } from "./actions/action";
 import { UIComponent } from "./ui_component";
 import { LineMachine } from "./system/line_machine";
@@ -28,7 +26,7 @@ export class UI_Manager {
         this.ACTIVE_POINTER_INPUT = false;
         this.origin_x = 0;
         this.origin_y = 0;
-        this.transform = new(Common     .Transform2D)();
+        this.transform = new(css.types.transform2D)();
         this.last_action = Date.now();
         this.ui_target = null;
 

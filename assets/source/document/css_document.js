@@ -2,7 +2,7 @@ import {
 	Document
 } from "./document";
 
-import whind from "whind";
+import whind from "@candlefw/whind";
 
 
 
@@ -17,7 +17,7 @@ export class CSSDocument extends Document {
 		this.data = string;
 
 		if(this.tree){
-			this.tree._parse_(whind(string)).catch((e) => {
+			this.tree.parse(whind(string)).catch((e) => {
 		        throw e;
 		    }).then((css) => {
 		    	this.old = string;

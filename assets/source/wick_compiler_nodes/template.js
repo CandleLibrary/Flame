@@ -1,6 +1,6 @@
-import {SourceTemplateNode} from "@galactrax/wick";
+import {SourceTemplateNode} from "@candlefw/wick";
 
-import whind from "whind";
+import whind from "@candlefw/whind";
 
 let Lexer = whind;
 
@@ -34,7 +34,7 @@ SourceTemplateNode.prototype.buildExisting = function(element, source, presets, 
         if (true || this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
-            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
+            for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
                 let child = children[i];
                 if (node.buildExisting(child, source, presets, taps)) i++;
             }

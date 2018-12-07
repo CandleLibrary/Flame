@@ -1,4 +1,4 @@
-import {ScriptNode} from "@galactrax/wick";
+import {ScriptNode} from "@candlefw/wick";
 
 const path = require("path");
 
@@ -22,7 +22,7 @@ ScriptNode.prototype.cssInject = ScriptNode.prototype._processTextNodeHook_;
             URL = path.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
     }
 
-    this.css._parse_(lex).catch((e) => {
+    this.css.parse(lex).catch((e) => {
         throw e;
     }).then((css) => {
         this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);

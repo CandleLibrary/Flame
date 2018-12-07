@@ -1,9 +1,10 @@
+import {CSSParser} from "@candlefw/css";
+
 import { setNumericalValue, getRatio, setValue } from "./common";
 import {SETDELTALEFT, SETDELTATOP} from "./position";
 
 import { CacheFactory } from "./cache";
 
-import {CSSParser} from "@galactrax/wick";
 
 
 let types = CSSParser.types;

@@ -1,4 +1,4 @@
-import {SourceNode} from "@galactrax/wick";
+import {SourceNode} from "@candlefw/wick";
 
 SourceNode.prototype.buildExisting = function(element, source, presets, taps, win = window, css) {
     if (true || this.CHANGED !== 0) {
@@ -30,7 +30,7 @@ SourceNode.prototype.buildExisting = function(element, source, presets, taps, wi
         if (true || this.CHANGED & 2) {
             //rebuild children
             let children = element.childNodes;
-            for (let i = 0, node = this.fch; node; node = this.getN(node)) {
+            for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
                 let child = children[i];
                 if (node.buildExisting(child, source, presets, taps, null, win, this.css)) i++;
             }

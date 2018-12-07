@@ -1,4 +1,4 @@
-import {SVGNode} from "@galactrax/wick";
+import {SVGNode} from "@candlefw/wick";
 
 import {RootNode} from "./root";
 

@@ -1,4 +1,4 @@
-import {CSSRule} from "@galactrax/wick";
+import {CSSRule} from "@candlefw/css";
 
 /**
  * @brief This will replace the default rule.merge with a reactive system that updates the respective selector. 

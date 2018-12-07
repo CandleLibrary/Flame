@@ -1,6 +1,6 @@
-import {CSSParser} from "@galactrax/wick";
+import css from "@candlefw/css";
 
-let types = CSSParser.types;
+let types = css.types;
 
 import {setValue} from "./common";
 

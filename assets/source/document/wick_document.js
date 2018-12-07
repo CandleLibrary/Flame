@@ -1,7 +1,4 @@
-import {SourcePackage} from "@galactrax/wick";
-
-
-
+import {SourcePackage} from "@candlefw/wick";
 import {Document} from "./document";
 
 export class WickDocument extends Document{

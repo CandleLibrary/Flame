@@ -1,4 +1,4 @@
-import {Presets} from "@galactrax/wick";
+import {Presets} from "@candlefw/wick";
 
 
 import path from "path";
@@ -6,7 +6,7 @@ import fs from "fs";
 import {flame_scheme} from "./scheme";
 
 //Text Editing
-import {TextFramework, TextIO} from "@galactrax/charcoal";
+import {TextFramework, TextIO} from "@candlefw/charcoal";
 
 import {ColorFramework} from "../color/color_framework";
 

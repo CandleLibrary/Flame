@@ -1,4 +1,4 @@
-//import wick from "@galactrax/wick";
+//import wick from "@candlefw/wick";
 
 import {
     Component
@@ -73,8 +73,8 @@ class UIComponent extends Component {
 
         let src = this.mgr.sources[0].ast;
 
-        if (src._statics_.menu) {
-            switch (src._statics_.menu) {
+        if (src.statics.menu) {
+            switch (src.statics.menu) {
                 case "main":
                     this.system.ui.addToMenu("main", this.name, this.mgr.sources[0].badges.icon, this);
                     break;
@@ -104,7 +104,7 @@ class UIComponent extends Component {
     }
 
     set(data) {
-        this.mgr._update_({
+        this.mgr.update({
             target: data
         });
     }

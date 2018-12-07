@@ -1,5 +1,4 @@
 import {
-    setValue,
     setNumericalValue,
     getRatio
 } from "./common";
@@ -10,10 +9,10 @@ import {
     SETDELTAWIDTH,
     SETDELTAHEIGHT
 } from "./dimensions";
-import {CSSParser} from "@galactrax/wick";
+import css from "@candlefw/css";
 
 
-const types = CSSParser.types;
+const types = css.types;
 
 export function SETLEFT(system, element, component, x, LINKED = false, type = "") {
     let cache = CacheFactory(system, element, component);

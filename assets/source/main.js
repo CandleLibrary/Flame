@@ -1,6 +1,6 @@
 HTMLElement.prototype.wick_node = null;
 
-import {TextFramework, TextIO} from "@galactrax/charcoal";
+import {TextFramework, TextIO} from "@candlefw/charcoal";
 //Amend the prototype of the HTML
 
 import { UI_Manager } from "./interface/ui_manager";
@@ -34,7 +34,7 @@ import { Project } from "./project/project";
 import {actions} from "./interface/actions/action";
 
 //Presets
-import {Presets} from "@galactrax/wick"
+import {Presets} from "@candlefw/wick";
 
 
 class System {

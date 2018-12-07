@@ -4,13 +4,13 @@ function LOAD(system, env){
 
 		it("Should be able to load html file from file system and create a component in the main view.", function(fin){
 			//Load in test component
-			let uri = path.resolve("test/component/test_comp.html")
+			let uri = path.resolve("test/component/test_comp.html");
 			
 			system.docs.load(uri);
 			
 			let doc = system.docs.get(uri);
 			
-			doc.should.not.equal(undefined)
+			doc.should.not.equal(undefined);
 
 			doc.bind({documentReady:(data)=>{
 				data.should.not.equal(undefined);
@@ -22,9 +22,9 @@ function LOAD(system, env){
 					system.ui.components[0].x.should.equal(20);
 					system.ui.components[0].y.should.equal(20);
 					fin();
-				},100)
+				},100);
 
-			}})
-		})
+			}});
+		});
 	});
 }

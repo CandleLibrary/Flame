@@ -1,4 +1,4 @@
-import {CSSParser} from "@galactrax/wick";
+import css from "@candlefw/css";
 
 
 import { CacheFactory } from "./cache";
@@ -10,7 +10,7 @@ import {
     SETDELTABOTTOM
 } from "./position";
 
-const types = CSSParser.types;
+const types = css.types;
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 

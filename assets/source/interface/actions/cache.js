@@ -1,7 +1,3 @@
-import CSSRule from "@galactrax/wick";
-
-let CSS_Rule_Constructor = CSSRule;
-
 let cache_de_cache = null;
 
 function getApplicableRules(system, element, component) {

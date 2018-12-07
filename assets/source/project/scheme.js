@@ -10,7 +10,7 @@ TimeSchemeConstructor,
 StringSchemeConstructor, 
 NumberSchemeConstructor, 
 BoolSchemeConstructor
-} from "@galactrax/wick";
+} from "@candlefw/wick";
 
 const schemed = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
 const EPOCH_Date = new DateSchemeConstructor;

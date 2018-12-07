@@ -1,4 +1,4 @@
-//import wick from "@galactrax/wick";
+//import wick from "@candlefw/wick";
 
 /**
  * This module is responsible for storing, updating, and caching compents. 
@@ -77,7 +77,7 @@ class Component {
         if (!INLINE) {
             let style = new StyleNode();
             style.tag = "style"
-            this.sources[0].ast.addC(style);
+            this.sources[0].ast.addChild(style);
             style.css = tree;
             tree.addObserver(style);
             this.local_css.splice(this.css_split, 0, tree);

@@ -1,4 +1,4 @@
-import {RootText} from "@galactrax/wick";
+import {RootText} from "@candlefw/wick";
 
 import {RootNode} from "./root";
 

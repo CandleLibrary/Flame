@@ -6,8 +6,8 @@
   "scripts": {
     "start": "electron .",
     "textedit": "electron . text_edit",
-    "build": "rollup --config ./assets/build/config/dev.config.js",
-    "build.watch": "rollup --watch --config ./assets/build/config/dev.config.js",
+    "build": "rollup --config ./assets/build/config/config.js",
+    "build.watch": "rollup --watch --config ./assets/build/config/config.js",
     "prepare": "rollup --config ./assets/build/config/config.js",
     "test": "mocha"
   },
@@ -22,13 +22,16 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
+    "@candlefw/charcoal": "0.0.1-a",
+    "@candlefw/css": "0.0.4",
+    "@candlefw/glow": "0.0.4",
+    "@candlefw/whind": "^0.2.7",
+    "@candlefw/wick": "^0.5.4",
     "diff": "^3.5.0",
     "electron": "^3.0.10",
     "paper": "^0.11.8"
   },
   "devDependencies": {
-    "@galactrax/charcoal": ">=0.0.4",
-    "@galactrax/wick": ">=0.4.8-a",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "rollup": "^0.66.6",

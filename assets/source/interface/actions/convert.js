@@ -4,7 +4,7 @@ CLEARMARGINLEFT,
 CLEARLEFT,
 CLEARTOP
 } from "./clear";
-import {CSSParser} from "@galactrax/wick"
+import css from "@candlefw/css";
 import {
     CacheFactory
 } from "./cache";
@@ -20,7 +20,7 @@ import {
     SETMARGINLEFT,
     SETMARGINTOP
 } from "./margin";
-let types = CSSParser.types;
+let types = css.types;
 
 /**
  * Actions for converting position and layout to different forms. 

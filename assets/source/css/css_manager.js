@@ -1,6 +1,6 @@
-import {CSSRootNode, CSSRule} from "@galactrax/wick";
-import {StyleNode} from "../wick_compiler_nodes/style"
-import whind from "whind";
+import {CSSRootNode, CSSRule} from "@candlefw/css";
+import {StyleNode} from "../wick_compiler_nodes/style";
+import whind from "@candlefw/whind";
 
 const CSS_Rule_Constructor = CSSRule;
 
@@ -135,7 +135,7 @@ export class CSSManager {
             	style.tag = "style";
             	
             	ast.css = (ast.css) ? ast.css : [];
-            	ast.addC(style)
+            	ast.addChild(style)
             	ast.css.push(tree)
             	
             	style.css = tree;
@@ -159,7 +159,7 @@ export class CSSManager {
 				else
 					classes.value.txt += ` ${class_name}`;
 			}else{
-				element.wick_node._attributes_.push(element.wick_node._processAttributeHook_("class", whind(class_name)));
+				element.wick_node.attributes.push(element.wick_node.processAttributeHook("class", whind(class_name)));
 			}
 
 			element.classList.add(class_name);
@@ -174,7 +174,7 @@ export class CSSManager {
 
 	addFile(css_text, scope, file_id) {
 		let css_file = new CSS_Root_Constructor();
-		css_file._parse_(new wick.core.lexer(css_text), true, null, null);
+		css_file.parse(new wick.core.lexer(css_text), true, null, null);
 		this.css_file.push(css_text);
 		css_file.file_id = file_id;
 	}

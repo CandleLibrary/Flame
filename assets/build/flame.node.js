@@ -921,7 +921,8 @@ const number = 1,
 TYPE_MASK = 0xF,
 PARSE_STRING_MASK = 0x10,
 IGNORE_WHITESPACE_MASK = 0x20,
-TOKEN_LENGTH_MASK = 0xFFFFFFC0,
+CHARACTERS_ONLY_MASK = 0x40,
+TOKEN_LENGTH_MASK = 0xFFFFFF80,
 
 //De Bruijn Sequence for finding index of right most bit set.
 //http://supertech.csail.mit.edu/papers/debruijn.pdf
@@ -1205,8 +1206,10 @@ class Lexer {
                     type = symbol;
                     continue;
                 } else {
+                    //Trim white space from end of string
+                    base = l$$1 - length;
+                    marker.sl -= length;
                     length = 0;
-                    base = l$$1;
                     char -= base - off;
                 }
             }
@@ -1216,7 +1219,7 @@ class Lexer {
 
         marker.type = type;
         marker.off = base;
-        marker.tl = length;
+        marker.tl = (this.masked_values & CHARACTERS_ONLY_MASK) ? Math.min(1,length) : length;
         marker.char = char;
         marker.line = line;
 
@@ -1265,7 +1268,7 @@ class Lexer {
 
         if (this.off < 0) this.throw(`Expecting ${text} got null`);
 
-        if (this.tx[this.off] == char[0])
+        if (this.ch == char[0])
             this.next();
         else
             this.throw(`Expecting "${char[0]}" got "${this.tx[this.off]}"`);
@@ -1313,13 +1316,11 @@ class Lexer {
      * @return {String} A substring of the parsed string.
      * @public
      */
-    slice(start) {
+    slice(start = this.off) {
 
-        if (typeof start === "number" || typeof start === "object") {
-            if (start instanceof Lexer) start = start.off;
-            return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
-        }
-        return this.str.slice(this.off, this.sl);
+        if (start instanceof Lexer) start = start.off;
+
+        return this.str.slice(start, (this.off <= start) ? this.sl : this.off);
     }
 
     /**
@@ -1331,12 +1332,12 @@ class Lexer {
 
         if (!(marker instanceof Lexer)) return marker;
 
-        if (marker.tx == "/") {
-            if (marker.pk.tx == "*") {
+        if (marker.ch == "/") {
+            if (marker.pk.ch == "*") {
                 marker.sync();
-                while (!marker.END && (marker.next().tx != "*" || marker.pk.tx != "/")) { /* NO OP */ }
+                while (!marker.END && (marker.next().ch != "*" || marker.pk.ch != "/")) { /* NO OP */ }
                 marker.sync().assert("/");
-            } else if (marker.pk.tx == "/") {
+            } else if (marker.pk.ch == "/") {
                 let IWS = marker.IWS;
                 while (marker.next().ty != types.new_line && !marker.END) { /* NO OP */ }
                 marker.IWS = IWS;
@@ -1452,15 +1453,27 @@ class Lexer {
     }
 
     get token_length(){
-        return ((this.masked_values & TOKEN_LENGTH_MASK) >> 6);
+        return ((this.masked_values & TOKEN_LENGTH_MASK) >> 7);
     }
 
     set token_length(value){
-        this.masked_values = (this.masked_values & ~TOKEN_LENGTH_MASK) | (((value << 6) | 0) & TOKEN_LENGTH_MASK); 
+        this.masked_values = (this.masked_values & ~TOKEN_LENGTH_MASK) | (((value << 7) | 0) & TOKEN_LENGTH_MASK); 
     }
 
     get IGNORE_WHITE_SPACE(){
         return this.IWS;
+    }
+
+    set IGNORE_WHITE_SPACE(bool){
+        this.iws = !!bool;
+    }
+
+    get CHARACTERS_ONLY(){
+        return !!(this.masked_values & CHARACTERS_ONLY_MASK);
+    }
+
+    set CHARACTERS_ONLY(boolean){
+        this.masked_values = (this.masked_values & ~CHARACTERS_ONLY_MASK) | ((boolean | 0) << 6); 
     }
 
     get IWS(){
@@ -13507,7 +13520,7 @@ class SourceManager {
 
     emit(name, value) {
         for (let i = 0; i < this.sources.length; i++)
-            this.sources[i]._upImport_(name, value, {
+            this.sources[i].upImport(name, value, {
                 event: {}
             });
     }
@@ -13623,7 +13636,7 @@ class SourceManager {
         return transition_time;
     }
 
-    _upImport_(prop_name, data, meta) {
+    upImport(prop_name, data, meta) {
         if (this.parent)
             this.parent.up(prop_name, data, meta, this);
     }
@@ -14617,7 +14630,7 @@ class Source extends View {
     }
 
     /**
-        Sets up Model connection or creates a new Model from a schema.
+        Makes the source a view of the given Model. If no model passed, then the source will bind to another model depending on its `scheme` or `model` attributes. 
     */
     load(model) {
         let m = null, s = null;
@@ -14634,6 +14647,8 @@ class Source extends View {
         } else if (!model)
             model = new Model(model);
 
+        let LOADED = this.LOADED;
+
         this.LOADED = true;
 
         for (let i = 0, l = this.sources.length; i < l; i++) {
@@ -14646,7 +14661,8 @@ class Source extends View {
         for (let name in this.taps)
             this.taps[name].load(this.model, false);
 
-        this.update({ created: true });
+        if(!LOADED)
+            this.update({ created: true });
     }
 
     down(data, changed_values) {
@@ -14655,10 +14671,10 @@ class Source extends View {
 
     up(tap, data, meta) {
         if (this.parent)
-            this.parent._upImport_(tap._prop_, data, meta, this);
+            this.parent.upImport(tap._prop_, data, meta, this);
     }
 
-    _upImport_(prop_name, data, meta) {
+    upImport(prop_name, data, meta) {
         if (this.taps[prop_name])
             this.taps[prop_name].up(data, meta);
     }
@@ -15303,7 +15319,7 @@ class ScriptIO extends IOBase {
             typeof(name) !== "undefined" &&
             typeof(value) !== "undefined"
         ) {
-            this._source_._upImport_(name, value, this.meta);
+            this._source_.upImport(name, value, this.meta);
         }
     }
 }
@@ -17747,7 +17763,7 @@ class SourceTemplate extends View {
                 transition.start();
             }
 
-        this.parent._upImport_("template_count_changed", {
+        this.parent.upImport("template_count_changed", {
             displayed: ol,
             offset: offset,
             count: this.activeSources.length,
@@ -17815,7 +17831,7 @@ class SourceTemplate extends View {
             for (let i = 0; i < sl; i++) this.sources[i].transitionOut(transition, "", true);
             this.sources.length = 0;
 
-            this.parent._upImport_("template_count_changed", {
+            this.parent.upImport("template_count_changed", {
                 displayed: 0,
                 offset: 0,
                 count: 0,
@@ -17871,7 +17887,6 @@ class SourceTemplate extends View {
      * @param      {Array}  items   An array of items no longer stored in the ModelContainer. 
      */
     removed(items, transition = Transitioneer.createTransition()) {
-        debugger
         for (let i = 0; i < items.length; i++) {
             let item = items[i];
             for (let j = 0; j < this.sources.length; j++) {

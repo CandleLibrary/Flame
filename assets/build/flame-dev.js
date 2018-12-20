@@ -590,8 +590,134 @@ var flame = (function (fs,path) {
         }
     }
 
+    const A = 65;
+    const a = 97;
+    const ACKNOWLEDGE = 6;
+    const AMPERSAND = 38;
+    const ASTERISK = 42;
+    const AT = 64;
+    const B = 66;
+    const b = 98;
+    const BACKSLASH = 92;
+    const BACKSPACE = 8;
+    const BELL = 7;
+    const C = 67;
+    const c = 99;
+    const CANCEL = 24;
+    const CARET = 94;
+    const CARRIAGE_RETURN = 13;
+    const CLOSE_CURLY = 125;
+    const CLOSE_PARENTH = 41;
+    const CLOSE_SQUARE = 93;
+    const COLON = 58;
+    const COMMA = 44;
+    const d = 100;
+    const D = 68;
+    const DATA_LINK_ESCAPE = 16;
+    const DELETE = 127;
+    const DEVICE_CTRL_1 = 17;
+    const DEVICE_CTRL_2 = 18;
+    const DEVICE_CTRL_3 = 19;
+    const DEVICE_CTRL_4 = 20;
+    const DOLLAR = 36;
+    const DOUBLE_QUOTE = 34;
+    const e$1 = 101;
+    const E = 69;
+    const EIGHT = 56;
+    const END_OF_MEDIUM = 25;
+    const END_OF_TRANSMISSION = 4;
+    const END_OF_TRANSMISSION_BLOCK = 23;
+    const END_OF_TXT = 3;
+    const ENQUIRY = 5;
+    const EQUAL = 61;
+    const ESCAPE = 27;
+    const EXCLAMATION = 33;
+    const f = 102;
+    const F = 70;
+    const FILE_SEPERATOR = 28;
+    const FIVE = 53;
+    const FORM_FEED = 12;
+    const FORWARD_SLASH = 47;
+    const FOUR = 52;
+    const g = 103;
+    const G = 71;
+    const GRAVE = 96;
+    const GREATER_THAN = 62;
+    const GROUP_SEPERATOR = 29;
+    const h = 104;
+    const H = 72;
+    const HASH = 35;
     const HORIZONTAL_TAB = 9;
+    const HYPHEN = 45;
+    const i = 105;
+    const I = 73;
+    const j = 106;
+    const J = 74;
+    const k = 107;
+    const K = 75;
+    const l = 108;
+    const L = 76;
+    const LESS_THAN = 60;
+    const LINE_FEED = 10;
+    const m = 109;
+    const M = 77;
+    const n = 110;
+    const N = 78;
+    const NEGATIVE_ACKNOWLEDGE = 21;
+    const NINE = 57;
+    const NULL = 0;
+    const o = 111;
+    const O = 79;
+    const ONE = 49;
+    const OPEN_CURLY = 123;
+    const OPEN_PARENTH = 40;
+    const OPEN_SQUARE = 91;
+    const p = 112;
+    const P = 80;
+    const PERCENT = 37;
+    const PERIOD = 46;
+    const PLUS = 43;
+    const q = 113;
+    const Q = 81;
+    const QMARK = 63;
+    const QUOTE = 39;
+    const r = 114;
+    const R = 82;
+    const RECORD_SEPERATOR = 30;
+    const s = 115;
+    const S = 83;
+    const SEMICOLON = 59;
+    const SEVEN = 55;
+    const SHIFT_IN = 15;
+    const SHIFT_OUT = 14;
+    const SIX = 54;
     const SPACE = 32;
+    const START_OF_HEADER = 1;
+    const START_OF_TEXT = 2;
+    const SUBSTITUTE = 26;
+    const SYNCH_IDLE = 22;
+    const t = 116;
+    const T = 84;
+    const THREE = 51;
+    const TILDE = 126;
+    const TWO = 50;
+    const u = 117;
+    const U = 85;
+    const UNDER_SCORE = 95;
+    const UNIT_SEPERATOR = 31;
+    const v = 118;
+    const V = 86;
+    const VERTICAL_BAR = 124;
+    const VERTICAL_TAB = 11;
+    const w = 119;
+    const W = 87;
+    const x$1 = 120;
+    const X = 88;
+    const y$1 = 121;
+    const Y = 89;
+    const z = 122;
+    const Z = 90;
+    const ZERO = 48;
 
     /**
      * Lexer Jump table reference 
@@ -1043,6 +1169,7 @@ var flame = (function (fs,path) {
          */
         throw (message) {
             let t$$1 = ("________________________________________________"),
+                n$$1 = "\n",
                 is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
             this.IWS = false;
             let pk = this.copy();
@@ -1697,11 +1824,13 @@ var flame = (function (fs,path) {
         flushLinkedLines() {
             //Remove all linked lines at this point
             let node = this.nxt;
+            let vl = 0;
 
             while (node && node.IS_LINKED_LINE) {
                 let nxt = node.nxt;
                 this.fw.line_container.remove(node);
                 node.release();
+                vl = 0;
                 node = nxt;
             }
 
@@ -1829,7 +1958,8 @@ var flame = (function (fs,path) {
             if (!this.NEED_PARSE && !FORCE) return this.nxt;
 
             //CACHE parse functions variables
-            var temp = null;
+            var token_length = 0,
+                temp = null;
 
             //This function will change structure of tokens, thus resetting cache.
             this.NEED_PARSE = false;
@@ -2077,6 +2207,7 @@ var flame = (function (fs,path) {
     }
 
     function setDeltaX(x, y, dx, fw, CLAMP = false) {
+        let rx = -1;
 
         //retrieve line info
         let line = fw.line_container.getLine(y),
@@ -2117,6 +2248,8 @@ var flame = (function (fs,path) {
             }
         } else
             x = xd;
+
+        rx = xd;
 
         return { x, y };
     }
@@ -2489,7 +2622,9 @@ var flame = (function (fs,path) {
 
             if (!view) return;
 
-            if (view !== this.cached_view) ;
+            if (view !== this.cached_view) {
+                //rebuild line;
+            }
             let gen = this.getLines(view.getTop(), view.getHeight());
             let offset = gen.next().value;
 
@@ -3047,7 +3182,9 @@ var flame = (function (fs,path) {
                             var code = text.charCodeAt(i);
                             var char = font_data[code - 32];
 
-                            if (code < 32) ; else {
+                            if (code < 32) {
+                                //x_pixel += 0;
+                            } else {
                                 x--;
                                 x_pixel += char.width * size;
                             }
@@ -3203,7 +3340,80 @@ var flame = (function (fs,path) {
         <div style="position:absolute; top:-10px; left:0; font-size10px; color:red; background-color:white">${cur.x}|${cur.rx}|${cur.rx - cur.x}</div>
         </div>`;
 
-            if (cur.HAS_SELECTION) ;
+            if (cur.HAS_SELECTION) {
+                /*
+                this.selection_index = 0;
+
+                var id1 = this.id;
+                var id2 = (this.selection_y << 10) | this.selection_x
+
+                if (id2 < id1) {
+                    var x1 = this.selection_x;
+                    var y1 = this.selection_y;
+                    var x2 = this.x;
+                    var y2 = this.y;
+                } else {
+                    var x1 = this.x;
+                    var y1 = this.y;
+                    var x2 = this.selection_x;
+                    var y2 = this.selection_y;
+                }
+
+                var line_count = y2 - y1;
+
+                for (var i = 0; i < line_count + 1; i++) {
+                    var x_start = 0;
+                    var y = y1 + i;
+                    var line = this.getLine(y);
+                    var x_end = line.length - ((line.IS_LINKED_LINE) ? 0 : 1);
+
+                    if (i === 0) {
+                        x_start = x1;
+                    }
+
+                    if (i == line_count) {
+
+                        x_end = Math.min(x2, line.length - ((line.IS_LINKED_LINE) ? 0 : 1));
+                    }
+                }
+
+                //createSelection(y, x_start, x_end, xc, yc, scale)
+
+                if (!this.selections) {
+                    for (var i = 0; i < this.selections.length; i++) {
+                        var div = this.selections[i];
+                        div.hide();
+                    }
+                    this.selection_index = 0;
+                }
+
+                if (!this.selections[this.selection_index]) {
+                    var div = document.createElement("div");
+                    div.style.cssText = `
+                    position:absolute;
+                    top:0;
+                    left:0;
+                    background-color:rgba(250,0,0,0.5);
+                    z-index:30000000000;
+                `;
+                    this.selections[this.selection_index] = div;
+
+                }
+
+                var div = this.selections[this.selection_index];
+                this.selection_index++;
+                var x1 = this.getXCharOffset(x_start, y);
+                var x2 = this.getXCharOffset(x_end, y);
+                var width = x2 - x1;
+
+                div.show();
+                div.style.left = ((x1 + xc) * scale) + "px";
+                div.style.top = ((this.getYCharOffset(y) + yc) * scale) + "px";
+                div.style.width = width * scale + "px";
+                div.style.height = 16 * scale + "px";
+                this.fw.parent_element.appendChild(div);
+                */
+            }
         }
 
         /*** FONTS ***/
@@ -4371,6 +4581,8 @@ var flame = (function (fs,path) {
             
             let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
             let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
+
+            let new_path = "";
             if (URL_new.path[0] != "/") {
 
                 let a = URL_old.path.split("/");
@@ -4546,6 +4758,7 @@ var flame = (function (fs,path) {
                         lfv = lex.n.pos;
                         continue;
                 }
+                lex.n;
             }
 
             if (lfv > 0) class_map.set(key_val, lex.s(lfv));
@@ -4625,7 +4838,7 @@ var flame = (function (fs,path) {
                 }
 
                 //set query
-                let null_class, str = "";
+                let class_, null_class, str = "";
 
                 if ((null_class = map.get(""))) {
                     if (null_class.size > 0) {
@@ -4963,6 +5176,11 @@ var flame = (function (fs,path) {
     const PI = Math.PI; 
     const pow = Math.pow;
 
+    // A helper function to filter for values in the [0,1] interval:
+    function accept(t) {
+      return 0<=t && t <=1;
+    }
+
     // A real-cuberoots-only function:
     function cuberoot(v) {
       if(v<0) return -pow(-v,1/3);
@@ -5182,6 +5400,269 @@ var flame = (function (fs,path) {
     	}
     }
 
+    function curvePoint(curve, t) {
+        var point = {
+            x: 0,
+            y: 0
+        };
+        point.x = posOnCurve(t, curve[0], curve[2], curve[4]);
+        point.y = posOnCurve(t, curve[1], curve[3], curve[5]);
+        return point;
+    }
+
+    function posOnCurve(t, p1, p2, p3) {
+        var ti = 1 - t;
+        return ti * ti * p1 + 2 * ti * t * p2 + t * t * p3;
+    }
+
+    function splitCurve(bp, t) {
+        var left = [];
+        var right = [];
+
+        function drawCurve(bp, t) {
+            if (bp.length == 2) {
+                left.push(bp[0], bp[1]);
+                right.push(bp[0], bp[1]);
+            } else {
+                var new_bp = []; //bp.slice(0,-2);
+                for (var i = 0; i < bp.length - 2; i += 2) {
+                    if (i == 0) {
+                        left.push(bp[i], bp[i + 1]);
+                    }
+                    if (i == bp.length - 4) {
+                        right.push(bp[i + 2], bp[i + 3]);
+                    }
+                    new_bp.push((1 - t) * bp[i] + t * bp[i + 2]);
+                    new_bp.push((1 - t) * bp[i + 1] + t * bp[i + 3]);
+                }
+                drawCurve(new_bp, t);
+            }
+        }
+
+        drawCurve(bp, t);
+
+        return {
+            x: new QBezier(right),
+            y: new QBezier(left)
+        };
+    }
+
+    function curveIntersections(p1, p2, p3) {
+        var intersections = {
+            a: Infinity,
+            b: Infinity
+        };
+
+        var a = p1 - 2 * p2 + p3;
+
+        var b = 2 * (p2 - p1);
+
+        var c = p1;
+
+        if (b == 0) {} else if (Math.abs(a) < 0.00000000005) {
+            intersections.a = (-c / b); //c / b;
+        } else {
+
+            intersections.a = ((-b - Math.sqrt((b * b) - 4 * a * c)) / (2 * a));
+            intersections.b = ((-b + Math.sqrt((b * b) - 4 * a * c)) / (2 * a));
+        }
+        return intersections
+    }
+
+    class QBezier {
+        constructor(x1, y1, x2, y2, x3, y3) {
+            this.x1 = 0;
+            this.x2 = 0;
+            this.x3 = 0;
+            this.y1 = 0;
+            this.y2 = 0;
+            this.y3 = 0;
+
+            if (typeof(x1) == "number") {
+                this.x1 = x1;
+                this.x2 = x2;
+                this.x3 = x3;
+                this.y1 = y1;
+                this.y2 = y2;
+                this.y3 = y3;
+                return;
+            }
+
+            if (x1 instanceof QBezier) {
+                this.x1 = x1.x1;
+                this.x2 = x1.x2;
+                this.x3 = x1.x3;
+                this.y1 = x1.y1;
+                this.y2 = x1.y2;
+                this.y3 = x1.y3;
+                return;
+            }
+
+            if (x1 instanceof Array) {
+                this.x1 = x1[0];
+                this.y1 = x1[1];
+                this.x2 = x1[2];
+                this.y2 = x1[3];
+                this.x3 = x1[4];
+                this.y3 = x1[5];
+                return;
+            }
+        }
+
+        reverse() {
+            return new QBezier(
+                this.x3,
+                this.y3,
+                this.x2,
+                this.y2,
+                this.x1,
+                this.y1
+            )
+        }
+
+        point(t) {
+            return new Point2D(
+                posOnCurve(t, this.x1, this.x2, this.x3),
+                posOnCurve(t, this.y1, this.y2, this.y3))
+
+        }
+
+        tangent(t) {
+            var tan = {
+                x: 0,
+                y: 0
+            };
+
+            var px1 = this.x2 - this.x1;
+            var py1 = this.y2 - this.y1;
+
+            var px2 = this.x3 - this.x2;
+            var py2 = this.y3 - this.y2;
+
+            tan.x = (1 - t) * px1 + t * px2;
+            tan.y = (1 - t) * py1 + t * py2;
+
+            return tan;
+        }
+
+        toArray() {
+            return [this.x1, this.y1, this.x2, this.y2, this.x3, this.y3];
+        }
+
+        split(t) {
+            return splitCurve(this.toArray(), t);
+        }
+
+        rootsX() {
+            return this.roots(
+                this.x1,
+                this.x2,
+                this.x3
+            )
+
+        }
+
+        roots(p1, p2, p3) {
+            var curve = this.toArray();
+
+            var c = p1 - (2 * p2) + p3;
+            var b = 2 * (p2 - p1);
+            var a = p1;
+            var a2 = a * 2;
+            var sqrt = Math.sqrt(b * b - (a * 4 * c));
+            var t1 = (-b + sqrt) / a2;
+            var t2 = (-b - sqrt) / a2;
+
+            return [t1, t2];
+        }
+
+        rootsa() {
+            var curve = this.toArray();
+
+            var p1 = curve[1];
+            var p2 = curve[3];
+            var p3 = curve[5];
+            var x1 = curve[0];
+            var x2 = curve[2];
+            var x3 = curve[4];
+
+            var py1d = 2 * (p2 - p1);
+            var py2d = 2 * (p3 - p2);
+            var ad1 = -py1d + py2d;
+            var bd1 = py1d;
+
+            var px1d = 2 * (x2 - x1);
+            var px2d = 2 * (x3 - x2);
+            var ad2 = -px1d + px2d;
+            var bd2 = px1d;
+
+            var t1 = -bd1 / ad1;
+            var t2 = -bd2 / ad2;
+
+            return [t1, t2];
+        }
+
+        boundingBox() {
+            var x1 = curve[0];
+            var y1 = curve[1];
+            var x2 = curve[2];
+            var y2 = curve[3];
+            var x3 = curve[4];
+            var y3 = curve[5];
+            var roots = getRootsClamped(curve);
+            var min_x = Math.min(x1, x2, x3, roots.y[0] || Infinity, roots.x[0] || Infinity);
+            var min_y = Math.min(y1, y2, y3, roots.y[1] || Infinity, roots.x[1] || Infinity);
+            var max_x = Math.max(x1, x2, x3, roots.y[0] || -Infinity, roots.x[0] || -Infinity);
+            var max_y = Math.max(y1, y2, y3, roots.y[1] || -Infinity, roots.x[1] || -Infinity);
+
+            return {
+                min: {
+                    x: min_x,
+                    y: min_y
+                },
+                max: {
+                    x: max_x,
+                    y: max_y
+                }
+            };
+        }
+
+        rotate(angle, offset) {
+            angle = (angle / 180) * Math.PI;
+
+            var new_curve = this.toArray();
+
+            for (var i = 0; i < 6; i += 2) {
+                var x = curve[i] - offset.x;
+                var y = curve[i + 1] - offset.y;
+                new_curve[i] = ((x * Math.cos(angle) - y * Math.sin(angle))) + offset.x;
+                new_curve[i + 1] = ((x * Math.sin(angle) + y * Math.cos(angle))) + offset.y;
+            }
+
+            return new QBezier(new_curve);
+        }
+
+        intersects() {
+            return {
+                x: curveIntersections(this.x1, this.x2, this.x3),
+                y: curveIntersections(this.y1, this.y2, this.y3)
+            }
+        }
+
+        add(x, y) {
+            if (typeof(x) == "number") {
+                return new QBezier(
+                    this.x1 + x,
+                    this.y1 + y,
+                    this.x2 + x,
+                    this.y2 + y,
+                    this.x3 + x,
+                    this.y3 + y,
+                )
+            }
+        }
+    }
+
     class CSS_Bezier extends CBezier {
     	static parse(l, rule, r) {
 
@@ -5239,8 +5720,10 @@ var flame = (function (fs,path) {
             	switch(l.tx){
             		case "linear-gradient":
             		l.next().a("(");
-            		let num,type ="deg";
-            		if(l.tx == "to");else if(l.ty == l.types.num){
+            		let dir,num,type ="deg";
+            		if(l.tx == "to"){
+
+            		}else if(l.ty == l.types.num){
             			num = parseFloat(l.ty);
             			type = l.next().tx;
             			l.next().a(',');
@@ -5365,6 +5848,7 @@ var flame = (function (fs,path) {
         
         while (!lex.END) {
             let tx = lex.tx;
+            lex.n;
             switch (tx) {
                 case "matrix":
 
@@ -5443,6 +5927,7 @@ var flame = (function (fs,path) {
                 case "perspective":
                     break;
             }
+            lex.n;
         }
     }
     // A 2D transform composition of 2D position, 2D scale, and 1D rotation.
@@ -6670,6 +7155,7 @@ var flame = (function (fs,path) {
                     if (super_term) return term;
                     break;
                 case "<":
+                    let v;
 
                     if (term) {
                         if (term instanceof NR && term.isRepeating()) term = _Jux_(new NR, term);
@@ -6837,7 +7323,8 @@ var flame = (function (fs,path) {
                         if (!prop(win))
                             return false;
                     }
-                }        }
+                }
+            }
 
             return true;
         }
@@ -6949,7 +7436,9 @@ var flame = (function (fs,path) {
 
         */
         parseSelector(lexer) {
-            let selector_array = [],
+            let rule = this,
+                id = "",
+                selector_array = [],
                 selectors_array = [];
             let start = lexer.pos;
             let selectors = [];
@@ -6972,7 +7461,8 @@ var flame = (function (fs,path) {
                         break;
                     case "[":
                         let p = lexer.pk;
-                        while (!p.END && p.next().tx !== "]") {}                    p.a("]");
+                        while (!p.END && p.next().tx !== "]") {};
+                        p.a("]");
                         if (p.END) throw new _Error_("Unexpected end of input.");
                         sel.ss.push({
                             t: "attribute",
@@ -7127,7 +7617,8 @@ var flame = (function (fs,path) {
                                         ).catch((e) => res(this.parse(lexer)));
                                     } else {
                                         //Failed to fetch resource, attempt to find the end to of the import clause.
-                                        while (!lexer.END && lexer.next().tx !== ";") {}                                    lexer.next();
+                                        while (!lexer.END && lexer.next().tx !== ";") {}
+                                        lexer.next();
                                     }
                             }
                             break;
@@ -7166,7 +7657,9 @@ var flame = (function (fs,path) {
         isSame(inCSSRuleBody) {
             if (inCSSRuleBody instanceof CSSRuleBody) {
                 if (this.media_selector) {
-                    if (inCSSRuleBody.media_selector) ;
+                    if (inCSSRuleBody.media_selector) {
+                        //TODO compare media selectors;
+                    }
                 } else if (!inCSSRuleBody.media_selector)
                     return true;
             }
@@ -7386,6 +7879,10 @@ var flame = (function (fs,path) {
      * @private
      */
     LinkedList.mixinTree(CSSRootNode);
+    /*
+     * Expecting ID error check.
+     */
+    const _err_ = "Expecting Identifier";
 
     /**
      * Builds a CSS object graph that stores `selectors` and `rules` pulled from a CSS string. 
@@ -7521,7 +8018,9 @@ var flame = (function (fs,path) {
                     unique_rule.addProp(`top:0px`);
                     v |= 1 << 2;
                 }
-            } else if ((960 & v) > 0) ; else {
+            } else if ((960 & v) > 0) {
+                //using margin
+            } else {
 
                 //Create left and top positions or us margin depending on current user preferences.
                 unique_rule.addProp(`left:0px;top:0px`);
@@ -7644,6 +8143,13 @@ var flame = (function (fs,path) {
 
     function TEXTEDITOR(system, element, component, x, y){}
 
+    function TEXT(system, element, component, dx, dy) {
+        let pos = event.cursor;
+        let data = event.text_data;
+        let text = system.html.aquireTextData(element);
+        text.update(pos, data);
+    }
+
     let types$2 = CSSParser.types;
 
     function getContentBox(ele, win = window) {
@@ -7665,6 +8171,7 @@ var flame = (function (fs,path) {
     }
 
     function getFirstPositionedAncestor(ele) {
+        let element = null;
 
         while (ele.parentElement) {
             ele = ele.parentElement;
@@ -7767,6 +8274,14 @@ var flame = (function (fs,path) {
         let ratio = 0;
         funct(system, element, component, original_value + delta_value);
         let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
+        let diff_x = end_x - original_value;
+        if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {        
+            ratio = (diff_x / delta_value);
+            let diff = delta_value / ratio;
+            if (diff !== 0) {
+                funct(system, element, component, original_value + diff, true);
+            }
+        }
         return ratio;
     }
 
@@ -7821,6 +8336,8 @@ var flame = (function (fs,path) {
 
         return ratio;
     }
+
+    const types$3 = CSSParser.types;
 
     function SETLEFT(system, element, component, x, LINKED = false, type = "") {
         let cache = CacheFactory(system, element, component);
@@ -8494,7 +9011,8 @@ var flame = (function (fs,path) {
     }
 
     function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
-        let style = component.window.getComputedStyle(element);    let start_x = parseFloat(style.paddingLeft) || 0;
+        let style = component.window.getComputedStyle(element);3;
+        let start_x = parseFloat(style.paddingLeft) || 0;
         let width = (parseFloat(style.width) || 0) + start_x;
 
         if(dx > 0 && start_x + dx > width - 20) return ratio;
@@ -8834,6 +9352,28 @@ var flame = (function (fs,path) {
         }
         if (!LINKED) element.wick_node.setRebuild();
     }
+    //clear right
+    function CLEARIGHT(system, element, component, LINKED = false) {
+        let cache = CacheFactory(system, element, component);
+        let css = cache.rules;
+        let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+        if (css.props.right) {
+            if (KEEP_UNIQUE) cache.unique.addProp(`right:auto`);
+            else css.props.right = "auto";
+        }
+        if (!LINKED) element.wick_node.setRebuild();
+    }
+    //clear bottom
+    function CLEABOTTOM(system, element, component, LINKED = false) {
+        let cache = CacheFactory(system, element, component);
+        let css = cache.rules;
+        let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+        if (css.props.bottom) {
+            if (KEEP_UNIQUE) cache.unique.addProp(`bottom:auto`);
+            else css.props.bottom = "auto";
+        }
+        if (!LINKED) element.wick_node.setRebuild();
+    }
 
     //clear margin-top
     function CLEARMARGINTOP(system, element, component, LINKED = false) {
@@ -8854,6 +9394,18 @@ var flame = (function (fs,path) {
         if (css.props.margin_left) {
             if (KEEP_UNIQUE) cache.unique.addProp(`margin-left:0`);
             else css.props.margin_left = 0;
+        }
+        if (!LINKED) element.wick_node.setRebuild();
+    }
+
+    //clear margin-right
+    function CLEARMARGINRIGHT(system, element, component, LINKED = false) {
+        let cache = CacheFactory(system, element, component);
+        let css = cache.rules;
+        let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+        if (css.props.margin_right) {
+            if (KEEP_UNIQUE) cache.unique.addProp(`margin-right:0`);
+            else css.props.margin_right = 0;
         }
         if (!LINKED) element.wick_node.setRebuild();
     }
@@ -8935,7 +9487,7 @@ var flame = (function (fs,path) {
                 let x = rect.x;
                 let y = rect.y; //- parseFloat(par_prop["margin-top"]);
 
-                if (css.props.margin) ;
+                if (css.props.margin) {}
 
                 CLEARMARGINTOP(system, element, component, true);
                 CLEARMARGINLEFT(system, element, component, true);
@@ -9134,6 +9686,14 @@ var flame = (function (fs,path) {
 
         element.wick_node.setRebuild();
     }
+
+    //Converting from unit types
+    //left
+    function LEFTTOPX() {}
+    function LEFTTOEM() {}
+    function LEFTTOPERCENTAGE() {}
+    function LEFTTOVH() {}
+    function LEFTTOVW() {}
     //right
     //top
     //bottom
@@ -9684,6 +10244,8 @@ var flame = (function (fs,path) {
 
             let mx = this.tolerance;
             let my = this.tolerance;
+            let x_set = false;
+            let y_set = false;
             const l = box.l;
             const r = box.r;
 
@@ -9702,7 +10264,7 @@ var flame = (function (fs,path) {
                 //Make sure the ranges overlap
 
                 //Vertical
-                if (l <= (box.r + tol + 1) && r >= (box.l - tol - 1)) {
+                if (!x_set && l <= (box.r + tol + 1) && r >= (box.l - tol - 1)) {
                     //There is overlap; find the best alignment
                     let c = (box.l + box.r) * 0.5;
                     let tol = Math.abs(mx);
@@ -9729,7 +10291,7 @@ var flame = (function (fs,path) {
                 }
 
                 //Horizontal
-                if (t < (box.b + tol + 1) && b > (box.t - tol - 1)) {
+                if (!y_set && t < (box.b + tol + 1) && b > (box.t - tol - 1)) {
                     //There is overlap; find the best alignment
                     let c = (box.t + box.b) * 0.5;
                     let tol = Math.abs(my);
@@ -9751,6 +10313,8 @@ var flame = (function (fs,path) {
                             break;
                         }
                 }
+
+                if (x_set && y_set) break;
             }
 
             if (Math.abs(mx) < tol && Math.abs(dx) < tol)
@@ -10724,6 +11288,15 @@ var flame = (function (fs,path) {
     const DOC = (typeof(document) !== "undefined") ? document : ()=>{};
 
     /**
+     * Global Window Instance short name
+     * @property WIN
+     * @package
+     * @memberof module:wick~internals
+     * @type 	{Window}
+     */
+    const WIN = (typeof(window) !== "undefined") ? window : ()=>{};
+
+    /**
      * Global HTMLElement class short name
      * @property EL
      * @package
@@ -10740,6 +11313,51 @@ var flame = (function (fs,path) {
      * @type Object
      */
     const OB = Object;
+
+    /**
+     * Global String class short name
+     * @property STR
+     * @package
+     * @memberof module:wick~internals
+     * @type String
+     */
+    const STR = String;
+
+    /**
+     * Global Array class short name
+     * @property AR
+     * @package
+     * @memberof module:wick~internals
+     * @type 	{Array}
+     */
+    const AR = Array;
+
+    /**
+     * Global Number class short name
+     * @property NUM
+     * @package
+     * @memberof module:wick~internals
+     * @type 	{Number}
+     */
+    const NUM = Number;
+
+    /**
+     * Global Date class short name
+     * @property DT
+     * @package
+     * @memberof module:wick~internals
+     * @type 	{Date}
+     */
+    const DT = Date;
+
+    /**
+     * Global Boolean class short name
+     * @property BO
+     * @package
+     * @memberof module:wick~internals
+     * @type 	{Boolean}
+     */
+    const BO = Boolean;
 
     /***************** Functions ********************/
 
@@ -10772,6 +11390,26 @@ var flame = (function (fs,path) {
      * @return  {Boolean}  			bool - Switch for deep clone
      */
     const _cloneNode_ = (el, bool) => el.cloneNode(bool);
+
+    /**
+     *  Element.prototype.getElementsByTagName short name wrapper.
+     * @method _getElementByTag_
+     * @package
+     * @memberof module:wick~internals
+     * @param 	{HTMLElement}  		el   - HTMLElement to find tags on.
+     * @return  {String}  			tag - tagnames of elements to find.
+     */
+    const _getElementByTag_ = (el, tag) => el.getElementsByTagName(tag);
+
+    /**
+     *  Shortname for `instanceof` expression
+     * @method _instanceOf_
+     * @package
+     * @param      {object}  inst    The instance
+     * @param      {object}  constr  The constructor
+     * @return     {boolean}  the result of `inst instanceof constr`
+     */
+    const _instanceOf_ = (inst, constr) => inst instanceof constr;
 
     const _SealedProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: true});
     const _FrozenProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: false});
@@ -11260,6 +11898,7 @@ var flame = (function (fs,path) {
 
     // A no op function
     let EmptyFunction = () => {};
+    let EmptyArray = [];
 
     class ModelContainerBase extends ModelBase {
 
@@ -11609,6 +12248,8 @@ var flame = (function (fs,path) {
             @param {Array} items - An array of identifiable Models or objects. 
         */
         cull(items) {
+
+            let hash_table = {};
             let existing_items = __getAll__([], true);
 
             let loadHash = (item) => {
@@ -11616,6 +12257,9 @@ var flame = (function (fs,path) {
                     return item.forEach((e) => loadHash(e));
 
                 let identifier = this._gI_(item);
+
+                if (identifier !== undefined)
+                    hash_table[identifier] = item;
 
             };
 
@@ -12104,6 +12748,14 @@ var flame = (function (fs,path) {
 
     let schemes = { date, string: string$1, number: number$1, bool, time };
 
+
+    /**
+     * Used by Models to ensure conformance to a predefined data structure. Becomes immutable once created.
+     * @param {Object} data - An Object of `key`:`value` pairs used to define the Scheme. `value`s must be instances of or SchemeConstructor or classes that extend SchemeConstructor.
+     * @readonly
+     */
+    class Schema {}
+
     class BTreeModelContainer extends ModelContainerBase {
 
         constructor(data = [], root = null, address = []) {
@@ -12509,7 +13161,8 @@ var flame = (function (fs,path) {
                     if (left.LEAF)
                         for (let i = 0; i < left.keys.length; i++)
                             if (left.keys[i] != left.nodes[i].id)
-                                ;
+                                {/*debugger*/}
+
                     return true;
                 }
 
@@ -12550,7 +13203,7 @@ var flame = (function (fs,path) {
                     let key = this.keys[i];
 
                     if (key <= end && key >= start) {
-                        if (unique_id && this.nodes[i][unique_key] !== unique_id) continue;
+                        if (unique_key, unique_id && this.nodes[i][unique_key] !== unique_id) continue;
                         out_container.push(this.nodes[i]);
                         out++;
                         this.keys.splice(i, 1);
@@ -12585,6 +13238,8 @@ var flame = (function (fs,path) {
                 this.nodes[i].get(start, end, out_container);
 
             } else {
+
+                let out = false;
 
                 for (let i = 0, l = this.keys.length; i < l; i++) {
                     let key = this.keys[i];
@@ -14140,7 +14795,8 @@ var flame = (function (fs,path) {
                         if (pk.ch == "!") {
                             /* DTD - Doctype and Comment tags*/
                             //This type of tag is dropped
-                            while (!lex.END && lex.n.ch !== ">") {}                        lex.a(">");
+                            while (!lex.END && lex.n.ch !== ">") {}
+                            lex.a(">");
                             continue;
                         }
 
@@ -14228,7 +14884,7 @@ var flame = (function (fs,path) {
                 if (!IGNORE_TEXT_TILL_CLOSE_TAG) {
                     if (lex.ty == 8 && !HAS_INNER_TEXT) {
                         start = lex.pos;
-                    } else if (lex.ty == 256) ; else {
+                    } else if (lex.ty == 256) {} else {
                         HAS_INNER_TEXT = true;
                         end = lex.off + lex.tl;
                     }
@@ -14326,7 +14982,7 @@ var flame = (function (fs,path) {
             while (!lex.END) {
                 if (lex.ty == 8) {
                     txt += " ";
-                } else if (lex.ty == 256) ; else {
+                } else if (lex.ty == 256) {} else {
                     txt += lex.tx;
                 }
                 lex.IWS = false;
@@ -14365,6 +15021,18 @@ var flame = (function (fs,path) {
     }
 
      LinkedList.mixinTree(HTMLNode);
+
+
+    /**
+     * Builds an HTML AST. 
+     * @function
+     * @param {string} html_string - A string containing HTML data.
+     * @param {string} css_string - An existing CSSRootNode to merge with new `selectors` and `rules`.
+     * @return {Promise} Returns a `Promise` that will return a new or existing CSSRootNode.
+     * @memberof module:wick.core
+     * @alias html
+     */
+    const HTMLParser = (html_string, root = null, url) => (root = (!root || !(root instanceof HTMLNode)) ? new HTMLNode() : root, root.parse(whind$1(html_string.replace(/\&lt;/g, "<").replace(/\&gt;/g, ">"), url)));
 
     // Mode Flag
     const KEEP = 0;
@@ -14528,6 +15196,18 @@ var flame = (function (fs,path) {
 
             if (this.LOADED) {
                 this.LOADED = false;
+
+
+                let t = 0; //this.transitionOut();
+                /*
+                for (let i = 0, l = this.children.length; i < l; i++) {
+                    let child = this.children[i];
+
+                    t = Math.max(t, child.transitionOut());
+                }
+                */
+                if (t > 0)
+                    return setTimeout(() => { this.destroy(); }, t * 1000 + 5);
             }
 
             if (this.parent && this.parent.removeSource)
@@ -15326,8 +16006,11 @@ var flame = (function (fs,path) {
     const DYNAMIC_BINDING_ID = 0;
     const RAW_VALUE_BINDING_ID = 1;
     const TEMPLATE_BINDING_ID = 2;
+    const EVENT_BINDING_ID = 3;
 
     const ATTRIB = 1;
+    const STYLE = 2;
+    const HTML$1 = 3;
     const TEXT$2 = 4;
     const INPUT = 5;
     const SCRIPT = 6;
@@ -15809,6 +16492,9 @@ var flame = (function (fs,path) {
     function StyleTemplate(lex) {
 
         const style = new OutStyleTemplate();
+        if(lex){
+
+        }
         return style;
     }
 
@@ -16564,7 +17250,10 @@ var flame = (function (fs,path) {
             for (let i = 0, l = this.attributes.length; i < l; i++) {
                 let attr = this.attributes[i];
 
-                if (!attr.value) ; else {
+                if (!attr.value) {
+                    //let value = this.par.importAttrib()
+                    //if(value) data[attr.name];
+                } else {
                     data[attr.name] = attr.value;
 
                 }
@@ -17167,6 +17856,7 @@ var flame = (function (fs,path) {
     const Transitioneer = (function() {
 
         let obj_map = new Map();
+        let ActiveTransition = null;
 
         function $in(anim_data_or_duration = 0, delay = 0) {
 
@@ -17252,6 +17942,8 @@ var flame = (function (fs,path) {
                 this.out_seq = [];
 
                 this.TT = {};
+                //Final transition time is given by max(start_len+in_delay, end_len);\
+                ActiveTransition = this;
 
                 this.out = $out.bind(this);
                 this.in = $in.bind(this);
@@ -17618,6 +18310,7 @@ var flame = (function (fs,path) {
 
                 let i = 0,
                     ip = 0,
+                    ia = 0,
                     oa = 0;
 
                 while (i < off - this.shift) output[i++].index = -2;
@@ -17633,6 +18326,8 @@ var flame = (function (fs,path) {
 
                     output[i++].index = -2;
                 }
+
+                ia = 0;
 
                 while (i < off + limit && i < ol) {
 
@@ -18748,11 +19443,23 @@ var flame = (function (fs,path) {
         svg:SVGNode
     };
 
+    let internals = { /* Empty if production */ };
+
     core.source.package = SourcePackage;
     core.source.constructor = Source;
 
     Object.freeze(core.source);
     Object.freeze(core);
+
+    let source = core.source;
+
+    const wick$1 = {
+    	source,
+    	scheme,
+    	model: model$1,
+    	core,
+    	internals
+    };
 
     let proto$1 = StyleNode$1.prototype;
     proto$1.cssInject = proto$1._processTextNodeHook_;
@@ -19104,7 +19811,8 @@ var flame = (function (fs,path) {
         }
 
         seal(differ) {
-            if (this.PENDING_SAVE) {
+            
+            //if (this.PENDING_SAVE) {
                 this.PENDING_SAVE = false;
 
                 let new_data = this + "";
@@ -19117,7 +19825,7 @@ var flame = (function (fs,path) {
                     id: this.id,
                     diff
                 } : null;
-            }
+            //}
 
             return null;
         }
@@ -19259,25 +19967,162 @@ var flame = (function (fs,path) {
     }
 
     /**
-     * Uses a diff algorithm to create a change map from one document version to another. Vesions are stored in the project as a change history. 
+     * Uses a diff algorithm to create a change map from one document version to another. Versions are stored in the project as a change history. 
      */
-    class DocumentDifferentiator{
-    	createDiff(old, new_){
-    		if(old == new_) return;
+    class DocumentDifferentiator {
 
-    		return {
-    			old,
-    			new:new_
-    		}
-    	}
+        constructor() {
+            this.oldTF = new TextFramework();
+            this.newTF = new TextFramework();
+        }
 
-    	convert(doc, diff){
-    		doc.fromString(diff.new, false);
-    	}	
+        createDiff(old, new_) {
+            
+            if (!old || !new_ || old == new_) return;
+            
+            const oldTF = this.oldTF;
+            const newTF = this.newTF;
 
-    	revert(doc, diff){
-    		doc.fromString(diff.old, false);
-    	}
+            oldTF.insertText(old);
+            oldTF.updateText();
+            newTF.insertText(new_);
+            newTF.updateText();
+
+            let i = 0, j = 0, 
+            	li = oldTF.length,
+            	lj = newTF.length;
+
+            const diffs = {new:[],old:[]};
+
+            outer:
+                for (i = 0, j = 0; i < li; i++) {
+
+                    if (j >= lj) {
+                        //differences
+                        diffs.push({ type: "old", index: i, text: oldTF.getLine(i).slice() });
+                        continue;
+                    }
+
+
+                    if (oldTF.getLine(i).slice() == newTF.getLine(j).slice()) {
+                    	 console.log("ZANPAN",oldTF.getLine(i).slice(), newTF.getLine(j).slice(),i,j);
+                        j++;
+                        continue;
+                    }
+
+                    let root = j;
+
+                    for (let d = 1; j < lj; j++, d++) {
+                    	//*
+                    	if (j-root == 0 && i+d < li && oldTF.getLine(i+d).slice() == newTF.getLine(root+d).slice()){
+                    		for (let n = 0; n < d; n++) {	
+                    			diffs.new.push({index: root+n, text: newTF.getLine(root+n).slice()});
+                            	diffs.old.push({index: i+n, text: oldTF.getLine(i+n).slice() });
+                    		}
+                    		i += d;
+                            j = root+d+1;
+                            continue outer;
+                    	}//*/
+
+                        if (oldTF.getLine(i).slice() == newTF.getLine(j).slice()) {
+                            const distance = j - i;
+                            const l = Math.min(li, i + distance-1);
+                            
+                            for (let p = i+1; p < l; p++) {
+                                if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
+
+                                    for (let n = i; n < p; n++) 
+                                        diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"AA"});
+                                    
+                                    i = p;
+                                    j = root + 1;
+                                    continue outer;
+                                }
+                            }
+
+                            for (let n = root; n < j; n++) 
+                                diffs.new.push({index: n, text: newTF.getLine(n).slice(), n:"AB", root});
+                            
+                            j++;
+
+                    		console.log(oldTF.getLine(i).slice(), newTF.getLine(j).slice(),i,j);
+                            
+                            continue outer;
+                        }
+
+
+                        if (j == lj - 1) {
+
+                            for (let p = i; p < li; p++) {
+                                if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
+                                    for (let n = i; n < p; n++)
+                                        diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"DD", root, p});
+
+                                    i = p;
+                                    j = root + 1;
+                                    continue outer;
+                                }
+                            }
+
+                            diffs.new.push({index: root, text: newTF.getLine(root).slice()});
+                            diffs.old.push({index: i, text: oldTF.getLine(i).slice() });
+                            j = root + 1;
+                            break;
+                        }
+                    }
+                }
+
+
+            while (j < lj) {
+                diffs.new.push({index: j, text: newTF.getLine(j).slice()});
+                j++;
+            }
+
+            return diffs;
+        }
+
+        convert(doc, diff) {
+        	let a = new TextFramework();
+        	a.insertText(doc + "");
+            a.updateText();
+
+            for(let i = diff.old.length -1; i >= 0; i--){
+            	let d = diff.old[i];
+            	let line = a.getLine(d.index);
+            	a.line_container.remove(line);
+            	line.release();
+            }
+            a.updateText();
+
+            for(let i = 0; i < diff.new.length;i++){
+            	let d = diff.new[i];
+            	a.insertText(d.text, d.index - 1);
+            	a.updateText();
+            }
+
+            doc.fromString(a.toString());
+        }
+
+        revert(doc, diff) {
+            let a = new TextFramework();
+        	a.insertText(doc + "");
+            a.updateText();
+
+            for(let i = diff.new.length -1; i >= 0; i--){
+            	let d = diff.new[i];
+            	let line = a.getLine(d.index);
+            	a.line_container.remove(line);
+            	line.release();
+            }
+
+            for(let i = 0; i < diff.old.length;i++){
+            	let d = diff.old[i];
+            	a.insertText(d.text, d.index - 1);
+            	a.updateText();
+            }
+
+            doc.fromString(a.toString());
+        }
     }
 
     /**
@@ -19488,7 +20333,7 @@ var flame = (function (fs,path) {
 
     RootNode.prototype.buildExisting = function(element, source$$1, presets, taps, parent_element, win = window, css = this.css) {
         
-        {
+        if (true || this.CHANGED !== 0) {
 
             element.style.cssText = "";
 
@@ -19520,14 +20365,14 @@ var flame = (function (fs,path) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source$$1, presets, taps);
 
-            {
+            if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
                 for (let i = 0, l = this._bindings_.length; i < l; i++) {
                     this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
                 }
             }
 
-            {
+            if (true || this.CHANGED & 2) {
                 //rebuild children
                 let children = element.childNodes;
                 for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
@@ -19705,7 +20550,7 @@ var flame = (function (fs,path) {
     RootText.prototype.updated = function(){};
 
     SourceNode$1.prototype.buildExisting = function(element, source$$1, presets, taps, win = window, css) {
-        {
+        if (true || this.CHANGED !== 0) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
@@ -19724,14 +20569,14 @@ var flame = (function (fs,path) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source$$1, presets, taps);
 
-            {
+            if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
                 for (let i = 0, l = this._bindings_.length; i < l; i++) {
                     this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
                 }
             }
 
-            {
+            if (true || this.CHANGED & 2) {
                 //rebuild children
                 let children = element.childNodes;
                 for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
@@ -19744,8 +20589,10 @@ var flame = (function (fs,path) {
         return true;
     };
 
+    let Lexer$1 = whind$1;
+
     SourceTemplateNode$1.prototype.buildExisting = function(element, source$$1, presets, taps) {
-        {
+        if (true || this.CHANGED !== 0) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
@@ -19764,14 +20611,14 @@ var flame = (function (fs,path) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source$$1, presets, taps);
 
-            {
+            if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
                 for (let i = 0, l = this._bindings_.length; i < l; i++) {
                     this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
                 }
             }
 
-            {
+            if (true || this.CHANGED & 2) {
                 //rebuild children
                 let children = element.childNodes;
                 for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
@@ -19980,6 +20827,7 @@ var flame = (function (fs,path) {
     			rgb[0] += c;
     			rgb[2] += x;
     		}
+
     		var m = l - 0.5 * c;
 
     		rgb[0] += m;
@@ -20022,6 +20870,7 @@ var flame = (function (fs,path) {
     			rgb[0] += c;
     			rgb[2] += x;
     		}
+
     		rgb[0] *= 255;
     		rgb[1] *= 255;
     		rgb[2] *= 255;

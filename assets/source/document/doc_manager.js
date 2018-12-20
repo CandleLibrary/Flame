@@ -6,7 +6,7 @@ import {
 } from "./css_document";
 import path from "path";
 import fs from "fs";
-import {DocumentDifferentiator} from "./differ"
+import {DocumentDifferentiator} from "./differ";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -108,7 +108,7 @@ export class DocumentManager {
             for(let i = 0; i < diffs.length; i++){
                 let diff = diffs[i];
                 let doc = this.docs.get(diff.id);
-                this.differ.revert(doc, diff.diff)
+                this.differ.revert(doc, diff.diff);
             }
         }
     }

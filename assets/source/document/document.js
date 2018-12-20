@@ -20,7 +20,8 @@ export class Document {
     }
 
     seal(differ) {
-        if (this.PENDING_SAVE) {
+        
+        //if (this.PENDING_SAVE) {
             this.PENDING_SAVE = false;
 
             let new_data = this + "";
@@ -33,7 +34,7 @@ export class Document {
                 id: this.id,
                 diff
             } : null;
-        }
+        //}
 
         return null;
     }

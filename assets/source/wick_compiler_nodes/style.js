@@ -5,12 +5,12 @@ proto.cssInject = proto._processTextNodeHook_;
 
 const path = require("path");
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
-proto._processTextNodeHook_ = function(lex) {
+proto.processTextNodeHook = function(lex) {
     //Feed the lexer to a new CSS Builder
     this.css = this.getCSS();
     lex.IWS = true;
     lex.tl = 0;
-    lex.n();
+    lex.next();
 
     let URL = "";
 

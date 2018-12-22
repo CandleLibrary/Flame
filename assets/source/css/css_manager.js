@@ -49,6 +49,7 @@ export class CSSManager {
 	}
 
 	createStyleDocument(name){
+
 		let id = "./temp.css"
 		this.docs.load({path:"./", name:"temp.css"}, true);
 		let doc = this.docs.get(id);
@@ -118,7 +119,7 @@ export class CSSManager {
 				}
 			}
 		}
-
+		
 		if (!selector) {
 			//Create new CSS document and create identifier for this document best matching the element. 
 			//Add new class to element if there is none present. 
@@ -144,8 +145,6 @@ export class CSSManager {
 				this.css_files.push(tree);
 				component.local_css.push(tree);
 			}
-
-
 
 
 				//create new css document. it should be located at the same location as the component. Or at a temp location

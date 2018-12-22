@@ -38,29 +38,29 @@
 ## ISSUES
 - UI ATM feels clunky, unrefined, and in the way. 
 
-## version 0.1.0
-- BoundingBox/Draw creation of new elements/components. Should pop up best guess for type of - element. 
-- UI for background color, images and gradients
-- UI for border handling.
-- UI for fonts.
-- Project management UI. 
-- Auto Save of files.
-- Change history, undo/redo. 
-- Step based adjustment mode.
-- Pop-up focus on individual elements. 
-- Allow center, left, right alignment for groups of elements.
-- Allow multi selection
-- Allow distribution alignment.
+## version 0.1.0 - Base Functionality
+[ ] BoundingBox/Draw creation of new elements/components. Should pop up best guess for type of element. 
+[ ] UI for background color, images and gradients
+[ ] UI for border handling.
+[ ] UI for fonts.
+[ ] Project management UI. 
+[ ] Auto Save of files.
+[ ] Change history, undo/redo. 
+[ ] Step based adjustment mode.
+[ ] Pop-up focus on individual elements. 
+[ ] Allow center, left, right alignment for groups of elements.
+[ ] Allow multi selection
+[ ] Allow distribution alignment.
 
 ## ISSUES
-- Element jumps when initially moved
-- Cursor alignment off in text editor
-- TEXT `data` chars end up messing up elements 
-- Elements disappear when moved outside th bounds of a component
-- UI boxes jump around when cursor hits certain regions
-- Setting Background color does not yield instance change in component.
-- Not all UI components load.  
-- Component and UI header too verbose. Need to use icons and menus to reduce their presence. 
-- Delete/Backspace in text edit does not update elements. 
+[ ] Element jumps when initially moved
+[ ] Cursor alignment off in text editor
+[ ] TEXT `data` chars end up messing up elements 
+[ ] Elements disappear when moved outside th bounds of a component
+[ ] UI boxes jump around when cursor hits certain regions
+[ ] Setting Background color does not yield instance change in component.
+[ ] Not all UI components load.  
+[ ] Component and UI header too verbose. Need to use icons and menus to reduce their presence. 
+[ ] Delete/Backspace in text edit does not update elements. 
 
 d1

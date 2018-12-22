@@ -81,7 +81,7 @@ class UIComponent extends Component {
             }
         }
 
-        let css = pkg._skeletons_[0].tree.css;
+        let css = pkg.skeletons[0].tree.css;
         if (css) {
             css.forEach(css => {
                 this.local_css.push(css);

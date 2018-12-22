@@ -9,9 +9,9 @@ function MOVE (system){
 		 component = ui.components[0];
 		 element = component.query("span");
 		 input = element.nextSibling.childNodes[1];
-		 console.log(input)
+		 console.log(input);
 		 style = component.window.getComputedStyle(element);
-		})
+		});
 
 		it("Necessary CSS rules are created when moving an element in a component.", function(fin){
 
@@ -36,7 +36,7 @@ function MOVE (system){
 			style.position.should.equal("relative");
 
 			fin();
-		})
+		});
 
 		it("Converting position type should keep element in same visual location - display:inline", function(fin){		
 			//SPAN
@@ -86,7 +86,7 @@ function MOVE (system){
 			rect.top.should.equal(top);
 			input.flame_cache = null;
 			fin();
-		})
+		});
 
 		it("Converting position type should keep element in same visual location - display:block");
 		it("Converting position type should keep element in same visual location - display:grid");
@@ -110,6 +110,6 @@ function MOVE (system){
 			system.actions.CONVERT_TOP(system, element, component, "px");
 			rect = element.getBoundingClientRect();
 			top.should.equal(rect.top);
-		})
-	})
+		});
+	});
 }

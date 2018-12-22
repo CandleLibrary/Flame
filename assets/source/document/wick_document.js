@@ -1,7 +1,7 @@
-import {SourcePackage} from "@candlefw/wick";
-import {Document} from "./document";
+import { SourcePackage } from "@candlefw/wick";
+import { Document } from "./document";
 
-export class WickDocument extends Document{
+export class WickDocument extends Document {
 
     updatedWickASTTree(tree) {
         this.element.innerText = tree;
@@ -12,16 +12,21 @@ export class WickDocument extends Document{
 
         (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
 
-            if(this.data)
-                this.data.removeObserver(this);
+            if(!pkg) //TODO - Determine the cause of undefined assigned to pkg
+                return;
+
+            if (this.data){
+                this.element.innerText = "";
+                this.data.skeletons[0].tree.removeObserver(this);
+            }
 
             this.data = pkg;
 
-            pkg._skeletons_[0].tree.addObserver(this);
-            
+            pkg.skeletons[0].tree.addObserver(this);
+
             for (let i = 0; i < this.observers.length; i++) this.observers[i].documentReady(pkg);
 
-            if(ALLOW_SEAL){
+            if (ALLOW_SEAL) {
                 this.PENDING_SAVE = true;
                 this.system.docs.seal();
             }
@@ -29,10 +34,12 @@ export class WickDocument extends Document{
     }
 
     toString() {
-        return this.data._skeletons_[0].tree + "";
+        return (this.data) ?
+            this.data.skeletons[0].tree + "" :
+            "";
     }
 
-    get type(){
+    get type() {
         return "wick";
     }
 }

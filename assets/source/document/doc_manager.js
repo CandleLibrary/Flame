@@ -6,7 +6,7 @@ import {
 } from "./css_document";
 import path from "path";
 import fs from "fs";
-import {DocumentDifferentiator} from "./differ";
+import { DocumentDifferentiator } from "./differ";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -17,6 +17,9 @@ export class DocumentManager {
         this.differ = new DocumentDifferentiator();
         this.diffs = [];
         this.diff_step = 0;
+
+        this.pending = null;
+        this.updated = false;
         /**
          * Global `fetch` polyfill - basic support
          */
@@ -46,7 +49,7 @@ export class DocumentManager {
             case "string": // Load from file system or DB
                 let p = path.parse(file);
                 file = {
-                    path : p.dir,
+                    path: p.dir,
                     name: p.base
                 };
             case "object": // Londead data 
@@ -64,10 +67,10 @@ export class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path, this.system, NEW_FILE);
-                                break
+                                doc = new WickDocument(name, path, this.system, NEW_FILE, this);
+                                break;
                             default:
-                                doc = new CSSDocument(name, path, this.system, NEW_FILE);
+                                doc = new CSSDocument(name, path, this.system, NEW_FILE, this);
                         }
                         this.docs.set(id, doc);
                         doc.load();
@@ -84,46 +87,82 @@ export class DocumentManager {
     }
 
     /** Updates all changes to files and records diffs resulting from user actions */
-    seal(){
-        let diffs = [];
-        this.docs.forEach((d)=>{
-            let diff = d.seal(this.differ);
-            if(diff)
-                diffs.push(diff);
-        });
+    seal() {
+        
+        let diffs = [],
+            doc;
 
-        if(diffs.length > 0){
-            this.diffs.push({v:version++,diffs});
-            this.diff_step++;
+        if (this.pending) {
+
+            this.pending.previous = null;
+
+            while ((doc = this.pending)) {
+                let pack = doc.seal(this.differ);
+
+                if (pack)
+                    diffs.push(pack);
+            }
+
+            if (diffs.length > 0) {
+                this.diffs.push({ v: version++, diffs });
+                this.diff_step++;
+            }
         }
 
     }
 
-    stepBack(){
-        if(this.diff_step == 0) return;
-        debugger
+    stepBack() {
+        console.log("back", this.diff_step, this.diffs)
+
+        if (this.diff_step == 0) return;
+
         let diffs = this.diffs[--this.diff_step].diffs;
 
-        if(diffs){
-            for(let i = 0; i < diffs.length; i++){
-                let diff = diffs[i];
-                let doc = this.docs.get(diff.id);
-                this.differ.revert(doc, diff.diff);
+        if (diffs) {
+            for (let i = 0; i < diffs.length; i++) {
+                let pack = diffs[i];
+                let doc = this.docs.get(pack.id);
+                this.differ.revert(doc, pack.diff);
             }
         }
     }
 
-    stepForward(){
-        if(this.diff_step == this.diffs.length-1) return;
-        let diffs = this.diffs[this.diff_step++];
+    stepForward() {
+        console.log("forward", this.diff_step, this.diffs)
+        //if (this.diff_step == this.diffs.length - 1) return;
+        let diffs = this.diffs[this.diff_step++].diffs;
 
-        if(diffs){
-            for(let i = 0; i < diffs.length; i++){
-                let diff = diffs[i];
-                let doc = this.docs.get(diff.diffs.id);
-                this.differ.convert(doc, diff)
+        console.log(diffs)
+
+        if (diffs) {
+            for (let i = 0; i < diffs.length; i++) {
+                let pack = diffs[i];
+                let doc = this.docs.get(pack.id);
+                this.differ.convert(doc, pack.diff);
             }
-        }   
+        }
+    }
+
+    addPending(doc) {
+        if (doc.ps)
+            return;
+        if (this.pending)
+            doc.next = this.pending;
+
+        this.pending = doc;
+    }
+
+    removePending(doc) {
+        if (doc == this.pending) {
+
+            if (doc.nxt == doc)
+                this.pending = null;
+            else
+                this.pending = doc.next;
+        }
+
+        doc.next = null;
+        doc.prv = null;
     }
 }
 

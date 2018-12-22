@@ -1,10 +1,20 @@
 {
   "name": "@galactrax/flame",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A browser tech web editing app based on wick and electron",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+
+    "start.win.release" : "set FLAME_TEST=false && set FLAME_DEV=false && electron .",
+    "start.win.dev" : "set FLAME_TEST=false && set FLAME_DEV=true && electron .",
+    "start.win.test": "set FLAME_TEST=true && electron .",
+
+    "start.unix.release" : "FLAME_TEST=false FLAME_DEV=false electron .",
+    "start.unix.dev" : "FLAME_TEST=false FLAME_DEV=true electron .",
+    "start.unix.test": "FLAME_TEST=true electron .",
+
+    
     "build": "rollup --config ./assets/build/config/config.js",
     "build.watch": "rollup --watch --config ./assets/build/config/config.js",
     "prepare": "rollup --config ./assets/build/config/config.js",
@@ -21,21 +31,21 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
-    "@candlefw/charcoal": "0.0.1-a",
-    "@candlefw/css": "0.0.4",
-    "@candlefw/glow": "0.0.4",
-    "@candlefw/whind": "^0.2.8",
-    "@candlefw/wick": "^0.5.5",
-    "diff": "^3.5.0",
-    "electron": "^3.0.13",
-    "paper": "^0.11.8"
+    "@candlefw/charcoal": "*",
+    "@candlefw/css": "*",
+    "@candlefw/glow": "*",
+    "@candlefw/ll": "^0.1.2",
+    "@candlefw/whind": "*",
+    "@candlefw/wick": "^0.5.6",
+    "electron": "^4.0.0",
+    "paper": "^0.12.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
-    "rollup": "^0.66.6",
+    "rollup": "^0.68.1",
     "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-node-resolve": "^4.0.0",
     "spectron": "^5.0.0",
     "whind": ">=0.0.2"
   },

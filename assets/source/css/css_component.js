@@ -4,6 +4,7 @@ export class CSSComponent{
 		this.tree = tree;
 		this.doc = null;
 		this.element = document.createElement("div");
+
 		this.tree.addObserver(this);
 	}
 

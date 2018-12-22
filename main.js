@@ -12,6 +12,9 @@ app.on("ready", () => {
     let win = new BrowserWindow({
         width: 1920,
         height: 1080,
+        webPreferences : {
+            nodeIntegration: true
+        }
     });
 
     if (DEV && !TEST) win.webContents.openDevTools();

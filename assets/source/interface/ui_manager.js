@@ -277,6 +277,7 @@ export class UI_Manager {
     }
 
     handlePointerEndEvent(e) {
+        
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
@@ -311,7 +312,7 @@ export class UI_Manager {
                 case "svg":
                 case "jpg":
                 case "png":
-                case "gif":
+                case "gif": //intentional
                 default:
                     break;
             }

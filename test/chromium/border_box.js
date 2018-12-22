@@ -3,20 +3,17 @@ function BB (system){
 	const ui = system.ui;
 
 	describe("Handling border box of elements", function(){
-		this.slow(1000)
-		let component, element, style, rect, input;
+		this.slow(1000);
+		let component, element, style;
 
 		before(function(){
 		 component = ui.components[0];
 		 element = component.query("#main");
 		 style = component.window.getComputedStyle(element);
-		})
+		});
 
 		it("Allows arbitrary adjustment of height and width of an element.", function(){
-			let rect = element.getBoundingClientRect();
-
-			let width = rect.width;
-			let height = rect.height; 
+			let rect = element.getBoundingClientRect();; 
 
 			system.actions.SETHEIGHT(system, element, component, 60);
 			system.actions.SETWIDTH(system, element, component, 40);
@@ -52,22 +49,19 @@ function BB (system){
 		})
 
 		it("Moving padding adjusts width simultanously to keep position relative to cursor and overall border-bx width constant.", function(){
-			let rect = element.getBoundingClientRect();
+			let rect = element.getBoundingClientRect(); 
 
-			let width = rect.width;
-			let height = rect.height; 
-
-			system.actions.RESIZEPADDINGTL(system, element, component, 20, 20)
+			system.actions.RESIZEPADDINGTL(system, element, component, 20, 20);
 			rect = element.getBoundingClientRect();
-			style.paddingLeft.should.equal("20px")
-			style.paddingTop.should.equal("20px")
+			style.paddingLeft.should.equal("20px");
+			style.paddingTop.should.equal("20px");
 			rect.height.should.equal(120);
 			rect.width.should.equal(120);
 
-			system.actions.RESIZEPADDINGBR(system, element, component, -20, -20)
+			system.actions.RESIZEPADDINGBR(system, element, component, -20, -20);
 			rect = element.getBoundingClientRect();
-			style.paddingRight.should.equal("20px")
-			style.paddingBottom.should.equal("20px")
+			style.paddingRight.should.equal("20px");
+			style.paddingBottom.should.equal("20px");
 			rect.height.should.equal(120);
 			rect.width.should.equal(120);
 		})

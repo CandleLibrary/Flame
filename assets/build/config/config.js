@@ -14,6 +14,7 @@ export default {
         name :"flame",
         file: "./assets/build/flame.node.js",
         format: "cjs",
+        sourcemap: true
     }],
     external : ["path", "fs"],
     plugins: [commonjs({ include: ['./main.js', './node_modules/*.*'] }),            resolve()]

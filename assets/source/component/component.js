@@ -118,25 +118,43 @@ class Component {
 
     documentReady(pkg) {
 
-        let css = pkg._skeletons_[0].tree.css;
+        if (this.manager) {
+            //Already have source, just need to rebuild with new tree. 
+            const tree = pkg.skeletons[0].tree,
+                css = tree.css;
 
-        if (css)
-            css.forEach(css => {
-                this.local_css.push(css);
-            });
+            this.sources[0].ast = tree;
 
-        if (this.IFRAME_LOADED){
-            this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
-            this.sources[0].window = this.window;
+            if (css)
+                css.forEach(css => {
+                    this.local_css.push(css);
+                });
+
+            this.local_css = [];
+
             this.rebuild();
-            
-        }else
-            this.iframe.addEventListener("load", () => {
+        } else {
+
+        
+            let css = pkg.skeletons[0].tree.css;
+
+            if (css)
+                css.forEach(css => {
+                    this.local_css.push(css);
+                });
+
+            if (this.IFRAME_LOADED) {
                 this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
                 this.sources[0].window = this.window;
                 this.rebuild();
-            });
 
+            } else
+                this.iframe.addEventListener("load", () => {
+                    this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+                    this.sources[0].window = this.window;
+                    this.rebuild();
+                });
+        }
     }
 
     _upImport_() {
@@ -160,12 +178,12 @@ class Component {
         return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
     }
 
-    rebuild(){
-        if(this.sources)
+    rebuild() {
+        if (this.sources)
             this.sources[0].rebuild();
     }
 
-    query(query){
+    query(query) {
         return this.window.document.querySelector(query);
     }
 

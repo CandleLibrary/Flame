@@ -2,26 +2,30 @@ import fs from "fs";
 
 import {actions} from "../interface/actions/action";
 
+import ll from "@candlefw/ll";
+
 export class Document {
 
-    constructor(file_name, path, system, IS_NEW_FILE) {
+    constructor(file_name, path, system, IS_NEW_FILE, manager) {
         this.path = path;
         this.name = file_name;
         this.data = null;
         this.LOADED = (IS_NEW_FILE) ? true: false;
         this.UPDATED = true;
         this.SAVING = false;
-        this.PENDING_SAVE = false;
         this.INITIAL_HISTORY = false;
         this.observers = [];
         this.system = system;
         this.element = document.createElement("div");
         this.old_data = "";
+        this.manager = manager;
+        this.ps = false;
     }
 
     seal(differ) {
-        
-        //if (this.PENDING_SAVE) {
+
+        if (this.PENDING_SAVE) {
+            
             this.PENDING_SAVE = false;
 
             let new_data = this + "";
@@ -34,7 +38,7 @@ export class Document {
                 id: this.id,
                 diff
             } : null;
-        //}
+        }
 
         return null;
     }
@@ -65,9 +69,9 @@ export class Document {
         this.PENDING_SAVE = false;
         fs.open(this.path + "/" + this.name, "w", (err, fd) => {
             if (err) throw err;
-            fs.write(fd, (this.data._skeletons_[0].tree + ""), 0, "utf8", (err, written, data) => {
+            fs.write(fd, (this.data.skeletons[0].tree + ""), 0, "utf8", (err, written, data) => {
                 fs.close(fd, (err) => {
-                    if (err) throw err
+                    if (err) throw err;
                 });
                 if (err) {
                     throw err;
@@ -96,5 +100,19 @@ export class Document {
         return `${this.path}/${this.name}`;
     }
 
+    set PENDING_SAVE(v){
+        if(v) {
+            this.manager.addPending(this);
+            this.ps = true;
+        } else {
+            this.manager.removePending(this);
+            this.ps = false;
+        }
+    }
 
+    get PENDING_SAVE(){
+        return this.ps;
+    }
 }
+
+ll.mixinTree(Document);

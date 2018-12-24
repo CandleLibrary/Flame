@@ -1,7 +1,7 @@
 export function UNDO(system){
-	system.docs.stepBack();
+	system.history.undo();
 }
 
 export function REDO(system){
-	system.docs.stepForward();
+	system.history.redo();
 }

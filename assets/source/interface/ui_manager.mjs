@@ -88,6 +88,18 @@ export class UI_Manager {
         document.body.addEventListener("dragstart", e => {});
     }
 
+    reset(){
+        this.components.forEach(c=> actions.REMOVE_COMPONENT(system, c));
+    }
+
+    removeComponent(component){
+        for(let i = 0, l = this.components.length; i < l; i++)
+            if(component === this.components[i]){
+                this.components.splice(i,1);
+                break;
+            }
+    }
+
     mountComponent(component) {
         component.mount(this.element);
         this.loadedComponents.push(component);

@@ -121,23 +121,25 @@ export class DocumentDifferentiator {
 
         a.updateText();
 
+
         for(let i = diff.old.length -1; i >= 0; i--){
-        	let d = diff.old[i];
-        	let line = a.getLine(d.index);
-        	a.line_container.remove(line);
-        	line.release();
+            let d = diff.old[i];
+            let line = a.getLine(d.index);
+            a.line_container.remove(line);
+            line.release();
         }
 
         if(a.length == 0) debugger
 
         for(let i = 0; i < diff.new.length;i++){
-        	let d = diff.new[i];
-        	a.insertText(d.text, d.index - 1);
-        	a.updateText();
+            let d = diff.new[i];
+            a.insertText(d.text, d.index - 1);
+            a.updateText();
         }
 
         a.updateText();
 
+        console.log(a + "","\n_________________________________\n" , doc +"")
 
         doc.fromString(a.toString(), false);
     }
@@ -161,8 +163,8 @@ export class DocumentDifferentiator {
             a.insertText(d.text, Math.max(0,d.index - 1));
             a.updateText();
         }   
-
-
+        console.log(a + "","\n_________________________________\n" , doc +"")
+        
         doc.fromString(a.toString(), false);
     }
 }

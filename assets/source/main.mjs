@@ -1,6 +1,6 @@
 HTMLElement.prototype.wick_node = null;
 
-import {TextFramework, TextIO} from "@candlefw/charcoal";
+import { TextFramework, TextIO } from "@candlefw/charcoal";
 //Amend the prototype of the HTML
 
 import { UI_Manager } from "./interface/ui_manager";
@@ -8,33 +8,34 @@ import { JSManager } from "./js/js_manager";
 
 //CSS
 import { CSSManager } from "./css/css_manager";
-import { CSSRule } from "./css/wick_css_nodes.js";
+import { CSSRule } from "./css/wick_css_nodes.mjs";
 
 //HTML
 import { HTMLManager } from "./html/html_manager";
-import { DocumentManager } from "./document/doc_manager";
+import { DocumentManager } from "./document/doc_manager.mjs";
 
 //SOURCE
-import { Source } from "./source/source.js";
+import { Source } from "./source/source.mjs";
 
 //COMPILER NODES
-import { RootNode } from "./wick_compiler_nodes/root.js";
-import { SVGNode } from "./wick_compiler_nodes/svg.js";
-import { StyleNode } from "./wick_compiler_nodes/style.js";
-import { RootText } from "./wick_compiler_nodes/text.js";
-import { SourceNode } from "./wick_compiler_nodes/source.js";
-import { SourceTemplateNode } from "./wick_compiler_nodes/template.js";
-import { PackageNode } from "./wick_compiler_nodes/package.js";
-import { ScriptNode } from "./wick_compiler_nodes/script.js";
+import { RootNode } from "./wick_compiler_nodes/root.mjs";
+import { SVGNode } from "./wick_compiler_nodes/svg.mjs";
+import { StyleNode } from "./wick_compiler_nodes/style.mjs";
+import { RootText } from "./wick_compiler_nodes/text.mjs";
+import { SourceNode } from "./wick_compiler_nodes/source.mjs";
+import { SourceTemplateNode } from "./wick_compiler_nodes/template.mjs";
+import { PackageNode } from "./wick_compiler_nodes/package.mjs";
+import { ScriptNode } from "./wick_compiler_nodes/script.mjs";
 
 //Poject system
-import { Project } from "./project/project";
+import { Project } from "./project/project.mjs";
+import { StateMachine } from "./project/state_machine.mjs";
 
 //Actions 
-import {actions} from "./interface/actions/action";
+import { actions } from "./interface/actions/action.mjs";
 
 //Presets
-import {Presets} from "@candlefw/wick";
+import { Presets } from "@candlefw/wick";
 
 
 class System {
@@ -42,15 +43,16 @@ class System {
         this.docs = new DocumentManager(this);
         this.css = new CSSManager(this.docs);
         this.html = new HTMLManager(this.docs);
-        this.js = new JSManager(this.docs);
+        this.mjs = new JSManager(this.docs);
         this.presets = new Presets();
         this.actions = actions;
+        this.history = new StateMachine(this);
         this.project = new Project(this);
     }
 }
 
 /**
-* @brief Flame exposed object.  
+ * @brief Flame exposed object.  
  * @details Contains methods necessary to start a flame session.
  * @return Object
  */
@@ -58,13 +60,13 @@ const flame = {
     init: () => {
         const env = require('electron').remote.process.env;
         //Get testing and development flags. 
-        
+
         const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
         const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
 
-        if(TEST)
+        if (TEST)
             require("chai").should();
-        
+
         let system = new System();
 
         StyleNode.prototype.flame_system = system;
@@ -77,14 +79,14 @@ const flame = {
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         system.ui = new UI_Manager(ui_group, view_group, system);
-        
-        if(DEV && !TEST){
+
+        if (DEV && !TEST) {
             //Load in the development component.
-            let path = require("path").join(process.cwd(),"assets/components/test.html");
+            let path = require("path").join(process.cwd(), "assets/components/test.html");
             let doc = system.docs.get(system.docs.load(path));
-            actions.CREATE_COMPONENT(system, doc, {x:200, y:200});
+            actions.CREATE_COMPONENT(system, doc, { x: 200, y: 200 });
             window.flame = flame;
-        }else if(TEST){
+        } else if (TEST) {
             //Load in HTML test runner
             const test_iframe = document.createElement("iframe");
             test_iframe.src = "../../test/chromium/test.html";
@@ -107,29 +109,29 @@ const flame = {
                 test_iframe.contentWindow.fs = require("fs");
                 test_iframe.contentWindow.path = require("path");
                 test_iframe.contentWindow.run(system, require("chai"));
-            }
+            };
         }
-        
+
         //Connect to server or local file system and load projects
         //Check to see if there recently worked on project to open. 
-          //Load Poject.
+        //Load Poject.
         //If user preference allows, open the Splash screen modal. 
     },
 
-     //Initialize a text editor on element
-    initEditor(element){ 
-       
+    //Initialize a text editor on element
+    initEditor(element) {
+
         let fw = new TextFramework();
         let io = new TextIO(element);
-        
+
         io.fw = fw;
 
-        element.addEventListener("mouseup",e => io.onMouseUp(e));
-        element.addEventListener("keypress",e=> io.onKeyPress(e));
-        element.addEventListener("keydown",e=> io.onKeyDown(e));
-        element.addEventListener("wheel",e=> io.onMouseWheel(e));
+        element.addEventListener("mouseup", e => io.onMouseUp(e));
+        element.addEventListener("keypress", e => io.onKeyPress(e));
+        element.addEventListener("keydown", e => io.onKeyDown(e));
+        element.addEventListener("wheel", e => io.onMouseWheel(e));
 
-        return {fw, io};
+        return { fw, io };
     }
 };
 export default flame;

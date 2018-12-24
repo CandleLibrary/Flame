@@ -16,10 +16,13 @@ export class Document {
         this.INITIAL_HISTORY = false;
         this.observers = [];
         this.system = system;
-        this.element = document.createElement("div");
         this.old_data = "";
         this.manager = manager;
         this.ps = false;
+    }
+
+    destroy(){
+        this.observers = null;
     }
 
     seal(differ) {
@@ -113,6 +116,8 @@ export class Document {
     get PENDING_SAVE(){
         return this.ps;
     }
+
+
 }
 
 ll.mixinTree(Document);

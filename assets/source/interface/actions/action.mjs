@@ -2,7 +2,7 @@ import {CacheFactory} from "./cache"
 import { TEXTEDITOR } from "./text";
 import { MOVE, CENTER } from "./move";
 import { COMPLETE } from "./complete";
-import { CREATE_COMPONENT, CREATE_CSS_DOC } from "./create";
+import { CREATE_COMPONENT, CREATE_CSS_DOC, REMOVE_COMPONENT } from "./create";
 import {SETWIDTH,
 SETHEIGHT,
 SETDELTAWIDTH,
@@ -117,6 +117,7 @@ const actions = {
     TEXTEDITOR,
     MOVE,
     CENTER,
+    REMOVE_COMPONENT,
     CREATE_COMPONENT,
     CREATE_CSS_DOC,
     TOMARGINLEFT,

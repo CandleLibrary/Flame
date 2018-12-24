@@ -7,4 +7,5 @@ export function COMPLETE(system, element) {
 		CacheFactory.clear(element);
 
 	system.docs.seal();
+	system.history.seal();
 }

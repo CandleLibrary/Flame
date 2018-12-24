@@ -4,7 +4,6 @@ import { Document } from "./document";
 export class WickDocument extends Document {
 
     updatedWickASTTree(tree) {
-        this.element.innerText = tree;
         this.save();
     }
 
@@ -15,10 +14,8 @@ export class WickDocument extends Document {
             if(!pkg) //TODO - Determine the cause of undefined assigned to pkg
                 return;
 
-            if (this.data){
-                this.element.innerText = "";
+            if (this.data)
                 this.data.skeletons[0].tree.removeObserver(this);
-            }
 
             this.data = pkg;
 

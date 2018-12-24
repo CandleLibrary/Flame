@@ -103,20 +103,14 @@ export class DocumentManager {
                     diffs.push(pack);
             }
 
-            if (diffs.length > 0) {
-                this.diffs.push({ v: version++, diffs });
-                this.diff_step++;
-            }
+            if (diffs.length > 0) 
+                this.system.history.addAction({type:"doc", diffs});
         }
-
     }
 
-    stepBack() {
-        console.log("back", this.diff_step, this.diffs)
-
-        if (this.diff_step == 0) return;
-
-        let diffs = this.diffs[--this.diff_step].diffs;
+    undo(action) {
+        
+        let diffs = action.diffs;
 
         if (diffs) {
             for (let i = 0; i < diffs.length; i++) {
@@ -127,12 +121,9 @@ export class DocumentManager {
         }
     }
 
-    stepForward() {
-        console.log("forward", this.diff_step, this.diffs)
-        //if (this.diff_step == this.diffs.length - 1) return;
-        let diffs = this.diffs[this.diff_step++].diffs;
+    redo(action) {
 
-        console.log(diffs)
+        let diffs = action.diffs;
 
         if (diffs) {
             for (let i = 0; i < diffs.length; i++) {
@@ -163,6 +154,15 @@ export class DocumentManager {
 
         doc.next = null;
         doc.prv = null;
+    }
+
+    /**
+        Reset document manager, releasing all held documents. 
+    */
+    reset(){
+        this.diffs = [];
+        this.docs.forEach(d=>d.destroy());
+        this.docs = new Map();
     }
 }
 

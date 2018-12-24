@@ -2,6 +2,13 @@ function LOAD(system, env) {
     describe("Loading components", function() {
         this.slow(2000)
 
+        after(()=>{
+            //Reset the ui, doc, and components
+
+           // system.docs.reset();
+
+        })
+
         it("Should be able to load html file from file system and create a component in the main view.", function() {
             //Load in test component
             let uri = path.resolve(env.url);

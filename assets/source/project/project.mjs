@@ -15,7 +15,6 @@ import {ColorFramework} from "../color/color_framework";
  * @details The project object is the primary store of user data and preferences. 
  * It also provides the hosting of the presets object for wick components, and the interface components for user tools. 
  * The flame_data model stored is the main linking object for handling UI updates from actions performed through UI components.  
- * 
  */
 export class Project {
 
@@ -42,7 +41,10 @@ export class Project {
             }
         });
         
-        this.history = [];
+        this.history = [[]];
+        this.state_id = 0;
+
+        
         
         this.setDefaults();
 
@@ -72,8 +74,32 @@ export class Project {
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
-    load() {}
-    save() {}
+
+    /**
+        Creates new project file, with given name to directory. Sets the file as the main project file.
+    */
+    createFile(name, directory){
+
+    }
+
+    /** 
+        Saves all components, history, and settings to the project file. 
+        May also save current documents if user settings permit.  
+    **/
+    saveAll(){
+        if(!this.project_doc)
+            this.createFile(this.settings);
+
+        this.project_doc;
+
+    }
+
+    /** 
+        Saves current history to project file. 
+    **/
+    saveCheckpoint(){
+
+    }
 
     get settings(){
         return this.flame_data.settings;

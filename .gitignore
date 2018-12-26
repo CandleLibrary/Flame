@@ -87,4 +87,4 @@ build/*
 #Api directory
 documents/api/*
 
-*.siblime-workspace
+*.sublime-workspace

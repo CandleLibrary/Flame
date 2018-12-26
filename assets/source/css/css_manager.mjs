@@ -51,7 +51,7 @@ export class CSSManager {
 	createStyleDocument(name){
 
 		let id = "./temp.css"
-		this.docs.load({path:"./", name:"temp.css"}, true);
+		this.docs.loadFile({path:"./", name:"temp.css"}, true);
 		let doc = this.docs.get(id);
 		debugger
 	}

@@ -1,22 +1,21 @@
 <w-s model="settings" #menu="main" export="load">
-	
-	<div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))" style="display:none">
-		SETTINGS
-	</div>
-
-	<button onclick="((undo)())">undo</button>
-	<button onclick="((redo)())">redo</button>
-
-	<script on=((target))>	
+    <div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))" style="display:none">
+        SETTINGS
+    </div>
+    <button onclick="((undo)())">
+        undo
+    </button>
+    <button onclick="((redo)())">
+        redo
+    </button>
+    <script on="((target))" >	
 		src.target = target;
 	</script>
-
-	<script on="((undo))">
+    <script on="((undo))" >
 		if(src.target)
 			presets.custom.actions.UNDO(presets.custom.system);
 	</script>
-
-	<script on="((redo))">
+    <script on="((redo))" >
 		if(src.target)
 			presets.custom.actions.REDO(presets.custom.system);
 	</script>

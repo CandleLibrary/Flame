@@ -10,9 +10,10 @@ export class WickDocument extends Document {
     fromString(string, ALLOW_SEAL = true) {
 
         (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
-
+            this.LOADED = true;
             if(!pkg) //TODO - Determine the cause of undefined assigned to pkg
-                return;
+                
+                {debugger;return;}
 
             if (this.data)
                 this.data.skeletons[0].tree.removeObserver(this);
@@ -21,7 +22,7 @@ export class WickDocument extends Document {
 
             pkg.skeletons[0].tree.addObserver(this);
 
-            for (let i = 0; i < this.observers.length; i++) this.observers[i].documentReady(pkg);
+            this.alertObservers();
 
             if (ALLOW_SEAL) {
                 this.PENDING_SAVE = true;
@@ -32,11 +33,11 @@ export class WickDocument extends Document {
 
     toString() {
         return (this.data) ?
-            this.data.skeletons[0].tree + "" :
+            this.data.toString():
             "";
     }
 
     get type() {
-        return "wick";
+        return "html";
     }
 }

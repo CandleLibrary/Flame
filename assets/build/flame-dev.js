@@ -8856,6 +8856,8 @@ var flame = (function (fs, path) {
 
         load(document) {
             this.name.innerHTML = document.name;
+            this.doc_name = document.name;
+            this.doc_path = document.path;
             document.bind(this);
         }
 
@@ -8900,7 +8902,7 @@ var flame = (function (fs, path) {
             }
         }
 
-        _upImport_() {
+        upImport() {
 
         }
 
@@ -8970,6 +8972,18 @@ var flame = (function (fs, path) {
         get target() {
             return this.element;
         }
+
+        toJSON(){
+            return {
+                x:this.x,
+                y:this.y,
+                width:this.width,
+                height:this.height,
+                path:this.doc_path,
+                name:this.doc_name,
+                type: "html"
+            };
+        }
     }
 
     function CREATE_COMPONENT(system, doc, event) {
@@ -8986,6 +9000,8 @@ var flame = (function (fs, path) {
 
         component.x = event.x;
         component.y = event.y;
+
+        return component;
     }
 
     function REMOVE_COMPONENT(system, component){
@@ -9002,8 +9018,6 @@ var flame = (function (fs, path) {
         let comp = system.css.createComponent(doc);
 
         let element = comp.element;
-
-        //document.querySelector("#main_view").appendChild(element);
 
         comp.x = -event.x;
         comp.y = -event.y;
@@ -10201,7 +10215,7 @@ var flame = (function (fs, path) {
                 });
             }
 
-            this.mgr._upImport_ = (prop_name, data, meta) => {
+            this.mgr.upImport = (prop_name, data, meta) => {
                 switch (prop_name) {
                     case "load":
                         this.system.ui.mountComponent(this);
@@ -11090,14 +11104,17 @@ var flame = (function (fs, path) {
             document.body.addEventListener("dragstart", e => {});
         }
 
-        reset(){
-            this.components.forEach(c=> actions.REMOVE_COMPONENT(system, c));
+        reset() {
+            const system = this.system;
+
+            while (this.components[0])
+                actions.REMOVE_COMPONENT(system, this.components[0]);
         }
 
-        removeComponent(component){
-            for(let i = 0, l = this.components.length; i < l; i++)
-                if(component === this.components[i]){
-                    this.components.splice(i,1);
+        removeComponent(component) {
+            for (let i = 0, l = this.components.length; i < l; i++)
+                if (component === this.components[i]) {
+                    this.components.splice(i, 1);
                     break;
                 }
         }
@@ -11122,7 +11139,7 @@ var flame = (function (fs, path) {
 
         addComponent(wick_component_file_path) {
 
-            let doc = this.system.docs.get(this.system.docs.load(wick_component_file_path));
+            let doc = this.system.docs.get(this.system.docs.loadFile(wick_component_file_path));
 
             if (doc) {
                 let component = new UIComponent(this.system, doc.name);
@@ -11281,7 +11298,7 @@ var flame = (function (fs, path) {
             } else if (this.target) {
                 let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
                 let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-                let { dx, dy } = {dx:diffx, dy:diffy};//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+                let { dx, dy } = { dx: diffx, dy: diffy }; //this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
                 this.origin_x -= dx;
                 this.origin_y -= dy;
                 //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -11291,7 +11308,7 @@ var flame = (function (fs, path) {
         }
 
         handlePointerEndEvent(e) {
-            
+
             this.UI_MOVE = false;
             this.ACTIVE_POINTER_INPUT = false;
 
@@ -11302,35 +11319,15 @@ var flame = (function (fs, path) {
                 actions.COMPLETE(this.system, this.target.element, this.target.component);
         }
 
+
+
         handleDocumentDrop(e) {
             e.preventDefault();
 
-            Array.prototype.forEach.call(e.dataTransfer.files, f => {
-                let doc = this.system.docs.get(this.system.docs.load(f));
-
-                if (doc) switch (doc.type) {
-                    case "wick":
-                    case "html":
-                        actions.CREATE_COMPONENT(this.system, doc, {
-                            x: this.transform.getLocalX(e.clientX),
-                            y: this.transform.getLocalY(e.clientY)
-                        });
-                        break;
-                    case "css":
-                        actions.CREATE_CSS_DOC(this.system, doc, {
-                            x: this.transform.getLocalX(e.clientX),
-                            y: this.transform.getLocalY(e.clientY)
-                        });
-                        break;
-                    case "js":
-                    case "svg":
-                    case "jpg":
-                    case "png":
-                    case "gif": //intentional
-                    default:
-                        break;
-                }
-            });
+            Array.prototype.forEach.call(e.dataTransfer.files, 
+                f =>
+                this.mountDocument(f, this.transform.getLocalX(e.clientX), this.transform.getLocalY(e.clientY))
+            );
         }
 
         handleContextMenu(e, x, y, component = null) {
@@ -11372,6 +11369,59 @@ var flame = (function (fs, path) {
             if (this.target)
                 this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
             this.loadedComponents.forEach(c => c.set(this.target));
+        }
+
+        mountDocument(file_info, x, y) {
+            let doc = this.system.docs.get(this.system.docs.loadFile(file_info));
+            let comp = null;
+            if (doc) switch (doc.type) {
+                case "wick":
+                case "html":
+                    comp = actions.CREATE_COMPONENT(this.system, doc, {
+                        x,
+                        y
+                    });
+                    break;
+                case "css":
+                    comp = actions.CREATE_CSS_DOC(this.system, doc, {
+                        x,
+                        y
+                    });
+                    break;
+                case "js":
+                case "svg":
+                case "jpg":
+                case "png":
+                case "gif": //intentional
+                default:
+                    break;
+            }
+
+            return comp
+        }
+
+        /******** FILE HANDLING ************/
+
+        async save(file_builder) {
+            let data = { components: [] };
+
+            for (let i = 0; i < this.components.length; i++)
+                data.components.push(this.components[i]);
+
+            return await file_builder.writeS(JSON.stringify(data));
+        }
+
+        load(string) {
+            let data = JSON.parse(string);
+
+            let components = data.components;
+
+            for (let i = 0; i < components.length; i++) {
+                let d = components[i];
+                let comp = this.mountDocument(d, d.x, d.y);
+                comp.width = d.width;
+                comp.height = d.height;
+            }
         }
     }
 
@@ -11897,7 +11947,7 @@ var flame = (function (fs, path) {
             }
         }
 
-        toJson() { return JSON.stringify(this, null, '\t'); }
+        toJSON() { return JSON.stringify(this, null, '\t'); }
 
 
         /**
@@ -13608,7 +13658,7 @@ var flame = (function (fs, path) {
 
             if (data)
                 for (let name in data)
-                    this._createProp_(name, data[name]);
+                    this.createProp(name, data[name]);
 
         }
 
@@ -13651,14 +13701,14 @@ var flame = (function (fs, path) {
                          out = true;
                     }
                 } else{
-                    this._createProp_(prop_name, data[prop_name]);
+                    this.createProp(prop_name, data[prop_name]);
                     out = true;
                 }
             }
 
             return out;
         }
-        _createProp_(name, value) {
+        createProp(name, value) {
 
             let index = this.prop_offset++;
 
@@ -13741,6 +13791,24 @@ var flame = (function (fs, path) {
             }
 
             this.scheduleUpdate(name);
+        }
+
+        toJSON(HOST = true){
+            let data = {};
+
+            for(let name in this.look_up){
+                let index = this.look_up[name];
+                let prop = this.prop_array[index];
+
+                if(prop){
+                    if(prop instanceof ModelBase)
+                        data[name] = prop.toJSON(false);
+                    else
+                        data[name] = prop;
+                }
+            }
+
+            return HOST ? JSON.stringify(data) : data;    
         }
     }
 
@@ -14061,17 +14129,12 @@ var flame = (function (fs, path) {
                             if (schema_name == "proto") {
                                 for (let name in schema.proto)
                                     _SealedProperty_(prototype, name, schema.proto[name]);
-                                count++;
                                 continue;
                             }
 
                             if (typeof(scheme) == "function") {
                                 CreateModelProperty(prototype, scheme, schema_name, count);
-                                count++;
-                                continue;
-                            }
-
-                            if (typeof(scheme) == "object") {
+                            } else if (typeof(scheme) == "object") {
                                 if (Array.isArray(scheme)) {
                                     if (scheme[0] && scheme[0].container && scheme[0].schema)
                                         CreateModelProperty(prototype, scheme[0], schema_name, count);
@@ -14093,8 +14156,6 @@ var flame = (function (fs, path) {
                             look_up[schema_name] = count;
                             count++;
                         }
-
-
 
                         _SealedProperty_(prototype, "prop_offset", count);
                         _SealedProperty_(prototype, "look_up", look_up);
@@ -14119,6 +14180,8 @@ var flame = (function (fs, path) {
             if (data)
                 this.set(data, true);
         }
+
+        destroy() { this.root = null; }
 
         set(data, FROM_ROOT = false) {
 
@@ -14160,10 +14223,9 @@ var flame = (function (fs, path) {
             return this._changed_;
         }
 
-        destroy() { this.root = null; }
-
-        _createProp_() {}
+        createProp() {}
     }
+    SchemedModel.prototype.toJSON = Model.prototype.toJSON;
 
     class SchemedContainer extends ArrayModelContainer {
         
@@ -14870,8 +14932,7 @@ var flame = (function (fs, path) {
     TYPE_MASK$1 = 0xF,
     PARSE_STRING_MASK$1 = 0x10,
     IGNORE_WHITESPACE_MASK$1 = 0x20,
-    CHARACTERS_ONLY_MASK$1 = 0x40,
-    TOKEN_LENGTH_MASK$1 = 0xFFFFFF80,
+    TOKEN_LENGTH_MASK$1 = 0xFFFFFFC0,
 
     //De Bruijn Sequence for finding index of right most bit set.
     //http://supertech.csail.mit.edu/papers/debruijn.pdf
@@ -15156,10 +15217,8 @@ var flame = (function (fs, path) {
                         type = symbol$1;
                         continue;
                     } else {
-                        //Trim white space from end of string
-                        base = l - length;
-                        marker.sl -= length;
                         length = 0;
+                        base = l;
                         char -= base - off;
                     }
                 }
@@ -15169,7 +15228,7 @@ var flame = (function (fs, path) {
 
             marker.type = type;
             marker.off = base;
-            marker.tl = (this.masked_values & CHARACTERS_ONLY_MASK$1) ? Math.min(1,length) : length;
+            marker.tl = length;
             marker.char = char;
             marker.line = line;
 
@@ -15218,7 +15277,7 @@ var flame = (function (fs, path) {
 
             if (this.off < 0) this.throw(`Expecting ${text} got null`);
 
-            if (this.ch == char[0])
+            if (this.tx[this.off] == char[0])
                 this.next();
             else
                 this.throw(`Expecting "${char[0]}" got "${this.tx[this.off]}"`);
@@ -15266,11 +15325,13 @@ var flame = (function (fs, path) {
          * @return {String} A substring of the parsed string.
          * @public
          */
-        slice(start = this.off) {
+        slice(start) {
 
-            if (start instanceof Lexer$1) start = start.off;
-
-            return this.str.slice(start, (this.off <= start) ? this.sl : this.off);
+            if (typeof start === "number" || typeof start === "object") {
+                if (start instanceof Lexer$1) start = start.off;
+                return (this.END) ? this.str.slice(start, this.sl) : this.str.slice(start, this.off);
+            }
+            return this.str.slice(this.off, this.sl);
         }
 
         /**
@@ -15282,12 +15343,12 @@ var flame = (function (fs, path) {
 
             if (!(marker instanceof Lexer$1)) return marker;
 
-            if (marker.ch == "/") {
-                if (marker.pk.ch == "*") {
+            if (marker.tx == "/") {
+                if (marker.pk.tx == "*") {
                     marker.sync();
-                    while (!marker.END && (marker.next().ch != "*" || marker.pk.ch != "/")) { /* NO OP */ }
+                    while (!marker.END && (marker.nexts().tx != "*" || marker.pk.tx != "/")) { /* NO OP */ }
                     marker.sync().assert("/");
-                } else if (marker.pk.ch == "/") {
+                } else if (marker.pk.tx == "/") {
                     let IWS = marker.IWS;
                     while (marker.next().ty != types.new_line && !marker.END) { /* NO OP */ }
                     marker.IWS = IWS;
@@ -15403,27 +15464,15 @@ var flame = (function (fs, path) {
         }
 
         get token_length(){
-            return ((this.masked_values & TOKEN_LENGTH_MASK$1) >> 7);
+            return ((this.masked_values & TOKEN_LENGTH_MASK$1) >> 6);
         }
 
         set token_length(value){
-            this.masked_values = (this.masked_values & ~TOKEN_LENGTH_MASK$1) | (((value << 7) | 0) & TOKEN_LENGTH_MASK$1); 
+            this.masked_values = (this.masked_values & ~TOKEN_LENGTH_MASK$1) | (((value << 6) | 0) & TOKEN_LENGTH_MASK$1); 
         }
 
         get IGNORE_WHITE_SPACE(){
             return this.IWS;
-        }
-
-        set IGNORE_WHITE_SPACE(bool){
-            this.iws = !!bool;
-        }
-
-        get CHARACTERS_ONLY(){
-            return !!(this.masked_values & CHARACTERS_ONLY_MASK$1);
-        }
-
-        set CHARACTERS_ONLY(boolean){
-            this.masked_values = (this.masked_values & ~CHARACTERS_ONLY_MASK$1) | ((boolean | 0) << 6); 
         }
 
         get IWS(){
@@ -16462,11 +16511,7 @@ var flame = (function (fs, path) {
 
         }
 
-
-
         /******************************************* ATTRIBUTE AND ELEMENT ACCESS ******************************************************************************************************************/
-
-
 
         /**
          * Returns the type of `0` (`HTML`)
@@ -16541,7 +16586,7 @@ var flame = (function (fs, path) {
         getAttrib(prop) {
             for (let i = -1, l = this.attributes.length; ++i < l;) {
                 let attrib = this.attributes[i];
-                if (attrib.name == prop) return attrib;
+                if (attrib.name == prop && !attrib.IGNORE) return attrib;
             }
             return null;
         }
@@ -16638,6 +16683,7 @@ var flame = (function (fs, path) {
          * @public
          */
         toString(off = 0) {
+
             let o = offset.repeat(off);
 
             let str = `${o}<${this.tag}`,
@@ -16647,7 +16693,9 @@ var flame = (function (fs, path) {
 
             while (++i < l) {
                 let attr = atr[i];
-                str += ` ${attr.name}="${attr.value}"`;
+               
+                if(attr.name) 
+                    str += ` ${attr.name}="${attr.value}"`;
             }
 
             str += ">\n";
@@ -16655,12 +16703,18 @@ var flame = (function (fs, path) {
             if(this.single)
                 return str;
 
-            for (let node = this.fch; node;
-                (node = this.getNextChild(node))) {
-                str += node.toString(off+1);
-            }
+            str += this.innerToString(off+1);
 
             return str + `${o}</${this.tag}>\n`;
+        }
+
+        innerToString(off){
+            let str = "";
+            for (let node = this.fch; node;
+                (node = this.getNextChild(node))) {
+                str += node.toString(off);
+            }
+            return str;
         }
 
 
@@ -17027,13 +17081,13 @@ var flame = (function (fs, path) {
             return null;
         }
 
-        processAttributeHook(name, lex) { return { name, value: lex.slice() }; }
+        processAttributeHook(name, lex) { return {IGNORE:false, name, value: lex.slice() }; }
         
         processTextNodeHook(lex, IS_INNER_HTML) {
             if (!IS_INNER_HTML)
-                return new TextNode(lex.slice());
+                return new TextNode(lex.trim().slice());
             let txt = "";
-
+            /*
             lex.IWS = true;
 
             while (!lex.END) {
@@ -17048,10 +17102,15 @@ var flame = (function (fs, path) {
 
             if(!(lex.ty & (8 | 256)))
                 txt += lex.tx;
-
-            if (txt.length > 0) {
-                return new TextNode(txt.trim());
-            }
+            */
+            //if (txt.length > 0) {
+                
+                let t = lex.trim();
+                 debugger   
+                if(t.string_length > 0)
+                    return new TextNode(t.slice());
+                
+            //}
 
             return null;
         }
@@ -17612,17 +17671,17 @@ var flame = (function (fs, path) {
                 let bind = binds[i];
 
                 switch (bind.type) {
-                    case 0: //DYNAMIC_BINDING_ID
+                    case 0: //DYNAMICbindingID
                         let new_bind = new BindIO(source, errors, source.getTap(bind.tap_name), bind);
                         this.binds.push(new_bind);
                         new_bind.child = this;
                         //this.binds.push(msg._bind_(source, errors, taps, this));
                         break;
-                    case 1: //RAW_VALUE_BINDING_ID
+                    case 1: //RAW_VALUEbindingID
                         this.binds.push(bind);
                         break;
-                    case 2: //TEMPLATE_BINDING_ID
-                        if (bind._bindings_.length < 1) // Just a variable less expression.
+                    case 2: //TEMPLATEbindingID
+                        if (bind.bindings.length < 1) // Just a variable less expression.
                             this.binds.push({ _value_: msg.func() });
                         else
                             this.binds.push(bind._bind_(source, errors, taps, this));
@@ -17722,17 +17781,17 @@ var flame = (function (fs, path) {
                 let bind = binds[i];
 
                 switch (bind.type) {
-                    case 0: //DYNAMIC_BINDING_ID
+                    case 0: //DYNAMICbindingID
                         let new_bind = new BindIO(source, errors, source.getTap(bind.tap_name), bind);
                         this.binds.push(new_bind);
                         new_bind.child = this;
                         //this.binds.push(msg._bind_(source, errors, taps, this));
                         break;
-                    case 1: //RAW_VALUE_BINDING_ID
+                    case 1: //RAW_VALUEbindingID
                         this.binds.push(bind);
                         break;
-                    case 2: //TEMPLATE_BINDING_ID
-                        if (bind._bindings_.length < 1) // Just a variable less expression.
+                    case 2: //TEMPLATEbindingID
+                        if (bind.bindings.length < 1) // Just a variable less expression.
                             this.binds.push({ _value_: msg.func() });
                         else
                             this.binds.push(bind._bind_(source, errors, taps, this));
@@ -17934,14 +17993,14 @@ var flame = (function (fs, path) {
             this.data = null;
             if (msg) {
                 switch (msg.type) {
-                    case 0: //DYNAMIC_BINDING_ID
+                    case 0: //DYNAMICbindingID
                         this._msg_ = msg._bind_(source, errors, taps, this);
                         break;
-                    case 1: //RAW_VALUE_BINDING_ID
+                    case 1: //RAW_VALUEbindingID
                         this.data = msg.txt;
                         break;
-                    case 2: //TEMPLATE_BINDING_ID
-                        if (msg._bindings_.length < 1) // Just a variable less expression.
+                    case 2: //TEMPLATEbindingID
+                        if (msg.bindings.length < 1) // Just a variable less expression.
                             this.data = msg.func();
                         else
                             this._msg_ = msg._bind_(source, errors, taps, this);
@@ -18060,10 +18119,10 @@ var flame = (function (fs, path) {
         }
     }
 
-    const DYNAMIC_BINDING_ID = 0;
-    const RAW_VALUE_BINDING_ID = 1;
-    const TEMPLATE_BINDING_ID = 2;
-    const EVENT_BINDING_ID = 3;
+    const DYNAMICbindingID = 0;
+    const RAW_VALUEbindingID = 1;
+    const TEMPLATEbindingID = 2;
+    const EVENTbindingID = 3;
 
     const ATTRIB = 1;
     const STYLE = 2;
@@ -18088,19 +18147,19 @@ var flame = (function (fs, path) {
             return new EventIO(source, errors, taps, element, eventname, this._event_, this.bind);
         }
 
-        get _bindings_() {
+        get bindings() {
             if (this.bind) {
-                if (this.bind.type == TEMPLATE_BINDING_ID)
-                    return [...this.bind._bindings_, this._event_];
+                if (this.bind.type == TEMPLATEbindingID)
+                    return [...this.bind.bindings, this._event_];
                 else
                     return [this.bind, this._event_];
             }
             return [this._event_];
         }
-        set _bindings_(v) {}
+        set bindings(v) {}
 
         get type() {
-            return TEMPLATE_BINDING_ID;
+            return TEMPLATEbindingID;
         }
         set type(v) {}
     }
@@ -18112,7 +18171,7 @@ var flame = (function (fs, path) {
      */
     class ExpressionBinding {
         constructor(binds, func) {
-            this._bindings_ = binds;
+            this.bindings = binds;
             this.func = func;
         }
 
@@ -18120,14 +18179,14 @@ var flame = (function (fs, path) {
             
             switch (this.method) {
                 case INPUT:
-                    return new InputExpresionIO(source, errors, taps, element, this._bindings_, this.func);
+                    return new InputExpresionIO(source, errors, taps, element, this.bindings, this.func);
                 default:
-                    return new ExpressionIO(source, errors, taps, element, this._bindings_, this.func);
+                    return new ExpressionIO(source, errors, taps, element, this.bindings, this.func);
             }
         }
 
         get type() {
-            return TEMPLATE_BINDING_ID;
+            return TEMPLATEbindingID;
         }
         set type(v) {}
     }
@@ -18158,7 +18217,7 @@ var flame = (function (fs, path) {
         }
 
         get type() {
-            return DYNAMIC_BINDING_ID;
+            return DYNAMICbindingID;
         }
         set type(v) {}
 
@@ -18187,7 +18246,7 @@ var flame = (function (fs, path) {
         }
         get _value_() { return this.txt; }
         set _value_(v) {}
-        get type() { return RAW_VALUE_BINDING_ID; }
+        get type() { return RAW_VALUEbindingID; }
         set type(v) {}
         toString(){return this.txt;}
     }
@@ -18506,7 +18565,7 @@ var flame = (function (fs, path) {
 
 
     function OutTemplate(binds = []) {
-        this._bindings_ = binds;
+        this.bindings = binds;
     }
 
     OutTemplate.prototype = {
@@ -18514,33 +18573,33 @@ var flame = (function (fs, path) {
 
         attr: "",
 
-        _bindings_: null,
+        bindings: null,
 
         _bind_: function(source, errors, taps, element, attr) {
             if (this.method == ATTRIB || this.method == INPUT)
-                return new AttribTemplate(source, errors, taps, attr, element, this._bindings_);
-            return new TemplateString(source, errors, taps, element, this._bindings_);
+                return new AttribTemplate(source, errors, taps, attr, element, this.bindings);
+            return new TemplateString(source, errors, taps, element, this.bindings);
         },
 
         _appendText_: function(string) {
-            let binding = this._bindings_[this._bindings_.length - 1];
+            let binding = this.bindings[this.bindings.length - 1];
 
-            if (binding && binding.type == RAW_VALUE_BINDING_ID) {
+            if (binding && binding.type == RAW_VALUEbindingID) {
                 binding.txt += string;
             } else {
-                this._bindings_.push(new RawValueBinding(string));
+                this.bindings.push(new RawValueBinding(string));
             }
         },
 
         set type(v) {},
         get type() {
-            return TEMPLATE_BINDING_ID;
+            return TEMPLATEbindingID;
         },
 
         toString(){
             let str = "";
-            for(let i = 0; i < this._bindings_.length; i++)
-                str += this._bindings_[i];
+            for(let i = 0; i < this.bindings.length; i++)
+                str += this.bindings[i];
             return str;
         }
     };
@@ -18561,15 +18620,15 @@ var flame = (function (fs, path) {
             this._css_props_ = [];
         }
 
-        get _bindings_() {
+        get bindings() {
             if (this._template_)
-                return this._template_._bindings_;
+                return this._template_.bindings;
             return [];
         }
-        set _bindings_(v) {}
+        set bindings(v) {}
 
         get type() {
-            return TEMPLATE_BINDING_ID;
+            return TEMPLATEbindingID;
         }
         set type(v) {}
 
@@ -18610,7 +18669,7 @@ var flame = (function (fs, path) {
 
             this.prop_name = prop_name;
 
-            this._bindings_ = bindings;
+            this.bindings = bindings;
         }
 
         get _wick_type_() {
@@ -18619,7 +18678,7 @@ var flame = (function (fs, path) {
         set _wick_type_(v) {}
 
         _bind_(source, errors, taps, io) {
-            let binding = new CSSRuleTemplateString(source, errors, taps, this._bindings_, this.prop_name);
+            let binding = new CSSRuleTemplateString(source, errors, taps, this.bindings, this.prop_name);
             binding.addIO(io);
             return binding;
         }
@@ -18676,7 +18735,7 @@ var flame = (function (fs, path) {
             this.HAS_TAPS = false;
 
             this.tap_list = [];
-            this._bindings_ = [];
+            this.bindings = [];
 
             this.css = null;
 
@@ -18737,7 +18796,7 @@ var flame = (function (fs, path) {
 
                 let rule;
 
-                
+
                 for (let i = 0; i < css.length; i++)
                     rule = css[i].getApplicableRules(this, rule, win);
 
@@ -18750,10 +18809,10 @@ var flame = (function (fs, path) {
                     //Link in the rule properties to the tap system. 
                     let HAVE_BINDING = false;
 
-                    for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                        let binding = this._bindings_[i];
+                    for (let i = 0, l = this.bindings.length; i < l; i++) {
+                        let binding = this.bindings[i];
 
-                        if (binding.name == "css"){
+                        if (binding.name == "css") {
                             binding.binding.clear();
                             HAVE_BINDING = (binding.binding._addRule_(rule), true);
                         }
@@ -18767,7 +18826,7 @@ var flame = (function (fs, path) {
                             value: "",
                             binding
                         };
-                        this._bindings_.push(vals);
+                        this.bindings.push(vals);
 
                     }
 
@@ -18782,8 +18841,8 @@ var flame = (function (fs, path) {
         setPendingCSS(css) {
             if (this.par)
                 this.par.setPendingCSS(css);
-            else{
-                if(!this.css)
+            else {
+                if (!this.css)
                     this.css = [];
                 this.css.push(css);
             }
@@ -18894,15 +18953,15 @@ var flame = (function (fs, path) {
 
             if (this.delegateTapBinding(binding, tap_mode)) return binding;
 
-            if (binding.type === TEMPLATE_BINDING_ID) {
+            if (binding.type === TEMPLATEbindingID) {
 
-                let _bindings_ = binding._bindings_;
+                let bindings = binding.bindings;
 
-                for (let i = 0, l = _bindings_.length; i < l; i++)
-                    if (_bindings_[i].type === DYNAMIC_BINDING_ID)
-                        this.linkTapBinding(_bindings_[i]);
+                for (let i = 0, l = bindings.length; i < l; i++)
+                    if (bindings[i].type === DYNAMICbindingID)
+                        this.linkTapBinding(bindings[i]);
 
-            } else if (binding.type === DYNAMIC_BINDING_ID)
+            } else if (binding.type === DYNAMICbindingID)
                 this.linkTapBinding(binding);
 
             return binding;
@@ -18930,17 +18989,17 @@ var flame = (function (fs, path) {
 
             const out_statics = this.__statics__ || statics;
             let own_out_ele;
-            
+
             if (this._merged_) {
-                
+
                 own_out_ele = {
                     ele: null
                 };
 
                 let out_source = this._merged_.build(element, source, presets, errors, taps, out_statics, own_out_ele);
 
-                if(!source)
-                    source = out_source;            
+                if (!source)
+                    source = out_source;
             }
 
             let own_element;
@@ -18948,11 +19007,11 @@ var flame = (function (fs, path) {
             if (own_out_ele) {
                 own_element = own_out_ele.ele;
             } else {
-                if(!source){
+                if (!source) {
                     source = new Source(null, presets, own_element, this);
                     own_element = this.createElement(presets, source);
                     source.ele = own_element;
-                }else
+                } else
                     own_element = this.createElement(presets, source);
 
                 if (element) appendChild(element, own_element);
@@ -18973,8 +19032,8 @@ var flame = (function (fs, path) {
 
                 if (element) appendChild(element, own_element);
 
-                for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                    let attr = this._bindings_[i];
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    let attr = this.bindings[i];
                     attr.binding._bind_(source, errors, taps, own_element, attr.name);
                 }
 
@@ -19031,9 +19090,14 @@ var flame = (function (fs, path) {
          */
         processAttributeHook(name, lex) {
 
-            if(!name) return null;
+            if (!name) return null;
 
-            let start = lex.off;
+            let start = lex.off,
+                basic = {
+                    IGNORE:true,
+                    name,
+                    value: lex.slice(start)
+                };
 
             let bind_method = ATTRIB,
                 FOR_EVENT = false;
@@ -19050,7 +19114,7 @@ var flame = (function (fs, path) {
                             this.statics[key] = lex.slice();
                     }
 
-                    return null;
+                    return basic;
 
                 case "v": //Input
                     if (name == "value")
@@ -19070,45 +19134,42 @@ var flame = (function (fs, path) {
                         let components = this.presets.components;
                         if (components)
                             components[component_name] = this;
-                        return null;
+                        return basic;
                     }
                     break;
                 case "b":
                     if (name == "badge") {
                         this._badge_name_ = lex.tx;
-                        return null;
+                        return basic;
                     }
             }
 
             if (this.checkTapMethodGate(name, lex))
-                return null;
+                return {
+                    name,
+                    value: lex.slice(start)
+                };
 
+            basic.IGNORE = false;
             if ((lex.sl - lex.off) > 0) {
                 let binding = Template(lex, FOR_EVENT);
                 if (!binding) {
-                    return {
-                        name,
-                        value: lex.slice(start)
-                    };
+                    return basic;
                 }
 
                 binding.val = name;
                 binding.method = bind_method;
                 let attr = {
+                    IGNORE:false,
                     name,
                     value: (start < lex.off) ? lex.slice(start) : true,
                     binding: this.processTapBinding(binding)
                 };
-                this._bindings_.push(attr);
+                this.bindings.push(attr);
                 return attr;
             }
 
-            let value = lex.slice(start);
-
-            return {
-                name,
-                value: value || true
-            };
+            return basic;
         }
 
 
@@ -19157,13 +19218,15 @@ var flame = (function (fs, path) {
     class ScriptNode$1 extends VoidNode$1 {
         constructor() {
             super();
-            this._script_text_ = "";
-            this._binding_ = null;
+            this.script_text = "";
+            this.binding = null;
         }
 
         processTextNodeHook(lex) {
-            if (this._binding_)
-                this._binding_.val = lex.slice();
+            this.script_text = lex.slice();
+            
+            if (this.binding)
+                this.binding.val = this.script_text;
         }
 
         processAttributeHook(name, lex) {
@@ -19171,9 +19234,9 @@ var flame = (function (fs, path) {
             switch (name) {
                 case "on":
                     let binding = Template(lex, false);
-                    if (binding.type == DYNAMIC_BINDING_ID) {
+                    if (binding.type == DYNAMICbindingID) {
                         binding.method = SCRIPT;
-                        this._binding_ = this.processTapBinding(binding);
+                        this.binding = this.processTapBinding(binding);
                     }
                     return null;
             }
@@ -19181,8 +19244,8 @@ var flame = (function (fs, path) {
             return { name, value: lex.slice() };
         }
         build(element, source, presets, errors, taps) {
-            if (this._binding_)
-                this._binding_._bind_(source, errors, taps, element);
+            if (this.binding)
+                this.binding._bind_(source, errors, taps, element);
         }
     }
 
@@ -19224,7 +19287,7 @@ var flame = (function (fs, path) {
         createElement() {
             return createElement(this.getAttribute("element") || "div");
         }
-        
+
         build(element, source, presets, errors, taps = null, statics = null, out_ele = null) {
 
             let data = {};
@@ -19290,8 +19353,8 @@ var flame = (function (fs, path) {
                     ele: element
                 };
 
-                for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                    let attr = this._bindings_[i];
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    let attr = this.bindings[i];
                     let bind = attr.binding._bind_(me, errors, out_taps, element, attr.name);
 
                     if (hook) {
@@ -19341,7 +19404,12 @@ var flame = (function (fs, path) {
          * @return     {Object}  Key value pair.
          */
         processAttributeHook(name, lex, value) {
-            let start = lex.off;
+            let start = lex.off,
+                basic = {
+                    IGNORE:true,
+                    name,
+                    value: lex.slice(start)
+                };
 
             switch (name[0]) {
                 case "#":
@@ -19354,19 +19422,22 @@ var flame = (function (fs, path) {
                             this.statics[key] = lex.slice();
                     }
 
-                    return null;
+                    return {
+                        name,
+                        value: lex.slice(start)
+                    };
                 case "m":
                     if (name == "model") {
                         this._model_name_ = lex.slice();
                         lex.n;
-                        return null;
+                        return basic;
                     }
                     break;
                 case "s":
                     if (name == "schema") {
                         this._schema_name_ = lex.slice();
                         lex.n;
-                        return null;
+                        return basic;
                     }
                     break;
                 case "c":
@@ -19375,45 +19446,42 @@ var flame = (function (fs, path) {
                         let components = this.presets.components;
                         if (components)
                             components[component_name] = this;
-                        return null;
+                        return basic;
                     }
                     break;
                 case "b":
                     if (name == "badge") {
                         this._badge_name_ = lex.tx;
-                        return null;
+                        return basic;
                     }
                     break;
                 default:
                     if (this.checkTapMethodGate(name, lex))
-                        return null;
+                        return basic;
             }
 
             //return { name, value: lex.slice() };
             //return super.processAttributeHook(name, lex, value);
+            basic.IGNORE = false;
+
             if ((lex.sl - lex.off) > 0) {
                 let binding = Template(lex, true);
                 if (!binding) {
-                    return {
-                        name,
-                        value: lex.slice(start)
-                    };
+                    return basic;
                 }
                 binding.val = name;
                 binding.method = ATTRIB;
                 let attr = {
+                    IGNORE:false,
                     name,
                     value: (start < lex.off) ? lex.slice(start) : true,
                     binding: this.processTapBinding(binding)
                 };
-                this._bindings_.push(attr);
+                this.bindings.push(attr);
                 return attr;
             }
 
-            return {
-                name,
-                value: lex.slice(start)
-            };
+            return basic;
 
         }
     }
@@ -20899,7 +20967,8 @@ var flame = (function (fs, path) {
             super();
             this.BUILD_LIST = [];
             this.filters = [];
-            this._property_bind_ = null;
+            this.property_bind = null;
+            this.property_bind_text = "";
             this.package = null;
         }
 
@@ -20909,25 +20978,25 @@ var flame = (function (fs, path) {
 
             if (this.HAS_TAPS)
                 taps = source.linkTaps(this.tap_list);
-            if (this._property_bind_ && this.package) {
+            if (this.property_bind && this.package) {
 
                 let ele = createElement(this.getAttribute("element") || "ul");
-                
-                this.class.split(" ").map(c=> c ? ele.classList.add(c):{});
 
-                if(this._badge_name_)
+                this.class.split(" ").map(c => c ? ele.classList.add(c) : {});
+
+                if (this._badge_name_)
                     source.badges[this._badge_name_] = ele;
-                
+
 
                 let me = new SourceTemplate(source, presets, ele);
                 me.package = this.package;
-                me.prop = this._property_bind_._bind_(source, errors, taps, me);
+                me.prop = this.property_bind._bind_(source, errors, taps, me);
 
                 appendChild(element, ele);
 
                 for (let node = this.fch; node; node = this.getNextChild(node)) {
                     //All filter nodes here
-                    
+
                     let on = node.getAttrib("on");
                     let sort = node.getAttrib("sort");
                     let filter = node.getAttrib("filter");
@@ -20936,12 +21005,12 @@ var flame = (function (fs, path) {
                     let scrub = node.getAttrib("scrub");
                     let shift = node.getAttrib("shift");
 
-                    if(limit && limit.binding.type == 1){
+                    if (limit && limit.binding.type == 1) {
                         me.limit = parseInt(limit.value);
                         limit = null;
                     }
 
-                    if(shift && shift.binding.type == 1){
+                    if (shift && shift.binding.type == 1) {
                         me.shift = parseInt(shift.value);
                         shift = null;
                     }
@@ -20949,8 +21018,8 @@ var flame = (function (fs, path) {
                     if (sort || filter || limit || offset || scrub || shift) //Only create Filter node if it has a sorting bind or a filter bind
                         me.filters.push(new FilterIO(source, errors, taps, me, on, sort, filter, limit, offset, scrub, shift));
                 }
-            }else{
-                errors.push(new Error(`Missing source for template bound to "${this._property_bind_._bindings_[0].tap_name}"`));
+            } else {
+                errors.push(new Error(`Missing source for template bound to "${this.property_bind.bindings[0].tap_name}"`));
             }
 
             return source;
@@ -20962,9 +21031,9 @@ var flame = (function (fs, path) {
 
         _ignoreTillHook_() {}
 
-        
-    createHTMLNodeHook(tag, start) {
-            
+
+        createHTMLNodeHook(tag, start) {
+
             switch (tag) {
                 case "f":
                     return new FilterNode(); //This node is used to 
@@ -20974,16 +21043,26 @@ var flame = (function (fs, path) {
         }
 
         processTextNodeHook(lex) {
-            if (!this._property_bind_) {
+            if (!this.property_bind) {
+                this.property_bind_text = lex.trim().slice();
                 let cp = lex.copy();
                 lex.IWS = true;
                 cp.tl = 0;
                 if (cp.n.ch == barrier_a_start && (cp.n.ch == barrier_a_start || cp.ch == barrier_b_start)) {
                     let binding = Template(lex);
                     if (binding)
-                        this._property_bind_ = this.processTapBinding(binding);
+                        this.property_bind = this.processTapBinding(binding);
                 }
             }
+        }
+
+        innerToString(off){
+            //Insert temp child node for the property_bind
+            let str = this.property_bind_text;
+
+            str += super.innerToString(off);
+
+            return str;
         }
     }
 
@@ -21139,7 +21218,7 @@ var flame = (function (fs, path) {
             let source = this.tree.build(parent_element, parent_source, this.presets, errors);
 
             if (errors.length > 0) {
-                //TODO!!!!!!Remove all _bindings_ that change Model. 
+                //TODO!!!!!!Remove all bindings that change Model. 
                 //source.kill_up_bindings();
                 errors.forEach(e => console.log(e));
             }
@@ -21153,14 +21232,20 @@ var flame = (function (fs, path) {
          * Only accept certain nodes for mounting to the DOM. 
          * The custom element `import` is simply used to import extra HTML data from network for use with template system. It should not exist otherwise.
          */
-        if (ast.tag && (ast.tag !== "import" && ast.tag !== "link") && ast.tag !== "template") {
-            let skeleton = new Skeleton(ast, presets);
-            SourcePackage.skeletons.push(skeleton);
+        if (ast.tag) {
+            if ((ast.tag == "import" || ast.tag == "link")) {
+                //add tags to package itself.
+                SourcePackage.links.push(ast);
+            } else if (ast.tag !== "template") {
+                let skeleton = new Skeleton(ast, presets);
+                SourcePackage.skeletons.push(skeleton);
+            }
         }
 
         lex.IWS = true;
 
         while (!lex.END && lex.ch != "<") { lex.n; }
+
         if (!lex.END)
             return parseText(lex, SourcePackage, presets, url, win);
 
@@ -21172,8 +21257,8 @@ var flame = (function (fs, path) {
 
     function buildCSS(lex, SourcePackage, presets, ast, css_list, index, url, win) {
         return css_list[index].READY().then(() => {
-            
-            if(++index < css_list.length) return buildCSS(lex, SourcePackage, presets, ast, css_list, index, url, win);
+
+            if (++index < css_list.length) return buildCSS(lex, SourcePackage, presets, ast, css_list, index, url, win);
 
             ast.linkCSS(null, win);
 
@@ -21196,9 +21281,9 @@ var flame = (function (fs, path) {
             node.presets = presets;
 
             return node.parse(lex, url).then((ast) => {
-                if (ast.css && ast.css.length > 0) 
+                if (ast.css && ast.css.length > 0)
                     return buildCSS(lex, SourcePackage, presets, ast, ast.css, 0, url, win);
-                
+
                 return complete(lex, SourcePackage, presets, ast, url, win);
             }).catch((e) => {
                 SourcePackage.addError(e);
@@ -21292,6 +21377,8 @@ var flame = (function (fs, path) {
              * Flag to indicate SourcePackage was compiled with errors
              */
             this.HAVE_ERRORS = false;
+
+            this.links = [];
 
             if (element instanceof Promise) {
                 element.then((data) => CompileSource(this, presets, data, url, win));
@@ -21443,6 +21530,18 @@ var flame = (function (fs, path) {
             if (manager.sourceLoaded) manager.sourceLoaded();
 
             return manager;
+        }
+
+        toString(){
+            let str = "";
+
+            for(let i = 0; i < this.links.length; i++)
+                str += this.links[i];
+
+            for(let i = 0; i < this.skeletons.length; i++)
+                str += this.skeletons[i].tree;
+
+            return str;
         }
     }
 
@@ -21651,7 +21750,7 @@ var flame = (function (fs, path) {
     	createStyleDocument(name){
 
     		let id = "./temp.css";
-    		this.docs.load({path:"./", name:"temp.css"}, true);
+    		this.docs.loadFile({path:"./", name:"temp.css"}, true);
     		let doc = this.docs.get(id);
     		debugger
     	}
@@ -21851,31 +21950,188 @@ var flame = (function (fs, path) {
 
      class HTMLManager {}
 
+    const fr = new FileReader();
+    /**
+        Represents actions to save a file to disk. 
+    **/
+    class $FileReader {
+
+        constructor(file_path) {
+            this.handle = -1;
+            this.stream = -1;
+            this.offset = 0;
+            this.file_path = file_path;
+
+            try {
+                this.handle = fs.openSync(file_path, "r");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async string(encoding = "utf8") {
+            if (this.ready) {
+                return new Promise((res, rej) => {
+                    fs.readFile(this.handle, encoding, (err, string) => {
+                        if (err)
+                            return rej(err);
+                        res(string);
+                    });
+                });
+            } else
+                throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+
+        }
+
+        async readB(array_constructor = ArrayBuffer, byte_length = 0, off = this.offset, MOVE_OFFSET = true) {
+            if (this.ready && byte_length > 0) {
+                return new Promise((res, rej) => {
+                    let buffer = new Uint8Array(byte_length);
+
+                    fs.read(this.handle, buffer, 0, byte_length, off, (err, read) => {
+
+                        if (err) return rej(err);
+
+                        if (MOVE_OFFSET) this.offset = off + read;
+
+                        if (array_constructor === ArrayBuffer)
+                            res(buffer.buffer);
+                        else if (array_constructor == Uint8Array)
+                            res(buffer);
+                        else if (array_constructor == Blob)
+                            res(new Blob([buffer.buffer]));
+                        else
+                            res(new array_constructor(buffer.buffer));
+
+                    });
+                })
+            } else
+                throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+        }
+
+        async readS(byte_length = 0, off = this.offset, encoding = "utf8", MOVE_OFFSET = true) {
+            if (this.ready && byte_length > 0) {
+                let buffer = await this.readB(Blob, byte_length, off, MOVE_OFFSET);
+                let fr = new FileReader();
+                return new Promise(res => {
+                    fr.onload = () => {
+                        res(fr.result);
+                    };
+                    fr.readAsText(buffer, encoding);
+                });
+            } else
+                throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+        }
+
+        scanTo(byte_offset) {
+            if (!this.ready) return;
+            this.offset = byte_offset;
+        }
+
+        close() {
+            if (this.ready) {
+                try {
+                    fs.closeSync(this.handle);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        get ready() { return this.handle !== -1; }
+    }
+
+    /**
+    	Represents actions to save a file to disk. 
+    **/
+    class FileBuilder {
+
+        constructor(file_path) {
+            this.handle = -1;
+            this.stream = -1;
+            this.offset = 0;
+
+            try {
+                this.handle = fs.openSync(file_path, "w+");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async writeWord(offset, word){
+        	return await this.writeB(new Uint32Array([word]), offset, false);
+        }
+
+        writeB(buffer, off = this.offset, MOVE_OFFSET = true){
+        	if(this.ready){
+    	    	return new Promise((res, rej)=>{
+    	    		fs.write(this.handle, buffer, 0, buffer.byteLength, off, (err, written)=>{
+    	    			if(err) return rej(err);
+    	    				
+    	    			if(MOVE_OFFSET)this.offset = off+written;
+
+    	    			res(off+written);
+    	    		});
+    	    	}).catch(e=>console.error(e));
+        	}
+        }
+
+        writeS(string, off = this.offset, MOVE_OFFSET = true){
+        	if(this.ready){
+    	    	return new Promise((res, rej)=>{
+    	    		fs.write(this.handle, string, off, "utf8", (err, written)=>{
+    	    			if(err) return rej(err);
+    	    				
+    	    			if(MOVE_OFFSET)this.offset = off+written;
+
+    	    			res(off+written);
+    	    		});
+    	    	}).catch(e=>console.error(e));
+        	}
+        }
+
+        scanTo(byte_offset) {
+            if (!this.ready) return;
+        }
+
+        close() {
+            if (this.ready) {
+            	try{
+            		fs.closeSync(this.handle);
+            	}catch(e){
+            		console.error(e);
+            	}
+            }
+        }
+
+        get ready() { return this.handle !== -1; }
+    }
+
     class Document {
 
         constructor(file_name, path$$1, system, IS_NEW_FILE, manager) {
             this.path = path$$1;
             this.name = file_name;
             this.data = null;
-            this.LOADED = (IS_NEW_FILE) ? true: false;
+            this.old_data = "";
+            this.LOADED = (IS_NEW_FILE) ? true : false;
             this.UPDATED = true;
             this.SAVING = false;
             this.INITIAL_HISTORY = false;
             this.observers = [];
             this.system = system;
-            this.old_data = "";
             this.manager = manager;
             this.ps = false;
         }
 
-        destroy(){
+        destroy() {
             this.observers = null;
         }
 
         seal(differ) {
 
             if (this.PENDING_SAVE) {
-                
+
                 this.PENDING_SAVE = false;
 
                 let new_data = this + "";
@@ -21893,65 +22149,71 @@ var flame = (function (fs, path) {
             return null;
         }
 
-        load() {
-            if(!this.LOADED){
-                fs.open(this.path + "/" + this.name, "r", (err, fd) => {
-                    if (err) throw err;
-                    fs.readFile(fd, "utf8", (err, data) => {
-                        
-                        fs.close(fd, (err) => {if (err) throw err});
-                        
-                        if (err) 
-                            throw err;
-                        
-                        this.LOADED = true;
-                        this.fromString(data);    
-                    });
-                });
+        async load() {
+            if (!this.LOADED) {
+                let fr = new $FileReader(this.path + "/" + this.name);
+
+                try {
+                    let data = await fr.string();
+                    this.LOADED = true;
+                    this.fromString(data);
+                } catch (e) {
+                    console.error(e);
+                }
+
+                return this.data;
             }
         }
 
-        save() {
-            this.PENDING_SAVE = true;
-            return;
-            if (this.SAVING) return;
-            this.SAVING = true;
-            this.PENDING_SAVE = false;
-            fs.open(this.path + "/" + this.name, "w", (err, fd) => {
-                if (err) throw err;
-                fs.write(fd, (this.data.skeletons[0].tree + ""), 0, "utf8", (err, written, data) => {
-                    fs.close(fd, (err) => {
-                        if (err) throw err;
-                    });
-                    if (err) {
-                        throw err;
-                    }
-                    if (this.PENDING_SAVE) this.save();
-                    else this.PENDING_SAVE = false;
-                    this.SAVING = false;
-                });
-            });
+        async save(file_builder) {
+
+            if (!file_builder) {
+                if (this.SAVING) return;
+
+                this.SAVING = true;
+
+                let fb = new FileBuilder(this.id);
+                let string = this.toString();
+                let d = await fb.writeS(string);
+
+                if (d == 0)
+                    console.warn(`Saved zero sized file ${this.id}`);
+
+                fb.close();
+
+                this.SAVING = false;
+
+            } else {
+                return file_builder.write(this.toString());
+            }
         }
 
-        toString(){
+        toString() {
             return "[Document]";
         }
 
         bind(object) {
-            if (this.LOADED) object.documentReady(this.data);
+            if (this.LOADED && object.documentReady(this.data) === false) return;
             this.observers.push(object);
         }
 
-        get type(){
+        alertObservers() {
+            if (this.observers)
+                for (let i = 0; i < this.observers.length; i++)
+                    if (this.observers[i].documentReady(this.data) === false)
+                        this.observers.splice(i--, 1);
+        }
+
+        get type() {
             return "";
         }
 
-        get id(){
+        get id() {
             return `${this.path}/${this.name}`;
         }
 
-        set PENDING_SAVE(v){
-            if(v) {
+        set PENDING_SAVE(v) {
+            if (v) {
                 this.manager.addPending(this);
                 this.ps = true;
             } else {
@@ -21960,11 +22222,9 @@ var flame = (function (fs, path) {
             }
         }
 
-        get PENDING_SAVE(){
+        get PENDING_SAVE() {
             return this.ps;
         }
-
-
     }
 
     LinkedList.mixinTree(Document);
@@ -21978,9 +22238,10 @@ var flame = (function (fs, path) {
         fromString(string, ALLOW_SEAL = true) {
 
             (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
-
+                this.LOADED = true;
                 if(!pkg) //TODO - Determine the cause of undefined assigned to pkg
-                    return;
+                    
+                    {debugger;return;}
 
                 if (this.data)
                     this.data.skeletons[0].tree.removeObserver(this);
@@ -21989,7 +22250,7 @@ var flame = (function (fs, path) {
 
                 pkg.skeletons[0].tree.addObserver(this);
 
-                for (let i = 0; i < this.observers.length; i++) this.observers[i].documentReady(pkg);
+                this.alertObservers();
 
                 if (ALLOW_SEAL) {
                     this.PENDING_SAVE = true;
@@ -22000,12 +22261,12 @@ var flame = (function (fs, path) {
 
         toString() {
             return (this.data) ?
-                this.data.skeletons[0].tree + "" :
+                this.data.toString():
                 "";
         }
 
         get type() {
-            return "wick";
+            return "html";
         }
     }
 
@@ -22027,9 +22288,8 @@ var flame = (function (fs, path) {
                     this.tree.updated();
                 });
             } else {
-
-                for (let i = 0; i < this.observers.length; i++)
-                    this.observers[i].documentReady(this.data);
+                
+                this.alertObservers();
 
                 if (ALLOW_SEAL) {
                     this.PENDING_SAVE = true;
@@ -22060,9 +22320,9 @@ var flame = (function (fs, path) {
         }
 
         createDiff(old, new_) {
-            
+
             if (!old || !new_ || old == new_) return;
-            
+
             const oldTF = this.oldTF;
             const newTF = this.newTF;
 
@@ -22074,11 +22334,12 @@ var flame = (function (fs, path) {
             newTF.insertText(new_);
             newTF.updateText();
 
-            let i = 0, j = 0, 
-            	li = oldTF.length,
-            	lj = newTF.length;
+            let i = 0,
+                j = 0,
+                li = oldTF.length,
+                lj = newTF.length;
 
-            const diffs = {new:[],old:[]};
+            const diffs = { new: [], old: [] };
 
             outer:
                 for (i = 0, j = 0; i < li; i++) {
@@ -22098,38 +22359,38 @@ var flame = (function (fs, path) {
                     let root = j;
 
                     for (let d = 1; j < lj; j++, d++) {
-                    	//*
-                    	if (j-root == 0 && i+d < li && oldTF.getLine(i+d).slice() == newTF.getLine(root+d).slice()){
-                    		for (let n = 0; n < d; n++) {	
-                    			diffs.new.push({index: root+n, text: newTF.getLine(root+n).slice()});
-                            	diffs.old.push({index: i+n, text: oldTF.getLine(i+n).slice() });
-                    		}
-                    		i += d;
-                            j = root+d+1;
+                        //*
+                        if (j - root == 0 && i + d < li && oldTF.getLine(i + d).slice() == newTF.getLine(root + d).slice()) {
+                            for (let n = 0; n < d; n++) {
+                                diffs.new.push({ index: root + n, text: newTF.getLine(root + n).slice() });
+                                diffs.old.push({ index: i + n, text: oldTF.getLine(i + n).slice() });
+                            }
+                            i += d;
+                            j = root + d + 1;
                             continue outer;
-                    	}//*/
+                        } //*/
 
                         if (oldTF.getLine(i).slice() == newTF.getLine(j).slice()) {
                             const distance = j - i;
-                            const l = Math.min(li, i + distance-1);
-                            
-                            for (let p = i+1; p < l; p++) {
+                            const l = Math.min(li, i + distance - 1);
+
+                            for (let p = i + 1; p < l; p++) {
                                 if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
 
-                                    for (let n = i; n < p; n++) 
-                                        diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"AA"});
-                                    
+                                    for (let n = i; n < p; n++)
+                                        diffs.old.push({ index: n, text: oldTF.getLine(n).slice(), n: "AA" });
+
                                     i = p;
                                     j = root + 1;
                                     continue outer;
                                 }
                             }
 
-                            for (let n = root; n < j; n++) 
-                                diffs.new.push({index: n, text: newTF.getLine(n).slice(), n:"AB", root});
-                            
+                            for (let n = root; n < j; n++)
+                                diffs.new.push({ index: n, text: newTF.getLine(n).slice(), n: "AB", root });
+
                             j++;
-                            
+
                             continue outer;
                         }
 
@@ -22139,7 +22400,7 @@ var flame = (function (fs, path) {
                             for (let p = i; p < li; p++) {
                                 if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
                                     for (let n = i; n < p; n++)
-                                        diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"DD", root, p});
+                                        diffs.old.push({ index: n, text: oldTF.getLine(n).slice(), n: "DD", root, p });
 
                                     i = p;
                                     j = root + 1;
@@ -22147,8 +22408,8 @@ var flame = (function (fs, path) {
                                 }
                             }
 
-                            diffs.new.push({index: root, text: newTF.getLine(root).slice()});
-                            diffs.old.push({index: i, text: oldTF.getLine(i).slice() });
+                            diffs.new.push({ index: root, text: newTF.getLine(root).slice() });
+                            diffs.old.push({ index: i, text: oldTF.getLine(i).slice() });
                             j = root + 1;
                             break;
                         }
@@ -22157,7 +22418,7 @@ var flame = (function (fs, path) {
 
 
             while (j < lj) {
-                diffs.new.push({index: j, text: newTF.getLine(j).slice()});
+                diffs.new.push({ index: j, text: newTF.getLine(j).slice() });
                 j++;
             }
 
@@ -22165,30 +22426,28 @@ var flame = (function (fs, path) {
         }
 
         convert(doc, diff) {
-        	let a = new TextFramework();
-        	a.insertText(doc + "");
+            let a = new TextFramework();
+            a.insertText(doc + "");
 
             a.updateText();
 
 
-            for(let i = diff.old.length -1; i >= 0; i--){
+            for (let i = diff.old.length - 1; i >= 0; i--) {
                 let d = diff.old[i];
                 let line = a.getLine(d.index);
                 a.line_container.remove(line);
                 line.release();
             }
 
-            if(a.length == 0) debugger
+            if (a.length == 0) debugger
 
-            for(let i = 0; i < diff.new.length;i++){
+            for (let i = 0; i < diff.new.length; i++) {
                 let d = diff.new[i];
                 a.insertText(d.text, d.index - 1);
                 a.updateText();
             }
 
             a.updateText();
-
-            console.log(a + "","\n_________________________________\n" , doc +"");
 
             doc.fromString(a.toString(), false);
         }
@@ -22199,21 +22458,21 @@ var flame = (function (fs, path) {
             a.insertText(doc + "");
             a.updateText();
 
-            for(let i = diff.new.length -1; i >= 0; i--){
+            for (let i = diff.new.length - 1; i >= 0; i--) {
                 let d = diff.new[i];
                 let line = a.getLine(d.index);
                 a.line_container.remove(line);
                 line.release();
             }
 
-            if(a.length == 0) debugger
-            for(let i = 0; i < diff.old.length;i++){
+            if (a.length == 0) debugger
+                
+            for (let i = 0; i < diff.old.length; i++) {
                 let d = diff.old[i];
-                a.insertText(d.text, Math.max(0,d.index - 1));
+                a.insertText(d.text, Math.max(0, d.index - 1));
                 a.updateText();
-            }   
-            console.log(a + "","\n_________________________________\n" , doc +"");
-            
+            }
+
             doc.fromString(a.toString(), false);
         }
     }
@@ -22255,20 +22514,21 @@ var flame = (function (fs, path) {
         /*
          * Loads file into project
          */
-        load(file, NEW_FILE = false) {
+        loadFile(file, NEW_FILE = false) {
             switch (typeof(file)) {
                 case "string": // Load from file system or DB
-                    let p = path.parse(file);
+                    var p = path.parse(file);
                     file = {
                         path: p.dir,
                         name: p.base
                     };
-                case "object": // Londead data 
+                    //Intentional fall through. 
+                case "object": // Loandead data 
                     if (file.name && file.path) {
                         let path$$1 = file.path;
                         let name = file.name;
                         let type = "";
-                        if (file.type) type = file.type.split("/")[1].toLowerCase();
+                        if (file.type) type = file.type; //.split("/")[1].toLowerCase();
                         else type = name.split(".").pop().toLowerCase();
                         if (path$$1.includes(name)) path$$1 = path$$1.replace(name, "");
                         if (path$$1[path$$1.length - 1] == "/" || path$$1[path$$1.length - 1] == "\\") path$$1 = path$$1.slice(0, -1);
@@ -22280,11 +22540,17 @@ var flame = (function (fs, path) {
                                 case "html":
                                     doc = new WickDocument(name, path$$1, this.system, NEW_FILE, this);
                                     break;
+                                case "css":
                                 default:
                                     doc = new CSSDocument(name, path$$1, this.system, NEW_FILE, this);
                             }
                             this.docs.set(id, doc);
-                            doc.load();
+
+
+                            if (file.data)
+                                doc.fromString(file.data);
+                            else
+                                doc.load();
                         }
                         return id;
                     }
@@ -22299,7 +22565,7 @@ var flame = (function (fs, path) {
 
         /** Updates all changes to files and records diffs resulting from user actions */
         seal() {
-            
+
             let diffs = [],
                 doc;
 
@@ -22314,13 +22580,13 @@ var flame = (function (fs, path) {
                         diffs.push(pack);
                 }
 
-                if (diffs.length > 0) 
-                    this.system.history.addAction({type:"doc", diffs});
+                if (diffs.length > 0)
+                    this.system.history.addAction({ type: "doc", diffs });
             }
         }
 
         undo(action) {
-            
+
             let diffs = action.diffs;
 
             if (diffs) {
@@ -22370,14 +22636,53 @@ var flame = (function (fs, path) {
         /**
             Reset document manager, releasing all held documents. 
         */
-        reset(){
+        reset() {
             this.diffs = [];
-            this.docs.forEach(d=>d.destroy());
+            this.docs.forEach(d => d.destroy());
             this.docs = new Map();
         }
-    }
 
-    var version = 0;
+        async save(file_builder) {
+            if (!file_builder) {
+                //Save all files individually
+                this.docs.forEach(doc=>{
+                    doc.save();
+                });
+            } else {
+
+                var i = this.docs.entries();
+
+                for (let v of i) {
+                    let doc = v[1];
+                    await file_builder.writeS(JSON.stringify({ name: doc.name, path: doc.path, type: doc.type, data: doc + "" }));
+                }
+
+                return file_builder.offset;
+            }
+        }
+
+        load(string) {
+            let lex = new whind$1(string);
+            let level = 0;
+
+            while (!lex.END) {
+                if (lex.ch == "{") {
+                    let n = lex.pk;
+                    level = 1;
+                    while (!n.END && level > 0) {
+                        if (n.ch == "{") level++;
+                        if (n.ch == "}") level--;
+                        n.next();
+                    }
+
+                    this.loadFile(JSON.parse(n.slice(lex)));
+
+                    lex.sync(n);
+                } else
+                    lex.next();
+            }
+        }
+    }
 
     Source.prototype.rebuild = function (){
     	this.ast.buildExisting(this.ele, this, this.presets, this.taps,null, this.window);
@@ -22499,8 +22804,8 @@ var flame = (function (fs, path) {
 
             if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
-                for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                    this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    this.bindings[i].binding._bind_(source$$1, [], taps, element, this.bindings[i].name);
                 }
             }
 
@@ -22703,8 +23008,8 @@ var flame = (function (fs, path) {
 
             if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
-                for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                    this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    this.bindings[i].binding._bind_(source$$1, [], taps, element, this.bindings[i].name);
                 }
             }
 
@@ -22745,8 +23050,8 @@ var flame = (function (fs, path) {
 
             if (true || this.CHANGED & 1) {
                 //redo IOs that have changed (TODO)
-                for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                    this._bindings_[i].binding._bind_(source$$1, [], taps, element, this._bindings_[i].name);
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    this.bindings[i].binding._bind_(source$$1, [], taps, element, this.bindings[i].name);
                 }
             }
 
@@ -22767,39 +23072,8 @@ var flame = (function (fs, path) {
         return false;
     };
 
-    const path$2 = require("path");
-
-    ScriptNode$1.prototype.cssInject = ScriptNode$1.prototype._processTextNodeHook_;
-
-    //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
-    /*Script.prototype._processTextNodeHook_ = function(lex) {
-        //Feed the lexer toString a new CSS Builder
-        this.css = this.getCSS();
-        lex.IWS = true;
-        lex.tl = 0;
-        lex.n();
-
-        let URL = "";
-
-        let IS_DOCUMENT = !!this.url;
-
-        if (this.url) {
-            URL = this.url.path;
-            if (!path.isAbsolute(URL))
-                URL = path.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
-        }
-
-        this.css.parse(lex).catch((e) => {
-            throw e;
-        }).then((css) => {
-            this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);
-        });
-
-        this.css.addObserver(this);
-    };*/
-
     ScriptNode$1.prototype.toString = function(off) {
-        return ("    ").repeat(off) + `<script>${this.innerText}<script/>\n`;
+        return ("    ").repeat(off) + `<script on="((${this.binding.tap_name}))" >${this.script_text}</script>\n`;
     };
 
     ScriptNode$1.prototype.updatedCSS = function() {
@@ -22827,6 +23101,7 @@ var flame = (function (fs, path) {
             temp_directory : $String,
             last_modified : EPOCH_Time,
             creation_date : EPOCH_Time,
+            bundle_files :$Boolean,
     	}),
     	default  : schemed({
             component  : schemed({
@@ -23103,7 +23378,7 @@ var flame = (function (fs, path) {
     }
 
     /**
-     * @brief Stores data for the current project.
+     * @brief Stores data for the current project. Handles the global saving and importation of data. 
      * @details The project object is the primary store of user data and preferences. 
      * It also provides the hosting of the presets object for wick components, and the interface components for user tools. 
      * The flame_data model stored is the main linking object for handling UI updates from actions performed through UI components.  
@@ -23113,51 +23388,57 @@ var flame = (function (fs, path) {
         constructor(system) {
 
             this.system = system;
-            
+
             this.flame_data = new flame_scheme();
 
             this.presets = new Presets({
-                models:{
+                models: {
                     flame: this.flame_data,
                     settings: this.flame_data.settings,
                 },
-                custom:{
-                    actions : system.actions,
-                    ui : system.ui,
-                    classes : {
-                        textio : TextIO,
-                        textfw : TextFramework,
-                        coloredit : ColorFramework
+                custom: {
+                    actions: system.actions,
+                    ui: system.ui,
+                    classes: {
+                        textio: TextIO,
+                        textfw: TextFramework,
+                        coloredit: ColorFramework
                     },
                     system
                 }
             });
-            
-            this.history = [[]];
-            this.state_id = 0;
 
-            
-            
+            this.history = [
+                []
+            ];
+            this.state_id = 0;
+            this.file_path = "project.fpd";
+
+
             this.setDefaults();
 
             //Load interface components from working directory
-
         }
 
-        loadComponents(dir){
-            fs.readdir(dir,(e,d)=>{
-                if(e)
+        reset() {
+            this.system.ui.reset();
+            this.system.docs.reset();
+        }
+
+        loadComponents(dir) {
+            fs.readdir(dir, (e, d) => {
+                if (e)
                     return console.error(`Could not load UI components: ${e}`);
 
-                d.forEach((fn)=>{
-                    if(path.extname(fn) == ".html"){
+                d.forEach((fn) => {
+                    if (path.extname(fn) == ".html") {
                         this.system.ui.addComponent(([dir, fn]).join("/"));
                     }
                 });
             });
         }
 
-        setDefaults(){
+        setDefaults() {
             this.flame_data.creation_date = Date.now();
             this.flame_data.default.component.width = 360;
             this.flame_data.default.component.height = 920;
@@ -23166,39 +23447,173 @@ var flame = (function (fs, path) {
             this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
         }
 
+        get properties() {
+            return this.flame_data;
+        }
+
+        get settings() {
+            return this.flame_data.settings;
+        }
+
+        importUIComponent(component) {
+            this.system.iu.addUIComponent(component);
+        }
+        /****************************************************               ******************************************************************************/
+        /**************************************************** FILE HANDLING ******************************************************************************/
+        /****************************************************               ******************************************************************************/
 
         /**
-            Creates new project file, with given name to directory. Sets the file as the main project file.
-        */
-        createFile(name, directory){
+            Save to original location - saves files to original locations, overwriting if necessary. Can be set on a per doc basis. 
+            Save to output dir - saves files to output directory, matching the folder structure relative to current working directory. 
+                if a file was imported outside the CWD, the file will be placed at the root of the output dir.
+            Save checkpoint - saves file to project fifle at regular intervals. This causes a new file to be created every time a file is save. It will reference the old files history to preserve state history. 
+            Backup docs - saves documents to project file. Default if Save original or Save output are both false/unset. The is overrides save checkpoint 
+            Save history - saves the history of the curent data.
+        **/
 
+        async load(file_path = this.file_path, call_back = null) {
+            let file_reader;
+
+            if (file_path instanceof $FileReader)
+                file_reader = file_path;
+            else
+                file_reader = new $FileReader(file_path);
+
+            let stamp = await this.readFileStamp(file_reader);
+
+            if (stamp.title !== "CF")
+                throw new Error(`File ${file_path} is not recognized as an *.fpd file.`);
+
+            let ui = await file_reader.readS(stamp.ui_size);
+
+            if (stamp.flags & 2) {
+                let data = await file_reader.readS(stamp.doc_size);
+                this.system.docs.load(data);
+            }
+
+            this.system.ui.load(ui);
+
+            if (call_back)
+                call_back();
         }
 
         /** 
             Saves all components, history, and settings to the project file. 
             May also save current documents if user settings permit.  
         **/
-        saveAll(){
-            if(!this.project_doc)
-                this.createFile(this.settings);
+        async save(file_path = this.file_path, call_back = null) {
+            let file_builder;
 
-            this.project_doc;
+            if (file_path instanceof FileBuilder)
+                file_builder = file_path;
+            else
+                file_builder = new FileBuilder(file_path);
 
+            //64byte header.
+            file_builder.offset = 64;
+
+            let ui_size = 0,
+                docs_size = 0,
+                setting_size = 0,
+                history_size = 0;
+
+            ui_size = await this.saveUI(file_builder);
+
+            if (this.properties.project.bundle_files)
+                docs_size = await this.saveDocuments(file_builder);
+            else if (this.properties.project.export_file_dir)
+                this.system.docs.save(null, export_file_dir);
+            else    
+                this.system.docs.save();
+
+            //Save Project Properties
+            setting_size = await this.saveProperties(file_builder);
+            //May create some leading here.
+
+            //State History
+            history_size = await this.saveCheckpoint(file_builder);
+
+            //May create some leading here.
+
+            //await file_builder.writeWord(8,ui_size); //gives offset to docs
+            await this.writefileStamp(file_builder, ui_size, docs_size, setting_size, history_size);
+
+            file_builder.close();
+
+            if (file_builder.offset == 0)
+                throw new Error("Failed to write data to file.");
+
+            if (call_back)
+                call_back(true);
+
+            return true;
         }
 
         /** 
             Saves current history to project file. 
         **/
-        saveCheckpoint(){
-
+        async saveUI(file_builder) {
+            const off = file_builder.offset;
+            return await this.system.ui.save(file_builder) - off;
         }
 
-        get settings(){
-            return this.flame_data.settings;
+        async saveCheckpoint(file_builder) {
+            const off = file_builder.offset;
+            return await this.system.history.save(file_builder) - off;
         }
 
-        importUIComponent(component){
-            this.system.iu.addUIComponent(component);
+        async saveProperties(file_builder) {
+            const off = file_builder.offset;
+            return await file_builder.writeS(this.properties.toJSON()) - off;
+        }
+
+        async saveDocuments(file_builder) {
+            const off = file_builder.offset;
+            return await this.system.docs.save(file_builder) - off;
+        }
+
+        async writefileStamp(file_builder, ui_size = 0, doc_size = 0, project_size = 0, history_size = 0) {
+            let stamp = new Uint32Array(16);
+
+            let entry_flags = ((ui_size > 0) | 0) |
+                (((doc_size > 0) | 0) << 1) |
+                (((project_size > 0) | 0) << 2) |
+                (((history_size > 0) | 0) << 3);
+
+            //Document info, time stamp, entries
+            stamp[0] = ((this.system.version & 0xFFFF) << 16) | (("F").charCodeAt(0)) << 8 | (("C").charCodeAt(0)); /*CF*/
+            stamp[1] = entry_flags;
+            stamp[2] = ui_size;
+            stamp[3] = doc_size;
+            stamp[4] = project_size;
+            stamp[5] = history_size;
+
+            return await file_builder.writeB(stamp, 0, false);
+        }
+
+        async readFileStamp(file_reader) {
+            let stamp = await file_reader.readB(Uint32Array, 64);
+
+            let d = stamp[0];
+            let version = (d >> 16) & 0xFFFF;
+            let title = String.fromCharCode(d & 0xFF) + String.fromCharCode((d >> 8) & 0xFF);
+
+            let
+                flags = stamp[1],
+                ui_size = stamp[2],
+                doc_size = stamp[3],
+                project_size = stamp[4],
+                history_size = stamp[5];
+
+            return {
+                title,
+                version,
+                flags,
+                ui_size,
+                doc_size,
+                project_size,
+                history_size
+            };
         }
     }
 
@@ -23220,7 +23635,7 @@ var flame = (function (fs, path) {
 
             let root = this.fch;
             let node = this.fch;
-
+            if(this.fch)
             do {
                 str.b.push(node.toJSON());
             } while ((node = node.next) !== root);
@@ -23262,6 +23677,7 @@ var flame = (function (fs, path) {
         constructor(system) {
             this.system = system;
             this.active_state = new State();
+            this.root_state = this.active_state;
         }
 
         //Stores history as an array of reversable actions.
@@ -23274,9 +23690,8 @@ var flame = (function (fs, path) {
         }
 
         seal() {
-            let id = this.active_state.children.length;
-
-            let state = new State(id);
+            const   id = this.active_state.children.length,
+                    state = new State(id);
 
             this.active_state.addChild(state);
 
@@ -23312,29 +23727,39 @@ var flame = (function (fs, path) {
         }
 
         /**
-            Degresses to the previous state and then plays that state's undo method. Does nothing if there is no state to fallback to.
+            Degresses to the previous state and then plays that state's undo method. Does nothing if there is no state to sfallback to.
         **/
         undo() {
 
-            let prev = this.active_state.par;
+            const prev = this.active_state.par;
 
             if (prev) {
 
-                let actions = prev.actions;
+                const actions = prev.actions;
 
                 for (let i = 0; i < actions.length; i++) {
                     
-                    let action = actions[i];
+                    const action = actions[i];
 
                     switch (action.type) {
                         case "doc":
                             this.system.docs.undo(action);
-                            break;
+                            break; 
                     }
                 }
 
                 this.active_state = prev;
             }
+        }
+
+        async save(file_builder){ 
+            const data = {state: this.active_state.id, states: this.root_state.toJSON()};
+            
+            return await file_builder.writeS(JSON.stringify(data));   
+        }
+
+        async load(file_reader){
+
         }
     }
 
@@ -23386,7 +23811,7 @@ var flame = (function (fs, path) {
             if (DEV && !TEST) {
                 //Load in the development component.
                 let path$$1 = require("path").join(process.cwd(), "assets/components/test.html");
-                let doc = system.docs.get(system.docs.load(path$$1));
+                let doc = system.docs.get(system.docs.loadFile(path$$1));
                 actions.CREATE_COMPONENT(system, doc, { x: 200, y: 200 });
                 window.flame = flame;
             } else if (TEST) {

@@ -1,3 +1,3 @@
 module.exports = function (system){
-	console.log(system)
-}
+	console.log(system);
+};

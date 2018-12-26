@@ -88,14 +88,17 @@ export class UI_Manager {
         document.body.addEventListener("dragstart", e => {});
     }
 
-    reset(){
-        this.components.forEach(c=> actions.REMOVE_COMPONENT(system, c));
+    reset() {
+        const system = this.system;
+
+        while (this.components[0])
+            actions.REMOVE_COMPONENT(system, this.components[0]);
     }
 
-    removeComponent(component){
-        for(let i = 0, l = this.components.length; i < l; i++)
-            if(component === this.components[i]){
-                this.components.splice(i,1);
+    removeComponent(component) {
+        for (let i = 0, l = this.components.length; i < l; i++)
+            if (component === this.components[i]) {
+                this.components.splice(i, 1);
                 break;
             }
     }
@@ -120,7 +123,7 @@ export class UI_Manager {
 
     addComponent(wick_component_file_path) {
 
-        let doc = this.system.docs.get(this.system.docs.load(wick_component_file_path));
+        let doc = this.system.docs.get(this.system.docs.loadFile(wick_component_file_path));
 
         if (doc) {
             let component = new UIComponent(this.system, doc.name);
@@ -279,7 +282,7 @@ export class UI_Manager {
         } else if (this.target) {
             let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
             let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            let { dx, dy } = {dx:diffx, dy:diffy}//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            let { dx, dy } = { dx: diffx, dy: diffy } //this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -289,7 +292,7 @@ export class UI_Manager {
     }
 
     handlePointerEndEvent(e) {
-        
+
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
@@ -300,35 +303,15 @@ export class UI_Manager {
             actions.COMPLETE(this.system, this.target.element, this.target.component);
     }
 
+
+
     handleDocumentDrop(e) {
         e.preventDefault();
 
-        Array.prototype.forEach.call(e.dataTransfer.files, f => {
-            let doc = this.system.docs.get(this.system.docs.load(f));
-
-            if (doc) switch (doc.type) {
-                case "wick":
-                case "html":
-                    actions.CREATE_COMPONENT(this.system, doc, {
-                        x: this.transform.getLocalX(e.clientX),
-                        y: this.transform.getLocalY(e.clientY)
-                    });
-                    break;
-                case "css":
-                    actions.CREATE_CSS_DOC(this.system, doc, {
-                        x: this.transform.getLocalX(e.clientX),
-                        y: this.transform.getLocalY(e.clientY)
-                    });
-                    break;
-                case "js":
-                case "svg":
-                case "jpg":
-                case "png":
-                case "gif": //intentional
-                default:
-                    break;
-            }
-        });
+        Array.prototype.forEach.call(e.dataTransfer.files, 
+            f =>
+            this.mountDocument(f, this.transform.getLocalX(e.clientX), this.transform.getLocalY(e.clientY))
+        );
     }
 
     handleContextMenu(e, x, y, component = null) {
@@ -370,5 +353,58 @@ export class UI_Manager {
         if (this.target)
             this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
+    }
+
+    mountDocument(file_info, x, y) {
+        let doc = this.system.docs.get(this.system.docs.loadFile(file_info));
+        let comp = null;
+        if (doc) switch (doc.type) {
+            case "wick":
+            case "html":
+                comp = actions.CREATE_COMPONENT(this.system, doc, {
+                    x,
+                    y
+                });
+                break;
+            case "css":
+                comp = actions.CREATE_CSS_DOC(this.system, doc, {
+                    x,
+                    y
+                });
+                break;
+            case "js":
+            case "svg":
+            case "jpg":
+            case "png":
+            case "gif": //intentional
+            default:
+                break;
+        }
+
+        return comp
+    }
+
+    /******** FILE HANDLING ************/
+
+    async save(file_builder) {
+        let data = { components: [] };
+
+        for (let i = 0; i < this.components.length; i++)
+            data.components.push(this.components[i]);
+
+        return await file_builder.writeS(JSON.stringify(data));
+    }
+
+    load(string) {
+        let data = JSON.parse(string);
+
+        let components = data.components;
+
+        for (let i = 0; i < components.length; i++) {
+            let d = components[i];
+            let comp = this.mountDocument(d, d.x, d.y);
+            comp.width = d.width;
+            comp.height = d.height;
+        }
     }
 }

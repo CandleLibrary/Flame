@@ -24,9 +24,8 @@ export class CSSDocument extends Document {
                 this.tree.updated();
             });
         } else {
-
-            for (let i = 0; i < this.observers.length; i++)
-                this.observers[i].documentReady(this.data);
+            
+            this.alertObservers();
 
             if (ALLOW_SEAL) {
                 this.PENDING_SAVE = true;

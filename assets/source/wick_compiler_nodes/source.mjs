@@ -22,8 +22,8 @@ SourceNode.prototype.buildExisting = function(element, source, presets, taps, wi
 
         if (true || this.CHANGED & 1) {
             //redo IOs that have changed (TODO)
-            for (let i = 0, l = this._bindings_.length; i < l; i++) {
-                this._bindings_[i].binding._bind_(source, [], taps, element, this._bindings_[i].name);
+            for (let i = 0, l = this.bindings.length; i < l; i++) {
+                this.bindings[i].binding._bind_(source, [], taps, element, this.bindings[i].name);
             }
         }
 

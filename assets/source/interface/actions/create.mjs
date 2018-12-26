@@ -16,6 +16,8 @@ export function CREATE_COMPONENT(system, doc, event) {
 
     component.x = event.x;
     component.y = event.y;
+
+    return component;
 }
 
 export function REMOVE_COMPONENT(system, component){
@@ -32,8 +34,6 @@ export function CREATE_CSS_DOC(system, doc, event) {
     let comp = system.css.createComponent(doc);
 
     let element = comp.element;
-
-    //document.querySelector("#main_view").appendChild(element);
 
     comp.x = -event.x;
     comp.y = -event.y;

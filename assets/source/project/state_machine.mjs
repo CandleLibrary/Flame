@@ -18,7 +18,7 @@ class State {
 
         let root = this.fch;
         let node = this.fch;
-
+        if(this.fch)
         do {
             str.b.push(node.toJSON());
         } while ((node = node.next) !== root);
@@ -60,6 +60,7 @@ export class StateMachine {
     constructor(system) {
         this.system = system;
         this.active_state = new State();
+        this.root_state = this.active_state;
     }
 
     //Stores history as an array of reversable actions.
@@ -72,9 +73,8 @@ export class StateMachine {
     }
 
     seal() {
-        let id = this.active_state.children.length;
-
-        let state = new State(id);
+        const   id = this.active_state.children.length,
+                state = new State(id);
 
         this.active_state.addChild(state);
 
@@ -110,28 +110,38 @@ export class StateMachine {
     }
 
     /**
-        Degresses to the previous state and then plays that state's undo method. Does nothing if there is no state to fallback to.
+        Degresses to the previous state and then plays that state's undo method. Does nothing if there is no state to sfallback to.
     **/
     undo() {
 
-        let prev = this.active_state.par;
+        const prev = this.active_state.par;
 
         if (prev) {
 
-            let actions = prev.actions;
+            const actions = prev.actions;
 
             for (let i = 0; i < actions.length; i++) {
                 
-                let action = actions[i];
+                const action = actions[i];
 
                 switch (action.type) {
                     case "doc":
                         this.system.docs.undo(action);
-                        break;
+                        break; 
                 }
             }
 
             this.active_state = prev;
         }
+    }
+
+    async save(file_builder){ 
+        const data = {state: this.active_state.id, states: this.root_state.toJSON()};
+        
+        return await file_builder.writeS(JSON.stringify(data));   
+    }
+
+    async load(file_reader){
+
     }
 }

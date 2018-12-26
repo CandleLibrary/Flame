@@ -1,14 +1,14 @@
 <link src="./element_entry.html">
 <div component="layout">
     <w-c element="div">
-        ((elements))
-        <f sort="(( m1.id_ - m2.id_ ))">
-            <element-entry></element-entry>
+((elements))        <f sort="(( m1.id_ - m2.id_ ))">
+        <element-entry>
+        </element-entry>
     </w-c>
-    <script on="((droppee))">
+    <script on="((droppee))" >
     src.droppee = droppee;
     </script>
-    <script on="((dropper))">
+    <script on="((dropper))" >
     let droppee = src.droppee;
 
     if (droppee) {
@@ -37,7 +37,7 @@
         presets.custom.system.ui.render();
     }
     </script>
-    <script on="((insert))">
+    <script on="((insert))" >
     let sib_node = insert;
 
     let root = wick.core.source.compiler.nodes.root;
@@ -59,7 +59,7 @@
 
     });
     </script>
-    <script on="((target))">
+    <script on="((target))" >
     let elements = [];
     //extract all elements and present on a grid
 

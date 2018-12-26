@@ -1,15 +1,15 @@
 import {SchemedModel,
-Model,
-ModelContainerBase,
-BTreeModelContainer,
-ArrayModelContainer,
-MultiIndexedContainer,
-SchemeConstructor, 
-DateSchemeConstructor, 
-TimeSchemeConstructor, 
-StringSchemeConstructor, 
-NumberSchemeConstructor, 
-BoolSchemeConstructor
+    Model,
+    ModelContainerBase,
+    BTreeModelContainer,
+    ArrayModelContainer,
+    MultiIndexedContainer,
+    SchemeConstructor, 
+    DateSchemeConstructor, 
+    TimeSchemeConstructor, 
+    StringSchemeConstructor, 
+    NumberSchemeConstructor, 
+    BoolSchemeConstructor
 } from "@candlefw/wick";
 
 const schemed = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
@@ -31,6 +31,7 @@ const flame_scheme = schemed({
         temp_directory : $String,
         last_modified : EPOCH_Time,
         creation_date : EPOCH_Time,
+        bundle_files :$Boolean,
 	}),
 	default  : schemed({
         component  : schemed({

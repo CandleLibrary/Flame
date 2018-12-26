@@ -6,6 +6,7 @@
     <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
     <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
     <script type="text/javascript" src="./load.js"></script>
+    <script type="text/javascript" src="./save.js"></script>
     <script type="text/javascript" src="./move.js"></script>
     <script type="text/javascript" src="./border_box.js"></script>
     <script type="text/javascript" src="./history.js"></script>
@@ -13,28 +14,52 @@
 </head>
 
 <body>
-	<div id="mocha"></div>
-	<script>
-		function run(system){
-			mocha.setup("bdd");
-			chai.should();
+    <div id="mocha"></div>
+    <script>
+    function run(system) {
+        mocha.setup("bdd");
+        chai.should();
 
-			const env = {
-				url : "test/component/test_comp.html"
-			};
-	  		
-	  		/** Loading Test Modules **/
-	  		LOAD(system, env);
-	  		MOVE(system, env);
-	  		BB(system, env);
-	  		HISTORY(system, env);
-	  		UNSORTED(system, env);
+        function loadDoc(uri) {
+            system.docs.loadFile(uri);
+            let doc = system.docs.get(uri);
+            doc.should.not.equal(undefined);
+            return doc;
+        }
 
-	  		mocha.checkLeaks();
-	  		mocha.run();
-		}
-		window.run = run;
-	</script>
+        function loadComponent(uri) {
+            const doc = loadDoc(uri);
+            return new Promise(res => {
+                doc.bind({
+                    documentReady: data => {
+                        const comp = system.actions.CREATE_COMPONENT(system, doc, { x: 20, y: 20 });
+                        //There's a slight delay as a component is loaded into the UI. 
+                        setTimeout(function() {
+                            return res({ doc, data, comp });
+                        }, 100);
+
+                        return false;
+                    }
+                });
+            });
+        }
+
+        const env = {
+            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_comp.html"))
+        };
+
+        /** Loading Test Modules **/
+        DATA(system, env);
+        //MOVE(system, env);
+        //BB(system, env);
+        //HISTORY(system, env);
+        //UNSORTED(system, env);
+
+        mocha.checkLeaks();
+        mocha.run();
+    }
+    window.run = run;
+    </script>
 </body>
 
 </html>

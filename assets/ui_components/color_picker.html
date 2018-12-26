@@ -2,21 +2,14 @@
     <div badge="icon" class="menu_item" onclick="((load)(`test`))" onpointerup="((load)(`test`))" style="display:none">
         COLOR
     </div>
-
-    <canvas 
-        width="150" 
-        height="150"
-        onmousedown="((down)())" 
-        badge="color_field">
+    <canvas width="150" height="150" onmousedown="((down)())" badge="color_field">
     </canvas>
-
-    <script on="((created))">
+    <script on="((created))" >
         this.cp = new presets.custom.classes.coloredit();
         src.ctx = src.badges.color_field.getContext("2d");
         this.cp.draw(src.ctx, 0,0,150,150,"square","hsl");
     </script>
-
-    <script on="((down))">
+    <script on="((down))" >
         let col = this.cp.getColor(event.offsetX, event.offsetY, 150, 150, "square", "hsl");
         emit.r = col.r;
         emit.g = col.g;
@@ -25,20 +18,33 @@
         emit.primary_color = (col.r) | (col.g << 8) | (col.b << 16) | (col.a << 24);
 
     </script>
-
-    <span>R<input type="number" value="((r))"></span>
-    <span>G<input type="number" value="((g))"></span>
-    <span>B<input type="number" value="((b))"></span>
-    <span>A<input type="number" value="((a))" min=0 max=1></span>
-    <button onclick="((bg)())">background</button>
-    <button onclick="((col)())">color</button>
-
-    <script on=((target))>	
+    <span>
+        R
+        <input type="number" value="((r))">
+    </span>
+    <span>
+        G
+        <input type="number" value="((g))">
+    </span>
+    <span>
+        B
+        <input type="number" value="((b))">
+    </span>
+    <span>
+        A
+        <input type="number" value="((a))" min="0 max=1">
+    </span>
+    <button onclick="((bg)())">
+        background
+    </button>
+    <button onclick="((col)())">
+        color
+    </button>
+    <script on="((target))" >	
 		src.target = target;
         this.cp.draw(src.ctx, 0,0,150,150,"square","hsl");
 	</script>
-    
-    <script on="((bg))">
+    <script on="((bg))" >
     let color = src.color;
 
     let r = color & 0xFF;
@@ -49,7 +55,7 @@
     if (src.target)
         presets.custom.actions.SETBACKGROUNDCOLOR(presets.custom.system, src.target.element, src.target.component, r, g, b, a);
     </script>
-    <script on="((col))">
+    <script on="((col))" >
     let color = src.color;
 
     let r = color & 0xFF;
@@ -60,11 +66,10 @@
     if (src.target)
         presets.custom.actions.SETCOLOR(presets.custom.system, src.target.element, src.target.component, r, g, b, a);
     </script>
-
-    <script on="((primary_color))">
+    <script on="((primary_color))" >
     src.color = primary_color;
     </script>
-    <script on="((color))">
+    <script on="((color))" >
     let out = primary_color;
 
     src.color = out;
@@ -74,20 +79,20 @@
     emit.b = (out >> 16) & 0xFF;
     emit.a = ((out >> 24) & 0xFF);
     </script>
-    <script on="((r))">
+    <script on="((r))" >
     let color = src.color;
     emit.primary_color = (color & 0xFFFFFF00) | ((r | 0) & 0xFF);
     emit.primary_color = color;
     </script>
-    <script on="((g))">
+    <script on="((g))" >
     let color = src.color;
     emit.primary_color = (color & 0xFFFF00FF) | (((g | 0) & 0xFF) << 8);
     </script>
-    <script on="((b))">
+    <script on="((b))" >
     let color = src.color;
     emit.primary_color = (color & 0xFF00FFFF) | (((b | 0) & 0xFF) << 16);
     </script>
-    <script on="((a))">
+    <script on="((a))" >
     let v = Math.max(Math.min((255 * a) | 0, 255), 0);
     let color = src.color;
     emit.primary_color = (color & 0xFFFFFF) | (((v | 0) & 0xFF) << 24);

@@ -1,3 +1,4 @@
+import whind from "@candlefw/whind";
 import {
     WickDocument
 } from "./wick_document";
@@ -5,7 +6,6 @@ import {
     CSSDocument
 } from "./css_document";
 import path from "path";
-import fs from "fs";
 import { DocumentDifferentiator } from "./differ";
 /**
  * The Document Manager handles text file operations and text file updating. 
@@ -44,20 +44,21 @@ export class DocumentManager {
     /*
      * Loads file into project
      */
-    load(file, NEW_FILE = false) {
+    loadFile(file, NEW_FILE = false) {
         switch (typeof(file)) {
             case "string": // Load from file system or DB
-                let p = path.parse(file);
+                var p = path.parse(file);
                 file = {
                     path: p.dir,
                     name: p.base
                 };
-            case "object": // Londead data 
+                //Intentional fall through. 
+            case "object": // Loandead data 
                 if (file.name && file.path) {
                     let path = file.path;
                     let name = file.name;
                     let type = "";
-                    if (file.type) type = file.type.split("/")[1].toLowerCase();
+                    if (file.type) type = file.type //.split("/")[1].toLowerCase();
                     else type = name.split(".").pop().toLowerCase();
                     if (path.includes(name)) path = path.replace(name, "");
                     if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
@@ -69,11 +70,17 @@ export class DocumentManager {
                             case "html":
                                 doc = new WickDocument(name, path, this.system, NEW_FILE, this);
                                 break;
+                            case "css":
                             default:
                                 doc = new CSSDocument(name, path, this.system, NEW_FILE, this);
                         }
                         this.docs.set(id, doc);
-                        doc.load();
+
+
+                        if (file.data)
+                            doc.fromString(file.data);
+                        else
+                            doc.load();
                     }
                     return id;
                 }
@@ -88,7 +95,7 @@ export class DocumentManager {
 
     /** Updates all changes to files and records diffs resulting from user actions */
     seal() {
-        
+
         let diffs = [],
             doc;
 
@@ -103,13 +110,13 @@ export class DocumentManager {
                     diffs.push(pack);
             }
 
-            if (diffs.length > 0) 
-                this.system.history.addAction({type:"doc", diffs});
+            if (diffs.length > 0)
+                this.system.history.addAction({ type: "doc", diffs });
         }
     }
 
     undo(action) {
-        
+
         let diffs = action.diffs;
 
         if (diffs) {
@@ -159,11 +166,50 @@ export class DocumentManager {
     /**
         Reset document manager, releasing all held documents. 
     */
-    reset(){
+    reset() {
         this.diffs = [];
-        this.docs.forEach(d=>d.destroy());
+        this.docs.forEach(d => d.destroy());
         this.docs = new Map();
     }
-}
 
-var version = 0;
+    async save(file_builder) {
+        if (!file_builder) {
+            //Save all files individually
+            this.docs.forEach(doc=>{
+                doc.save();
+            });
+        } else {
+
+            var i = this.docs.entries();
+
+            for (let v of i) {
+                let doc = v[1];
+                await file_builder.writeS(JSON.stringify({ name: doc.name, path: doc.path, type: doc.type, data: doc + "" }));
+            }
+
+            return file_builder.offset;
+        }
+    }
+
+    load(string) {
+        let lex = new whind(string);
+        let level = 0;
+
+        while (!lex.END) {
+            if (lex.ch == "{") {
+                let n = lex.pk;
+                level = 1;
+                while (!n.END && level > 0) {
+                    if (n.ch == "{") level++;
+                    if (n.ch == "}") level--;
+                    n.next();
+                }
+
+                this.loadFile(JSON.parse(n.slice(lex)));
+
+                lex.sync(n);
+            } else
+                lex.next();
+        }
+    }
+}

@@ -1,26 +1,46 @@
 <w-s model="settings" import="target" component="positioning">
-	
-	<div>Position Type: ((pos_type))</div>
-	<div>H-Move Type: ((hori_type))</div>
-	<div>V-Move Type: ((vert_type))</div>
-
-	
-	<div>Right:((right))</div>
-	<div>Bottom:((bottom))</div>
-	
-	<div>Top:((top))<input type="number" value="(( parseFloat(top) ))" oninput="((st)(top))">
-		<button onclick="((ct)('em'))">em</button>
-		<button onclick="((ct)('%'))">%</button>
-		<button onclick="((ct)('px'))">px</button>
-	</div>
-	
-	<div>Left:((left))<input type="number" value="(( parseFloat(left) ))" oninput="((sl)(left))">
-		<button onclick="((cl)('em'))">em</button>
-		<button onclick="((cl)('%'))">%</button>
-		<button onclick="((cl)('px'))">px</button>
-	</div>
-
-	<script on=((target))>
+    <div>
+        Position Type: ((pos_type))
+    </div>
+    <div>
+        H-Move Type: ((hori_type))
+    </div>
+    <div>
+        V-Move Type: ((vert_type))
+    </div>
+    <div>
+        Right:((right))
+    </div>
+    <div>
+        Bottom:((bottom))
+    </div>
+    <div>
+        Top:((top))
+        <input type="number" value="(( parseFloat(top) ))" oninput="((st)(top))">
+        <button onclick="((ct)('em'))">
+            em
+        </button>
+        <button onclick="((ct)('%'))">
+            %
+        </button>
+        <button onclick="((ct)('px'))">
+            px
+        </button>
+    </div>
+    <div>
+        Left:((left))
+        <input type="number" value="(( parseFloat(left) ))" oninput="((sl)(left))">
+        <button onclick="((cl)('em'))">
+            em
+        </button>
+        <button onclick="((cl)('%'))">
+            %
+        </button>
+        <button onclick="((cl)('px'))">
+            px
+        </button>
+    </div>
+    <script on="((target))" >
 		src.target = target;
 		//get element info
 		let cache = presets.custom.actions.CacheFactory(
@@ -38,25 +58,21 @@
 		emit.bottom = cache.rules.props.bottom;
 		emit.right = cache.rules.props.right;
 	</script>
-
-	<script on=((sl))>
+    <script on="((sl))" >
 		presets.custom.actions.SETLEFT(presets.custom.system, src.target.element, src.target.component, sl.copy(event.target.value), false);
 		presets.custom.actions.COMPLETE(presets.custom.system);
 		presets.custom.system.ui.update();
 	</script>
-
-	<script on=((cl))>
+    <script on="((cl))" >
 		presets.custom.actions.CONVERT_LEFT(presets.custom.system, src.target.element, src.target.component, cl);
 		presets.custom.system.ui.update();
 	</script>
-
-	<script on=((st))>
+    <script on="((st))" >
 		presets.custom.actions.SETTOP(presets.custom.system, src.target.element, src.target.component, st.copy(event.target.value), false);
 		presets.custom.actions.COMPLETE(presets.custom.system);
 		presets.custom.system.ui.update();
 	</script>
-
-	<script on=((ct))>
+    <script on="((ct))" >
 		presets.custom.actions.CONVERT_TOP(presets.custom.system, src.target.element, src.target.component, ct);
 		presets.custom.system.ui.update();
 	</script>

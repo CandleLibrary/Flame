@@ -88,7 +88,7 @@ class UIComponent extends Component {
             });
         }
 
-        this.mgr._upImport_ = (prop_name, data, meta) => {
+        this.mgr.upImport = (prop_name, data, meta) => {
             switch (prop_name) {
                 case "load":
                     this.system.ui.mountComponent(this);

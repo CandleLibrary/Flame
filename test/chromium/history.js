@@ -1,29 +1,26 @@
 function HISTORY(system, env) {
     const css = system.css;
-    const ui = system.ui;
-
-    const path = require("path");
 
     describe("Handling State History", function() {
         this.slow(2000);
 
-        let component, element, style, rect, input;
+        let component, element, style;
 
-        beforeEach(function(fin) {
-            //Grab the single instance of the document. 
-            let doc = system.docs.get(path.resolve(env.url));
-            system.actions.CREATE_COMPONENT(system, doc, { x: 200, y: 40 });
-
-            setTimeout(() => {
-                component = ui.components[1];
+        beforeEach(() =>
+            env
+            .loadTestComponentA()
+            .then((v) => {
+                let { comp } = v;
+                component = comp;
                 element = component.query("span");
-                input = element.nextSibling.childNodes[1];
                 style = component.window.getComputedStyle(element);
-                fin();
-            }, 100);
-        });
+            })
+        );
+
+        afterEach(() => system.project.reset());
 
         it("Basic history commands UNDO and REDO", function() {
+            console.log("AA")
             let style = component.window.getComputedStyle(element);
 
             system.actions.MOVE(system, element, component, 10, 10, false);

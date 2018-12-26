@@ -11,9 +11,9 @@ export class DocumentDifferentiator {
     }
 
     createDiff(old, new_) {
-        
+
         if (!old || !new_ || old == new_) return;
-        
+
         const oldTF = this.oldTF;
         const newTF = this.newTF;
 
@@ -25,11 +25,12 @@ export class DocumentDifferentiator {
         newTF.insertText(new_);
         newTF.updateText();
 
-        let i = 0, j = 0, 
-        	li = oldTF.length,
-        	lj = newTF.length;
+        let i = 0,
+            j = 0,
+            li = oldTF.length,
+            lj = newTF.length;
 
-        const diffs = {new:[],old:[]};
+        const diffs = { new: [], old: [] };
 
         outer:
             for (i = 0, j = 0; i < li; i++) {
@@ -49,38 +50,38 @@ export class DocumentDifferentiator {
                 let root = j;
 
                 for (let d = 1; j < lj; j++, d++) {
-                	//*
-                	if (j-root == 0 && i+d < li && oldTF.getLine(i+d).slice() == newTF.getLine(root+d).slice()){
-                		for (let n = 0; n < d; n++) {	
-                			diffs.new.push({index: root+n, text: newTF.getLine(root+n).slice()});
-                        	diffs.old.push({index: i+n, text: oldTF.getLine(i+n).slice() });
-                		}
-                		i += d;
-                        j = root+d+1;
+                    //*
+                    if (j - root == 0 && i + d < li && oldTF.getLine(i + d).slice() == newTF.getLine(root + d).slice()) {
+                        for (let n = 0; n < d; n++) {
+                            diffs.new.push({ index: root + n, text: newTF.getLine(root + n).slice() });
+                            diffs.old.push({ index: i + n, text: oldTF.getLine(i + n).slice() });
+                        }
+                        i += d;
+                        j = root + d + 1;
                         continue outer;
-                	}//*/
+                    } //*/
 
                     if (oldTF.getLine(i).slice() == newTF.getLine(j).slice()) {
                         const distance = j - i;
-                        const l = Math.min(li, i + distance-1);
-                        
-                        for (let p = i+1; p < l; p++) {
+                        const l = Math.min(li, i + distance - 1);
+
+                        for (let p = i + 1; p < l; p++) {
                             if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
 
-                                for (let n = i; n < p; n++) 
-                                    diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"AA"});
-                                
+                                for (let n = i; n < p; n++)
+                                    diffs.old.push({ index: n, text: oldTF.getLine(n).slice(), n: "AA" });
+
                                 i = p;
                                 j = root + 1;
                                 continue outer;
                             }
                         }
 
-                        for (let n = root; n < j; n++) 
-                            diffs.new.push({index: n, text: newTF.getLine(n).slice(), n:"AB", root});
-                        
+                        for (let n = root; n < j; n++)
+                            diffs.new.push({ index: n, text: newTF.getLine(n).slice(), n: "AB", root });
+
                         j++;
-                        
+
                         continue outer;
                     }
 
@@ -90,7 +91,7 @@ export class DocumentDifferentiator {
                         for (let p = i; p < li; p++) {
                             if (oldTF.getLine(p).slice() == newTF.getLine(root).slice()) {
                                 for (let n = i; n < p; n++)
-                                    diffs.old.push({index: n, text: oldTF.getLine(n).slice(), n:"DD", root, p});
+                                    diffs.old.push({ index: n, text: oldTF.getLine(n).slice(), n: "DD", root, p });
 
                                 i = p;
                                 j = root + 1;
@@ -98,8 +99,8 @@ export class DocumentDifferentiator {
                             }
                         }
 
-                        diffs.new.push({index: root, text: newTF.getLine(root).slice()});
-                        diffs.old.push({index: i, text: oldTF.getLine(i).slice() });
+                        diffs.new.push({ index: root, text: newTF.getLine(root).slice() });
+                        diffs.old.push({ index: i, text: oldTF.getLine(i).slice() });
                         j = root + 1;
                         break;
                     }
@@ -108,7 +109,7 @@ export class DocumentDifferentiator {
 
 
         while (j < lj) {
-            diffs.new.push({index: j, text: newTF.getLine(j).slice()});
+            diffs.new.push({ index: j, text: newTF.getLine(j).slice() });
             j++;
         }
 
@@ -116,30 +117,28 @@ export class DocumentDifferentiator {
     }
 
     convert(doc, diff) {
-    	let a = new TextFramework();
-    	a.insertText(doc + "");
+        let a = new TextFramework();
+        a.insertText(doc + "");
 
         a.updateText();
 
 
-        for(let i = diff.old.length -1; i >= 0; i--){
+        for (let i = diff.old.length - 1; i >= 0; i--) {
             let d = diff.old[i];
             let line = a.getLine(d.index);
             a.line_container.remove(line);
             line.release();
         }
 
-        if(a.length == 0) debugger
+        if (a.length == 0) debugger
 
-        for(let i = 0; i < diff.new.length;i++){
+        for (let i = 0; i < diff.new.length; i++) {
             let d = diff.new[i];
             a.insertText(d.text, d.index - 1);
             a.updateText();
         }
 
         a.updateText();
-
-        console.log(a + "","\n_________________________________\n" , doc +"")
 
         doc.fromString(a.toString(), false);
     }
@@ -150,21 +149,21 @@ export class DocumentDifferentiator {
         a.insertText(doc + "");
         a.updateText();
 
-        for(let i = diff.new.length -1; i >= 0; i--){
+        for (let i = diff.new.length - 1; i >= 0; i--) {
             let d = diff.new[i];
             let line = a.getLine(d.index);
             a.line_container.remove(line);
             line.release();
         }
 
-        if(a.length == 0) debugger
-        for(let i = 0; i < diff.old.length;i++){
+        if (a.length == 0) debugger
+            
+        for (let i = 0; i < diff.old.length; i++) {
             let d = diff.old[i];
-            a.insertText(d.text, Math.max(0,d.index - 1));
+            a.insertText(d.text, Math.max(0, d.index - 1));
             a.updateText();
-        }   
-        console.log(a + "","\n_________________________________\n" , doc +"")
-        
+        }
+
         doc.fromString(a.toString(), false);
     }
 }

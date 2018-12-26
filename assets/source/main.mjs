@@ -83,7 +83,7 @@ const flame = {
         if (DEV && !TEST) {
             //Load in the development component.
             let path = require("path").join(process.cwd(), "assets/components/test.html");
-            let doc = system.docs.get(system.docs.load(path));
+            let doc = system.docs.get(system.docs.loadFile(path));
             actions.CREATE_COMPONENT(system, doc, { x: 200, y: 200 });
             window.flame = flame;
         } else if (TEST) {

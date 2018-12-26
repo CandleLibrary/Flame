@@ -113,6 +113,8 @@ class Component {
 
     load(document) {
         this.name.innerHTML = document.name;
+        this.doc_name = document.name;
+        this.doc_path = document.path;
         document.bind(this);
     }
 
@@ -157,7 +159,7 @@ class Component {
         }
     }
 
-    _upImport_() {
+    upImport() {
 
     }
 
@@ -226,6 +228,18 @@ class Component {
 
     get target() {
         return this.element;
+    }
+
+    toJSON(){
+        return {
+            x:this.x,
+            y:this.y,
+            width:this.width,
+            height:this.height,
+            path:this.doc_path,
+            name:this.doc_name,
+            type: "html"
+        };
     }
 }
 

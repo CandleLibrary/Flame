@@ -231,7 +231,7 @@ export class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
-            if (x === NaN || y === NaN)
+            if (isNaN(x) || isNaN(y))
                 debugger;
 
             this.origin_x = x;
@@ -247,9 +247,8 @@ export class UI_Manager {
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
 
-        if (e.target !== document.body) {
+        if (e.target !== document.body) 
             return;
-        }
 
         this.canvas.clearTargets(this.transform);
         this.main_menu.setAttribute("show", "false");
@@ -264,8 +263,8 @@ export class UI_Manager {
         if (this.UI_MOVE) {
             x = (typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX);
             y = (typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY);
-            let diffx = this.origin_x - x;
-            let diffy = this.origin_y - y;
+            const diffx = this.origin_x - x;
+            const diffy = this.origin_y - y;
             this.transform.px -= diffx * this.transform.sx;
             this.transform.py -= diffy * this.transform.sy;
             this.origin_x = x + diffx;
@@ -274,15 +273,15 @@ export class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.ui_target) {
-            let diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
-            let diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
             this.origin_x -= diffx;
             this.origin_y -= diffy;
             if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
-            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            let { dx, dy } = { dx: diffx, dy: diffy } //this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+            const { dx, dy } = { dx: diffx, dy: diffy };//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -309,8 +308,10 @@ export class UI_Manager {
         e.preventDefault();
 
         Array.prototype.forEach.call(e.dataTransfer.files, 
-            f =>
-            this.mountDocument(f, this.transform.getLocalX(e.clientX), this.transform.getLocalY(e.clientY))
+            f => this.mountDocument(
+                f, 
+                this.transform.getLocalX(e.clientX), 
+                this.transform.getLocalY(e.clientY))
         );
     }
 
@@ -334,7 +335,7 @@ export class UI_Manager {
         let amount = e.deltaY;
         let os = this.transform.scale;
         this.transform.scale = Math.max(0.2, Math.min(2, os + -amount * 0.00005));
-        let px = this.transform.px,
+        const px = this.transform.px,
             s = this.transform.scale,
             py = this.transform.py;
 
@@ -356,10 +357,11 @@ export class UI_Manager {
     }
 
     mountDocument(file_info, x, y) {
-        let doc = this.system.docs.get(this.system.docs.loadFile(file_info));
+        const doc = this.system.docs.get(this.system.docs.loadFile(file_info));
         let comp = null;
-        if (doc) switch (doc.type) {
-            case "wick":
+        if (doc) {
+            switch (doc.type) {
+            case "wick": 
             case "html":
                 comp = actions.CREATE_COMPONENT(this.system, doc, {
                     x,
@@ -379,15 +381,16 @@ export class UI_Manager {
             case "gif": //intentional
             default:
                 break;
+            }
         }
 
-        return comp
+        return comp;
     }
 
     /******** FILE HANDLING ************/
 
     async save(file_builder) {
-        let data = { components: [] };
+        const data = { components: [] };
 
         for (let i = 0; i < this.components.length; i++)
             data.components.push(this.components[i]);
@@ -396,13 +399,12 @@ export class UI_Manager {
     }
 
     load(string) {
-        let data = JSON.parse(string);
-
-        let components = data.components;
+        const data = JSON.parse(string),
+            components = data.components;
 
         for (let i = 0; i < components.length; i++) {
-            let d = components[i];
-            let comp = this.mountDocument(d, d.x, d.y);
+            const d = components[i],
+                comp = this.mountDocument(d, d.x, d.y);
             comp.width = d.width;
             comp.height = d.height;
         }

@@ -11248,7 +11248,7 @@ class UI_Manager {
     handlePointerDownEvent(e, x = this.transform.getLocalX(e.pageX), y = this.transform.getLocalY(e.pageY), FROM_MAIN = false) {
 
         if (e.button == 1) {
-            if (x === NaN || y === NaN)
+            if (isNaN(x) || isNaN(y))
                 debugger;
 
             this.origin_x = x;
@@ -11264,9 +11264,8 @@ class UI_Manager {
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
 
-        if (e.target !== document.body) {
+        if (e.target !== document.body) 
             return;
-        }
 
         this.canvas.clearTargets(this.transform);
         this.main_menu.setAttribute("show", "false");
@@ -11281,8 +11280,8 @@ class UI_Manager {
         if (this.UI_MOVE) {
             x = (typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX);
             y = (typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY);
-            let diffx = this.origin_x - x;
-            let diffy = this.origin_y - y;
+            const diffx = this.origin_x - x;
+            const diffy = this.origin_y - y;
             this.transform.px -= diffx * this.transform.sx;
             this.transform.py -= diffy * this.transform.sy;
             this.origin_x = x + diffx;
@@ -11291,15 +11290,15 @@ class UI_Manager {
             this.view_element.style.transform = this.transform;
             return;
         } else if (this.ui_target) {
-            let diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
-            let diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : e.pageX);
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : e.pageY);
             this.origin_x -= diffx;
             this.origin_y -= diffy;
             if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
-            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            let { dx, dy } = { dx: diffx, dy: diffy }; //this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+            const { dx, dy } = { dx: diffx, dy: diffy };//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
             this.origin_x -= dx;
             this.origin_y -= dy;
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
@@ -11326,8 +11325,10 @@ class UI_Manager {
         e.preventDefault();
 
         Array.prototype.forEach.call(e.dataTransfer.files, 
-            f =>
-            this.mountDocument(f, this.transform.getLocalX(e.clientX), this.transform.getLocalY(e.clientY))
+            f => this.mountDocument(
+                f, 
+                this.transform.getLocalX(e.clientX), 
+                this.transform.getLocalY(e.clientY))
         );
     }
 
@@ -11351,7 +11352,7 @@ class UI_Manager {
         let amount = e.deltaY;
         let os = this.transform.scale;
         this.transform.scale = Math.max(0.2, Math.min(2, os + -amount * 0.00005));
-        let px = this.transform.px,
+        const px = this.transform.px,
             s = this.transform.scale,
             py = this.transform.py;
 
@@ -11373,10 +11374,11 @@ class UI_Manager {
     }
 
     mountDocument(file_info, x, y) {
-        let doc = this.system.docs.get(this.system.docs.loadFile(file_info));
+        const doc = this.system.docs.get(this.system.docs.loadFile(file_info));
         let comp = null;
-        if (doc) switch (doc.type) {
-            case "wick":
+        if (doc) {
+            switch (doc.type) {
+            case "wick": 
             case "html":
                 comp = actions.CREATE_COMPONENT(this.system, doc, {
                     x,
@@ -11396,15 +11398,16 @@ class UI_Manager {
             case "gif": //intentional
             default:
                 break;
+            }
         }
 
-        return comp
+        return comp;
     }
 
     /******** FILE HANDLING ************/
 
     async save(file_builder) {
-        let data = { components: [] };
+        const data = { components: [] };
 
         for (let i = 0; i < this.components.length; i++)
             data.components.push(this.components[i]);
@@ -11413,13 +11416,12 @@ class UI_Manager {
     }
 
     load(string) {
-        let data = JSON.parse(string);
-
-        let components = data.components;
+        const data = JSON.parse(string),
+            components = data.components;
 
         for (let i = 0; i < components.length; i++) {
-            let d = components[i];
-            let comp = this.mountDocument(d, d.x, d.y);
+            const d = components[i],
+                comp = this.mountDocument(d, d.x, d.y);
             comp.width = d.width;
             comp.height = d.height;
         }
@@ -22702,10 +22704,10 @@ SourceNode$1.prototype.createElement = function(presets, source$$1) {
     return element;
 };
 
-RootNode.prototype.reparse_type = RootNode;
+RootNode.prototype.ReparseConstructor = RootNode;
 
 RootNode.prototype.createElement = function(presets, source$$1) {
-    let element = document.createElement(this.tag);
+    const element = document.createElement(this.tag);
     element.wick_source = source$$1;
     element.wick_node = this;
     element.wick_id = RootNode.id++;
@@ -22722,16 +22724,15 @@ RootNode.prototype.setSource = function(source$$1) {
     source$$1.ast = this;
 };
 
-RootNode.prototype.reparse = function(text, element) {
+RootNode.prototype.reparse = function(text) {
 
-    let Root = new this.reparse_type();
+    const Root = new this.ReparseConstructor();
 
     Root.par = this.par;
 
-    let promise = Root.parse(whind$1(text), false, false, this.par);
+    const promise = Root.parse(whind$1(text), false, false, this.par);
 
     promise.then(node => {
-
         node.par = null;
 
         if (this.par)
@@ -22739,7 +22740,6 @@ RootNode.prototype.reparse = function(text, element) {
         node.BUILT = true;
         node.setRebuild(false, true);
         node.rebuild();
-        //replace this node with the new one. 
     });
 
     return promise;
@@ -22961,8 +22961,8 @@ class DeleteNode extends SourceNode$1 {
 }
 
 SVGNode.prototype.createElement = function(presets, source$$1){
-	let element = document.createElementNS("http://www.w3.org/2000/svg", this.tag);
-	element.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
+    const element = document.createElementNS("http://www.w3.org/2000/svg", this.tag);
+    element.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xlink", "http://www.w3.org/1999/xlink");
     element.wick_source = source$$1;
     element.wick_node = this;
     element.wick_id = RootNode.id++;
@@ -22976,7 +22976,7 @@ SVGNode.prototype.buildExisting = RootNode.prototype.buildExisting;
 SVGNode.prototype.setRebuild = RootNode.prototype.setRebuild;
 SVGNode.prototype.resetRebuild = RootNode.prototype.resetRebuild;
 SVGNode.prototype.updated = RootNode.prototype.updated;
-SVGNode.prototype.reparse_type = SVGNode;
+SVGNode.prototype.ReparseConstructor = SVGNode;
 
 RootText.prototype.createElement = RootNode.prototype.createElement;
 RootText.prototype.setSource = RootNode.prototype.setSource;
@@ -23049,12 +23049,11 @@ SourceTemplateNode$1.prototype.buildExisting = function(element, source$$1, pres
         if (this._merged_)
             this._merged_.buildExisting(element, source$$1, presets, taps);
 
-        if (true || this.CHANGED & 1) {
+        if (true || this.CHANGED & 1) 
             //redo IOs that have changed (TODO)
-            for (let i = 0, l = this.bindings.length; i < l; i++) {
+            for (let i = 0, l = this.bindings.length; i < l; i++) 
                 this.bindings[i].binding._bind_(source$$1, [], taps, element, this.bindings[i].name);
-            }
-        }
+        
 
         if (true || this.CHANGED & 2) {
             //rebuild children
@@ -23095,26 +23094,26 @@ const $Boolean = new BoolSchemeConstructor;
  * Schema for flame_data model
  */
 //const schemed = wick.model.scheme;
-const flame_scheme = schemed({
-	project : schemed({
-		name : $String,
-        working_directory : $String,
-        temp_directory : $String,
-        last_modified : EPOCH_Time,
-        creation_date : EPOCH_Time,
-        bundle_files :$Boolean,
-	}),
-	default  : schemed({
-        component  : schemed({
+const FlameScheme = schemed({
+    project: schemed({
+        name: $String,
+        working_directory: $String,
+        temp_directory: $String,
+        last_modified: EPOCH_Time,
+        creation_date: EPOCH_Time,
+        bundle_files: $Boolean,
+    }),
+    default: schemed({
+        component: schemed({
             width: $Number,
             height: $Number
         })
-	}),
+    }),
     settings: schemed({
         KEEP_UNIQUE: $Boolean,
-        move_type : $String,
+        move_type: $String,
         primary_color: $Number,
-        secondary_color : $Number,
+        secondary_color: $Number,
 
     })
 });
@@ -23390,7 +23389,7 @@ class Project {
 
         this.system = system;
 
-        this.flame_data = new flame_scheme();
+        this.flame_data = new FlameScheme();
 
         this.presets = new Presets({
             models: {
@@ -23523,7 +23522,7 @@ class Project {
         if (this.properties.project.bundle_files)
             docs_size = await this.saveDocuments(file_builder);
         else if (this.properties.project.export_file_dir)
-            this.system.docs.save(null, export_file_dir);
+            this.system.docs.save(null/*, export_file_dir*/);
         else    
             this.system.docs.save();
 
@@ -23593,13 +23592,13 @@ class Project {
     }
 
     async readFileStamp(file_reader) {
-        let stamp = await file_reader.readB(Uint32Array, 64);
+        const stamp = await file_reader.readB(Uint32Array, 64);
 
-        let d = stamp[0];
-        let version = (d >> 16) & 0xFFFF;
-        let title = String.fromCharCode(d & 0xFF) + String.fromCharCode((d >> 8) & 0xFF);
+        const d = stamp[0],
+            version = (d >> 16) & 0xFFFF,
+            title = String.fromCharCode(d & 0xFF) + String.fromCharCode((d >> 8) & 0xFF);
 
-        let
+        const
             flags = stamp[1],
             ui_size = stamp[2],
             doc_size = stamp[3],

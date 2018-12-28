@@ -1,14 +1,15 @@
-import {SchemedModel,
+import {
+    SchemedModel,
     Model,
     ModelContainerBase,
     BTreeModelContainer,
     ArrayModelContainer,
     MultiIndexedContainer,
-    SchemeConstructor, 
-    DateSchemeConstructor, 
-    TimeSchemeConstructor, 
-    StringSchemeConstructor, 
-    NumberSchemeConstructor, 
+    SchemeConstructor,
+    DateSchemeConstructor,
+    TimeSchemeConstructor,
+    StringSchemeConstructor,
+    NumberSchemeConstructor,
     BoolSchemeConstructor
 } from "@candlefw/wick";
 
@@ -24,28 +25,28 @@ const $Boolean = new BoolSchemeConstructor;
  * Schema for flame_data model
  */
 //const schemed = wick.model.scheme;
-const flame_scheme = schemed({
-	project : schemed({
-		name : $String,
-        working_directory : $String,
-        temp_directory : $String,
-        last_modified : EPOCH_Time,
-        creation_date : EPOCH_Time,
-        bundle_files :$Boolean,
-	}),
-	default  : schemed({
-        component  : schemed({
+const FlameScheme = schemed({
+    project: schemed({
+        name: $String,
+        working_directory: $String,
+        temp_directory: $String,
+        last_modified: EPOCH_Time,
+        creation_date: EPOCH_Time,
+        bundle_files: $Boolean,
+    }),
+    default: schemed({
+        component: schemed({
             width: $Number,
             height: $Number
         })
-	}),
+    }),
     settings: schemed({
         KEEP_UNIQUE: $Boolean,
-        move_type : $String,
+        move_type: $String,
         primary_color: $Number,
-        secondary_color : $Number,
+        secondary_color: $Number,
 
     })
 });
 
-export {flame_scheme};
+export { FlameScheme };

@@ -14,10 +14,10 @@ SourceNode.prototype.createElement = function(presets, source) {
     return element;
 };
 
-RootNode.prototype.reparse_type = RootNode;
+RootNode.prototype.ReparseConstructor = RootNode;
 
 RootNode.prototype.createElement = function(presets, source) {
-    let element = document.createElement(this.tag);
+    const element = document.createElement(this.tag);
     element.wick_source = source;
     element.wick_node = this;
     element.wick_id = RootNode.id++;
@@ -34,16 +34,15 @@ RootNode.prototype.setSource = function(source) {
     source.ast = this;
 };
 
-RootNode.prototype.reparse = function(text, element) {
+RootNode.prototype.reparse = function(text) {
 
-    let Root = new this.reparse_type();
+    const Root = new this.ReparseConstructor();
 
     Root.par = this.par;
 
-    let promise = Root.parse(whind(text), false, false, this.par);
+    const promise = Root.parse(whind(text), false, false, this.par);
 
     promise.then(node => {
-
         node.par = null;
 
         if (this.par)
@@ -51,7 +50,6 @@ RootNode.prototype.reparse = function(text, element) {
         node.BUILT = true;
         node.setRebuild(false, true);
         node.rebuild();
-        //replace this node with the new one. 
     });
 
     return promise;

@@ -60,9 +60,16 @@
     },
     "extends":"eslint:recommended",
     "rules":{
+        "no-fallthrough": ["error", { "commentPattern": "[iI]ntentional( - [\\w\\W]*){0,1}" }],
         "semi-style": ["error", "last"],
         "semi": ["warn","always", {"omitLastInOneLineBlock": true}],
-        "prefer-const":"warn"
+        "prefer-const":"warn",
+        "indent": ["error", 4],
+        "new-cap" : ["error"],
+        "padding-line-between-statements": [
+            "error",
+            { "blankLine": "always", "prev": "function", "next": "*" }
+        ]
     }
   }
 }

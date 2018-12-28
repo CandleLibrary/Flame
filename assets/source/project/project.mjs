@@ -3,7 +3,7 @@ import { Presets } from "@candlefw/wick";
 
 import path from "path";
 import fs from "fs";
-import { flame_scheme } from "./scheme";
+import { FlameScheme } from "./scheme";
 
 //Text Editing
 import { TextFramework, TextIO } from "@candlefw/charcoal";
@@ -25,7 +25,7 @@ export class Project {
 
         this.system = system;
 
-        this.flame_data = new flame_scheme();
+        this.flame_data = new FlameScheme();
 
         this.presets = new Presets({
             models: {
@@ -158,7 +158,7 @@ export class Project {
         if (this.properties.project.bundle_files)
             docs_size = await this.saveDocuments(file_builder);
         else if (this.properties.project.export_file_dir)
-            this.system.docs.save(null, export_file_dir);
+            this.system.docs.save(null/*, export_file_dir*/);
         else    
             this.system.docs.save();
 
@@ -222,19 +222,19 @@ export class Project {
         stamp[2] = ui_size;
         stamp[3] = doc_size;
         stamp[4] = project_size;
-        stamp[5] = history_size
+        stamp[5] = history_size;
 
         return await file_builder.writeB(stamp, 0, false);
     }
 
     async readFileStamp(file_reader) {
-        let stamp = await file_reader.readB(Uint32Array, 64);
+        const stamp = await file_reader.readB(Uint32Array, 64);
 
-        let d = stamp[0];
-        let version = (d >> 16) & 0xFFFF;
-        let title = String.fromCharCode(d & 0xFF) + String.fromCharCode((d >> 8) & 0xFF);
+        const d = stamp[0],
+            version = (d >> 16) & 0xFFFF,
+            title = String.fromCharCode(d & 0xFF) + String.fromCharCode((d >> 8) & 0xFF);
 
-        let
+        const
             flags = stamp[1],
             ui_size = stamp[2],
             doc_size = stamp[3],

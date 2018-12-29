@@ -64,7 +64,6 @@
         "semi-style": ["error", "last"],
         "semi": ["warn","always", {"omitLastInOneLineBlock": true}],
         "prefer-const":"warn",
-        "indent": ["error", 4],
         "new-cap" : ["error"],
         "padding-line-between-statements": [
             "error",

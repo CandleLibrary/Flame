@@ -23,10 +23,20 @@ export class Project {
 
     constructor(system) {
 
-        this.system = system;
+        this.system = system;     
+        this.flame_data = null;
+        this.presets = null;
+
+        this.setPresets();
+        this.setDefaults();
+    }
+
+    setPresets(){
+
+        const system = this.system;
 
         this.flame_data = new FlameScheme();
-
+        
         this.presets = new Presets({
             models: {
                 flame: this.flame_data,
@@ -43,25 +53,18 @@ export class Project {
                 system
             }
         });
-
-        this.history = [
-            []
-        ];
-        this.state_id = 0;
-        this.file_path = "project.fpd";
-
-
-        this.setDefaults();
-
-        //Load interface components from working directory
     }
 
     reset() {
+        this.setPresets();
+        this.setDefaults();
         this.system.ui.reset();
         this.system.docs.reset();
+        this.system.history.reset();
     }
 
     loadComponents(dir) {
+
         fs.readdir(dir, (e, d) => {
             if (e)
                 return console.error(`Could not load UI components: ${e}`);
@@ -75,20 +78,30 @@ export class Project {
     }
 
     setDefaults() {
-        this.flame_data.creation_date = Date.now();
-        this.flame_data.default.component.width = 360;
-        this.flame_data.default.component.height = 920;
-        this.flame_data.settings.move_type = "relative";
-        this.flame_data.settings.KEEP_UNIQUE = true;
+        this.preferences.auto_save_interval = 0;
+
+        this.meta.creation_date = Date.now();
+        this.defaults.component.width = 360;
+        this.defaults.component.height = 920;
+        this.components.move_type = "relative";
+        this.components.KEEP_UNIQUE = true;
+
+
+
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
-    get properties() {
-        return this.flame_data;
+    get meta(){
+        return this.flame_data.meta;
     }
-
-    get settings() {
-        return this.flame_data.settings;
+    get preferences(){
+        return this.flame_data.preferences;
+    }
+    get defaults(){
+        return this.flame_data.defaults;
+    }
+    get components(){
+        return this.flame_data.components;
     }
 
     importUIComponent(component) {
@@ -108,6 +121,7 @@ export class Project {
     **/
 
     async load(file_path = this.file_path, call_back = null) {
+
         let file_reader;
 
         if (file_path instanceof FileReader)
@@ -115,19 +129,24 @@ export class Project {
         else
             file_reader = new FileReader(file_path);
 
-        let stamp = await this.readFileStamp(file_reader);
+        const stamp = await this.readFileStamp(file_reader);
 
         if (stamp.title !== "CF")
             throw new Error(`File ${file_path} is not recognized as an *.fpd file.`);
 
-        let ui = await file_reader.readS(stamp.ui_size);
+        const ui = await file_reader.readS(stamp.ui_size);
 
         if (stamp.flags & 2) {
-            let data = await file_reader.readS(stamp.doc_size);
+            const data = await file_reader.readS(stamp.doc_size);
             this.system.docs.load(data);
         }
-
         this.system.ui.load(ui);
+
+        const project_data = await file_reader.readS(stamp.project_size);
+
+        this.flame_data.set(JSON.parse(project_data));
+
+        await this.system.history.load(file_reader, stamp.history_size);
 
         if (call_back)
             call_back();
@@ -138,6 +157,7 @@ export class Project {
         May also save current documents if user settings permit.  
     **/
     async save(file_path = this.file_path, call_back = null) {
+
         let file_builder;
 
         if (file_path instanceof FileBuilder)
@@ -155,9 +175,9 @@ export class Project {
 
         ui_size = await this.saveUI(file_builder);
 
-        if (this.properties.project.bundle_files)
+        if (this.preferences.bundle_files)
             docs_size = await this.saveDocuments(file_builder);
-        else if (this.properties.project.export_file_dir)
+        else if (this.preferences.export_file_dir)
             this.system.docs.save(null/*, export_file_dir*/);
         else    
             this.system.docs.save();
@@ -200,7 +220,7 @@ export class Project {
 
     async saveProperties(file_builder) {
         const off = file_builder.offset;
-        return await file_builder.writeS(this.properties.toJSON()) - off;
+        return await file_builder.writeS(this.flame_data.toJSON()) - off;
     }
 
     async saveDocuments(file_builder) {
@@ -209,9 +229,8 @@ export class Project {
     }
 
     async writefileStamp(file_builder, ui_size = 0, doc_size = 0, project_size = 0, history_size = 0) {
-        let stamp = new Uint32Array(16);
-
-        let entry_flags = ((ui_size > 0) | 0) |
+        const stamp = new Uint32Array(16),
+            entry_flags = ((ui_size > 0) | 0) |
             (((doc_size > 0) | 0) << 1) |
             (((project_size > 0) | 0) << 2) |
             (((history_size > 0) | 0) << 3);

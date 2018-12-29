@@ -14,10 +14,12 @@ class State {
     }
 
     toJSON() {
-        const str = { a: this.actions, p: this.progression, b: [] };
-
-        let root = this.fch;
+        
+        const str = { a: this.actions, p: this.progression, b: [] },
+            root = this.fch;
+        
         let node = this.fch;
+        
         if(this.fch)
         do {
             str.b.push(node.toJSON());
@@ -27,6 +29,7 @@ class State {
     }
 
     fromJSON(node) {
+
         this.actions = node.a;
 
         const branches = node.b;
@@ -39,12 +42,14 @@ class State {
     }
 
     addAction(action){
+
         if(action.type)
             this.actions.push(action);
     }
 
     get id(){
-        let id = this._id + "";
+
+        const id = this._id + "";
         return (this.par) ? `${this.par.id}:${id}` : id;
     }
 }
@@ -63,6 +68,11 @@ export class StateMachine {
         this.root_state = this.active_state;
     }
 
+    reset(){
+        this.active_state = new State();
+        this.root_state = this.active_state;
+    }
+
     //Stores history as an array of reversable actions.
     addAction(action) {
         
@@ -73,6 +83,7 @@ export class StateMachine {
     }
 
     seal() {
+
         const   id = this.active_state.children.length,
                 state = new State(id);
 
@@ -141,7 +152,20 @@ export class StateMachine {
         return await file_builder.writeS(JSON.stringify(data));   
     }
 
-    async load(file_reader){
+    async load(file_reader, size){
+        const data = await file_reader.readS(size);
 
+        const history = JSON.parse(data);
+
+        this.root_state.fromJSON(history.states);
+
+        const state_id = history.state.split(/:/g).map(n=>parseInt(n));
+
+        let node = this.root_state;
+
+        for(let i = 1; i < state_id.length; i++)
+            node = node.children[state_id[i]];
+
+        this.active_state = node;
     }
 }

@@ -5,7 +5,7 @@
     <link href="../../node_modules/mocha/mocha.css" rel="stylesheet" />
     <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
     <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
-    <script type="text/javascript" src="./load.js"></script>
+    <script type="text/javascript" src="./data.js"></script>
     <script type="text/javascript" src="./save.js"></script>
     <script type="text/javascript" src="./move.js"></script>
     <script type="text/javascript" src="./border_box.js"></script>
@@ -17,6 +17,7 @@
     <div id="mocha"></div>
     <script>
     function run(system) {
+
         mocha.setup("bdd");
         chai.should();
 
@@ -45,6 +46,7 @@
         }
 
         const env = {
+            tO : (interval = 50) => new Promise(res => setTimeout(res, interval)),
             loadTestComponentA: () => loadComponent(path.resolve("test/component/test_comp.html"))
         };
 
@@ -52,12 +54,13 @@
         DATA(system, env);
         //MOVE(system, env);
         //BB(system, env);
-        //HISTORY(system, env);
+        HISTORY(system, env);
         //UNSORTED(system, env);
 
         mocha.checkLeaks();
         mocha.run();
     }
+
     window.run = run;
     </script>
 </body>

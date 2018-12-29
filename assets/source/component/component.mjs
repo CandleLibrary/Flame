@@ -18,9 +18,8 @@ class Component {
 
         this.iframe = document.createElement("iframe");
         this.iframe.src = "component_frame.html";
-
-        this.width = system.project.flame_data.default.component.width;
-        this.height = system.project.flame_data.default.component.height;
+        this.width = system.project.defaults.component.width;
+        this.height = system.project.defaults.component.height;
 
         this.IFRAME_LOADED = false;
 
@@ -231,6 +230,7 @@ class Component {
     }
 
     toJSON(){
+        console.log(this.x,this.y)
         return {
             x:this.x,
             y:this.y,

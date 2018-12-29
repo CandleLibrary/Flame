@@ -147,6 +147,8 @@ export class DocumentManager {
         if (this.pending)
             doc.next = this.pending;
 
+        doc.ps = true;
+
         this.pending = doc;
     }
 
@@ -158,6 +160,8 @@ export class DocumentManager {
             else
                 this.pending = doc.next;
         }
+
+        doc.ps = false;
 
         doc.next = null;
         doc.prv = null;

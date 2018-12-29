@@ -9,7 +9,8 @@ import whind from "@candlefw/whind";
 export class CSSDocument extends Document {
 
     updatedCSS(tree) {
-        this.save();
+       // this.save();
+       this.manager.addPending(this);
     }
 
     fromString(string, ALLOW_SEAL = true) {

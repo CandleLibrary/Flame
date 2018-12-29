@@ -75,7 +75,7 @@ function setToRelative(cache, KEEP_UNIQUE){
 export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     switch (css.props.position) {
         case "relative":
             /** 
@@ -122,7 +122,7 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
 export function TOPOSITIONRELATIVE(system, element, component) {
     const cache = CacheFactory(system, element, component);
     const css = cache.rules;
-    const KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    const KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
 
     switch (css.props.position) {
         case "relative":

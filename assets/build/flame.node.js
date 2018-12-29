@@ -8001,7 +8001,7 @@ class Cache {
 
     generateMovementCache(system, element, component) {
 
-        let move_type = system.project.settings.move_type;
+        let move_type = system.project.components.move_type;
 
         let unique_rule = getUniqueRule(system, element, component),
             css_r = getApplicableRules(system, element, component),
@@ -8245,7 +8245,7 @@ function getFirstPositionedAncestor(ele) {
 function setNumericalValue(propname, system, element, component, value, relative_type = 0) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     let props = css.props;
     let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
@@ -8255,13 +8255,13 @@ function setNumericalValue(propname, system, element, component, value, relative
             props = cache.unique.r.props;
             prop = props[propname];
         }if(!KEEP_UNIQUE){
-            let type = (system.project.settings.default_unit || "px");
+            let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
             prop = props[propname];
         } else  {
-            let type = (system.project.settings.default_unit || "px");
+            let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
@@ -8762,9 +8762,8 @@ class Component {
 
         this.iframe = document.createElement("iframe");
         this.iframe.src = "component_frame.html";
-
-        this.width = system.project.flame_data.default.component.width;
-        this.height = system.project.flame_data.default.component.height;
+        this.width = system.project.defaults.component.width;
+        this.height = system.project.defaults.component.height;
 
         this.IFRAME_LOADED = false;
 
@@ -8975,6 +8974,7 @@ class Component {
     }
 
     toJSON(){
+        console.log(this.x,this.y);
         return {
             x:this.x,
             y:this.y,
@@ -9436,7 +9436,7 @@ function RESIZEMARGINBR(system, element, component, dx, dy, IS_COMPONENT) {
 function CLEARLEFT(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`left:auto`);
         else css.props.left = "auto";
@@ -9447,7 +9447,7 @@ function CLEARLEFT(system, element, component, LINKED = false) {
 function CLEARTOP(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.top) {
         if (KEEP_UNIQUE) cache.unique.addProp(`top:auto`);
         else css.props.top = "auto";
@@ -9458,7 +9458,7 @@ function CLEARTOP(system, element, component, LINKED = false) {
 function CLEARIGHT(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.right) {
         if (KEEP_UNIQUE) cache.unique.addProp(`right:auto`);
         else css.props.right = "auto";
@@ -9469,7 +9469,7 @@ function CLEARIGHT(system, element, component, LINKED = false) {
 function CLEABOTTOM(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.bottom) {
         if (KEEP_UNIQUE) cache.unique.addProp(`bottom:auto`);
         else css.props.bottom = "auto";
@@ -9481,7 +9481,7 @@ function CLEABOTTOM(system, element, component, LINKED = false) {
 function CLEARMARGINTOP(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-top:0`);
         else css.props.margin_left = 0;
@@ -9492,7 +9492,7 @@ function CLEARMARGINTOP(system, element, component, LINKED = false) {
 function CLEARMARGINLEFT(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-left:0`);
         else css.props.margin_left = 0;
@@ -9504,7 +9504,7 @@ function CLEARMARGINLEFT(system, element, component, LINKED = false) {
 function CLEARMARGINRIGHT(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_right) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-right:0`);
         else css.props.margin_right = 0;
@@ -9576,7 +9576,7 @@ function setToRelative(cache, KEEP_UNIQUE){
 function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     switch (css.props.position) {
         case "relative":
             /** 
@@ -9623,7 +9623,7 @@ function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
 function TOPOSITIONRELATIVE(system, element, component) {
     const cache = CacheFactory(system, element, component);
     const css = cache.rules;
-    const KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    const KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
 
     switch (css.props.position) {
         case "relative":
@@ -11374,6 +11374,7 @@ class UI_Manager {
     }
 
     mountDocument(file_info, x, y) {
+        console.log(x, y);
         const doc = this.system.docs.get(this.system.docs.loadFile(file_info));
         let comp = null;
         if (doc) {
@@ -11424,6 +11425,8 @@ class UI_Manager {
                 comp = this.mountDocument(d, d.x, d.y);
             comp.width = d.width;
             comp.height = d.height;
+            comp.x = d.x;
+            comp.y = d.y;
         }
     }
 }
@@ -22235,7 +22238,8 @@ LinkedList.mixinTree(Document);
 class WickDocument extends Document {
 
     updatedWickASTTree(tree) {
-        this.save();
+        //this.save();
+        this.manager.addPending(this);
     }
 
     fromString(string, ALLOW_SEAL = true) {
@@ -22276,7 +22280,8 @@ class WickDocument extends Document {
 class CSSDocument extends Document {
 
     updatedCSS(tree) {
-        this.save();
+       // this.save();
+       this.manager.addPending(this);
     }
 
     fromString(string, ALLOW_SEAL = true) {
@@ -22620,6 +22625,8 @@ class DocumentManager {
         if (this.pending)
             doc.next = this.pending;
 
+        doc.ps = true;
+
         this.pending = doc;
     }
 
@@ -22631,6 +22638,8 @@ class DocumentManager {
             else
                 this.pending = doc.next;
         }
+
+        doc.ps = false;
 
         doc.next = null;
         doc.prv = null;
@@ -23095,26 +23104,28 @@ const $Boolean = new BoolSchemeConstructor;
  */
 //const schemed = wick.model.scheme;
 const FlameScheme = schemed({
-    project: schemed({
+    meta:schemed({
+        last_modified: EPOCH_Time,
+        creation_date: EPOCH_Time, 
+    }),
+    preferences: schemed({
         name: $String,
         working_directory: $String,
         temp_directory: $String,
-        last_modified: EPOCH_Time,
-        creation_date: EPOCH_Time,
         bundle_files: $Boolean,
+        auto_save_interval: $Number,
     }),
-    default: schemed({
+    defaults: schemed({
         component: schemed({
             width: $Number,
             height: $Number
         })
     }),
-    settings: schemed({
+    components: schemed({
         KEEP_UNIQUE: $Boolean,
         move_type: $String,
         primary_color: $Number,
         secondary_color: $Number,
-
     })
 });
 
@@ -23387,10 +23398,20 @@ class Project {
 
     constructor(system) {
 
-        this.system = system;
+        this.system = system;     
+        this.flame_data = null;
+        this.presets = null;
+
+        this.setPresets();
+        this.setDefaults();
+    }
+
+    setPresets(){
+
+        const system = this.system;
 
         this.flame_data = new FlameScheme();
-
+        
         this.presets = new Presets({
             models: {
                 flame: this.flame_data,
@@ -23407,25 +23428,18 @@ class Project {
                 system
             }
         });
-
-        this.history = [
-            []
-        ];
-        this.state_id = 0;
-        this.file_path = "project.fpd";
-
-
-        this.setDefaults();
-
-        //Load interface components from working directory
     }
 
     reset() {
+        this.setPresets();
+        this.setDefaults();
         this.system.ui.reset();
         this.system.docs.reset();
+        this.system.history.reset();
     }
 
     loadComponents(dir) {
+
         fs.readdir(dir, (e, d) => {
             if (e)
                 return console.error(`Could not load UI components: ${e}`);
@@ -23439,20 +23453,30 @@ class Project {
     }
 
     setDefaults() {
-        this.flame_data.creation_date = Date.now();
-        this.flame_data.default.component.width = 360;
-        this.flame_data.default.component.height = 920;
-        this.flame_data.settings.move_type = "relative";
-        this.flame_data.settings.KEEP_UNIQUE = true;
+        this.preferences.auto_save_interval = 0;
+
+        this.meta.creation_date = Date.now();
+        this.defaults.component.width = 360;
+        this.defaults.component.height = 920;
+        this.components.move_type = "relative";
+        this.components.KEEP_UNIQUE = true;
+
+
+
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
-    get properties() {
-        return this.flame_data;
+    get meta(){
+        return this.flame_data.meta;
     }
-
-    get settings() {
-        return this.flame_data.settings;
+    get preferences(){
+        return this.flame_data.preferences;
+    }
+    get defaults(){
+        return this.flame_data.defaults;
+    }
+    get components(){
+        return this.flame_data.components;
     }
 
     importUIComponent(component) {
@@ -23472,6 +23496,7 @@ class Project {
     **/
 
     async load(file_path = this.file_path, call_back = null) {
+
         let file_reader;
 
         if (file_path instanceof $FileReader)
@@ -23479,19 +23504,24 @@ class Project {
         else
             file_reader = new $FileReader(file_path);
 
-        let stamp = await this.readFileStamp(file_reader);
+        const stamp = await this.readFileStamp(file_reader);
 
         if (stamp.title !== "CF")
             throw new Error(`File ${file_path} is not recognized as an *.fpd file.`);
 
-        let ui = await file_reader.readS(stamp.ui_size);
+        const ui = await file_reader.readS(stamp.ui_size);
 
         if (stamp.flags & 2) {
-            let data = await file_reader.readS(stamp.doc_size);
+            const data = await file_reader.readS(stamp.doc_size);
             this.system.docs.load(data);
         }
-
         this.system.ui.load(ui);
+
+        const project_data = await file_reader.readS(stamp.project_size);
+
+        this.flame_data.set(JSON.parse(project_data));
+
+        await this.system.history.load(file_reader, stamp.history_size);
 
         if (call_back)
             call_back();
@@ -23502,6 +23532,7 @@ class Project {
         May also save current documents if user settings permit.  
     **/
     async save(file_path = this.file_path, call_back = null) {
+
         let file_builder;
 
         if (file_path instanceof FileBuilder)
@@ -23519,9 +23550,9 @@ class Project {
 
         ui_size = await this.saveUI(file_builder);
 
-        if (this.properties.project.bundle_files)
+        if (this.preferences.bundle_files)
             docs_size = await this.saveDocuments(file_builder);
-        else if (this.properties.project.export_file_dir)
+        else if (this.preferences.export_file_dir)
             this.system.docs.save(null/*, export_file_dir*/);
         else    
             this.system.docs.save();
@@ -23564,7 +23595,7 @@ class Project {
 
     async saveProperties(file_builder) {
         const off = file_builder.offset;
-        return await file_builder.writeS(this.properties.toJSON()) - off;
+        return await file_builder.writeS(this.flame_data.toJSON()) - off;
     }
 
     async saveDocuments(file_builder) {
@@ -23573,9 +23604,8 @@ class Project {
     }
 
     async writefileStamp(file_builder, ui_size = 0, doc_size = 0, project_size = 0, history_size = 0) {
-        let stamp = new Uint32Array(16);
-
-        let entry_flags = ((ui_size > 0) | 0) |
+        const stamp = new Uint32Array(16),
+            entry_flags = ((ui_size > 0) | 0) |
             (((doc_size > 0) | 0) << 1) |
             (((project_size > 0) | 0) << 2) |
             (((history_size > 0) | 0) << 3);
@@ -23631,10 +23661,12 @@ class State {
     }
 
     toJSON() {
-        const str = { a: this.actions, p: this.progression, b: [] };
-
-        let root = this.fch;
+        
+        const str = { a: this.actions, p: this.progression, b: [] },
+            root = this.fch;
+        
         let node = this.fch;
+        
         if(this.fch)
         do {
             str.b.push(node.toJSON());
@@ -23644,6 +23676,7 @@ class State {
     }
 
     fromJSON(node) {
+
         this.actions = node.a;
 
         const branches = node.b;
@@ -23656,12 +23689,14 @@ class State {
     }
 
     addAction(action){
+
         if(action.type)
             this.actions.push(action);
     }
 
     get id(){
-        let id = this._id + "";
+
+        const id = this._id + "";
         return (this.par) ? `${this.par.id}:${id}` : id;
     }
 }
@@ -23680,6 +23715,11 @@ class StateMachine {
         this.root_state = this.active_state;
     }
 
+    reset(){
+        this.active_state = new State();
+        this.root_state = this.active_state;
+    }
+
     //Stores history as an array of reversable actions.
     addAction(action) {
         
@@ -23690,6 +23730,7 @@ class StateMachine {
     }
 
     seal() {
+
         const   id = this.active_state.children.length,
                 state = new State(id);
 
@@ -23758,8 +23799,21 @@ class StateMachine {
         return await file_builder.writeS(JSON.stringify(data));   
     }
 
-    async load(file_reader){
+    async load(file_reader, size){
+        const data = await file_reader.readS(size);
 
+        const history = JSON.parse(data);
+
+        this.root_state.fromJSON(history.states);
+
+        const state_id = history.state.split(/:/g).map(n=>parseInt(n));
+
+        let node = this.root_state;
+
+        for(let i = 1; i < state_id.length; i++)
+            node = node.children[state_id[i]];
+
+        this.active_state = node;
     }
 }
 

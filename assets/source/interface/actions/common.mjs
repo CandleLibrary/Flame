@@ -39,7 +39,7 @@ export function getFirstPositionedAncestor(ele) {
 export function setNumericalValue(propname, system, element, component, value, relative_type = 0) {
     let cache = CacheFactory(system, element, component);
     let css = cache.rules;
-    let KEEP_UNIQUE = system.project.settings.KEEP_UNIQUE;
+    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     let props = css.props;
     let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
@@ -49,13 +49,13 @@ export function setNumericalValue(propname, system, element, component, value, r
             props = cache.unique.r.props;
             prop = props[propname];
         }if(!KEEP_UNIQUE){
-            let type = (system.project.settings.default_unit || "px");
+            let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
             prop = props[propname];
         } else  {
-            let type = (system.project.settings.default_unit || "px");
+            let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;

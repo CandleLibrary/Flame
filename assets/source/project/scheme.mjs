@@ -26,26 +26,28 @@ const $Boolean = new BoolSchemeConstructor;
  */
 //const schemed = wick.model.scheme;
 const FlameScheme = schemed({
-    project: schemed({
+    meta:schemed({
+        last_modified: EPOCH_Time,
+        creation_date: EPOCH_Time, 
+    }),
+    preferences: schemed({
         name: $String,
         working_directory: $String,
         temp_directory: $String,
-        last_modified: EPOCH_Time,
-        creation_date: EPOCH_Time,
         bundle_files: $Boolean,
+        auto_save_interval: $Number,
     }),
-    default: schemed({
+    defaults: schemed({
         component: schemed({
             width: $Number,
             height: $Number
         })
     }),
-    settings: schemed({
+    components: schemed({
         KEEP_UNIQUE: $Boolean,
         move_type: $String,
         primary_color: $Number,
         secondary_color: $Number,
-
     })
 });
 

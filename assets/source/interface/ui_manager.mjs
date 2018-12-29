@@ -357,6 +357,7 @@ export class UI_Manager {
     }
 
     mountDocument(file_info, x, y) {
+        console.log(x, y)
         const doc = this.system.docs.get(this.system.docs.loadFile(file_info));
         let comp = null;
         if (doc) {
@@ -407,6 +408,8 @@ export class UI_Manager {
                 comp = this.mountDocument(d, d.x, d.y);
             comp.width = d.width;
             comp.height = d.height;
+            comp.x = d.x;
+            comp.y = d.y;
         }
     }
 }

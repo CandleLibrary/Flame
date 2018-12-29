@@ -4,7 +4,8 @@ import { Document } from "./document";
 export class WickDocument extends Document {
 
     updatedWickASTTree(tree) {
-        this.save();
+        //this.save();
+        this.manager.addPending(this);
     }
 
     fromString(string, ALLOW_SEAL = true) {

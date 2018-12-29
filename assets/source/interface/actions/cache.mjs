@@ -45,7 +45,7 @@ class Cache {
 
     generateMovementCache(system, element, component) {
 
-        let move_type = system.project.settings.move_type;
+        let move_type = system.project.components.move_type;
 
         let unique_rule = getUniqueRule(system, element, component),
             css_r = getApplicableRules(system, element, component),

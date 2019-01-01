@@ -14,6 +14,11 @@ import { FileBuilder } from "./file_builder.mjs";
 import { FileReader } from "./file_reader.mjs";
 
 /**
+    Spark is used to issue timed callback for scheduled auto saving.
+*/
+import spark from "@candlefw/spark";
+
+/**
  * @brief Stores data for the current project. Handles the global saving and importation of data. 
  * @details The project object is the primary store of user data and preferences. 
  * It also provides the hosting of the presets object for wick components, and the interface components for user tools. 
@@ -30,6 +35,7 @@ export class Project {
         this.setPresets();
         this.setDefaults();
     }
+
 
     setPresets(){
 
@@ -53,6 +59,14 @@ export class Project {
                 system
             }
         });
+
+        this.preferences.auto_save_interval = 0;
+        this.preferences.working_directory = system.cwd;
+        this.preferences.proj_data_directory = system.cwd;
+        this.preferences.temp_directory = system.cwd;
+        this.preferences.name = "unnamed";
+
+        this.scheduleAutoSave();
     }
 
     reset() {
@@ -62,6 +76,20 @@ export class Project {
         this.system.docs.reset();
         this.system.history.reset();
     }
+
+    scheduledUpdate(frame_time, time_since_last){
+        this.save(path.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
+        this.scheduleAutoSave();
+    }
+
+    scheduleAutoSave(){
+        spark.removeFromQueue(this);
+
+        if(this.preferences.auto_save_interval < 1)
+            return;
+        //return;
+        spark.queueUpdate(this, this.preferences.auto_save_interval * 1000 /* interval in milliseconds */ )
+    };
 
     loadComponents(dir) {
 
@@ -85,8 +113,6 @@ export class Project {
         this.defaults.component.height = 920;
         this.components.move_type = "relative";
         this.components.KEEP_UNIQUE = true;
-
-
 
         this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
     }

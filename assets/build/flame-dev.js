@@ -11586,7 +11586,7 @@ var flame = (function (fs, path) {
     /**
      * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
      *    
-     * If any object is scheduled to be updated, it will be blocked from scheduling more updates the next JavaScript runtime tick.
+     * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
      */
     class Spark {
         /**
@@ -11605,7 +11605,7 @@ var flame = (function (fs, path) {
 
             this.frame_time = perf.now();
 
-            this._SCHD_ = false;
+            this.SCHEDULE_PENDING = false;
         }
 
         /**
@@ -11615,14 +11615,15 @@ var flame = (function (fs, path) {
          * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
          */
         queueUpdate(object, timestart = 1, timeend = 0) {
+
             if (object._SCHD_ || object._SCHD_ > 0) {
-                if (this._SCHD_)
+                if (this.SCHEDULE_PENDING)
                     return;
                 else
                     return caller(this.callback);
             }
 
-            object._SCHD_ = (timestart | ((timeend) << 16));
+            object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
 
             this.update_queue.push(object);
 
@@ -11631,9 +11632,24 @@ var flame = (function (fs, path) {
 
             this.frame_time = perf.now() | 0;
 
-            this._SCHD_ = true;
+            this.SCHEDULE_PENDING = true;
 
             caller(this.callback);
+        }
+
+        removeFromQueue(object){
+
+            if(object._SCHD_)
+                for(let i = 0, l = this.update_queue.length; i < l; i++)
+                    if(this.update_queue[i] === object){
+                        this.update_queue.splice(i,1);
+                        object._SCHD_ = 0;
+
+                        if(l == 1)
+                            this.SCHEDULE_PENDING = false;
+
+                        return;
+                    }
         }
 
         /**
@@ -11641,38 +11657,41 @@ var flame = (function (fs, path) {
          */
         update() {
 
-            this._SCHD_ = false;
+            this.SCHEDULE_PENDING = false;
 
-            let uq = this.update_queue;
+            const uq = this.update_queue;
+            const time = perf.now() | 0;
+            const diff = Math.ceil(time - this.frame_time) | 1;
+            const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
 
+            this.frame_time = time;
+            
             if (this.queue_switch == 0)
                 (this.update_queue = this.update_queue_b, this.queue_switch = 1);
             else
                 (this.update_queue = this.update_queue_a, this.queue_switch = 0);
 
-            let time = perf.now() | 0;
-
-            let diff = Math.ceil(time - this.frame_time) | 1;
-
-            this.frame_time = time;
-
-            let step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
-
             for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
-                let timestart = ((o._SCHD_ & 65535)) - diff;
-                let timeend = ((o._SCHD_ >> 16) & 65535);
+                let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
+                let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
 
+                o._SCHD_ = 0;
+                
                 if (timestart > 0) {
-                    o._SCHD_ = 0;
                     this.queueUpdate(o, timestart, timeend);
                     continue;
                 }
 
-                if (timeend > 0) {
-                    this.queueUpdate(o, timestart, timeend - diff);
-                    continue;
-                } else o._SCHD_ = 0;
+                timestart = 0;
 
+                if (timeend > 0) 
+                    this.queueUpdate(o, timestart, timeend - diff);
+
+                /** 
+                    To ensure on code path doesn't block any others, 
+                    scheduledUpdate methods are called within a try catch block. 
+                    Errors by default are printed to console. 
+                **/
                 try {
                     o.scheduledUpdate(step_ratio, diff);
                 } catch (e) {
@@ -23111,6 +23130,7 @@ var flame = (function (fs, path) {
             name: $String,
             working_directory: $String,
             temp_directory: $String,
+            proj_data_directory: $String,
             bundle_files: $Boolean,
             auto_save_interval: $Number,
         }),
@@ -23405,6 +23425,7 @@ var flame = (function (fs, path) {
             this.setDefaults();
         }
 
+
         setPresets(){
 
             const system = this.system;
@@ -23427,6 +23448,14 @@ var flame = (function (fs, path) {
                     system
                 }
             });
+
+            this.preferences.auto_save_interval = 0;
+            this.preferences.working_directory = system.cwd;
+            this.preferences.proj_data_directory = system.cwd;
+            this.preferences.temp_directory = system.cwd;
+            this.preferences.name = "unnamed";
+
+            this.scheduleAutoSave();
         }
 
         reset() {
@@ -23436,6 +23465,20 @@ var flame = (function (fs, path) {
             this.system.docs.reset();
             this.system.history.reset();
         }
+
+        scheduledUpdate(frame_time, time_since_last){
+            this.save(path.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
+            this.scheduleAutoSave();
+        }
+
+        scheduleAutoSave(){
+            spark.removeFromQueue(this);
+
+            if(this.preferences.auto_save_interval < 1)
+                return;
+            //return;
+            spark.queueUpdate(this, this.preferences.auto_save_interval * 1000 /* interval in milliseconds */ );
+        };
 
         loadComponents(dir) {
 
@@ -23459,8 +23502,6 @@ var flame = (function (fs, path) {
             this.defaults.component.height = 920;
             this.components.move_type = "relative";
             this.components.KEEP_UNIQUE = true;
-
-
 
             this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
         }

@@ -34,6 +34,7 @@ const FlameScheme = schemed({
         name: $String,
         working_directory: $String,
         temp_directory: $String,
+        proj_data_directory: $String,
         bundle_files: $Boolean,
         auto_save_interval: $Number,
     }),

@@ -114,5 +114,38 @@ function DATA(system, env) {
                     fs.unlinkSync(path.resolve("test/temp.fpd"));
                 });
         });
+
+        it("Auto-saves data at regular intervals", async function(){
+            this.slow(7500);
+            this.timeout(6000)
+
+            const pd = path.resolve("./test");
+            const name = "auto_save_test";
+            const file = path.resolve(pd, name + ".fpd");
+
+            console.log(pd, name, file)
+
+
+            system.project.allow_auto_save = true;
+            system.project.preferences.name = name;
+            system.project.preferences.proj_data_directory = pd;
+            system.project.preferences.auto_save_interval = 1;
+            system.project.scheduleAutoSave();
+
+            await env.tO(1020);
+
+            system.project.preferences.auto_save_interval = 0;
+            system.project.scheduleAutoSave();
+
+            let stats = fs.statSync(file);
+
+
+            if(!stats)
+                throw "File Has not been saved";
+            
+            fs.unlinkSync(file);
+
+            return true;
+        })
     });
 }

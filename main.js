@@ -9,20 +9,31 @@ app.on("ready", () => {
     const TEST = !!process.env.FLAME_TEST;
     const TEXT = process.argv.includes("text_edit");
 
+
     let win = new BrowserWindow({
+        show:false,
         width: 1920,
         height: 1080,
         webPreferences : {
             nodeIntegration: true
+        },
+        //If in (testing or development) modes make sure that the devtools open automatically
+        webPreferences:{
+            devTools : (TEST || DEV)
         }
     });
 
+    win.once("ready-to-show", function(){
+        this.show();
+        if(TEST || DEV) {
+            console.log(`Welcome to FlameDev!`)
+            this.webContents.openDevTools();
+        }
+    })
+
     if (DEV && !TEST) win.webContents.openDevTools();
 
-    if (TEXT)
-        win.loadFile("./assets/html/text_edit.html");
-    else
-        win.loadFile("./assets/html/index.html");
+    win.loadFile("./assets/html/index.html");
 
     //win.webContents.openDevTools();
     globalShortcut.register('f5', function() {

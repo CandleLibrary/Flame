@@ -30,6 +30,8 @@ export class UI_Manager {
         this.last_action = Date.now();
         this.ui_target = null;
 
+        this.dxdx = 0;
+
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
             These can be modified by the user through project system to create and use custom UI
@@ -279,11 +281,14 @@ export class UI_Manager {
             this.origin_y -= diffy;
             if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            const { dx, dy } = { dx: diffx, dy: diffy };//this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
-            this.origin_x -= dx;
-            this.origin_y -= dy;
+            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+            
+            let { dx, dy, MX, MY } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+
+            this.origin_x -= (MX) ? dx : diffx;
+            this.origin_y -= (MY) ? dy : diffy;
+
             //if(this.target.box.l == this.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (this.target.action) this.target.action(this.system, this.target.element, this.target.component, -dx, -dy, this.target.IS_COMPONENT);
             this.render();

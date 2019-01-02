@@ -26,7 +26,7 @@ class ElementLineBox extends LineBox {
 
 class ComponentLineBox extends LineBox {
     constructor(component) {
-    	super();
+        super();
         this.component = component;
     }
 
@@ -46,8 +46,6 @@ class ComponentLineBox extends LineBox {
         return this.component.width + this.component.x;
     }
 }
-
-
 
 function CreateBoxes(ele, c, LineMachine, target) {
 
@@ -94,8 +92,9 @@ export class LineMachine {
 
         if (!box) return { dx, dy };
 
-        let mx = this.tolerance;
-        let my = this.tolerance;
+        //tolerance based on rate
+        let mx = this.tolerance - 0.5 //Math.min(this.tolerance / Math.max(Math.abs(dx)*1.55, 0.1), this.tolerance);
+        let my = this.tolerance - 0.5  //Math.min(this.tolerance / Math.max(Math.abs(dy) * 1.55, 0.1), this.tolerance);
         let x_set = false;
         let y_set = false;
         const l = box.l;
@@ -107,8 +106,8 @@ export class LineMachine {
         const b = box.b;
         const ch = (l + r) / 2;
         const cv = (t + b) / 2;
-        const tol = this.tolerance;
-
+        const tolx = mx;
+        const toly = my;
 
         for (let i = 0; i < this.boxes.length; i++) {
             let box = this.boxes[i];
@@ -116,7 +115,7 @@ export class LineMachine {
             //Make sure the ranges overlap
 
             //Vertical
-            if (!x_set && l <= (box.r + tol + 1) && r >= (box.l - tol - 1)) {
+            if (!x_set && l <= (box.r + tolx + 1) && r >= (box.l - tolx - 1)) {
                 //There is overlap; find the best alignment
                 let c = (box.l + box.r) * 0.5;
                 let tol = Math.abs(mx);
@@ -129,10 +128,11 @@ export class LineMachine {
                     ch - box.l, ch - box.r, ch - c
                 ];
 
-                let length = LO ? 3 : 9;
+                let length = LO ? 3 : 9; // Singl
 
-                for (let j = 0; j < length; j++)
-                    if (Math.abs(array[j]) < tol) {
+                for (let j = 0; j < length; j++) {
+
+                    if (Math.abs(array[j]) < Math.abs(mx)) {
                         mx = array[j];
                         this.activex.id = i;
                         this.activex.tt = (j % 3);
@@ -140,10 +140,11 @@ export class LineMachine {
                         //x_set = true;
                         //break;
                     }
+                }
             }
 
             //Horizontal
-            if (!y_set && t < (box.b + tol + 1) && b > (box.t - tol - 1)) {
+            if (!y_set && t < (box.b + toly + 1) && b > (box.t - toly - 1)) {
                 //There is overlap; find the best alignment
                 let c = (box.t + box.b) * 0.5;
                 let tol = Math.abs(my);
@@ -169,17 +170,25 @@ export class LineMachine {
             if (x_set && y_set) break;
         }
 
-        if (Math.abs(mx) < tol && Math.abs(dx) < tol)
-            dx = mx;
+        let dx_ = dx,
+            dy_ = dy, MX =false, MY = false;
+
+        if (Math.abs(mx) < tolx && Math.abs(dx) < tolx){
+            MX = true;
+            dx_ = mx;
+        }
         else
             this.activex.id = -1;
 
-        if (Math.abs(my) < tol && Math.abs(dy) < tol)
-            dy = my;
+        if (Math.abs(my) < toly && Math.abs(dy) < toly){
+            MY = true;
+            dy_ = my;
+        }
         else
             this.activey.id = -1;
+        console.log(MX)
 
-        return { dx, dy };
+        return { dx: dx_, dy: dy_, MX, MY };
     }
 
     render(ctx, transform, boxc) {

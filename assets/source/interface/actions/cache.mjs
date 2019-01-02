@@ -12,11 +12,38 @@ function mergeRules(system, css) {
     return system.css.mergeRules(css);
 }
 
+class ComputedStyle{
+    constructor(component, element, cache){
+        this.cache = cache;
+        this._computed = component.window.getComputedStyle(element);
+        this.brect = element.getBoundingClientRect()
+    }
+
+    get width(){
+        return this.brect.width;
+    }
+
+    get hight(){
+        return this.brect.height;
+    }
+
+    get(value){
+
+        const internal_value = this.cache.rules.props[value];
+
+        if(internal_value)
+            return internal_value.toString();
+        
+        return this._computed.getPropertyValue(value);
+    }
+}
+
 class Cache {
 
     constructor() {
         this.rules = null;
         this.element = null;
+        this.component = null;
         this.cssflagsA = 0;
         this.cssflagsB = 0;
         this.next = null;
@@ -27,11 +54,13 @@ class Cache {
         this.move_vert_type = "";
         this.move_hori_type = "";
         this.unique = null;
+        this._computed = null;
     }
 
     destroy() {
         this.rules = null;
         this.element = null;
+        this._computed = null;
         this.cssflagsA = 0;
         this.cssflagsB = 0;
         this.move_type = "";
@@ -41,6 +70,19 @@ class Cache {
         this.valueD = 0;
         this.next = cache_de_cache;
         cache_de_cache = this;
+    }
+
+    get computed () {
+        if(!this._computed)
+            this._computed = new ComputedStyle(this.component, this.element, this);
+        return this._computed; 
+    }
+
+    update(system){
+        if(!system)
+            return
+
+        this.generateMovementCache(system, this.element, this.component);
     }
 
     generateMovementCache(system, element, component) {
@@ -225,6 +267,9 @@ export function CacheFactory(system, element, component) {
         cache_de_cache = cache_de_cache.next;
     } else
         cache = new Cache();
+
+    cache.component = component;
+    cache.element = element;
 
     cache.generateMovementCache(system, element, component);
 

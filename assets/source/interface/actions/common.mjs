@@ -21,6 +21,33 @@ function getContentBox(ele, win = window) {
     return { top, left, width, height };
 }
 
+/** 
+    Handles the rbuild routine of wick elements 
+*/
+export function setRebuild(element, LINKED = false) {
+    element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.rebuild();
+}
+
+/** 
+    Ensures the element has a compatible `display` value border-box properties
+*/
+export function ensureBlocklike(system, component, element) {
+    const cache = CacheFactory(system, element, component);
+    const display = cache.computed.get("display");
+    //Make sure we have an element that's prepared to change it's shape. If it's display type is inline, it needs to be changed to inline block.
+    switch (display) {
+        case "inline":
+            cache.unique.addProp("display:inline-block");
+            cache.update(system);
+            break;
+        default:
+            //do nothing
+            break;
+
+    }
+}
+
 export function getFirstPositionedAncestor(ele) {
     let element = null;
 
@@ -43,18 +70,19 @@ export function setNumericalValue(propname, system, element, component, value, r
     let props = css.props;
     let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
-    
+
     if (!prop) {
-        if(cache.unique.r.props[propname]){
+        if (cache.unique.r.props[propname]) {
             props = cache.unique.r.props;
             prop = props[propname];
-        }if(!KEEP_UNIQUE){
+        }
+        if (!KEEP_UNIQUE) {
             let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
             prop = props[propname];
-        } else  {
+        } else {
             let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
@@ -70,41 +98,42 @@ export function setNumericalValue(propname, system, element, component, value, r
     } else if (prop instanceof types.percentage) {
         //get the nearest positioned ancestor
 
-        let denominator = 0, ele;
+        let denominator = 0,
+            ele;
 
-        switch(relative_type){
-            case setNumericalValue.parent_width :
+        switch (relative_type) {
+            case setNumericalValue.parent_width:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).width;
-            break;
-            case setNumericalValue.parent_height :
+                break;
+            case setNumericalValue.parent_height:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).height;
-            break;
-            case setNumericalValue.positioned_ancestor_width :
+                break;
+            case setNumericalValue.positioned_ancestor_width:
                 ele = getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).width;
-            break;
-            case setNumericalValue.positioned_ancestor_height :
+                break;
+            case setNumericalValue.positioned_ancestor_height:
                 ele = getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).height;
-            break;
-            case setNumericalValue.height :
+                break;
+            case setNumericalValue.height:
                 denominator = getContentBox(element, component.window).width;
-            break;
-            case setNumericalValue.width :
+                break;
+            case setNumericalValue.width:
                 denominator = getContentBox(element, component.window).width;
-            break;
+                break;
         }
 
         let np = value / denominator;
-        
+
         props[propname] = prop.copy(np * 100);
     } else {
-        if(prop.copy)
+        if (prop.copy)
             props[propname] = prop.copy(value);
-        else{
-            if(value !== 0)
+        else {
+            if (value !== 0)
                 props[propname] = new types.length(value, "px");
             else
                 props[propname] = 0;
@@ -126,7 +155,7 @@ export function getRatio(system, element, component, funct, original_value, delt
     funct(system, element, component, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
-    if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {        
+    if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0) {
@@ -136,14 +165,14 @@ export function getRatio(system, element, component, funct, original_value, delt
     return ratio;
 }
 
-export function setValue(system, element, component, value_name, value){
+export function setValue(system, element, component, value_name, value) {
     let cache = CacheFactory(system, element, component);
-    
+
     let props = cache.rules.props;
 
-    if(props[value_name]){
+    if (props[value_name]) {
         props[value_name] = value;
-    }else{
+    } else {
         cache.unique.addProp(`${value_name.replace(/\_/g,"-")}:${value}`);
     }
 }

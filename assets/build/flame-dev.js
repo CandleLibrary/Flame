@@ -7967,11 +7967,38 @@ var flame = (function (fs, path) {
         return system.css.mergeRules(css);
     }
 
+    class ComputedStyle{
+        constructor(component, element, cache){
+            this.cache = cache;
+            this._computed = component.window.getComputedStyle(element);
+            this.brect = element.getBoundingClientRect();
+        }
+
+        get width(){
+            return this.brect.width;
+        }
+
+        get hight(){
+            return this.brect.height;
+        }
+
+        get(value){
+
+            const internal_value = this.cache.rules.props[value];
+
+            if(internal_value)
+                return internal_value.toString();
+            
+            return this._computed.getPropertyValue(value);
+        }
+    }
+
     class Cache {
 
         constructor() {
             this.rules = null;
             this.element = null;
+            this.component = null;
             this.cssflagsA = 0;
             this.cssflagsB = 0;
             this.next = null;
@@ -7982,11 +8009,13 @@ var flame = (function (fs, path) {
             this.move_vert_type = "";
             this.move_hori_type = "";
             this.unique = null;
+            this._computed = null;
         }
 
         destroy() {
             this.rules = null;
             this.element = null;
+            this._computed = null;
             this.cssflagsA = 0;
             this.cssflagsB = 0;
             this.move_type = "";
@@ -7996,6 +8025,19 @@ var flame = (function (fs, path) {
             this.valueD = 0;
             this.next = cache_de_cache;
             cache_de_cache = this;
+        }
+
+        get computed () {
+            if(!this._computed)
+                this._computed = new ComputedStyle(this.component, this.element, this);
+            return this._computed; 
+        }
+
+        update(system){
+            if(!system)
+                return
+
+            this.generateMovementCache(system, this.element, this.component);
         }
 
         generateMovementCache(system, element, component) {
@@ -8181,6 +8223,9 @@ var flame = (function (fs, path) {
         } else
             cache = new Cache();
 
+        cache.component = component;
+        cache.element = element;
+
         cache.generateMovementCache(system, element, component);
 
         element.flame_cache = cache;
@@ -8226,6 +8271,33 @@ var flame = (function (fs, path) {
         return { top, left, width, height };
     }
 
+    /** 
+        Handles the rbuild routine of wick elements 
+    */
+    function setRebuild(element, LINKED = false) {
+        element.wick_node.setRebuild();
+        if (!LINKED) element.wick_node.rebuild();
+    }
+
+    /** 
+        Ensures the element has a compatible `display` value border-box properties
+    */
+    function ensureBlocklike(system, component, element) {
+        const cache = CacheFactory(system, element, component);
+        const display = cache.computed.get("display");
+        //Make sure we have an element that's prepared to change it's shape. If it's display type is inline, it needs to be changed to inline block.
+        switch (display) {
+            case "inline":
+                cache.unique.addProp("display:inline-block");
+                cache.update(system);
+                break;
+            default:
+                //do nothing
+                break;
+
+        }
+    }
+
     function getFirstPositionedAncestor(ele) {
         let element = null;
 
@@ -8248,18 +8320,19 @@ var flame = (function (fs, path) {
         let props = css.props;
         let prop = props[propname];
         let css_name = propname.replace(/_/g, "-");
-        
+
         if (!prop) {
-            if(cache.unique.r.props[propname]){
+            if (cache.unique.r.props[propname]) {
                 props = cache.unique.r.props;
                 prop = props[propname];
-            }if(!KEEP_UNIQUE){
+            }
+            if (!KEEP_UNIQUE) {
                 let type = (system.project.components.default_unit || "px");
                 let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
                 cache.unique.addProp(`${css_name}:${value}`);
                 props = cache.unique.r.props;
                 prop = props[propname];
-            } else  {
+            } else {
                 let type = (system.project.components.default_unit || "px");
                 let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
                 cache.unique.addProp(`${css_name}:${value}`);
@@ -8275,41 +8348,42 @@ var flame = (function (fs, path) {
         } else if (prop instanceof types$2.percentage) {
             //get the nearest positioned ancestor
 
-            let denominator = 0, ele;
+            let denominator = 0,
+                ele;
 
-            switch(relative_type){
-                case setNumericalValue.parent_width :
+            switch (relative_type) {
+                case setNumericalValue.parent_width:
                     ele = element.parentElement; //getFirstPositionedAncestor(element);
                     if (ele) denominator = getContentBox(ele, component.window).width;
-                break;
-                case setNumericalValue.parent_height :
+                    break;
+                case setNumericalValue.parent_height:
                     ele = element.parentElement; //getFirstPositionedAncestor(element);
                     if (ele) denominator = getContentBox(ele, component.window).height;
-                break;
-                case setNumericalValue.positioned_ancestor_width :
+                    break;
+                case setNumericalValue.positioned_ancestor_width:
                     ele = getFirstPositionedAncestor(element);
                     if (ele) denominator = getContentBox(ele, component.window).width;
-                break;
-                case setNumericalValue.positioned_ancestor_height :
+                    break;
+                case setNumericalValue.positioned_ancestor_height:
                     ele = getFirstPositionedAncestor(element);
                     if (ele) denominator = getContentBox(ele, component.window).height;
-                break;
-                case setNumericalValue.height :
+                    break;
+                case setNumericalValue.height:
                     denominator = getContentBox(element, component.window).width;
-                break;
-                case setNumericalValue.width :
+                    break;
+                case setNumericalValue.width:
                     denominator = getContentBox(element, component.window).width;
-                break;
+                    break;
             }
 
             let np = value / denominator;
-            
+
             props[propname] = prop.copy(np * 100);
         } else {
-            if(prop.copy)
+            if (prop.copy)
                 props[propname] = prop.copy(value);
-            else{
-                if(value !== 0)
+            else {
+                if (value !== 0)
                     props[propname] = new types$2.length(value, "px");
                 else
                     props[propname] = 0;
@@ -8331,7 +8405,7 @@ var flame = (function (fs, path) {
         funct(system, element, component, original_value + delta_value);
         let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
         let diff_x = end_x - original_value;
-        if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {        
+        if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
             ratio = (diff_x / delta_value);
             let diff = delta_value / ratio;
             if (diff !== 0) {
@@ -8341,28 +8415,30 @@ var flame = (function (fs, path) {
         return ratio;
     }
 
-    function setValue(system, element, component, value_name, value){
+    function setValue(system, element, component, value_name, value) {
         let cache = CacheFactory(system, element, component);
-        
+
         let props = cache.rules.props;
 
-        if(props[value_name]){
+        if (props[value_name]) {
             props[value_name] = value;
-        }else{
+        } else {
             cache.unique.addProp(`${value_name.replace(/\_/g,"-")}:${value}`);
         }
     }
 
     function SETWIDTH(system, element, component, x, LINKED = false) {
+
+        ensureBlocklike(system, component, element);
         setNumericalValue("width", system, element, component, x, setNumericalValue.parent_width);
-            element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild(); 
+        setRebuild(element, LINKED);
     }
 
     function SETHEIGHT(system, element, component, x, LINKED = false) {
+
+        ensureBlocklike(system, component, element);
         setNumericalValue("height", system, element, component, x, setNumericalValue.parent_height);
-            element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild(); 
+        setRebuild(element, LINKED);
     }
 
     function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED = false) {
@@ -8370,11 +8446,11 @@ var flame = (function (fs, path) {
 
         if (ratio > 0)
             SETWIDTH(system, element, component, start_x + dx / ratio, true);
-        else
+        else {
+            ensureBlocklike(system, component, element);
             ratio = getRatio(system, element, component, SETWIDTH, start_x, dx, "width");
-
-            element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild(); 
+        }
+        setRebuild(element, LINKED);
 
         return ratio;
     }
@@ -8384,12 +8460,12 @@ var flame = (function (fs, path) {
         
         if (ratio > 0)
             SETHEIGHT(system, element, component, start_x + dx / ratio, true);
-        else
+        else {
+            ensureBlocklike(system, component, element);
             ratio = getRatio(system, element, component, SETHEIGHT, start_x, dx, "height");
-
-            element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild(); 
-
+        }
+        
+        setRebuild(element, LINKED);
         return ratio;
     }
 
@@ -9106,39 +9182,40 @@ var flame = (function (fs, path) {
 
     function SETPADDINGLEFT(system, element, component, x, LINKED = false) {
         resetPadding(system, element, component);
+        ensureBlocklike(system, component, element);
         setNumericalValue("padding_left", system, element, component, x, setNumericalValue.parent_width);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
-        let style = component.window.getComputedStyle(element);3;
-        let start_x = parseFloat(style.paddingLeft) || 0;
-        let width = (parseFloat(style.width) || 0) + start_x;
+        let cache = CacheFactory(system, element, component);
+        let start_x = parseFloat(cache.computed.get("padding-left")) || 0;
+        let width = (parseFloat(cache.computed.width) || 0) + start_x;
 
-        if(dx > 0 && start_x + dx > width - 20) return ratio;
+        if (dx > 0 && start_x + dx > width - 20) return ratio;
 
-        if(start_x+dx > 0){
+        if (start_x + dx > 0) {
 
-        if (ratio > 0)
-            SETPADDINGLEFT(system, element, component, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, element, component, SETPADDINGLEFT, start_x, dx, "padding-left");
+            if (ratio > 0)
+                SETPADDINGLEFT(system, element, component, start_x + dx / ratio, true);
+            else {
+                ensureBlocklike(system, component, element);
+                ratio = getRatio(system, element, component, SETPADDINGLEFT, start_x, dx, "padding-left");
+            }
 
-        SETDELTAWIDTH(system, element, component, -dx, true);
+            SETDELTAWIDTH(system, element, component, -dx, true);
 
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
-    }
+            setRebuild(element, LINKED);
+        }
 
         return ratio;
     }
 
     function SETPADDINGTOP(system, element, component, x, LINKED = false) {
         resetPadding(system, element, component);
+        ensureBlocklike(system, component, element);
         setNumericalValue("padding_top", system, element, component, x, setNumericalValue.parent_height);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function SETDELTAPADDINGTOP(system, element, component, dy, ratio = 0, LINKED = false) {
@@ -9146,19 +9223,19 @@ var flame = (function (fs, path) {
         let start_y = parseFloat(style.paddingTop) || 0;
         let height = (parseFloat(style.height) || 0) + start_y;
 
-        if(dy > 0 && start_y + dy > height - 20) return ratio;
+        if (dy > 0 && start_y + dy > height - 20) return ratio;
 
-        if(start_y+dy > 0){
+        if (start_y + dy > 0) {
             if (ratio > 0)
                 SETPADDINGTOP(system, element, component, start_y + dy / ratio, true);
-            else
+            else {
+                ensureBlocklike(system, component, element);
                 ratio = getRatio(system, element, component, SETPADDINGTOP, start_y, dy, "padding-top");
+            }
 
             SETDELTAHEIGHT(system, element, component, -dy, true);
 
-            element.wick_node.setRebuild();
-
-            if (!LINKED) element.wick_node.rebuild();
+            setRebuild(element, LINKED);
         }
 
         return ratio;
@@ -9166,9 +9243,9 @@ var flame = (function (fs, path) {
 
     function SETPADDINGRIGHT(system, element, component, x, LINKED = false) {
         resetPadding(system, element, component);
+        ensureBlocklike(system, component, element);
         setNumericalValue("padding_right", system, element, component, x, setNumericalValue.parent_height);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
 
@@ -9177,29 +9254,28 @@ var flame = (function (fs, path) {
         let start_x = parseFloat(style.paddingRight) || 0;
         let width = (parseFloat(style.width) || 0) + start_x;
 
-        if(dx > 0 && start_x + dx > width - 20) return ratio;
+        if (dx > 0 && start_x + dx > width - 20) return ratio;
 
-        if(start_x+dx > 0){
+        if (start_x + dx > 0) {
 
-        if (ratio > 0)
-            SETPADDINGRIGHT(system, element, component, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, element, component, SETPADDINGRIGHT, start_x, dx, "padding-right");
+            if (ratio > 0)
+                SETPADDINGRIGHT(system, element, component, start_x + dx / ratio, true);
+            else {
+                ensureBlocklike(system, component, element);
+                ratio = getRatio(system, element, component, SETPADDINGRIGHT, start_x, dx, "padding-right");
+            }
 
-        SETDELTAWIDTH(system, element, component, -dx, true);
-
-        element.wick_node.setRebuild();
-        
-        if (!LINKED) element.wick_node.rebuild();
-    }
+            SETDELTAWIDTH(system, element, component, -dx, true);
+    setRebuild(element,LINKED);
+        }
         return ratio;
     }
 
     function SETPADDINGBOTTOM(system, element, component, x, LINKED = false) {
         resetPadding(system, element, component);
+        ensureBlocklike(system, component, element);
         setNumericalValue("padding_bottom", system, element, component, x, setNumericalValue.parent_height);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
 
@@ -9208,81 +9284,73 @@ var flame = (function (fs, path) {
         let start_y = parseFloat(style.paddingBottom) || 0;
         let height = (parseFloat(style.height) || 0) + start_y;
 
-        if(dy > 0 && dy + start_y > height - 20) return ratio;
-        
-        if(start_y + dy >= 0){        
+        if (dy > 0 && dy + start_y > height - 20) return ratio;
+
+        if (start_y + dy >= 0) {
             if (ratio > 0)
                 SETPADDINGBOTTOM(system, element, component, start_y + dy / ratio, true);
-            else
+            else {
+                ensureBlocklike(system, component, element);
                 ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_y, dy, "padding-bottom");
+            }
 
             SETDELTAHEIGHT(system, element, component, -dy, true);
 
-            element.wick_node.setRebuild();
-            if (!LINKED) element.wick_node.rebuild();
-        }
-        
+        setRebuild(element,LINKED);}
+
         return ratio;
     }
 
     function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
         SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
         SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
         SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
         if (IS_COMPONENT) return;
         SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
         SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-        element.wick_node.setRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        setRebuild(element, LINKED);
     }
 
     function resetMargin(system, element, component) {

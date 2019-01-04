@@ -24,8 +24,8 @@ function getContentBox(ele, win = window) {
 /** 
     Handles the rbuild routine of wick elements 
 */
-export function setRebuild(element, LINKED = false) {
-    element.wick_node.setRebuild();
+export function prepRebuild(element, LINKED = false) {
+    element.wick_node.prepRebuild();
     if (!LINKED) element.wick_node.rebuild();
 }
 
@@ -33,7 +33,7 @@ export function setRebuild(element, LINKED = false) {
     Ensures the element has a compatible `display` value border-box properties
 */
 export function ensureBlocklike(system, component, element) {
-    const cache = CacheFactory(system, element, component);
+    const cache = CacheFactory(system, component, element);
     const display = cache.computed.get("display");
     //Make sure we have an element that's prepared to change it's shape. If it's display type is inline, it needs to be changed to inline block.
     switch (display) {
@@ -63,8 +63,8 @@ export function getFirstPositionedAncestor(ele) {
     return ele;
 }
 
-export function setNumericalValue(propname, system, element, component, value, relative_type = 0) {
-    let cache = CacheFactory(system, element, component);
+export function setNumericalValue(propname, system, component, element, value, relative_type = 0) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     let props = css.props;
@@ -150,23 +150,23 @@ setNumericalValue.width = 5;
 
 
 
-export function getRatio(system, element, component, funct, original_value, delta_value, css_name) {
+export function getRatio(system, component, element, funct, original_value, delta_value, css_name) {
     let ratio = 0;
-    funct(system, element, component, original_value + delta_value);
+    funct(system, component, element, original_value + delta_value);
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
     if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0) {
-            funct(system, element, component, original_value + diff, true);
+            funct(system, component, element, original_value + diff, true);
         }
     }
     return ratio;
 }
 
-export function setValue(system, element, component, value_name, value) {
-    let cache = CacheFactory(system, element, component);
+export function setValue(system, component, element, value_name, value) {
+    let cache = CacheFactory(system, component, element);
 
     let props = cache.rules.props;
 

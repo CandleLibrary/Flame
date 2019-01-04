@@ -1,7 +1,8 @@
 //*********** Actions ******************
 import css from "@candlefw/css";
 import { actions } from "./actions/action";
-import { UIComponent } from "./ui_component";
+import { UIComponent } from "../component/ui_component";
+import { MasterComponent } from "../component/master_component";
 import { LineMachine } from "./system/line_machine";
 import { SVGManager } from "./system/svg_manager";
 
@@ -19,8 +20,6 @@ export class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
 
         this.system = system;
-
-
         this.element = UIHTMLElement;
         this.view_element = ViewElement;
         this.ACTIVE_POINTER_INPUT = false;
@@ -28,7 +27,13 @@ export class UI_Manager {
         this.origin_y = 0;
         this.transform = new(css.types.transform2D)();
         this.last_action = Date.now();
+
         this.ui_target = null;
+        /**
+            Unbounded "master" component that sits behind other components and allows the creation of elements.
+            Component itself is not selectable. 
+        */
+        this.master_component = null;
 
         this.dxdx = 0;
 
@@ -88,6 +93,22 @@ export class UI_Manager {
             e.dataTransfer.dropEffect = "copy";
         });
         document.body.addEventListener("dragstart", e => {});
+
+        this.createMaster();
+    }
+
+    createMaster() {
+        const doc_id = this.system.docs.loadFile("~edit-canvas");
+        const doc = this.system.docs.get(doc_id);
+
+        this.master_component = new MasterComponent(this.system);
+        this.master_component.x = 0;
+        this.master_component.y = 0;
+
+        if (doc)
+            this.master_component.load(doc);
+
+        document.querySelector("#main_view").appendChild(this.master_component.element);
     }
 
     reset() {
@@ -95,6 +116,8 @@ export class UI_Manager {
 
         while (this.components[0])
             actions.REMOVE_COMPONENT(system, this.components[0]);
+
+        this.createMaster();
     }
 
     removeComponent(component) {
@@ -105,7 +128,7 @@ export class UI_Manager {
             }
     }
 
-    mountComponent(component) {
+    mountUIComponent(component) {
         component.mount(this.element);
         this.loadedComponents.push(component);
         component.set(this.target);
@@ -113,11 +136,9 @@ export class UI_Manager {
 
     addToMenu(menu_name, item_name, icon_element, menu) {
         if (menu_name == "main") {
-            let element = icon_element.cloneNode(true);
+            const element = icon_element.cloneNode(true);
             element.style.display = "";
-            element.onclick = () => {
-                this.mountComponent(menu);
-            };
+            element.onclick = () => { this.mountUIComponent(menu); };
             this.main_menu.appendChild(element);
             this.main_menu.map.set(name, icon_element);
         }
@@ -125,10 +146,10 @@ export class UI_Manager {
 
     addComponent(wick_component_file_path) {
 
-        let doc = this.system.docs.get(this.system.docs.loadFile(wick_component_file_path));
+        const doc = this.system.docs.get(this.system.docs.loadFile(wick_component_file_path));
 
         if (doc) {
-            let component = new UIComponent(this.system, doc.name);
+            const component = new UIComponent(this.system, doc.name);
             component.load(doc);
             this.ui_components.set(doc.name, component);
         }
@@ -137,7 +158,7 @@ export class UI_Manager {
     setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
-        if (target = this.canvas.pointerDown(e, x, y, this.transform)) {
+        if ((target = this.canvas.pointerDown(e, x, y, this.transform))) {
 
             this.target = target;
 
@@ -165,15 +186,16 @@ export class UI_Manager {
     integrateIframe(iframe, component) {
 
         iframe.contentWindow.addEventListener("wheel", e => {
-            let x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px;
-            let y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
+            const x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px;
+            const y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
             this.handleScroll(e, x, y);
         });
 
         iframe.contentWindow.addEventListener("mousedown", e => {
 
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            const x = e.pageX + 4 + component.x;
+            const y = e.pageY + 4 + component.y;
+
             this.last_action = Date.now();
             this.handlePointerDownEvent(e, x, y);
 
@@ -196,16 +218,16 @@ export class UI_Manager {
         });
 
         iframe.contentWindow.addEventListener("mousemove", e => {
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            const x = e.pageX + 4 + component.x;
+            const y = e.pageY + 4 + component.y;
             this.handlePointerMoveEvent(e, x, y);
             return false;
         });
 
         iframe.contentWindow.addEventListener("mouseup", e => {
-            let t = Date.now();
-            let x = e.pageX + 4 + component.x;
-            let y = e.pageY + 4 + component.y;
+            const t = Date.now();
+            const x = e.pageX + 4 + component.x;
+            const y = e.pageY + 4 + component.y;
 
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
@@ -249,7 +271,7 @@ export class UI_Manager {
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
 
-        if (e.target !== document.body) 
+        if (e.target !== document.body)
             return;
 
         this.canvas.clearTargets(this.transform);
@@ -281,10 +303,10 @@ export class UI_Manager {
             this.origin_y -= diffy;
             if (this.ui_target.action) this.ui_target.action(this.system, this.ui_target.component, diffx, diffy);
         } else if (this.target) {
-            let diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
-            let diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
-            
-            let { dx, dy, MX, MY } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : this.transform.getLocalX(e.pageX));
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : this.transform.getLocalY(e.pageY));
+
+            const { dx, dy, MX, MY } = this.line_machine.getSuggestedLine(this.target.box, diffx, diffy);
 
             this.origin_x -= (MX) ? dx : diffx;
             this.origin_y -= (MY) ? dy : diffy;
@@ -295,7 +317,7 @@ export class UI_Manager {
         }
     }
 
-    handlePointerEndEvent(e) {
+    handlePointerEndEvent() {
 
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
@@ -312,10 +334,10 @@ export class UI_Manager {
     handleDocumentDrop(e) {
         e.preventDefault();
 
-        Array.prototype.forEach.call(e.dataTransfer.files, 
+        Array.prototype.forEach.call(e.dataTransfer.files,
             f => this.mountDocument(
-                f, 
-                this.transform.getLocalX(e.clientX), 
+                f,
+                this.transform.getLocalX(e.clientX),
                 this.transform.getLocalY(e.clientY))
         );
     }
@@ -337,9 +359,12 @@ export class UI_Manager {
 
     handleScroll(e, x = e.pageX, y = e.pageY) {
         e.preventDefault();
-        let amount = e.deltaY;
-        let os = this.transform.scale;
+
+        const amount = e.deltaY,
+            os = this.transform.scale;
+
         this.transform.scale = Math.max(0.2, Math.min(2, os + -amount * 0.00005));
+
         const px = this.transform.px,
             s = this.transform.scale,
             py = this.transform.py;
@@ -362,31 +387,24 @@ export class UI_Manager {
     }
 
     mountDocument(file_info, x, y) {
-        console.log(x, y)
         const doc = this.system.docs.get(this.system.docs.loadFile(file_info));
         let comp = null;
         if (doc) {
             switch (doc.type) {
-            case "wick": 
-            case "html":
-                comp = actions.CREATE_COMPONENT(this.system, doc, {
-                    x,
-                    y
-                });
-                break;
-            case "css":
-                comp = actions.CREATE_CSS_DOC(this.system, doc, {
-                    x,
-                    y
-                });
-                break;
-            case "js":
-            case "svg":
-            case "jpg":
-            case "png":
-            case "gif": //intentional
-            default:
-                break;
+                case "wick":
+                case "html":
+                    comp = actions.CREATE_COMPONENT(this.system, doc, x, y);
+                    break;
+                case "css":
+                    comp = actions.CREATE_CSS_DOC(this.system, doc, x, y);
+                    break;
+                case "js":
+                case "svg":
+                case "jpg":
+                case "png":
+                case "gif": //intentional
+                default:
+                    break;
             }
         }
 
@@ -395,8 +413,12 @@ export class UI_Manager {
 
     /******** FILE HANDLING ************/
 
+    saveMaster() {
+        return {};
+    }
+
     async save(file_builder) {
-        const data = { components: [] };
+        const data = { master: this.saveMaster(), components: [] };
 
         for (let i = 0; i < this.components.length; i++)
             data.components.push(this.components[i]);

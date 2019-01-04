@@ -7,6 +7,7 @@ import {
 } from "./css_document";
 import path from "path";
 import { DocumentDifferentiator } from "./differ";
+import master_component_string from "./master_component_string.mjs";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -23,10 +24,10 @@ export class DocumentManager {
         /**
          * Global `fetch` polyfill - basic support
          */
-        global.fetch = (url, data) => new Promise((res, rej) => {
+        global.fetch = (url) => new Promise((res) => {
             let p = url;
             if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            let doc_id = this.load({
+            const doc_id = this.load({
                 path: path.dirname(p),
                 name: path.basename(p),
                 type: "text/css",
@@ -46,7 +47,17 @@ export class DocumentManager {
      */
     loadFile(file, NEW_FILE = false) {
         switch (typeof(file)) {
+
             case "string": // Load from file system or DB
+                
+                switch (file) {
+                    case "~edit-canvas": //Load new internal document ~edit-canvas
+                        const canvas = new WickDocument("edit-canvas", "%internal", this.system, false, this);
+                        canvas.fromString(master_component_string);
+                        this.docs.set(canvas.id, canvas);
+                        return canvas.id;
+                };
+
                 var p = path.parse(file);
                 file = {
                     path: p.dir,
@@ -55,15 +66,15 @@ export class DocumentManager {
                 //Intentional fall through. 
             case "object": // Loandead data 
                 if (file.name && file.path) {
+                    const name = file.name;
                     let path = file.path;
-                    let name = file.name;
                     let type = "";
-                    if (file.type) type = file.type //.split("/")[1].toLowerCase();
+                    if (file.type) type = file.type; //.split("/")[1].toLowerCase();
                     else type = name.split(".").pop().toLowerCase();
                     if (path.includes(name)) path = path.replace(name, "");
                     if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
                     path = path.replace(/\\/g, "/");
-                    let id = `${path}/${name}`;
+                    const id = `${path}/${name}`;
                     if (!this.docs.get(id)) {
                         let doc;
                         switch (type) {
@@ -116,13 +127,11 @@ export class DocumentManager {
     }
 
     undo(action) {
-
-        let diffs = action.diffs;
-
+        const diffs = action.diffs;
         if (diffs) {
             for (let i = 0; i < diffs.length; i++) {
-                let pack = diffs[i];
-                let doc = this.docs.get(pack.id);
+                const pack = diffs[i],
+                    doc = this.docs.get(pack.id);
                 this.differ.revert(doc, pack.diff);
             }
         }
@@ -130,12 +139,12 @@ export class DocumentManager {
 
     redo(action) {
 
-        let diffs = action.diffs;
+        const diffs = action.diffs;
 
         if (diffs) {
             for (let i = 0; i < diffs.length; i++) {
-                let pack = diffs[i];
-                let doc = this.docs.get(pack.id);
+                const pack = diffs[i],
+                    doc = this.docs.get(pack.id);
                 this.differ.convert(doc, pack.diff);
             }
         }
@@ -179,7 +188,7 @@ export class DocumentManager {
     async save(file_builder) {
         if (!file_builder) {
             //Save all files individually
-            this.docs.forEach(doc=>{
+            this.docs.forEach(doc => {
                 doc.save();
             });
         } else {

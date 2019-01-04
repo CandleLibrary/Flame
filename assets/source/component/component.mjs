@@ -1,11 +1,9 @@
-//import wick from "@candlefw/wick";
-
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  * Any associated stylesheets are managed through this componnent. 
  */
-class Component {
+export class Component {
 
     constructor(system) {
         //frame for fancy styling
@@ -24,6 +22,7 @@ class Component {
         this.IFRAME_LOADED = false;
 
         this.iframe.onload = (e) => {
+
             this.mountListeners();
             //e.target.contentDocument.body.appendChild(this.data);
             //e.target.contentWindow.wick = wick;
@@ -35,7 +34,6 @@ class Component {
         this.name = document.createElement("div");
         this.name.innerHTML = "unnamed";
         this.name.classList.add("flame_component_name");
-
 
         //HTML Data
         this.data = document.createElement("div");
@@ -68,14 +66,10 @@ class Component {
         this.system.ui.integrateIframe(this.iframe, this);
     }
 
-    get element() {
-        return this.style_frame;
-    }
-
     addStyle(tree, INLINE) {
         if (!INLINE) {
-            let style = new StyleNode();
-            style.tag = "style"
+            const style = new StyleNode();
+            style.tag = "style";
             this.sources[0].ast.addChild(style);
             style.css = tree;
             tree.addObserver(style);
@@ -87,27 +81,8 @@ class Component {
         }
     }
 
-    cache() {
-
-    }
-
     destroy() {
         this.element = null;
-    }
-
-    /**
-     * @brief Saves file to project directory. 
-     * @details [long description]
-     */
-    saveFile() {
-
-    }
-
-    /**
-     * Caches a bitmap image of the component.
-     */
-    cacheBitmap() {
-
     }
 
     load(document) {
@@ -118,7 +93,7 @@ class Component {
     }
 
     documentReady(pkg) {
-
+        
         if (this.manager) {
             //Already have source, just need to rebuild with new tree. 
             const tree = pkg.skeletons[0].tree,
@@ -136,8 +111,7 @@ class Component {
             this.rebuild();
         } else {
 
-        
-            let css = pkg.skeletons[0].tree.css;
+            const css = pkg.skeletons[0].tree.css;
 
             if (css)
                 css.forEach(css => {
@@ -159,23 +133,18 @@ class Component {
     }
 
     upImport() {
-
+        /* Empty Function  */
     }
-
-    /**
-     * Mounts the element to the document. 
-     */
-    mount() {}
 
     /**
      * Determines if point is in bounding box. 
      */
     pointInBoundingBox(x, y) {
         this.updateDimensions();
-        let min_x = this.dimensions.left;
-        let max_x = min_x + this.dimensions.width;
-        let min_y = this.dimensions.top;
-        let max_y = min_y + this.dimensions.height;
+        const min_x = this.dimensions.left,
+            max_x = min_x + this.dimensions.width,
+            min_y = this.dimensions.top,
+            max_y = min_y + this.dimensions.height;
         return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
     }
 
@@ -229,18 +198,19 @@ class Component {
         return this.element;
     }
 
-    toJSON(){
-        console.log(this.x,this.y)
+    get element() {
+        return this.style_frame;
+    }
+
+    toJSON() {
         return {
-            x:this.x,
-            y:this.y,
-            width:this.width,
-            height:this.height,
-            path:this.doc_path,
-            name:this.doc_name,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            path: this.doc_path,
+            name: this.doc_name,
             type: "html"
         };
     }
 }
-
-export { Component };

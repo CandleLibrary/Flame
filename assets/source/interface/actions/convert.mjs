@@ -72,8 +72,8 @@ function setToRelative(cache, KEEP_UNIQUE){
 /**
  * Convert position to ```absolute```
  */
-export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function TOPOSITIONABSOLUTE(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     switch (css.props.position) {
@@ -90,11 +90,11 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
 
             if (css.props.margin) {}
 
-            CLEARMARGINTOP(system, element, component, true);
-            CLEARMARGINLEFT(system, element, component, true);
+            CLEARMARGINTOP(system, component, element, true);
+            CLEARMARGINLEFT(system, component, element, true);
 
-            SETLEFT(system, element, component, x, true);
-            SETTOP(system, element, component, y, true);
+            SETLEFT(system, component, element, x, true);
+            SETTOP(system, component, element, y, true);
             
             break;
         case "absolute":
@@ -111,7 +111,7 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
     setToAbsolute(cache,KEEP_UNIQUE)
 
     if (!LINKED){
-        element.wick_node.setRebuild();
+        element.wick_node.prepRebuild();
         element.wick_node.rebuild();
     }
 }
@@ -119,8 +119,8 @@ export function TOPOSITIONABSOLUTE(system, element, component, LINKED = false) {
 /**
  * Convert position to ```relative```
  */
-export function TOPOSITIONRELATIVE(system, element, component) {
-    const cache = CacheFactory(system, element, component);
+export function TOPOSITIONRELATIVE(system, component, element) {
+    const cache = CacheFactory(system, component, element);
     const css = cache.rules;
     const KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
 
@@ -146,7 +146,7 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             const IS_INLINE = ele_in_dis.includes("inline");
 
             if(ele_in_dis == "inline")//force inline-block positioning
-                setValue(system, element, component, "display", "block");
+                setValue(system, component, element, "display", "block");
 
             //PARENT positining
             //TODO handle grid positioning;
@@ -190,15 +190,15 @@ export function TOPOSITIONRELATIVE(system, element, component) {
 
             let x1 =rect.x, y1 =rect.y,  x = x1 - offsetX, y =y1 - offsetY;
 
-            CLEARLEFT(system, element, component, true);
-            CLEARTOP(system, element, component, true);
+            CLEARLEFT(system, component, element, true);
+            CLEARTOP(system, component, element, true);
             
-            SETMARGINLEFT(system, element, component, x, true);
-            SETMARGINTOP(system, element, component, y, true);
+            SETMARGINLEFT(system, component, element, x, true);
+            SETMARGINTOP(system, component, element, y, true);
             
             setToRelative(cache, KEEP_UNIQUE);
             
-            element.wick_node.setRebuild();
+            element.wick_node.prepRebuild();
             element.wick_node.rebuild();
             rect = element.getBoundingClientRect();
             //enforce Position
@@ -206,9 +206,9 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             let y2 = rect.y;
             
             if(x2 != x1) 
-               SETMARGINLEFT(system, element, component, x - (x2 - x1), true);
+               SETMARGINLEFT(system, component, element, x - (x2 - x1), true);
             if(y2 != y1)
-                SETMARGINTOP(system, element, component, y - (y2 - y1), true); 
+                SETMARGINTOP(system, component, element, y - (y2 - y1), true); 
             
             break;
         case "fixed":
@@ -219,13 +219,13 @@ export function TOPOSITIONRELATIVE(system, element, component) {
             break;
     }
 
-    element.wick_node.setRebuild();
+    element.wick_node.prepRebuild();
     element.wick_node.rebuild();
 }
 
 
-export function CONVERT_TOP(system, element, component, type) {
-    let cache = CacheFactory(system, element, component);
+export function CONVERT_TOP(system, component, element, type) {
+    let cache = CacheFactory(system, component, element);
     let position = parseFloat(component.window.getComputedStyle(element).top);
     
     switch (type) {
@@ -251,13 +251,13 @@ export function CONVERT_TOP(system, element, component, type) {
             cache.rules.props.top = new types.length(1, 'px');
             break;
     }
-    SETTOP(system, element, component, position);
+    SETTOP(system, component, element, position);
 
-    element.wick_node.setRebuild();
+    element.wick_node.prepRebuild();
 }
 
-export function CONVERT_LEFT(system, element, component, type) {
-    let cache = CacheFactory(system, element, component);
+export function CONVERT_LEFT(system, component, element, type) {
+    let cache = CacheFactory(system, component, element);
     let position = parseFloat(component.window.getComputedStyle(element).left);
 
     switch (type) {
@@ -283,9 +283,9 @@ export function CONVERT_LEFT(system, element, component, type) {
             cache.rules.props.left = new types.length(1, 'px');
             break;
     }
-    SETLEFT(system, element, component, position);
+    SETLEFT(system, component, element, position);
 
-    element.wick_node.setRebuild();
+    element.wick_node.prepRebuild();
 }
 
 //Converting from unit types
@@ -314,9 +314,9 @@ export function LEFTTOVW() {}
 
 export function TOPOSITIONFIXED() {}
 export function TOPOSITIONSTICKY() { /* NO OP */ }
-export function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
+export function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
     // Get CSS information on element and update appropriate records
-    let cache = CacheFactory(system, element, component);
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let rect = getFirstPositionedAncestor(element).getBoundingClientRect();
     if (horizontal) {
@@ -344,5 +344,5 @@ export function TOGGLE_UNIT(system, element, component, horizontal, vertical) {
                 break;
         }
     }
-    element.wick_node.setRebuild();
+    element.wick_node.prepRebuild();
 }

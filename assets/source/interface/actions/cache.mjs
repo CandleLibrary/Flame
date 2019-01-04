@@ -1,10 +1,10 @@
 let cache_de_cache = null;
 
-function getApplicableRules(system, element, component) {
+function getApplicableRules(system, component, element) {
     return system.css.aquireCSS(element, component);
 }
 
-export function getUniqueRule(system, element, component) {
+export function getUniqueRule(system, component, element) {
     return system.css.getUnique(element, component);
 }
 
@@ -85,12 +85,12 @@ class Cache {
         this.generateMovementCache(system, this.element, this.component);
     }
 
-    generateMovementCache(system, element, component) {
+    generateMovementCache(system, component, element) {
 
         let move_type = system.project.components.move_type;
 
-        let unique_rule = getUniqueRule(system, element, component),
-            css_r = getApplicableRules(system, element, component),
+        let unique_rule = getUniqueRule(system, component, element),
+            css_r = getApplicableRules(system, component, element),
             css = mergeRules(system, css_r);
 
         //test for presence of rules. 
@@ -234,7 +234,7 @@ class Cache {
         }
 
         this.unique = unique_rule;
-        css_r = getApplicableRules(system, element, component);
+        css_r = getApplicableRules(system, component, element);
         this.rules = mergeRules(system, css_r);
         this.cssflagsA = v;
         this.original_rules =css_r;
@@ -255,7 +255,7 @@ class Cache {
 Cache.relative = 1;
 Cache.absolute = 2;
 
-export function CacheFactory(system, element, component) {
+export function CacheFactory(system, component, element) {
 
     if (element.flame_cache)
         return element.flame_cache;
@@ -271,7 +271,7 @@ export function CacheFactory(system, element, component) {
     cache.component = component;
     cache.element = element;
 
-    cache.generateMovementCache(system, element, component);
+    cache.generateMovementCache(system, component, element);
 
     element.flame_cache = cache;
 

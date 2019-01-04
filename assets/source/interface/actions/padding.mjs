@@ -2,7 +2,7 @@ import {
     setNumericalValue,
     getRatio,
     ensureBlocklike,
-    setRebuild
+    prepRebuild
 } from "./common";
 
 import {
@@ -14,8 +14,8 @@ import {
     SETDELTAWIDTH
 } from "./dimensions";
 
-function resetPadding(system, element, component) {
-    let cache = CacheFactory(system, element, component);
+function resetPadding(system, component, element) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     if (css.props.padding) {
         let val = css.props.padding;
@@ -60,15 +60,15 @@ function resetPadding(system, element, component) {
     }
 }
 
-export function SETPADDINGLEFT(system, element, component, x, LINKED = false) {
-    resetPadding(system, element, component);
+export function SETPADDINGLEFT(system, component, element, x, LINKED = false) {
+    resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_left", system, element, component, x, setNumericalValue.parent_width);
-    setRebuild(element, LINKED);
+    setNumericalValue("padding_left", system, component, element, x, setNumericalValue.parent_width);
+    prepRebuild(element, LINKED);
 }
 
-export function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function SETDELTAPADDINGLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let start_x = parseFloat(cache.computed.get("padding-left")) || 0;
     let width = (parseFloat(cache.computed.width) || 0) + start_x;
 
@@ -77,28 +77,28 @@ export function SETDELTAPADDINGLEFT(system, element, component, dx, ratio = 0, L
     if (start_x + dx > 0) {
 
         if (ratio > 0)
-            SETPADDINGLEFT(system, element, component, start_x + dx / ratio, true);
+            SETPADDINGLEFT(system, component, element, start_x + dx / ratio, true);
         else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, element, component, SETPADDINGLEFT, start_x, dx, "padding-left");
+            ratio = getRatio(system, component, element, SETPADDINGLEFT, start_x, dx, "padding-left");
         }
 
-        SETDELTAWIDTH(system, element, component, -dx, true);
+        SETDELTAWIDTH(system, component, element, -dx, true);
 
-        setRebuild(element, LINKED);
+        prepRebuild(element, LINKED);
     }
 
     return ratio;
 }
 
-export function SETPADDINGTOP(system, element, component, x, LINKED = false) {
-    resetPadding(system, element, component);
+export function SETPADDINGTOP(system, component, element, x, LINKED = false) {
+    resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_top", system, element, component, x, setNumericalValue.parent_height);
-    setRebuild(element, LINKED);
+    setNumericalValue("padding_top", system, component, element, x, setNumericalValue.parent_height);
+    prepRebuild(element, LINKED);
 }
 
-export function SETDELTAPADDINGTOP(system, element, component, dy, ratio = 0, LINKED = false) {
+export function SETDELTAPADDINGTOP(system, component, element, dy, ratio = 0, LINKED = false) {
     let style = component.window.getComputedStyle(element);
     let start_y = parseFloat(style.paddingTop) || 0;
     let height = (parseFloat(style.height) || 0) + start_y;
@@ -107,29 +107,29 @@ export function SETDELTAPADDINGTOP(system, element, component, dy, ratio = 0, LI
 
     if (start_y + dy > 0) {
         if (ratio > 0)
-            SETPADDINGTOP(system, element, component, start_y + dy / ratio, true);
+            SETPADDINGTOP(system, component, element, start_y + dy / ratio, true);
         else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, element, component, SETPADDINGTOP, start_y, dy, "padding-top");
+            ratio = getRatio(system, component, element, SETPADDINGTOP, start_y, dy, "padding-top");
         }
 
-        SETDELTAHEIGHT(system, element, component, -dy, true);
+        SETDELTAHEIGHT(system, component, element, -dy, true);
 
-        setRebuild(element, LINKED);
+        prepRebuild(element, LINKED);
     }
 
     return ratio;
 }
 
-export function SETPADDINGRIGHT(system, element, component, x, LINKED = false) {
-    resetPadding(system, element, component);
+export function SETPADDINGRIGHT(system, component, element, x, LINKED = false) {
+    resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_right", system, element, component, x, setNumericalValue.parent_height);
-    setRebuild(element, LINKED);
+    setNumericalValue("padding_right", system, component, element, x, setNumericalValue.parent_height);
+    prepRebuild(element, LINKED);
 }
 
 
-export function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
+export function SETDELTAPADDINGRIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
     let style = component.window.getComputedStyle(element);
     let start_x = parseFloat(style.paddingRight) || 0;
     let width = (parseFloat(style.width) || 0) + start_x;
@@ -139,27 +139,27 @@ export function SETDELTAPADDINGRIGHT(system, element, component, dx, ratio = 0, 
     if (start_x + dx > 0) {
 
         if (ratio > 0)
-            SETPADDINGRIGHT(system, element, component, start_x + dx / ratio, true);
+            SETPADDINGRIGHT(system, component, element, start_x + dx / ratio, true);
         else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, element, component, SETPADDINGRIGHT, start_x, dx, "padding-right");
+            ratio = getRatio(system, component, element, SETPADDINGRIGHT, start_x, dx, "padding-right");
         }
 
-        SETDELTAWIDTH(system, element, component, -dx, true);
-setRebuild(element,LINKED);
+        SETDELTAWIDTH(system, component, element, -dx, true);
+prepRebuild(element,LINKED);
     }
     return ratio;
 }
 
-export function SETPADDINGBOTTOM(system, element, component, x, LINKED = false) {
-    resetPadding(system, element, component);
+export function SETPADDINGBOTTOM(system, component, element, x, LINKED = false) {
+    resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_bottom", system, element, component, x, setNumericalValue.parent_height);
-    setRebuild(element, LINKED);
+    setNumericalValue("padding_bottom", system, component, element, x, setNumericalValue.parent_height);
+    prepRebuild(element, LINKED);
 }
 
 
-export function SETDELTAPADDINGBOTTOM(system, element, component, dy, ratio = 0, LINKED = false) {
+export function SETDELTAPADDINGBOTTOM(system, component, element, dy, ratio = 0, LINKED = false) {
     let style = component.window.getComputedStyle(element);
     let start_y = parseFloat(style.paddingBottom) || 0;
     let height = (parseFloat(style.height) || 0) + start_y;
@@ -168,67 +168,67 @@ export function SETDELTAPADDINGBOTTOM(system, element, component, dy, ratio = 0,
 
     if (start_y + dy >= 0) {
         if (ratio > 0)
-            SETPADDINGBOTTOM(system, element, component, start_y + dy / ratio, true);
+            SETPADDINGBOTTOM(system, component, element, start_y + dy / ratio, true);
         else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, element, component, SETPADDINGBOTTOM, start_y, dy, "padding-bottom");
+            ratio = getRatio(system, component, element, SETPADDINGBOTTOM, start_y, dy, "padding-bottom");
         }
 
-        SETDELTAHEIGHT(system, element, component, -dy, true);
+        SETDELTAHEIGHT(system, component, element, -dy, true);
 
-    setRebuild(element,LINKED);}
+    prepRebuild(element,LINKED);}
 
     return ratio;
 }
 
-export function RESIZEPADDINGT(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGT(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGTOP(system, component, element, dy, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGR(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGRIGHT(system, component, element, -dx, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGL(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGLEFT(system, component, element, dx, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGB(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGB(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGBOTTOM(system, component, element, -dy, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGTL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGTL(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
-    SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGLEFT(system, component, element, dx, 0, true);
+    SETDELTAPADDINGTOP(system, component, element, dy, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGTR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGTR(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
-    SETDELTAPADDINGTOP(system, element, component, dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGRIGHT(system, component, element, -dx, 0, true);
+    SETDELTAPADDINGTOP(system, component, element, dy, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGBL(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGBL(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGLEFT(system, element, component, dx, 0, true);
-    SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGLEFT(system, component, element, dx, 0, true);
+    SETDELTAPADDINGBOTTOM(system, component, element, -dy, 0, true);
+    prepRebuild(element, LINKED);
 }
 
-export function RESIZEPADDINGBR(system, element, component, dx, dy, IS_COMPONENT = false, LINKED = false) {
+export function RESIZEPADDINGBR(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) return;
-    SETDELTAPADDINGRIGHT(system, element, component, -dx, 0, true);
-    SETDELTAPADDINGBOTTOM(system, element, component, -dy, 0, true);
-    setRebuild(element, LINKED);
+    SETDELTAPADDINGRIGHT(system, component, element, -dx, 0, true);
+    SETDELTAPADDINGBOTTOM(system, component, element, -dy, 0, true);
+    prepRebuild(element, LINKED);
 }

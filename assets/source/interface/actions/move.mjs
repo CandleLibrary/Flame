@@ -2,7 +2,7 @@ import css from "@candlefw/css";
 
 
 import { CacheFactory } from "./cache";
-import { getFirstPositionedAncestor } from "./common";
+import { getFirstPositionedAncestor, prepRebuild } from "./common";
 import {
     SETDELTALEFT,
     SETDELTATOP,
@@ -15,14 +15,14 @@ const types = css.types;
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
-export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
+export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) {
         component.x += dx;
         component.y += dy;
     } else {
 
         // Get CSS information on element and update appropriate records
-        let cache = CacheFactory(system, element, component);
+        let cache = CacheFactory(system, component, element);
 
         let css = cache.rules;
 
@@ -30,39 +30,38 @@ export function MOVE(system, element, component, dx, dy, IS_COMPONENT) {
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
+                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA);
                     break;
                 case "left right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
                 case "left":
-                    cache.valueA = SETDELTALEFT(system, element, component, dx, cache.valueA);
+                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA);
                     break;
                 case "right":
-                    cache.valueB = SETDELTARIGHT(system, element, component, -dx, cache.valueB);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
                     break;
             }
 
             switch (cache.move_vert_type) {
                 case "top bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
+                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC);
                 case "top":
-                    cache.valueD = SETDELTATOP(system, element, component, dy, cache.valueD);
+                    cache.valueD = SETDELTATOP(system, component, element, dy, cache.valueD);
                     break;
                 case "bottom":
-                    cache.valueC = SETDELTABOTTOM(system, element, component, -dy, cache.valueC);
+                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC);
                     break;
             }
         }
-
-        element.wick_node.setRebuild();
-        element.wick_node.rebuild();
+                
+        prepRebuild(element, LINKED)
     }
 }
 
-export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL = true) {
+export function CENTER(system, component, element, HORIZONTAL = true, VERTICAL = true, LINKED = false) {
     // Get CSS information on element and update appropriate records
-    let cache = CacheFactory(system, element, component);
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
 
     let ancestor = getFirstPositionedAncestor(element);
@@ -106,6 +105,6 @@ export function CENTER(system, element, component, HORIZONTAL = true, VERTICAL =
             break;
     }
     */
-
-    element.wick_node.setRebuild();
+                
+    prepRebuild(element, LINKED)
 }

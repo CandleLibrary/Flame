@@ -3,8 +3,8 @@ import { Document } from "./document";
 
 export class WickDocument extends Document {
 
-    updatedWickASTTree(tree) {
-        //this.save();
+
+    updatedWickASTTree() {
         this.manager.addPending(this);
     }
 
@@ -12,9 +12,9 @@ export class WickDocument extends Document {
 
         (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
             this.LOADED = true;
-            if(!pkg) //TODO - Determine the cause of undefined assigned to pkg
-                
-                {debugger;return;}
+           
+            //TODO - Determine the cause of undefined assigned to pkg
+            if (!pkg) { debugger; return }
 
             if (this.data)
                 this.data.skeletons[0].tree.removeObserver(this);
@@ -34,7 +34,7 @@ export class WickDocument extends Document {
 
     toString() {
         return (this.data) ?
-            this.data.toString():
+            this.data.toString() :
             "";
     }
 

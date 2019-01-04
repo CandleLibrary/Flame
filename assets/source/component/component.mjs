@@ -93,7 +93,7 @@ export class Component {
     }
 
     documentReady(pkg) {
-        
+                
         if (this.manager) {
             //Already have source, just need to rebuild with new tree. 
             const tree = pkg.skeletons[0].tree,
@@ -130,6 +130,8 @@ export class Component {
                     this.rebuild();
                 });
         }
+
+        return false;
     }
 
     upImport() {

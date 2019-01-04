@@ -135,26 +135,19 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 };
 
 RootNode.prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false) {
-    if (child) {
-        this.CHANGED |= 2;
-    } else {
-        this.CHANGED |= 1;
-    }
 
-    if (REBUILT) {
-        this.CHANGED |= 4;
-    }
-
-    if (INSERTED) {
-        this.CHANGED |= 12;
-    }
+    this.CHANGED =  
+        this.CHANGED
+        | (!child) 
+        | ((!!child) << 1) 
+        | ((!!(REBUILT || INSERTED)) << 2)
+        | ((!!INSERTED) << 3);
 
     if (this.par)
         this.par.prepRebuild(true);
-    else if (this.merges) {
+    else if (this.merges) 
         for (let i = 0; i < this.merges.length; i++)
             this.merges.prepRebuild(true);
-    }
 };
 
 RootNode.prototype.resetRebuild = function() {
@@ -270,7 +263,7 @@ class DeleteNode extends SourceNode {
 
         let nxt = this.nxt;
         if (this.par)
-            this.par.remC(this);
+            this.par.removeChild(this);
         this.nxt = nxt;
     }
 }

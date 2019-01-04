@@ -15,7 +15,7 @@ import css from "@candlefw/css";
 
 const types = css.types;
 
-export function SETLEFT(system, component, element, x, LINKED = false, type = "") {
+export function SETLEFT(system, component, element, x, LINKED = false) {
     let cache = CacheFactory(system, component, element);
 
     if (x.type) {

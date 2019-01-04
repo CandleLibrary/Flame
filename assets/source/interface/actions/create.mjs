@@ -7,7 +7,39 @@ import { prepRebuild } from "./common.mjs";
 
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
-export async function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px = 0, py = 0, w = 50, h = 50) {
+
+export function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false){
+    let new_element = null,
+        node_c = child_element.wick_node;
+    
+    const node_p = target_element.wick_node;
+
+    if(COPY){
+        node_c = node_c.clone();
+    }else{
+        const par = node_c.par;
+        
+        node_c.extract();
+        
+        par.prepRebuild();
+        par.rebuild();
+    }
+    node_p.addChild(node_c);
+    
+    node_c.prepRebuild(false, false, true);
+    node_c.rebuild();
+    
+    new_element = target_element.lastChild;
+
+    SETLEFT(system, target_component, new_element, px, true);
+    SETTOP(system, target_component, new_element, py, true);
+
+    prepRebuild(new_element, LINKED);
+
+    return new_element;
+}
+
+export function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px = 0, py = 0, w = 50, h = 50) {
     if(typeof(tag_name) !== "string" || tag_name== "") 
         throw new Error(`Invalid argument for \`tag_name\`:${tag_name} in call to CREATE_ELEMENT.`);
 
@@ -28,7 +60,7 @@ export async function CREATE_ELEMENT(system, component, parent_element, tag_name
 
     prepRebuild(element);
 
-    return element;
+    return {element, node};
 }
 
 export function CREATE_COMPONENT(system, doc, px, py) {

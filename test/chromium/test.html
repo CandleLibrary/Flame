@@ -48,7 +48,8 @@
 
         const env = {
             tO : (interval = 50) => new Promise(res => setTimeout(res, interval)),
-            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_comp.html"))
+            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_compA.html")),
+            loadTestComponentB: () => loadComponent(path.resolve("test/component/test_compB.html"))
         };
 
         /** Loading Test Modules **/

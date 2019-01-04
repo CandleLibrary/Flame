@@ -41,8 +41,60 @@ function CREATION(system, env) {
             style.height.should.equal("50px");
         });
 
-        it.skip("Transfers elements between components.", async function() {
+        it("Transfers elements between components.", async function() {
+            this.slow(1000)
 
+            const {comp : compa} = await env.loadTestComponentA();
+            const {comp : compb} = await env.loadTestComponentB();
+
+            await env.tO(5);
+
+            let elementA = compa.query("span");
+            let elementB = compb.query("div");
+
+            compa.window.document.body.children[0].children.should.have.lengthOf(9)
+            compb.window.document.body.children[0].children.should.have.lengthOf(9)
+
+            const element = system.actions.TRANSFER_ELEMENT(system, compb, elementB, elementA, 50, 50);
+
+            await env.tO(5);
+
+            compa.window.document.body.children[0].children.should.have.lengthOf(8);
+            compb.window.document.body.children[0].children.should.have.lengthOf(10);
+
+            const style = system.ui.master_component.window.getComputedStyle(element);
+            const rules = css.mergeRules(css.aquireCSS(element, system.ui.master_component));
+
+            style.left.should.equal("50px");
+            style.top.should.equal("50px");
         })
+
+        it("Copies element from one component to another.", async function() {
+            this.slow(1000)
+            
+            const {comp : compa} = await env.loadTestComponentA();
+            const {comp : compb} = await env.loadTestComponentB();
+
+            await env.tO(5);
+
+            let elementA = compa.query("span");
+            let elementB = compb.query("div");
+
+            compa.window.document.body.children[0].children.should.have.lengthOf(9)
+            compb.window.document.body.children[0].children.should.have.lengthOf(9)
+
+            const element = system.actions.TRANSFER_ELEMENT(system, compb, elementB, elementA, 50, 50, true);
+
+            await env.tO(5);
+
+            compa.window.document.body.children[0].children.should.have.lengthOf(9);
+            compb.window.document.body.children[0].children.should.have.lengthOf(10);
+
+            const style = system.ui.master_component.window.getComputedStyle(element);
+            const rules = css.mergeRules(css.aquireCSS(element, system.ui.master_component));
+
+            style.left.should.equal("50px");
+            style.top.should.equal("50px");
+        })   
     });
 }

@@ -46,7 +46,7 @@
 
 ### Tools
 - [x] Allow creation of elements outside of components. 
-- [ ] BoundingBox/Draw creation of new elements/components. Should popup best guess for type of element.
+- [x] BoundingBox/Draw creation of new elements/components. Should popup best guess for type of element.
 - [ ] Step based adjustment mode.
 - [ ] Allow center, left, right alignment for groups of elements.
 - [ ] Allow multi selection

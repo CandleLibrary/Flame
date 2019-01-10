@@ -1,11 +1,11 @@
 let cache_de_cache = null;
 
 function getApplicableRules(system, component, element) {
-    return system.css.aquireCSS(element, component);
+    return system.css.aquireCSS(component, element);
 }
 
 export function getUniqueRule(system, component, element) {
-    return system.css.getUnique(element, component);
+    return system.css.getUnique(component, element);
 }
 
 function mergeRules(system, css) {

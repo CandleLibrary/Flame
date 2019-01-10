@@ -245,7 +245,7 @@ class BoxElement {
         }
     }
 
-    setTarget(element, component, IS_COMPONENT) {
+    setTarget(component, element, IS_COMPONENT) {
         this.target.element = element;
         this.target.component = component;
         this.target.IS_COMPONENT = IS_COMPONENT;
@@ -260,9 +260,9 @@ export class CanvasManager {
         this.ctx = this.element.getContext("2d");
     }
 
-    setIframeTarget(element, component, IS_COMPONENT = false) {
+    setIframeTarget(component, element, IS_COMPONENT = false) {
         let box = new BoxElement(element);
-        box.setTarget(element, component, IS_COMPONENT);
+        box.setTarget(component, element, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
     }

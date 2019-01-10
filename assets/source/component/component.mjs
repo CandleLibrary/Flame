@@ -61,7 +61,6 @@ export class Component {
 
         this.action = null;
     }
-
     mountListeners() {
         this.system.ui.integrateIframe(this.iframe, this);
     }

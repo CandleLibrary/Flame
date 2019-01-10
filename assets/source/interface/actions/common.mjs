@@ -119,10 +119,10 @@ export function setNumericalValue(propname, system, component, element, value, r
                 if (ele) denominator = getContentBox(ele, component.window).height;
                 break;
             case setNumericalValue.height:
-                denominator = getContentBox(element, component.window).width;
+                denominator = getContentBox(component, element.window).width;
                 break;
             case setNumericalValue.width:
-                denominator = getContentBox(element, component.window).width;
+                denominator = getContentBox(component, element.window).width;
                 break;
         }
 

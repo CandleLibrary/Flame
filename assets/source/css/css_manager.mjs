@@ -29,7 +29,7 @@ export class CSSManager {
      * @param  {[type]} component [description]
      * @return {[type]}           [description]
      */
-    aquireCSS(element, component) {
+    aquireCSS(component, element) {
         if (!component)
             return [];
 
@@ -63,7 +63,7 @@ export class CSSManager {
      * @param  {[type]} component [description]
      * @return {[type]}           [description]
      */
-    getUnique(element, component) {
+    getUnique(component, element) {
 
     	const IS_WICK_NODE = element instanceof RootNode;
 

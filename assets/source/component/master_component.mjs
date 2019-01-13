@@ -8,5 +8,43 @@ import {Component} from "./component.mjs";
 export class MasterComponent extends Component {
     constructor(system){
         super(system);
+
+        this.width = 1920;
+        this.height = 1080;
+    }
+
+    createFrameElement(){
+
+        this.frame = document.createElement("div");
+        this.frame.id = "master_component"
+       // this.frame.src = "component_frame.html";
+        //this.frame.setAttribute("frameBorder", "0");
+        this.frame.style.position = "fixed";
+
+
+        this.mountListeners();
+        this.IFRAME_LOADED = true;
+
+        return this.frame;
+    }
+
+    mountListeners() {
+        this.system.ui.integrateComponentFrame(this.frame, this);
+    }
+
+    get window(){
+    	return window;
+    }
+
+    get sourceElement(){
+    	return this.frame.firstChild;
+    }
+
+    get content(){
+        return this.frame;
+    }
+
+    query(query){
+    	return this.frame.querySelector(query);
     }
 }

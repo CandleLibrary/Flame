@@ -3,6 +3,7 @@ import { Component } from "../../component/component.mjs";
 import { MOVE } from "./move.mjs";
 import { SETLEFT, SETTOP } from "./position.mjs";
 import { SETWIDTH, SETHEIGHT } from "./dimensions.mjs";
+import { TOPOSITIONABSOLUTE } from "./convert.mjs";
 import { prepRebuild } from "./common.mjs";
 
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
@@ -52,7 +53,7 @@ export function CREATE_ELEMENT(system, component, parent_element, tag_name = "di
     node.rebuild();
     //grab the element from the parent
     const element = parent_element.lastChild;
-
+    TOPOSITIONABSOLUTE(system, component, element);
     SETLEFT(system, component, element, px, true);
     SETTOP(system, component, element, py, true);
     SETWIDTH(system, component, element, w, true);

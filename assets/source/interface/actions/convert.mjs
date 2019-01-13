@@ -173,9 +173,10 @@ export function TOPOSITIONRELATIVE(system, component, element) {
                 }
                 node = node.previousSibling;
             }
-            let rectp = element.parentElement.getBoundingClientRect();
 
-            let innerWidth = rectp.width  - (   (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0)+
+            var rectp = element.parentElement.getBoundingClientRect();
+
+            var innerWidth = rectp.width  - (   (parseFloat(par_prop.borderLeftWidth) || 0) + (parseFloat(par_prop.paddingLeft) || 0)+
                         (parseFloat(par_prop.borderRightWidth) || 0) + (parseFloat(par_prop.paddingRight) || 0));
             
             if(IS_INLINE && (offsetX + rect.width ) >= innerWidth)
@@ -188,7 +189,7 @@ export function TOPOSITIONRELATIVE(system, component, element) {
                 offsetY += (parseFloat(par_prop.borderTopWidth) || 0) + (parseFloat(par_prop.paddingTop) || 0)
             
 
-            let x1 =rect.x, y1 =rect.y,  x = x1 - offsetX, y =y1 - offsetY;
+            var x1 =rect.x, y1 =rect.y,  x = x1 - offsetX, y =y1 - offsetY;
 
             CLEARLEFT(system, component, element, true);
             CLEARTOP(system, component, element, true);
@@ -202,8 +203,8 @@ export function TOPOSITIONRELATIVE(system, component, element) {
             element.wick_node.rebuild();
             rect = element.getBoundingClientRect();
             //enforce Position
-            let x2 = rect.x;
-            let y2 = rect.y;
+            var x2 = rect.x;
+            var y2 = rect.y;
             
             if(x2 != x1) 
                SETMARGINLEFT(system, component, element, x - (x2 - x1), true);

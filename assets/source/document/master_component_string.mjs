@@ -6,6 +6,9 @@ export default `
 			height: 100%;
 			overflow : none;
 		}
+		div {
+			background-color:red
+		}
 	</style>	
 </w-s>
 `;

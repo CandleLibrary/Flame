@@ -12,7 +12,7 @@ class UIComponent extends Component {
 
         super(system);
 
-        this.iframe.onload = (e) => {
+        this.frame.onload = (e) => {
 
             this.mountListeners();
 
@@ -24,19 +24,19 @@ class UIComponent extends Component {
 
             //e.target.contentWindow.wick = wick;
 
-            this.window = e.target.contentWindow;
+            
 
             this.local_css.forEach((css) => {
                 let style = document.createElement("style");
                 style.innerText = css + "";
-                this.iframe.contentDocument.head.appendChild(style);
+                this.frame.contentDocument.head.appendChild(style);
             });
 
-            this.iframe.onload = null;
+            this.frame.onload = null;
         };
 
         //frame for fancy styling
-        this.iframe.classList.add("flame_ui_component");
+        this.frame.classList.add("flame_ui_component");
 
         this.pkg = null;
 
@@ -57,8 +57,8 @@ class UIComponent extends Component {
             this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
             this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
         });
-        this.iframe.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
-        this.iframe.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
     }
 
     documentReady(pkg) {
@@ -116,7 +116,11 @@ class UIComponent extends Component {
             element.appendChild(this.element);
     }
 
-    unmount() {};
+    unmount() {}
+
+     get window(){
+        return this.frame.contentWindow;
+    }
 }
 
 export {

@@ -11,7 +11,9 @@ import Default from "./input_handler/default.mjs";
 import ElementDraw from "./input_handler/element_draw.mjs";
 
 //OTHER imports
-import { CanvasManager } from "./canvas_manager";
+import { CanvasManager } from "./controls_manager";
+
+/** GLOBAL EVENTS FILLS **/
 
 var DD_Candidate = false;
 /**
@@ -22,6 +24,8 @@ var DD_Candidate = false;
 export class UI_Manager {
 
     constructor(UIHTMLElement, ViewElement, system) {
+        system.ui = this;
+
         this.d = Default;
         this.e = ElementDraw;
 
@@ -86,7 +90,7 @@ export class UI_Manager {
                 this.origin_x = x;
                 this.origin_y = y;
             } else
-                this.handlePointerDownEvent(e, !!1);
+                this.handlePointerDownEvent(e, undefined, undefined, !!1);
         });
         window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
@@ -203,21 +207,25 @@ export class UI_Manager {
 
     /******************** Component Iframe *************************/
 
-    integrateIframe(iframe, component) {
+    integrateComponentFrame(frame, component) {
 
-        iframe.contentWindow.addEventListener("wheel", e => {
+        frame.addEventListener("wheel", e => {
             const x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px,
                 y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
             this.handleScroll(e, x, y);
         });
 
-        iframe.contentWindow.addEventListener("mousedown", e => {
+        frame.addEventListener("mousedown", e => {
 
             const x = e.pageX + 4 + component.x;
             const y = e.pageY + 4 + component.y;
 
             this.last_action = Date.now();
-            this.handlePointerDownEvent(e, x, y);
+
+            if(component == this.master_component)
+                this.handlePointerDownEvent(e);
+            else
+                this.handlePointerDownEvent(e, x, y);
 
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
@@ -231,22 +239,23 @@ export class UI_Manager {
                         this.setTarget(e, component, x, y);
                     }
                 }
-
-
             }
-
-
             return false;
         });
 
-        iframe.contentWindow.addEventListener("mousemove", e => {
+        frame.addEventListener("mousemove", e => {
             const x = e.pageX + 4 + component.x;
             const y = e.pageY + 4 + component.y;
-            this.handlePointerMoveEvent(e, x, y);
+
+            if(component == this.master_component)
+                this.handlePointerMoveEvent(e);
+            else
+                this.handlePointerMoveEvent(e, x, y);
+            
             return false;
         });
 
-        iframe.contentWindow.addEventListener("mouseup", e => {
+        frame.addEventListener("mouseup", e => {
             const t = Date.now();
             const x = e.pageX + 4 + component.x;
             const y = e.pageY + 4 + component.y;
@@ -265,6 +274,7 @@ export class UI_Manager {
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
                         this.canvas.setIframeTarget(component, e.target);
                         this.render();
+
                         this.setTarget(e, component, x, y);
                     }
                     DD_Candidate = Date.now();
@@ -279,8 +289,7 @@ export class UI_Manager {
     /****************** Event responders **************************/
 
     handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-
-        if(e.target == document.body)
+        if (e.target == document.body || !this.target)
             this.active_handler = Handler.element_draw;
 
         this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
@@ -293,6 +302,7 @@ export class UI_Manager {
 
     handlePointerEndEvent(event) {
         this.active_handler = this.active_handler.input("end", event, this, this.target);
+        event.preventDefault();
     }
 
     handleDocumentDrop(e) {
@@ -303,11 +313,12 @@ export class UI_Manager {
     handleContextMenu(e, component = null) {
         //Load text editor in the bar.
         this.active_handler = this.active_handler.input("context", e, this, { component });
+        e.preventDefault();
     }
 
     handleScroll(e, x, y) {
-        e.preventDefault();
         this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
+        e.preventDefault();
     }
 
     /******** FILE HANDLING ************/

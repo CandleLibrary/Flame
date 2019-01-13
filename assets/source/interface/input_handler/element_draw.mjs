@@ -13,11 +13,14 @@ export default class ElementDraw extends Default {
     }
 
     start(event, ui, data) {
-        const x = ui.transform.getLocalX(event.pageX),
-              y = ui.transform.getLocalY(event.pageY);
+        if (event.button == 1) 
+            return default_handler.start(event, ui, data);
+
+        const x = data.x || ui.transform.getLocalX(event.pageX),
+            y = data.y || ui.transform.getLocalY(event.pageY);
+
         this.origin_x = x;
         this.origin_y = y;
-
         this.root_x = x;
         this.root_y = y;
 
@@ -28,14 +31,12 @@ export default class ElementDraw extends Default {
 
         //if (!this.ACTIVE_POINTER_INPUT) return this;
 
-        const x = ui.transform.getLocalX(event.pageX);
-        const y = ui.transform.getLocalY(event.pageY);
-        const diffx = this.origin_x - x;
-        const diffy = this.origin_y - y;
+        const x = data.x || ui.transform.getLocalX(event.pageX),
+            y = data.y || ui.transform.getLocalY(event.pageY);
+        console.log(x,y)
         this.origin_x = x;
         this.origin_y = y;
         
-
         return this;
     }
 
@@ -43,16 +44,17 @@ export default class ElementDraw extends Default {
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
-
         const x1 = Math.min(this.origin_x, this.root_x);
         const y1 = Math.min(this.origin_y, this.root_y);
         const x2 = Math.max(this.origin_x, this.root_x);
         const y2 = Math.max(this.origin_y, this.root_y);
-        debugger
+
+        console.log(x1,y1,x2,y2)
+
         actions.CREATE_ELEMENT(
             ui.system,
             ui.master_component,
-            ui.master_component.query("div"),
+            ui.master_component.sourceElement,
             "div",
             x1, y1, x2 - x1, y2 - y1);
 

@@ -8,13 +8,23 @@ body {
     left: 0;
     padding: 0;
     margin: 0;
-    overflow: hidden;
+    overflow: none;
     font-family: arial;
     user-select: none;
 }
 
 iframe {
     border: solid 0px black;
+}
+
+
+/**************** Master Component *********************/
+#master_component{
+    position: absolute;
+    left:0;
+    top:0;
+    overflow: visible;
+
 }
 
 .menu_item {

@@ -13,9 +13,12 @@ export default class Default extends Handler {
 
     start(event, ui, data) {
         const x = data.x || ui.transform.getLocalX(event.pageX),
-            y = data.y || ui.transform.getLocalY(event.pageY);
+              y = data.y || ui.transform.getLocalY(event.pageY);
+
+         console.log("start",{x,y})
 
         if (event.button == 1) {
+
             if (isNaN(x) || isNaN(y))
                 debugger;
 
@@ -51,12 +54,14 @@ export default class Default extends Handler {
             y = (typeof(y) == "number") ? y : ui.transform.getLocalY(event.pageY);
             const diffx = this.origin_x - x;
             const diffy = this.origin_y - y;
+
+
             ui.transform.px -= diffx * ui.transform.sx;
             ui.transform.py -= diffy * ui.transform.sy;
             this.origin_x = x + diffx;
             this.origin_y = y + diffy;
             ui.render();
-            ui.view_element.stylevent.transform = ui.transform;
+            ui.view_element.style.transform = ui.transform;
         } else if (ui.ui_target) {
             const diffx = this.origin_x - ((typeof(x) == "number") ? x : event.pageX);
             const diffy = this.origin_y - ((typeof(y) == "number") ? y : event.pageY);

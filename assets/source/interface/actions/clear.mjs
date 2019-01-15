@@ -1,82 +1,82 @@
 import { CacheFactory } from "./cache";
 
-export function CLEARLEFT(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARLEFT(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`left:auto`);
         else css.props.left = "auto";
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 //clear top
-export function CLEARTOP(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARTOP(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.top) {
         if (KEEP_UNIQUE) cache.unique.addProp(`top:auto`);
         else css.props.top = "auto";
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 //clear right
-export function CLEARIGHT(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARIGHT(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.right) {
         if (KEEP_UNIQUE) cache.unique.addProp(`right:auto`);
         else css.props.right = "auto";
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 //clear bottom
-export function CLEABOTTOM(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEABOTTOM(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.bottom) {
         if (KEEP_UNIQUE) cache.unique.addProp(`bottom:auto`);
         else css.props.bottom = "auto";
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 
 //clear margin-top
-export function CLEARMARGINTOP(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARMARGINTOP(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-top:0`);
         else css.props.margin_left = 0;
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 //clear margin-left
-export function CLEARMARGINLEFT(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARMARGINLEFT(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_left) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-left:0`);
         else css.props.margin_left = 0;
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 
 //clear margin-right
-export function CLEARMARGINRIGHT(system, element, component, LINKED = false) {
-    let cache = CacheFactory(system, element, component);
+export function CLEARMARGINRIGHT(system, component, element, LINKED = false) {
+    let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     if (css.props.margin_right) {
         if (KEEP_UNIQUE) cache.unique.addProp(`margin-right:0`);
         else css.props.margin_right = 0;
     }
-    if (!LINKED) element.wick_node.setRebuild();
+    if (!LINKED) element.wick_node.prepRebuild();
 }
 //clear margin-bottom
 //clear padding-left

@@ -8,6 +8,7 @@
     <script type="text/javascript" src="./data.js"></script>
     <script type="text/javascript" src="./save.js"></script>
     <script type="text/javascript" src="./move.js"></script>
+    <script type="text/javascript" src="./creating.js"></script>
     <script type="text/javascript" src="./border_box.js"></script>
     <script type="text/javascript" src="./history.js"></script>
     <script type="text/javascript" src="./unsorted.js"></script>
@@ -33,7 +34,7 @@
             return new Promise(res => {
                 doc.bind({
                     documentReady: data => {
-                        const comp = system.actions.CREATE_COMPONENT(system, doc, { x: 20, y: 20 });
+                        const comp = system.actions.CREATE_COMPONENT(system, doc, 20, 20);
                         //There's a slight delay as a component is loaded into the UI. 
                         setTimeout(function() {
                             return res({ doc, data, comp });
@@ -47,14 +48,16 @@
 
         const env = {
             tO : (interval = 50) => new Promise(res => setTimeout(res, interval)),
-            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_comp.html"))
+            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_compA.html")),
+            loadTestComponentB: () => loadComponent(path.resolve("test/component/test_compB.html"))
         };
 
         /** Loading Test Modules **/
-        DATA(system, env);
+        //DATA(system, env);
         //MOVE(system, env);
         //BB(system, env);
-        HISTORY(system, env);
+        CREATION(system, env);
+        //HISTORY(system, env);
         //UNSORTED(system, env);
 
         mocha.checkLeaks();

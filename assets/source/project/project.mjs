@@ -1,6 +1,5 @@
 import { Presets } from "@candlefw/wick";
 
-
 import path from "path";
 import fs from "fs";
 import { FlameScheme } from "./scheme";
@@ -88,10 +87,14 @@ export class Project {
         if(this.preferences.auto_save_interval < 1)
             return;
         //return;
-        spark.queueUpdate(this, this.preferences.auto_save_interval * 1000 /* interval in milliseconds */ )
-    };
+        spark.queueUpdate(this, this.preferences.auto_save_interval * 1000 /* interval in milliseconds */ );
+    }
 
-    loadComponents(dir) {
+    loadUIComponents(dir) {
+
+        if(this.system.TEST_MODE) 
+            return;
+        
 
         fs.readdir(dir, (e, d) => {
             if (e)
@@ -114,7 +117,7 @@ export class Project {
         this.components.move_type = "relative";
         this.components.KEEP_UNIQUE = true;
 
-        this.loadComponents(path.join(process.cwd(), "./assets/ui_components"));
+        this.loadUIComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
     get meta(){

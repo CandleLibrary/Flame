@@ -1,11 +1,9 @@
-//import wick from "@candlefw/wick";
-
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  * Any associated stylesheets are managed through this componnent. 
  */
-class Component {
+export class Component {
 
     constructor(system) {
         //frame for fancy styling
@@ -16,33 +14,18 @@ class Component {
         this.dimensions = document.createElement("div");
         this.dimensions.classList.add("flame_component_dimensions");
 
-        this.iframe = document.createElement("iframe");
-        this.iframe.src = "component_frame.html";
-        this.width = system.project.defaults.component.width;
-        this.height = system.project.defaults.component.height;
 
-        this.IFRAME_LOADED = false;
-
-        this.iframe.onload = (e) => {
-            this.mountListeners();
-            //e.target.contentDocument.body.appendChild(this.data);
-            //e.target.contentWindow.wick = wick;
-            this.window = e.target.contentWindow;
-            this.IFRAME_LOADED = true;
-        };
 
         //Label
         this.name = document.createElement("div");
         this.name.innerHTML = "unnamed";
         this.name.classList.add("flame_component_name");
 
-
         //HTML Data
         this.data = document.createElement("div");
 
         this.style_frame.appendChild(this.dimensions);
         this.style_frame.appendChild(this.name);
-        this.style_frame.appendChild(this.iframe);
 
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;
@@ -62,20 +45,46 @@ class Component {
         this.system = system;
 
         this.action = null;
+
+        const frame = this.createFrameElement();
+
+        this.style_frame.appendChild(frame);
+
+        this.width = this.system.project.defaults.component.width;
+        this.height = this.system.project.defaults.component.height;
+    }
+
+    createFrameElement() {
+
+        this.frame = document.createElement("iframe");
+        this.frame.src = "component_frame.html";
+
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+
+
+        this.IFRAME_LOADED = false;
+
+        this.frame.onload = (e) => {
+
+            this.mountListeners();
+            //e.target.contentDocument.body.appendChild(this.data);
+            //e.target.contentWindow.wick = wick;
+            this.IFRAME_LOADED = true;
+        };
+
+        return this.frame;
     }
 
     mountListeners() {
-        this.system.ui.integrateIframe(this.iframe, this);
-    }
-
-    get element() {
-        return this.style_frame;
+        this.system.ui.integrateComponentFrame(this.frame.contentWindow, this);
     }
 
     addStyle(tree, INLINE) {
         if (!INLINE) {
-            let style = new StyleNode();
-            style.tag = "style"
+            const style = new StyleNode();
+            style.tag = "style";
             this.sources[0].ast.addChild(style);
             style.css = tree;
             tree.addObserver(style);
@@ -87,27 +96,8 @@ class Component {
         }
     }
 
-    cache() {
-
-    }
-
     destroy() {
         this.element = null;
-    }
-
-    /**
-     * @brief Saves file to project directory. 
-     * @details [long description]
-     */
-    saveFile() {
-
-    }
-
-    /**
-     * Caches a bitmap image of the component.
-     */
-    cacheBitmap() {
-
     }
 
     load(document) {
@@ -136,8 +126,7 @@ class Component {
             this.rebuild();
         } else {
 
-        
-            let css = pkg.skeletons[0].tree.css;
+            const css = pkg.skeletons[0].tree.css;
 
             if (css)
                 css.forEach(css => {
@@ -145,37 +134,34 @@ class Component {
                 });
 
             if (this.IFRAME_LOADED) {
-                this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+                this.manager = pkg.mount(this.content, null, false, this);
                 this.sources[0].window = this.window;
                 this.rebuild();
 
             } else
-                this.iframe.addEventListener("load", () => {
-                    this.manager = pkg.mount(this.iframe.contentDocument.body, null, false, this);
+                this.frame.addEventListener("load", () => {
+                    this.manager = pkg.mount(this.content, null, false, this);
                     this.sources[0].window = this.window;
                     this.rebuild();
                 });
         }
+
+        return false;
     }
 
     upImport() {
-
+        /* Empty Function  */
     }
-
-    /**
-     * Mounts the element to the document. 
-     */
-    mount() {}
 
     /**
      * Determines if point is in bounding box. 
      */
     pointInBoundingBox(x, y) {
         this.updateDimensions();
-        let min_x = this.dimensions.left;
-        let max_x = min_x + this.dimensions.width;
-        let min_y = this.dimensions.top;
-        let max_y = min_y + this.dimensions.height;
+        const min_x = this.dimensions.left,
+            max_x = min_x + this.dimensions.width,
+            min_y = this.dimensions.top,
+            max_y = min_y + this.dimensions.height;
         return x >= min_x && x <= max_x && y >= min_y && y <= max_y;
     }
 
@@ -188,6 +174,10 @@ class Component {
         return this.window.document.querySelector(query);
     }
 
+    get window() {
+        return this.frame.contentWindow;
+    }
+
     set x(x) {
         this.element.style.left = x + "px";
     }
@@ -198,13 +188,13 @@ class Component {
     }
 
     set width(w) {
-        this.iframe.width = w;
+        this.frame.width = w;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
 
     set height(h) {
-        this.iframe.height = h;
+        this.frame.height = h;
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
@@ -218,29 +208,34 @@ class Component {
     }
 
     get width() {
-        return parseFloat(this.iframe.width);
+        return parseFloat(this.frame.width);
     }
 
     get height() {
-        return parseFloat(this.iframe.height);
+        return parseFloat(this.frame.height);
     }
 
     get target() {
         return this.element;
     }
 
-    toJSON(){
-        console.log(this.x,this.y)
+    get element() {
+        return this.style_frame;
+    }
+
+    get content() {
+        return this.frame.contentDocument.body;
+    }
+
+    toJSON() {
         return {
-            x:this.x,
-            y:this.y,
-            width:this.width,
-            height:this.height,
-            path:this.doc_path,
-            name:this.doc_name,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            path: this.doc_path,
+            name: this.doc_name,
             type: "html"
         };
     }
 }
-
-export { Component };

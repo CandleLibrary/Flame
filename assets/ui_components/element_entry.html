@@ -1,24 +1,43 @@
-<w-s export="insert dropper droppee" element="div" style="left:((lvl_*5))px; position:relative;border:1px solid black" component="element-entry" draggable="true" ondragover="((over)())" ondragexit="((out)())" ondragleave="((out)())" ondrop="((drop)())" ondragstart="((start)())" ondragstop="((end)())" badge="main">
-    ((lvl_))((tag))((id_))
-    <button onclick="((add)())">
-    </button>
+<w-s export="insert dropper droppee" 
+    element="div" 
+    style="left:((lvl_*5))px; position:relative;border:1px solid black" 
+    component="element-entry" 
+    draggable="true" 
+    ondragover="((over)())" 
+    ondragexit="((out)())" 
+    ondragleave="((out)())" 
+    ondrop="((drop)())" 
+    ondragstart="((start)())" 
+    ondragend="((end)())" 
+    badge="main"
+>
+    ((tag)) ((id_))
+
+    <button onclick="((add)())">o</button>
+
     <script on="((add))" >
         emit("insert", model);
-			</script>
+	</script>
     <style type="text/css"></style>
+
     <script on="((over))" >
+         event.preventDefault() 
     	src.badges.main.style.height = "40px";
     </script>
+
     <script on="((out))" >
     	src.badges.main.style.height = "";
     </script>
+
     <script on="((start))" >
     	emit("droppee", model);
     </script>
+
     <script on="((drop))" >
     	src.badges.main.style.height = "";
     	emit("dropper", model);
     </script>
+
     <script on="((end))" >
     	src.badges.main.style.height = "";
     	emit("droppee", null);

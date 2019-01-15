@@ -48,7 +48,7 @@ RootNode.prototype.reparse = function(text) {
         if (this.par)
             this.par.replace(this, node);
         node.BUILT = true;
-        node.setRebuild(false, true);
+        node.prepRebuild(false, true);
         node.rebuild();
     });
 
@@ -83,13 +83,14 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
     
     if (true || this.CHANGED !== 0) {
 
-        element.style.cssText = "";
+        if(element)
+            element.style.cssText = "";
 
         this.linkCSS(css, win);
         //IO CHANGE 
         //Attributes
         if (this.CHANGED & 4) {
-
+            
             let span = document.createElement("span");
 
             this._build_(span, source, presets, [], taps, {});
@@ -122,38 +123,31 @@ RootNode.prototype.buildExisting = function(element, source, presets, taps, pare
 
         if (true || this.CHANGED & 2) {
             //rebuild children
-            let children = element.childNodes;
-            for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
-                let child = children[i];
-                if (node.buildExisting(child, source, presets, taps, element, win)) i++;
-            }
+
+            const children = (element) ? element.childNodes : [];
+
+            for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) 
+                if (node.buildExisting(children[i], source, presets, taps, element, win)) i++;
         }
     }
 
     return true;
 };
 
-RootNode.prototype.setRebuild = function(child = false, REBUILT = false, INSERTED = false) {
-    if (child) {
-        this.CHANGED |= 2;
-    } else {
-        this.CHANGED |= 1;
-    }
+RootNode.prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false) {
 
-    if (REBUILT) {
-        this.CHANGED |= 4;
-    }
-
-    if (INSERTED) {
-        this.CHANGED |= 8;
-    }
+    this.CHANGED =  
+        this.CHANGED
+        | (!child) 
+        | ((!!child) << 1) 
+        | ((!!(REBUILT || INSERTED)) << 2)
+        | ((!!INSERTED) << 3);
 
     if (this.par)
-        this.par.setRebuild(true);
-    else if (this.merges) {
+        this.par.prepRebuild(true);
+    else if (this.merges) 
         for (let i = 0; i < this.merges.length; i++)
-            this.merges.setRebuild(true);
-    }
+            this.merges.prepRebuild(true);
 };
 
 RootNode.prototype.resetRebuild = function() {
@@ -269,7 +263,7 @@ class DeleteNode extends SourceNode {
 
         let nxt = this.nxt;
         if (this.par)
-            this.par.remC(this);
+            this.par.removeChild(this);
         this.nxt = nxt;
     }
 }

@@ -1,8 +1,6 @@
 //import wick from "@candlefw/wick";
 
-import {
-    Component
-} from "../component/component";
+import { Component } from "./component";
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
@@ -14,7 +12,7 @@ class UIComponent extends Component {
 
         super(system);
 
-        this.iframe.onload = (e) => {
+        this.frame.onload = (e) => {
 
             this.mountListeners();
 
@@ -26,19 +24,19 @@ class UIComponent extends Component {
 
             //e.target.contentWindow.wick = wick;
 
-            this.window = e.target.contentWindow;
+            
 
             this.local_css.forEach((css) => {
                 let style = document.createElement("style");
                 style.innerText = css + "";
-                this.iframe.contentDocument.head.appendChild(style);
+                this.frame.contentDocument.head.appendChild(style);
             });
 
-            this.iframe.onload = null;
+            this.frame.onload = null;
         };
 
         //frame for fancy styling
-        this.iframe.classList.add("flame_ui_component");
+        this.frame.classList.add("flame_ui_component");
 
         this.pkg = null;
 
@@ -59,8 +57,8 @@ class UIComponent extends Component {
             this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
             this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
         });
-        this.iframe.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
-        this.iframe.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
     }
 
     documentReady(pkg) {
@@ -114,11 +112,12 @@ class UIComponent extends Component {
     }
 
     mount(element) {
-        if(this.element.parentNode != element)
+        if (this.element.parentNode != element)
             element.appendChild(this.element);
     }
 
-    unmount() {};
+    unmount() {}
+
 }
 
 export {

@@ -45,7 +45,8 @@
 ## version 0.1.0 - Base Functionality - Current WIP
 
 ### Tools
-- [ ] BoundingBox/Draw creation of new elements/components. Should popup best guess for type of element.
+- [x] Allow creation of elements outside of components. 
+- [x] BoundingBox/Draw creation of new elements/components. Should popup best guess for type of element.
 - [ ] Step based adjustment mode.
 - [ ] Allow center, left, right alignment for groups of elements.
 - [ ] Allow multi selection
@@ -74,4 +75,4 @@
 - [ ] Component and UI header too verbose. Need to use icons and menus to reduce their presence.
 - [ ] Delete/Backspace action in text edit does not update elements.
 
-d3
+d4

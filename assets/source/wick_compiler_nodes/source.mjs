@@ -32,7 +32,7 @@ SourceNode.prototype.buildExisting = function(element, source, presets, taps, wi
             let children = element.childNodes;
             for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
                 let child = children[i];
-                if (node.buildExisting(child, source, presets, taps, null, win, this.css)) i++;
+                if (node.buildExisting(child, source, presets, taps, element, win, this.css)) i++;
             }
         }
     }

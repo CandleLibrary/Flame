@@ -15,7 +15,7 @@ SVGNode.prototype.setSource = RootNode.prototype.setSource;
 // Rebuild all sources relying on this node
 SVGNode.prototype.rebuild = RootNode.prototype.rebuild;
 SVGNode.prototype.buildExisting = RootNode.prototype.buildExisting;
-SVGNode.prototype.setRebuild = RootNode.prototype.setRebuild;
+SVGNode.prototype.prepRebuild = RootNode.prototype.prepRebuild;
 SVGNode.prototype.resetRebuild = RootNode.prototype.resetRebuild;
 SVGNode.prototype.updated = RootNode.prototype.updated;
 SVGNode.prototype.ReparseConstructor = SVGNode;

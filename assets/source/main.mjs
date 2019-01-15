@@ -37,9 +37,13 @@ import { actions } from "./interface/actions/action.mjs";
 //Presets
 import { Presets } from "@candlefw/wick";
 
+const env = require('electron').remote.process.env;
+const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
+const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
 
 class System {
     constructor() {
+        this.TEST_MODE = TEST;
         this.docs = new DocumentManager(this);
         this.css = new CSSManager(this.docs);
         this.html = new HTMLManager(this.docs);
@@ -58,16 +62,11 @@ class System {
  */
 const flame = {
     init: () => {
-        const env = require('electron').remote.process.env;
+
         //Get testing and development flags. 
+        if (TEST) require("chai").should();
 
-        const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
-        const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
-
-        if (TEST)
-            require("chai").should();
-
-        let system = new System();
+        const system = new System();
 
         StyleNode.prototype.flame_system = system;
 
@@ -84,7 +83,7 @@ const flame = {
             //Load in the development component.
             let path = require("path").join(process.cwd(), "assets/components/test.html");
             let doc = system.docs.get(system.docs.loadFile(path));
-            actions.CREATE_COMPONENT(system, doc, { x: 200, y: 200 });
+            actions.CREATE_COMPONENT(system, doc, 200, 200);
             window.flame = flame;
         } else if (TEST) {
             //Load in HTML test runner
@@ -134,6 +133,10 @@ const flame = {
         return { fw, io };
     }
 };
+
+
+
+
 export default flame;
 
 /* Interface files */

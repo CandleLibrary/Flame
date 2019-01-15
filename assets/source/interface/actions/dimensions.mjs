@@ -1,41 +1,43 @@
-import { setNumericalValue, getRatio } from "./common";
+import { setNumericalValue, getRatio, ensureBlocklike, prepRebuild} from "./common";
 
-export function SETWIDTH(system, element, component, x, LINKED = false) {
-    setNumericalValue("width", system, element, component, x, setNumericalValue.parent_width);
-        element.wick_node.setRebuild();
-    if (!LINKED) element.wick_node.rebuild(); 
+export function SETWIDTH(system, component, element, x, LINKED = false) {
+
+    ensureBlocklike(system, component, element);
+    setNumericalValue("width", system, component, element, x, setNumericalValue.parent_width);
+    prepRebuild(element, LINKED);
 }
 
-export function SETHEIGHT(system, element, component, x, LINKED = false) {
-    setNumericalValue("height", system, element, component, x, setNumericalValue.parent_height);
-        element.wick_node.setRebuild();
-    if (!LINKED) element.wick_node.rebuild(); 
+export function SETHEIGHT(system, component, element, x, LINKED = false) {
+
+    ensureBlocklike(system, component, element);
+    setNumericalValue("height", system, component, element, x, setNumericalValue.parent_height);
+    prepRebuild(element, LINKED);
 }
 
-export function SETDELTAWIDTH(system, element, component, dx, ratio = 0, LINKED = false) {
+export function SETDELTAWIDTH(system, component, element, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).width);
 
     if (ratio > 0)
-        SETWIDTH(system, element, component, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, element, component, SETWIDTH, start_x, dx, "width");
-
-        element.wick_node.setRebuild();
-    if (!LINKED) element.wick_node.rebuild(); 
+        SETWIDTH(system, component, element, start_x + dx / ratio, true);
+    else {
+        ensureBlocklike(system, component, element);
+        ratio = getRatio(system, component, element, SETWIDTH, start_x, dx, "width");
+    }
+    prepRebuild(element, LINKED);
 
     return ratio;
 }
 
-export function SETDELTAHEIGHT(system, element, component, dx, ratio = 0, LINKED = false) {
+export function SETDELTAHEIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
     let start_x = parseFloat(component.window.getComputedStyle(element).height);
     
     if (ratio > 0)
-        SETHEIGHT(system, element, component, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, element, component, SETHEIGHT, start_x, dx, "height");
-
-        element.wick_node.setRebuild();
-    if (!LINKED) element.wick_node.rebuild(); 
-
+        SETHEIGHT(system, component, element, start_x + dx / ratio, true);
+    else {
+        ensureBlocklike(system, component, element);
+        ratio = getRatio(system, component, element, SETHEIGHT, start_x, dx, "height");
+    }
+    
+    prepRebuild(element, LINKED);
     return ratio;
 }

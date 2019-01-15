@@ -59,7 +59,7 @@
 - [ ] UI for fonts.
 
 ### File Handling
-- [ ] Auto Save.
+- [x] Auto Save.
 - [x] Saving and loading of files.
 - [x] Change history, undo/redo.
 

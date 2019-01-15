@@ -118,9 +118,6 @@ class UIComponent extends Component {
 
     unmount() {}
 
-     get window(){
-        return this.frame.contentWindow;
-    }
 }
 
 export {

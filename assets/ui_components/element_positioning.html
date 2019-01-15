@@ -45,8 +45,8 @@
 		//get element info
 		let cache = presets.custom.actions.CacheFactory(
 			presets.custom.system,
-			target.element,
-			target.component
+			target.component,
+            target.element
 		);
 
 		emit.pos_type = cache.position;
@@ -59,21 +59,21 @@
 		emit.right = cache.rules.props.right;
 	</script>
     <script on="((sl))" >
-		presets.custom.actions.SETLEFT(presets.custom.system, src.target.element, src.target.component, sl.copy(event.target.value), false);
+		presets.custom.actions.SETLEFT(presets.custom.system, src.target.component,src.target.element,  sl.copy(event.target.value), false);
 		presets.custom.actions.COMPLETE(presets.custom.system);
 		presets.custom.system.ui.update();
 	</script>
     <script on="((cl))" >
-		presets.custom.actions.CONVERT_LEFT(presets.custom.system, src.target.element, src.target.component, cl);
+		presets.custom.actions.CONVERT_LEFT(presets.custom.system,src.target.component, src.target.element,  cl);
 		presets.custom.system.ui.update();
 	</script>
     <script on="((st))" >
-		presets.custom.actions.SETTOP(presets.custom.system, src.target.element, src.target.component, st.copy(event.target.value), false);
+		presets.custom.actions.SETTOP(presets.custom.system,src.target.component,  src.target.element, st.copy(event.target.value), false);
 		presets.custom.actions.COMPLETE(presets.custom.system);
 		presets.custom.system.ui.update();
 	</script>
     <script on="((ct))" >
-		presets.custom.actions.CONVERT_TOP(presets.custom.system, src.target.element, src.target.component, ct);
+		presets.custom.actions.CONVERT_TOP(presets.custom.system,src.target.component, src.target.element,  ct);
 		presets.custom.system.ui.update();
 	</script>
 </w-s>

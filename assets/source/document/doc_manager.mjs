@@ -27,7 +27,7 @@ export class DocumentManager {
         global.fetch = (url) => new Promise((res) => {
             let p = url;
             if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            const doc_id = this.load({
+            const doc_id = this.loadFile({
                 path: path.dirname(p),
                 name: path.basename(p),
                 type: "text/css",

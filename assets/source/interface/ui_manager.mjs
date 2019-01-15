@@ -11,7 +11,7 @@ import Default from "./input_handler/default.mjs";
 import ElementDraw from "./input_handler/element_draw.mjs";
 
 //OTHER imports
-import { CanvasManager } from "./controls_manager";
+import { ControlsManager } from "./controls_manager";
 
 /** GLOBAL EVENTS FILLS **/
 
@@ -66,17 +66,17 @@ export class UI_Manager {
         this.main_menu.setAttribute("show", "false");
         this.element.appendChild(this.main_menu);
 
-        //CanvasManager provides onscreen transform visual widgets for components and elements.
-        this.canvas = new CanvasManager();
-        this.canvas.resize(this.transform);
-        this.element.appendChild(this.canvas.element);
+        //ControlsManager provides onscreen transform visual widgets for components and elements.
+        this.controls = new ControlsManager();
+        this.controls.resize(this.transform);
+        this.element.appendChild(this.controls.element);
 
         /** SYSTEMS *******************************/
         this.svg_manager = new SVGManager(system);
         this.line_machine = new LineMachine();
 
         // **************** Eventing *****************
-        window.addEventListener("resize", e => this.canvas.resize(this.transform));
+        window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
         window.addEventListener("mouseover", e => {});
@@ -134,9 +134,9 @@ export class UI_Manager {
     }
 
     render() {
-        this.canvas.render(this.transform);
-        if (this.target)
-            this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
+        this.controls.render(this.transform);
+        if (this.target && this.RENDER_LINES)
+            this.line_machine.render(this.controls.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 
@@ -180,7 +180,9 @@ export class UI_Manager {
     setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
-        if ((target = this.canvas.pointerDown(e, x, y, this.transform))) {
+        const IS_ON_MASTER = component == this.master_component;
+
+        if ((target = this.controls.pointerDown(e, x, y, this.transform, IS_ON_MASTER))) {
 
             this.target = target;
 
@@ -199,8 +201,8 @@ export class UI_Manager {
             return true;
         }
 
-
         if (SET_MENU) this.main_menu.setAttribute("show", "false");
+
         return false;
 
     }
@@ -209,20 +211,14 @@ export class UI_Manager {
 
     integrateComponentFrame(frame, component) {
 
-        frame.addEventListener("wheel", e => {
-            const x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px,
-                y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
-            this.handleScroll(e, x, y);
-        });
-
         frame.addEventListener("mousedown", e => {
 
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
             this.last_action = Date.now();
 
-            if(component == this.master_component)
+            if (component == this.master_component)
                 this.handlePointerDownEvent(e);
             else
                 this.handlePointerDownEvent(e, x, y);
@@ -230,11 +226,11 @@ export class UI_Manager {
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
-                        this.canvas.setIframeTarget(component, component.element, true);
+                        this.controls.setTarget(component, component.element, true, true);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
-                        this.canvas.setIframeTarget(component, e.target);
+                        this.controls.setTarget(component, e.target, component == this.master_component);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -242,23 +238,36 @@ export class UI_Manager {
             }
             return false;
         });
+        
+        if (component !== this.master_component)
+            frame.addEventListener("wheel", e => {
+                const x1 = e.pageX,
+                    y1 = e.pageY,
+                    x2 = component.x,
+                    y2 = component.y,
+                    x = (x1 + x2) * this.transform.scale + this.transform.px,
+                    y = (y1 + y2) * this.transform.scale + this.transform.py;
+
+                this.handleScroll(e, x, y);
+            });
 
         frame.addEventListener("mousemove", e => {
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
-            if(component == this.master_component)
+            if (component == this.master_component) {
+
                 this.handlePointerMoveEvent(e);
-            else
+            } else
                 this.handlePointerMoveEvent(e, x, y);
-            
+
             return false;
         });
 
         frame.addEventListener("mouseup", e => {
             const t = Date.now();
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
@@ -268,13 +277,12 @@ export class UI_Manager {
                     this.handleContextMenu(e, component);
                 } else {
                     if (e.target.tagName == "BODY") {
-                        this.canvas.setIframeTarget(component, component.element, true);
+                        this.controls.setTarget(component, component.element, true);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                        this.canvas.setIframeTarget(component, e.target);
+                        this.controls.setTarget(component, e.target, component == this.master_component);
                         this.render();
-
                         this.setTarget(e, component, x, y);
                     }
                     DD_Candidate = Date.now();
@@ -317,6 +325,7 @@ export class UI_Manager {
     }
 
     handleScroll(e, x, y) {
+        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
         this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
         e.preventDefault();
     }

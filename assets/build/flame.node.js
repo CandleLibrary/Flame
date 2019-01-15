@@ -12930,6 +12930,8 @@ class Source extends View {
 
         model.addView(this);
 
+        this.model = model;
+
         for (let name in this.taps)
             this.taps[name].load(this.model, false);
 
@@ -17156,6 +17158,10 @@ class Component {
         this.frame = document.createElement("iframe");
         this.frame.src = "component_frame.html";
 
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+
 
         this.IFRAME_LOADED = false;
 
@@ -18654,9 +18660,6 @@ class UIComponent extends Component {
 
     unmount() {}
 
-     get window(){
-        return this.frame.contentWindow;
-    }
 }
 
 /**
@@ -18670,6 +18673,7 @@ class MasterComponent extends Component {
 
         this.width = 1920;
         this.height = 1080;
+        this.IS_MASTER = true;
     }
 
     createFrameElement(){
@@ -18709,27 +18713,47 @@ class MasterComponent extends Component {
 }
 
 class LineBox {
+    constructor(ON_MAIN = false){
+        this.rect = null;
+        this.ON_MAIN = ON_MAIN;
+    }
     get l() {
-        return this.rect.x + this.component.x + 4;
+        return this.rect.x + this.component.x;
     }
 
     get t() {
-        return this.rect.y + this.component.y + 4;
+        return this.rect.y + this.component.y;
     }
 
     get b() {
-        return this.rect.y + this.rect.height + this.component.y + 4;
+        return this.rect.y + this.rect.height + this.component.y;
     }
 
     get r() {
-        return this.rect.x + this.rect.width + this.component.x + 4;
+        return this.rect.x + this.rect.width + this.component.x;
+    }
+
+    getTransformed(trs){
+
+        if(this.ON_MAIN)
+            return {l:this.l, r:this.r, t:this.t, b:this.b};
+        else{
+
+            const 
+                l = (this.l)*trs.scale+trs.px,
+                t = (this.t)*trs.scale+trs.py,
+                r = (this.r)*trs.scale+trs.px,
+                b = (this.b)*trs.scale+trs.py;
+            return {l, r, t, b};
+        }
     }
 }
 
 class ElementLineBox extends LineBox {
     constructor(element, component) {
-        super();
+        super(!!component.IS_MASTER);
         this.rect = element.getBoundingClientRect();
+
         this.component = component;
     }
 }
@@ -18783,6 +18807,7 @@ class LineMachine {
     }
 
     setPotentialBoxes(element, component, components) {
+
         this.boxes.length = 0;
 
         if (!element) {
@@ -18896,7 +18921,6 @@ class LineMachine {
         }
         else
             this.activey.id = -1;
-        console.log(MX);
 
         return { dx: dx_, dy: dy_, MX, MY };
     }
@@ -18905,16 +18929,19 @@ class LineMachine {
 
         if (!boxc || this.boxes.length == 0) return;
 
+        boxc = boxc.getTransformed(transform);
+
         ctx.save();
-        transform.setCTX(ctx);
 
         if (this.activex.id > -1) {
             //0 = l, 1 = r, 2 = c 
             ctx.strokeStyle = "red";
-            let box = this.boxes[this.activex.id];
-            let x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
-            let y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt];
-            let y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+
+            const   
+                box = this.boxes[this.activex.id].getTransformed(transform),
+                x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt],
+                y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
+                y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
             ctx.beginPath();
             ctx.moveTo(x, y1);
             ctx.lineTo(x, y2);
@@ -18924,10 +18951,13 @@ class LineMachine {
         if (this.activey.id > -1) {
             //0 = t, 1 = b, 2 = c 
             ctx.strokeStyle = "green";
-            let box = this.boxes[this.activey.id];
-            let y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
-            let x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt];
-            let x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+
+            const 
+                box = this.boxes[this.activey.id].getTransformed(transform),
+                y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt],
+                x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
+                x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+
             ctx.beginPath();
             ctx.moveTo(x1, y);
             ctx.lineTo(x2, y);
@@ -19125,8 +19155,6 @@ class Default extends Handler {
         const x = data.x || ui.transform.getLocalX(event.pageX),
               y = data.y || ui.transform.getLocalY(event.pageY);
 
-         console.log("start",{x,y});
-
         if (event.button == 1) {
 
             if (isNaN(x) || isNaN(y))
@@ -19140,6 +19168,8 @@ class Default extends Handler {
             return this.constructor.default;
         }
 
+        ui.RENDER_LINES = true;
+
         this.origin_x = x;
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
@@ -19149,6 +19179,7 @@ class Default extends Handler {
 
         ui.canvas.clearTargets(ui.transform);
         ui.main_menu.setAttribute("show", "false");
+
 
         return this.constructor.default;
     }
@@ -19205,6 +19236,9 @@ class Default extends Handler {
         else if (ui.target)
             actions.COMPLETE(ui.system, ui.target.component, ui.target.element);
 
+        ui.RENDER_LINES = false;
+        ui.render();
+
         return this.constructor.default;
     }
 
@@ -19219,7 +19253,7 @@ class Default extends Handler {
         return this.constructor.default;
     }
 
-    scroll(event, ui) {
+    scroll(event, ui, data) {
         const amount = event.deltaY,
             os = ui.transform.scale;
 
@@ -19229,8 +19263,8 @@ class Default extends Handler {
             s = ui.transform.scale,
             py = ui.transform.py;
 
-        ui.transform.px -= ((((px - event.x) * os) - ((px - event.x) * s))) / (os);
-        ui.transform.py -= ((((py - event.y) * os) - ((py - event.y) * s))) / (os);
+        ui.transform.px -= ((((px - data.x) * os) - ((px - data.x) * s))) / (os);
+        ui.transform.py -= ((((py - data.y) * os) - ((py - data.y) * s))) / (os);
         ui.render();
         ui.view_element.style.transform = ui.transform;
 
@@ -19285,7 +19319,7 @@ class ElementDraw extends Default {
 
         const x = data.x || ui.transform.getLocalX(event.pageX),
             y = data.y || ui.transform.getLocalY(event.pageY);
-        console.log(x,y);
+
         this.origin_x = x;
         this.origin_y = y;
         
@@ -19301,14 +19335,14 @@ class ElementDraw extends Default {
         const x2 = Math.max(this.origin_x, this.root_x);
         const y2 = Math.max(this.origin_y, this.root_y);
 
-        console.log(x1,y1,x2,y2);
-
         actions.CREATE_ELEMENT(
             ui.system,
             ui.master_component,
             ui.master_component.sourceElement,
             "div",
             x1, y1, x2 - x1, y2 - y1);
+
+        ui.render();
 
         return default_handler;
     }
@@ -19326,8 +19360,25 @@ function gripPoint(ctx, x, y, r) {
     ctx.stroke();
 }
 
-class BoxElement {
+function getTransformed(trs){
+if(this.ON_MAIN)
+            return {l:this.l, r:this.r, t:this.t, b:this.b};
+        else{
+
+            const 
+                l = (this.l)*trs.scale+trs.px,
+                t = (this.t)*trs.scale+trs.py,
+                r = (this.r)*trs.scale+trs.px,
+                b = (this.b)*trs.scale+trs.py;
+
+            return {l, r, t, b};
+        }
+}
+
+class ControlWidget {
     constructor() {
+        this.IS_ON_MASTER = false;
+
         this._ml = 0;
         this._mr = 0;
         this._mt = 0;
@@ -19353,7 +19404,6 @@ class BoxElement {
         this.w = 0; //width of border box
         this.h = 0; //height of border box
         this.br = 0;
-        this.IS_COMPONENT = false;
 
         this.target = {
             IS_COMPONENT: false,
@@ -19368,6 +19418,8 @@ class BoxElement {
 
         const box = (this.target.box) ? this.target.box : { l: 0, r: 0, t: 0, b: 0 };
         this.target.box = box;
+        this.target.box.ON_MAIN = this.IS_ON_MASTER;
+        this.target.box.getTransformed = getTransformed;
         switch (this.target.action) {
             case actions.MOVE:
                 box.l = this.cbl;
@@ -19434,24 +19486,26 @@ class BoxElement {
         }
     }
 
-    setDimensions(IS_COMPONENT = this.IS_COMPONENT) {
-        let component = this.target.component;
+    setDimensions() {
+        const component = this.target.component;
+        const IS_COMPONENT = !!this.target.IS_COMPONENT;
+        const IS_ON_MASTER = !!this.IS_ON_MASTER;
 
         if (IS_COMPONENT) {
-            this.IS_COMPONENT = true;
-            this.x = component.x + 4;
-            this.y = component.y + 4;
-            this.w = component.width;
-            this.h = component.height;
+            const rect = this.target.element.getBoundingClientRect();
+            this.x = rect.left;//component.x;
+            this.y = rect.top;//component.y;
+            this.w = rect.width;
+            this.h = rect.height;
         } else {
-            let rect = this.target.element.getBoundingClientRect();
-            this.x = rect.left + component.x + 4;
-            this.y = rect.top + component.y + 4;
+            const rect = this.target.element.getBoundingClientRect();
+            this.x = rect.left + component.x;
+            this.y = rect.top + component.y;
             this.w = rect.width;
             this.h = rect.height;
         }
 
-        let par_prop = component.window.getComputedStyle(this.target.element);
+        const par_prop = component.window.getComputedStyle(this.target.element);
 
         //margin
         this._ml = parseFloat(par_prop.getPropertyValue("margin-left"));
@@ -19480,24 +19534,27 @@ class BoxElement {
     }
 
     //Margin box
-    get ml() { return this.x - this._ml - this.posl; }
-    get mt() { return this.y - this._mt - this.post; }
-    get mr() { return this.w + this._mr + this._ml + this.ml; }
-    get mb() { return this.h + this._mb + this._mt + this.mt; }
+    get ml() { return this.x - this._ml - this.posl }
+    get mt() { return this.y - this._mt - this.post }
+    get mr() { return this.w + this._mr + this._ml + this.ml }
+    get mb() { return this.h + this._mb + this._mt + this.mt }
 
     //Padding box
-    get pl() { return this.x + this._pl + this.bl; }
-    get pt() { return this.y + this._pt + this.bt; }
-    get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl; }
-    get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt; }
+    get pl() { return this.x + this._pl + this.bl }
+    get pt() { return this.y + this._pt + this.bt }
+    get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl }
+    get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt }
 
     //Content box
-    get cbl() { return this.x + this.bl; }
-    get cbt() { return this.y + this.bt; }
-    get cbr() { return this.w - this.br - this.bl + this.cbl; }
-    get cbb() { return this.h - this.bb - this.bt + this.cbt; }
+    get cbl() { return this.x + this.bl }
+    get cbt() { return this.y + this.bt }
+    get cbr() { return this.w - this.br - this.bl + this.cbl }
+    get cbb() { return this.h - this.bb - this.bt + this.cbt }
 
     render(ctx, scale) {
+
+        const IS_COMPONENT = !!this.target.IS_COMPONENT;
+
         this.setDimensions();
 
         ctx.strokeStyle = "rgb(0,0,0)";
@@ -19525,11 +19582,11 @@ class BoxElement {
         let cbb = this.cbb;
 
 
-        if (!this.IS_COMPONENT) {
+        if (!IS_COMPONENT) {
             ctx.strokeRect(ml, mt, mr - ml, mb - mt);
             ctx.strokeRect(pl, pt, pr - pl, pb - pt);
         }
-        
+
         ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
 
         //Render Markers
@@ -19545,7 +19602,7 @@ class BoxElement {
         gripPoint(ctx, cbl, cbb, r);
         gripPoint(ctx, cbr, cbb, r);
 
-        if (!this.IS_COMPONENT) {
+        if (!IS_COMPONENT) {
 
             //Margin Markers
             gripPoint(ctx, ml, mt, r);
@@ -19561,14 +19618,15 @@ class BoxElement {
         }
     }
 
-    setTarget(component, element, IS_COMPONENT) {
+    setTarget(component, element, IS_ON_MASTER = false) {
         this.target.element = element;
         this.target.component = component;
-        this.target.IS_COMPONENT = IS_COMPONENT;
+        this.target.IS_COMPONENT = (element) == component.element;
+        this.IS_ON_MASTER = IS_ON_MASTER;
     }
 }
 
-class CanvasManager {
+class ControlsManager {
     constructor() {
         //Canvas setup.
         this.element = document.createElement("canvas");
@@ -19576,30 +19634,53 @@ class CanvasManager {
         this.ctx = this.element.getContext("2d");
     }
 
-    setIframeTarget(component, element, IS_COMPONENT = false) {
-        let box = new BoxElement(element);
+    addTarget(component, element, IS_COMPONENT, IS_ON_MASTER){
+
+    }
+
+    removeTarget(component, element){
+
+    }
+   
+    setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
+        const box = new ControlWidget(element);
+        box.IS_ON_MASTER = IS_ON_MASTER;
         box.setTarget(component, element, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
     }
+    
+    clearTargets(transform) {
+        this.widget = null;
+        this.render(transform);
+    }
 
     render(transform) {
         this.element.width = this.element.width;
+
         if (this.widget) {
+            let scale = 1;
+            
             this.ctx.save();
-            transform.setCTX(this.ctx);
-            this.widget.render(this.ctx, transform.scale);
+
+            if (!this.widget.IS_ON_MASTER) {
+                transform.setCTX(this.ctx);
+                scale = transform.scale;
+            }
+
+            this.widget.render(this.ctx, scale);
+
             this.ctx.restore();
         }
     }
 
-    pointerDown(e, x, y, transform) {
-        let widget = this.widget;
+    pointerDown(e, x, y, transform, IS_ON_MASTER = false) {
+        const widget = this.widget;
         if (widget) {
 
             widget.target.action = null;
 
-            let tr = 5 / transform.scale; //touch radius
+            let tr = 5 / transform.scale; //(false) ? 1 : transform.scale; //touch radius
 
             //Margin box
             let ml = widget.ml; // widget.x - widget.ml - widget.posl;
@@ -19693,8 +19774,8 @@ class CanvasManager {
                 }
                 break;
             }
-            if (widget.target.action) {
 
+            if (widget.target.action) {
                 widget.setBox();
                 return widget.target;
             }
@@ -19728,11 +19809,6 @@ class CanvasManager {
     resize(transform) {
         this.element.width = window.innerWidth;
         this.element.height = window.innerHeight;
-        this.render(transform);
-    }
-
-    clearTargets(transform) {
-        this.widget = null;
         this.render(transform);
     }
 }
@@ -19792,17 +19868,17 @@ class UI_Manager {
         this.main_menu.setAttribute("show", "false");
         this.element.appendChild(this.main_menu);
 
-        //CanvasManager provides onscreen transform visual widgets for components and elements.
-        this.canvas = new CanvasManager();
-        this.canvas.resize(this.transform);
-        this.element.appendChild(this.canvas.element);
+        //ControlsManager provides onscreen transform visual widgets for components and elements.
+        this.controls = new ControlsManager();
+        this.controls.resize(this.transform);
+        this.element.appendChild(this.controls.element);
 
         /** SYSTEMS *******************************/
         this.svg_manager = new SVGManager(system);
         this.line_machine = new LineMachine();
 
         // **************** Eventing *****************
-        window.addEventListener("resize", e => this.canvas.resize(this.transform));
+        window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
         window.addEventListener("mouseover", e => {});
@@ -19860,9 +19936,9 @@ class UI_Manager {
     }
 
     render() {
-        this.canvas.render(this.transform);
-        if (this.target)
-            this.line_machine.render(this.canvas.ctx, this.transform, this.target.box);
+        this.controls.render(this.transform);
+        if (this.target && this.RENDER_LINES)
+            this.line_machine.render(this.controls.ctx, this.transform, this.target.box);
         this.loadedComponents.forEach(c => c.set(this.target));
     }
 
@@ -19906,7 +19982,9 @@ class UI_Manager {
     setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
-        if ((target = this.canvas.pointerDown(e, x, y, this.transform))) {
+        const IS_ON_MASTER = component == this.master_component;
+
+        if ((target = this.controls.pointerDown(e, x, y, this.transform, IS_ON_MASTER))) {
 
             this.target = target;
 
@@ -19925,8 +20003,8 @@ class UI_Manager {
             return true;
         }
 
-
         if (SET_MENU) this.main_menu.setAttribute("show", "false");
+
         return false;
 
     }
@@ -19935,20 +20013,14 @@ class UI_Manager {
 
     integrateComponentFrame(frame, component) {
 
-        frame.addEventListener("wheel", e => {
-            const x = ((component.x + 4 + e.pageX) * this.transform.scale) + this.transform.px,
-                y = ((component.y + 4 + e.pageY) * this.transform.scale) + this.transform.py;
-            this.handleScroll(e, x, y);
-        });
-
         frame.addEventListener("mousedown", e => {
 
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
             this.last_action = Date.now();
 
-            if(component == this.master_component)
+            if (component == this.master_component)
                 this.handlePointerDownEvent(e);
             else
                 this.handlePointerDownEvent(e, x, y);
@@ -19956,11 +20028,11 @@ class UI_Manager {
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
-                        this.canvas.setIframeTarget(component, component.element, true);
+                        this.controls.setTarget(component, component.element, true, true);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
-                        this.canvas.setIframeTarget(component, e.target);
+                        this.controls.setTarget(component, e.target, component == this.master_component);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -19968,23 +20040,36 @@ class UI_Manager {
             }
             return false;
         });
+        
+        if (component !== this.master_component)
+            frame.addEventListener("wheel", e => {
+                const x1 = e.pageX,
+                    y1 = e.pageY,
+                    x2 = component.x,
+                    y2 = component.y,
+                    x = (x1 + x2) * this.transform.scale + this.transform.px,
+                    y = (y1 + y2) * this.transform.scale + this.transform.py;
+
+                this.handleScroll(e, x, y);
+            });
 
         frame.addEventListener("mousemove", e => {
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
-            if(component == this.master_component)
+            if (component == this.master_component) {
+
                 this.handlePointerMoveEvent(e);
-            else
+            } else
                 this.handlePointerMoveEvent(e, x, y);
-            
+
             return false;
         });
 
         frame.addEventListener("mouseup", e => {
             const t = Date.now();
-            const x = e.pageX + 4 + component.x;
-            const y = e.pageY + 4 + component.y;
+            const x = e.pageX + component.x;
+            const y = e.pageY + component.y;
 
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
@@ -19994,13 +20079,12 @@ class UI_Manager {
                     this.handleContextMenu(e, component);
                 } else {
                     if (e.target.tagName == "BODY") {
-                        this.canvas.setIframeTarget(component, component.element, true);
+                        this.controls.setTarget(component, component.element, true);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                        this.canvas.setIframeTarget(component, e.target);
+                        this.controls.setTarget(component, e.target, component == this.master_component);
                         this.render();
-
                         this.setTarget(e, component, x, y);
                     }
                     DD_Candidate = Date.now();
@@ -20043,6 +20127,7 @@ class UI_Manager {
     }
 
     handleScroll(e, x, y) {
+        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
         this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
         e.preventDefault();
     }
@@ -21002,7 +21087,7 @@ class DocumentManager {
         global.fetch = (url) => new Promise((res) => {
             let p = url;
             if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            const doc_id = this.load({
+            const doc_id = this.loadFile({
                 path: path.dirname(p),
                 name: path.basename(p),
                 type: "text/css",

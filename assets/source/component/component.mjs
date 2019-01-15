@@ -59,6 +59,10 @@ export class Component {
         this.frame = document.createElement("iframe");
         this.frame.src = "component_frame.html";
 
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+
 
         this.IFRAME_LOADED = false;
 

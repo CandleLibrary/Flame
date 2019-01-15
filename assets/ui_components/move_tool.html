@@ -41,30 +41,30 @@
 	</script>
     <script on="((brl))" >
 		if(src.target)
-			presets.custom.actions.BORDERRADIUSTL(presets.custom.system, src.target.element, src.target.component, brl);
+			presets.custom.actions.BORDERRADIUSTL(presets.custom.system, src.target.component, src.target.element, brl);
 	</script>
     <script on="((center))" >
 		if(src.target)
-			presets.custom.actions.CENTER(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.actions.CENTER(presets.custom.system, src.target.component, src.target.element);
 	</script>
     <script on="((xtoggle))" >
 		if(src.target)
-			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.element, src.target.component, true);
+			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.component, src.target.element, true);
 	</script>
     <script on="((ytoggle))" >
 		if(src.target)
-			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.element, src.target.component, false, true);
+			presets.custom.actions.TOGGLE_UNIT(presets.custom.system, src.target.component, src.target.element,  false, true);
 	</script>
     <script on="((ptoggle))" >
 		if(src.target){
-			presets.custom.actions.TOPOSITIONABSOLUTE(presets.custom.system, src.target.element, src.target.component);
-			presets.custom.actions.COMPLETE(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.actions.TOPOSITIONABSOLUTE(presets.custom.system, src.target.component, src.target.element);
+			presets.custom.actions.COMPLETE(presets.custom.system, src.target.component, src.target.element);
 		}
 	</script>
     <script on="((rtoggle))" >
 		if(src.target){
-			presets.custom.actions.TOPOSITIONRELATIVE(presets.custom.system, src.target.element, src.target.component);
-			presets.custom.actions.COMPLETE(presets.custom.system, src.target.element, src.target.component);
+			presets.custom.actions.TOPOSITIONRELATIVE(presets.custom.system, src.target.component, src.target.element);
+			presets.custom.actions.COMPLETE(presets.custom.system, src.target.component, src.target.element);
 		}
 	</script>
 </w-s>

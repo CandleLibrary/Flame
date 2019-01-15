@@ -11,12 +11,13 @@ export class MasterComponent extends Component {
 
         this.width = 1920;
         this.height = 1080;
+        this.IS_MASTER = true;
     }
 
     createFrameElement(){
 
         this.frame = document.createElement("div");
-        this.frame.id = "master_component"
+        this.frame.id = "master_component";
        // this.frame.src = "component_frame.html";
         //this.frame.setAttribute("frameBorder", "0");
         this.frame.style.position = "fixed";

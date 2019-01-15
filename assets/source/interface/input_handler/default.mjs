@@ -15,8 +15,6 @@ export default class Default extends Handler {
         const x = data.x || ui.transform.getLocalX(event.pageX),
               y = data.y || ui.transform.getLocalY(event.pageY);
 
-         console.log("start",{x,y})
-
         if (event.button == 1) {
 
             if (isNaN(x) || isNaN(y))
@@ -30,6 +28,8 @@ export default class Default extends Handler {
             return this.constructor.default;
         }
 
+        ui.RENDER_LINES = true;
+
         this.origin_x = x;
         this.origin_y = y;
         this.ACTIVE_POINTER_INPUT = true;
@@ -39,6 +39,7 @@ export default class Default extends Handler {
 
         ui.canvas.clearTargets(ui.transform);
         ui.main_menu.setAttribute("show", "false");
+
 
         return this.constructor.default;
     }
@@ -95,6 +96,9 @@ export default class Default extends Handler {
         else if (ui.target)
             actions.COMPLETE(ui.system, ui.target.component, ui.target.element);
 
+        ui.RENDER_LINES = false;
+        ui.render();
+
         return this.constructor.default;
     }
 
@@ -109,7 +113,7 @@ export default class Default extends Handler {
         return this.constructor.default;
     }
 
-    scroll(event, ui) {
+    scroll(event, ui, data) {
         const amount = event.deltaY,
             os = ui.transform.scale;
 
@@ -119,8 +123,8 @@ export default class Default extends Handler {
             s = ui.transform.scale,
             py = ui.transform.py;
 
-        ui.transform.px -= ((((px - event.x) * os) - ((px - event.x) * s))) / (os);
-        ui.transform.py -= ((((py - event.y) * os) - ((py - event.y) * s))) / (os);
+        ui.transform.px -= ((((px - data.x) * os) - ((px - data.x) * s))) / (os);
+        ui.transform.py -= ((((py - data.y) * os) - ((py - data.y) * s))) / (os);
         ui.render();
         ui.view_element.style.transform = ui.transform;
 

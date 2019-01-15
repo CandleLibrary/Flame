@@ -33,7 +33,7 @@ export default class ElementDraw extends Default {
 
         const x = data.x || ui.transform.getLocalX(event.pageX),
             y = data.y || ui.transform.getLocalY(event.pageY);
-        console.log(x,y)
+
         this.origin_x = x;
         this.origin_y = y;
         
@@ -49,14 +49,14 @@ export default class ElementDraw extends Default {
         const x2 = Math.max(this.origin_x, this.root_x);
         const y2 = Math.max(this.origin_y, this.root_y);
 
-        console.log(x1,y1,x2,y2)
-
         actions.CREATE_ELEMENT(
             ui.system,
             ui.master_component,
             ui.master_component.sourceElement,
             "div",
             x1, y1, x2 - x1, y2 - y1);
+
+        ui.render();
 
         return default_handler;
     }

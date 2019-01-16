@@ -33,7 +33,7 @@ function CREATION(system, env) {
                 throw new Error("failed to create component on master component");
 
             const style = system.ui.master_component.window.getComputedStyle(element);
-            const rules = css.mergeRules(css.aquireCSS(element, system.ui.master_component));
+            const rules = css.mergeRules(css.aquireCSS(system.ui.master_component, element));
 
             style.left.should.equal("20px");
             style.top.should.equal("20px");
@@ -63,7 +63,7 @@ function CREATION(system, env) {
             compb.window.document.body.children[0].children.should.have.lengthOf(10);
 
             const style = system.ui.master_component.window.getComputedStyle(element);
-            const rules = css.mergeRules(css.aquireCSS(element, system.ui.master_component));
+            const rules = css.mergeRules(css.aquireCSS(system.ui.master_component, element));
 
             style.left.should.equal("50px");
             style.top.should.equal("50px");
@@ -91,7 +91,7 @@ function CREATION(system, env) {
             compb.window.document.body.children[0].children.should.have.lengthOf(10);
 
             const style = system.ui.master_component.window.getComputedStyle(element);
-            const rules = css.mergeRules(css.aquireCSS(element, system.ui.master_component));
+            const rules = css.mergeRules(css.aquireCSS(system.ui.master_component, element));
 
             style.left.should.equal("50px");
             style.top.should.equal("50px");

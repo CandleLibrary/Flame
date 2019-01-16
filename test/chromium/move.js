@@ -22,8 +22,8 @@ function MOVE(system, env) {
 
             //Span
             let style = component.window.getComputedStyle(element);
-            system.actions.MOVE(system, element, component, 10, 0, false);
-            let rules = css.mergeRules(css.aquireCSS(element, component));
+            system.actions.MOVE(system, component, element,  10, 0, false);
+            let rules = css.mergeRules(css.aquireCSS(component, element));
             rules.props.left.should.equal(10);
             rules.props.position.should.equal("relative");
             style.left.should.equal("10px");
@@ -32,8 +32,8 @@ function MOVE(system, env) {
 
             //Input
             style = component.window.getComputedStyle(input);
-            system.actions.MOVE(system, input, component, 50, 40, false);
-            rules = css.mergeRules(css.aquireCSS(input, component));
+            system.actions.MOVE(system, component, input,  50, 40, false);
+            rules = css.mergeRules(css.aquireCSS(component, input));
             rules.props.left.should.equal(50);
             rules.props.position.should.equal("relative");
             style.left.should.equal("50px");
@@ -51,7 +51,7 @@ function MOVE(system, env) {
             let top = rect.top;
 
             //Absolute
-            system.actions.TOPOSITIONABSOLUTE(system, element, component);
+            system.actions.TOPOSITIONABSOLUTE(system, component, element);
             style.position.should.equal("absolute");
             rect = element.getBoundingClientRect();
             rect.left.should.equal(left);
@@ -59,7 +59,7 @@ function MOVE(system, env) {
             element.flame_cache = null;
 
             //Relative
-            system.actions.TOPOSITIONRELATIVE(system, element, component);
+            system.actions.TOPOSITIONRELATIVE(system, component, element);
             style.position.should.equal("relative");
             style.left.should.equal("0px");
             style.top.should.equal("0px");
@@ -75,14 +75,14 @@ function MOVE(system, env) {
             top = rect.top;
 
             //Absolute
-            system.actions.TOPOSITIONABSOLUTE(system, input, component);
+            system.actions.TOPOSITIONABSOLUTE(system, component, input);
             style.position.should.equal("absolute");
             rect = input.getBoundingClientRect();
             rect.left.should.equal(left);
             rect.top.should.equal(top);
             input.flame_cache = null;
             //Relative
-            system.actions.TOPOSITIONRELATIVE(system, input, component);
+            system.actions.TOPOSITIONRELATIVE(system, component, input);
             style.position.should.equal("relative");
             style.left.should.equal("0px");
             style.top.should.equal("0px");
@@ -102,17 +102,17 @@ function MOVE(system, env) {
             rect = element.getBoundingClientRect();
             const left = rect.left;
             const top = rect.top;
-            system.actions.CONVERT_LEFT(system, element, component, "%");
+            system.actions.CONVERT_LEFT(system, component, element, "%");
             rect = element.getBoundingClientRect();
             left.should.equal(rect.left);
-            system.actions.CONVERT_LEFT(system, element, component, "px");
+            system.actions.CONVERT_LEFT(system, component, element, "px");
             rect = element.getBoundingClientRect();
             left.should.equal(rect.left);
 
-            system.actions.CONVERT_TOP(system, element, component, "%");
+            system.actions.CONVERT_TOP(system, component, element, "%");
             rect = element.getBoundingClientRect();
             top.should.equal(rect.top);
-            system.actions.CONVERT_TOP(system, element, component, "px");
+            system.actions.CONVERT_TOP(system, component, element, "px");
             rect = element.getBoundingClientRect();
             top.should.equal(rect.top);
         });

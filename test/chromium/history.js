@@ -21,16 +21,16 @@ function HISTORY(system, env) {
 
         it("Basic history commands UNDO and REDO", function() {
 
-            system.actions.MOVE(system, element, component, 10, 10, false);
+            system.actions.MOVE(system, component, element, 10, 10, false);
             system.actions.COMPLETE(system, element);
 
-            const rules = css.mergeRules(css.aquireCSS(element, component));
+            const rules = css.mergeRules(css.aquireCSS(component, element));
             rules.props.left.should.equal(10);
             rules.props.position.should.equal("relative");
             style.left.should.equal("10px");
             style.top.should.equal("10px");
 
-            system.actions.MOVE(system, element, component, 20, 20, false);
+            system.actions.MOVE(system, component, element, 20, 20, false);
             system.actions.COMPLETE(system, element);
 
             style.left.should.equal("30px");

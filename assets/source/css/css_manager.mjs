@@ -38,7 +38,7 @@ export class CSSManager {
         let css_docs = component.local_css;
 
         let selectors = [];
-
+        
         for (let i = 0; i < css_docs.length; i++) {
             let gen = css_docs[i].getApplicableSelectors(element, win),
                 sel = null;

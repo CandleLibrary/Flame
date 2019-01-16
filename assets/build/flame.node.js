@@ -8038,7 +8038,7 @@ class Cache {
         if(!system)
             return
 
-        this.generateMovementCache(system, this.element, this.component);
+        this.generateMovementCache(system, this.component, this.element);
     }
 
     generateMovementCache(system, component, element) {
@@ -16994,10 +16994,11 @@ class SourcePackage {
 
             element = shadow_root;
 
-            for (i = 0, l = this.styles.length; i < l; i++) {
-                let style = cloneNode(this.styles[i], true);
-                appendChild(element, style);
-            }
+            if(this.styles)
+                for (i = 0, l = this.styles.length; i < l; i++) {
+                    let style = cloneNode(this.styles[i], true);
+                    appendChild(element, style);
+                }
         }
 
         for (i = 0, l = this.skeletons.length; i < l; i++) {
@@ -20310,7 +20311,7 @@ class CSSManager {
         let css_docs = component.local_css;
 
         let selectors = [];
-
+        
         for (let i = 0; i < css_docs.length; i++) {
             let gen = css_docs[i].getApplicableSelectors(element, win),
                 sel = null;

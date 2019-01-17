@@ -35,7 +35,9 @@ export class Project {
         this.setDefaults();
     }
 
-
+    /**
+     * @brief Applies system defaults.
+     */
     setPresets(){
 
         const system = this.system;

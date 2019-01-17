@@ -3,8 +3,11 @@ import { actions } from "../actions/action";
 
 export default class Default extends Handler {
 
-    constructor() {
-        super();
+    constructor(system, component) {
+        super(system, component);
+
+        Handler.default = this;
+        
         this.origin_x = 0;
         this.origin_y = 0;
         this.UI_MOVE = false;
@@ -145,5 +148,3 @@ export default class Default extends Handler {
         return this.constructor.default;
     }
 }
-
-Handler.default = new Default();

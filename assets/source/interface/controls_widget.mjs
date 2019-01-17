@@ -26,8 +26,17 @@ if(this.ON_MAIN)
 }
 
 export class ControlWidget {
-    constructor() {
+    constructor(controler_component_package) {
+
+        this.element = document.createElement("div");
+        this.element.classList.add("widget_component");
+        
+        if(controler_component_package)
+            this.controller = controler_component_package.mount(this.element, this, false, this);
+        
         this.IS_ON_MASTER = false;
+
+        document.body.append(this.element);
 
         this._ml = 0;
         this._mr = 0;
@@ -201,7 +210,7 @@ export class ControlWidget {
     get cbr() { return this.w - this.br - this.bl + this.cbl }
     get cbb() { return this.h - this.bb - this.bt + this.cbt }
 
-    render(ctx, scale) {
+    render(ctx, scale, transform) {
 
         const IS_COMPONENT = !!this.target.IS_COMPONENT;
 
@@ -230,6 +239,11 @@ export class ControlWidget {
         let cbt = this.cbt;
         let cbr = this.cbr;
         let cbb = this.cbb;
+
+        this.element.style.width = `${(cbr-cbl)*scale}px`;
+        this.element.style.height = `${(cbb-cbt)*scale}px`;
+        this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
+        this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
 
 
         if (!IS_COMPONENT) {
@@ -266,6 +280,11 @@ export class ControlWidget {
             gripPoint(ctx, pl, pb, r);
             gripPoint(ctx, pr, pb, r);
         }
+    }
+
+
+    addView(source){
+        source.model = this;
     }
 
     setTarget(component, element, IS_ON_MASTER = false) {

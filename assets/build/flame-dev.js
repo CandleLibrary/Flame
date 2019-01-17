@@ -1,8 +1,8 @@
-var flame = (function (fs, path) {
+var flame = (function (path, fs) {
     'use strict';
 
-    fs = fs && fs.hasOwnProperty('default') ? fs['default'] : fs;
     path = path && path.hasOwnProperty('default') ? path['default'] : path;
+    fs = fs && fs.hasOwnProperty('default') ? fs['default'] : fs;
 
     //Main dna for containing line tokens
     class Container_Cell {
@@ -12929,8 +12929,6 @@ var flame = (function (fs, path) {
 
             model.addView(this);
 
-            this.model = model;
-
             for (let name in this.taps)
                 this.taps[name].load(this.model, false);
 
@@ -19100,8 +19098,19 @@ var flame = (function (fs, path) {
     }
 
     class Handler {
-        constructor() {
+        constructor(system, component) {
+            this.package = null;
 
+            if(component){
+                const doc = system.docs.get(system.docs.loadFile(component));
+
+                if (doc) 
+                    doc.bind(this);
+            }
+        }
+
+        documentReady(pkg){
+            this.package = pkg;
         }
 
         input(type, event, ui_manager, target) {
@@ -19142,8 +19151,11 @@ var flame = (function (fs, path) {
 
     class Default extends Handler {
 
-        constructor() {
-            super();
+        constructor(system, component) {
+            super(system, component);
+
+            Handler.default = this;
+            
             this.origin_x = 0;
             this.origin_y = 0;
             this.UI_MOVE = false;
@@ -19285,8 +19297,6 @@ var flame = (function (fs, path) {
         }
     }
 
-    Handler.default = new Default();
-
     const default_handler = Handler.default;
 
     class ElementDraw extends Default {
@@ -19375,8 +19385,17 @@ var flame = (function (fs, path) {
     }
 
     class ControlWidget {
-        constructor() {
+        constructor(controler_component_package) {
+
+            this.element = document.createElement("div");
+            this.element.classList.add("widget_component");
+            
+            if(controler_component_package)
+                this.controller = controler_component_package.mount(this.element, this, false, this);
+            
             this.IS_ON_MASTER = false;
+
+            document.body.append(this.element);
 
             this._ml = 0;
             this._mr = 0;
@@ -19550,7 +19569,7 @@ var flame = (function (fs, path) {
         get cbr() { return this.w - this.br - this.bl + this.cbl }
         get cbb() { return this.h - this.bb - this.bt + this.cbt }
 
-        render(ctx, scale) {
+        render(ctx, scale, transform) {
 
             const IS_COMPONENT = !!this.target.IS_COMPONENT;
 
@@ -19579,6 +19598,11 @@ var flame = (function (fs, path) {
             let cbt = this.cbt;
             let cbr = this.cbr;
             let cbb = this.cbb;
+
+            this.element.style.width = `${(cbr-cbl)*scale}px`;
+            this.element.style.height = `${(cbb-cbt)*scale}px`;
+            this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
+            this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
 
 
             if (!IS_COMPONENT) {
@@ -19617,6 +19641,11 @@ var flame = (function (fs, path) {
             }
         }
 
+
+        addView(source){
+            source.model = this;
+        }
+
         setTarget(component, element, IS_ON_MASTER = false) {
             this.target.element = element;
             this.target.component = component;
@@ -19641,8 +19670,8 @@ var flame = (function (fs, path) {
 
         }
        
-        setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
-            const box = new ControlWidget(element);
+        setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
+            const box = new ControlWidget(ui.active_handler.package);
             box.IS_ON_MASTER = IS_ON_MASTER;
             box.setTarget(component, element, IS_COMPONENT);
             box.setDimensions(IS_COMPONENT);
@@ -19667,7 +19696,7 @@ var flame = (function (fs, path) {
                     scale = transform.scale;
                 }
 
-                this.widget.render(this.ctx, scale);
+                this.widget.render(this.ctx, scale, transform);
 
                 this.ctx.restore();
             }
@@ -19827,6 +19856,9 @@ var flame = (function (fs, path) {
         constructor(UIHTMLElement, ViewElement, system) {
             system.ui = this;
 
+            //Initialize Handlers
+            new Default(system, path.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
+
             this.d = Default;
             this.e = ElementDraw;
 
@@ -19904,7 +19936,7 @@ var flame = (function (fs, path) {
             });
             document.body.addEventListener("dragstart", e => {});
 
-            this.createMaster();
+            //this.createMaster();
         }
 
         createMaster() {
@@ -20027,11 +20059,11 @@ var flame = (function (fs, path) {
                 if (e.button == 0) {
                     if (!this.setTarget(e, component, x, y)) {
                         if (e.target.tagName == "BODY") {
-                            this.controls.setTarget(component, component.element, true, true);
+                            this.controls.setTarget(component, component.element, true, true, this);
                             this.render();
                             this.setTarget(e, component, x, y);
                         } else {
-                            this.controls.setTarget(component, e.target, component == this.master_component);
+                            this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                             this.render();
                             this.setTarget(e, component, x, y);
                         }
@@ -20078,11 +20110,11 @@ var flame = (function (fs, path) {
                         this.handleContextMenu(e, component);
                     } else {
                         if (e.target.tagName == "BODY") {
-                            this.controls.setTarget(component, component.element, true);
+                            this.controls.setTarget(component, component.element, true, this);
                             this.render();
                             this.setTarget(e, component, x, y);
                         } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                            this.controls.setTarget(component, e.target, component == this.master_component);
+                            this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                             this.render();
                             this.setTarget(e, component, x, y);
                         }
@@ -20098,8 +20130,8 @@ var flame = (function (fs, path) {
         /****************** Event responders **************************/
 
         handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-            if (e.target == document.body || !this.target)
-                this.active_handler = Handler.element_draw;
+           // if (e.target == document.body || !this.target)
+           //     this.active_handler = Handler.element_draw;
 
             this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
             return false;
@@ -21991,7 +22023,9 @@ var flame = (function (fs, path) {
             this.setDefaults();
         }
 
-
+        /**
+         * @brief Applies system defaults.
+         */
         setPresets(){
 
             const system = this.system;
@@ -22531,4 +22565,4 @@ var flame = (function (fs, path) {
 
     return flame;
 
-}(fs, path));
+}(path, fs));

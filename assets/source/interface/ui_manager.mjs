@@ -5,6 +5,7 @@ import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";
 import { LineMachine } from "./system/line_machine";
 import { SVGManager } from "./system/svg_manager";
+import path from "path";
 
 import Handler from "./input_handler/handler.mjs";
 import Default from "./input_handler/default.mjs";
@@ -25,6 +26,9 @@ export class UI_Manager {
 
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui = this;
+
+        //Initialize Handlers
+        new Default(system, path.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
 
         this.d = Default;
         this.e = ElementDraw;
@@ -103,7 +107,7 @@ export class UI_Manager {
         });
         document.body.addEventListener("dragstart", e => {});
 
-        this.createMaster();
+        //this.createMaster();
     }
 
     createMaster() {
@@ -226,11 +230,11 @@ export class UI_Manager {
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true, true);
+                        this.controls.setTarget(component, component.element, true, true, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
-                        this.controls.setTarget(component, e.target, component == this.master_component);
+                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -277,11 +281,11 @@ export class UI_Manager {
                     this.handleContextMenu(e, component);
                 } else {
                     if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true);
+                        this.controls.setTarget(component, component.element, true, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                        this.controls.setTarget(component, e.target, component == this.master_component);
+                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -297,8 +301,8 @@ export class UI_Manager {
     /****************** Event responders **************************/
 
     handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-        if (e.target == document.body || !this.target)
-            this.active_handler = Handler.element_draw;
+       // if (e.target == document.body || !this.target)
+       //     this.active_handler = Handler.element_draw;
 
         this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
         return false;

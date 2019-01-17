@@ -1,6 +1,17 @@
 export default class Handler {
-    constructor() {
+    constructor(system, component) {
+        this.package = null;
 
+        if(component){
+            const doc = system.docs.get(system.docs.loadFile(component));
+
+            if (doc) 
+                doc.bind(this)
+        }
+    }
+
+    documentReady(pkg){
+        this.package = pkg;
     }
 
     input(type, event, ui_manager, target) {

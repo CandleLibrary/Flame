@@ -8,7 +8,7 @@ body {
     left: 0;
     padding: 0;
     margin: 0;
-    overflow: none;
+    overflow: hidden;
     font-family: arial;
     user-select: none;
 }
@@ -112,5 +112,17 @@ iframe {
     position: absolute;
     top: -20px;
     right: 0;
+}
+
+/***** UI COMPONENT ******/
+
+.widget_component{
+    position: fixed;
+    top:0;
+    left:0;
+    width:0;
+    height:0;
+    background-color: rgba(256,120,52,0.3);
+    user-select: none;
 }
 

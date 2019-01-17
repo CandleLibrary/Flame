@@ -17,8 +17,8 @@ export class ControlsManager {
 
     }
    
-    setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
-        const box = new ControlWidget(element);
+    setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
+        const box = new ControlWidget(ui.active_handler.package);
         box.IS_ON_MASTER = IS_ON_MASTER;
         box.setTarget(component, element, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
@@ -43,7 +43,7 @@ export class ControlsManager {
                 scale = transform.scale;
             }
 
-            this.widget.render(this.ctx, scale);
+            this.widget.render(this.ctx, scale, transform);
 
             this.ctx.restore();
         }

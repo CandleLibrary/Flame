@@ -7,7 +7,6 @@ app.on("ready", () => {
 
     const DEV = !!process.env.FLAME_DEV;
     const TEST = !!process.env.FLAME_TEST;
-    const TEXT = process.argv.includes("text_edit");
 
 
     let win = new BrowserWindow({

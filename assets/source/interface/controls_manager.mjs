@@ -19,7 +19,7 @@ export class ControlsManager {
    
     setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
         const box = new ControlWidget(element);
-        box.IS_ON_MASTER = IS_ON_MASTER;
+        box.IS_ON_MASTER = true//IS_ON_MASTER;
         box.setTarget(component, element, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
@@ -39,8 +39,8 @@ export class ControlsManager {
             this.ctx.save();
 
             if (!this.widget.IS_ON_MASTER) {
-                transform.setCTX(this.ctx);
-                scale = transform.scale;
+                // /transform.setCTX(this.ctx);
+                // /scale = transform.scale;
             }
 
             this.widget.render(this.ctx, scale);
@@ -51,6 +51,7 @@ export class ControlsManager {
 
     pointerDown(e, x, y, transform, IS_ON_MASTER = false) {
         const widget = this.widget;
+        
         if (widget) {
 
             widget.target.action = null;

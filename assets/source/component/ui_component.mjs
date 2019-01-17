@@ -57,8 +57,8 @@ class UIComponent extends Component {
             this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
             this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
         });
-        this.frame.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
-        this.frame.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
     }
 
     documentReady(pkg) {

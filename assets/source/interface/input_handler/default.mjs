@@ -12,8 +12,8 @@ export default class Default extends Handler {
     }
 
     start(event, ui, data) {
-        const x = data.x || ui.transform.getLocalX(event.pageX),
-              y = data.y || ui.transform.getLocalY(event.pageY);
+        const x = ui.transform.getLocalX(event.pageX),
+              y = ui.transform.getLocalY(event.pageY);
 
         if (event.button == 1) {
 

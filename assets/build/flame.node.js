@@ -19385,52 +19385,80 @@ if(this.ON_MAIN)
         }
 }
 
+
 class ControlWidget {
     constructor(controler_component_package) {
+        var widget = ControlWidget.cache;
 
-        this.element = document.createElement("div");
-        this.element.classList.add("widget_component");
-        
+        if(widget){
+
+            ControlWidget.cache = widget.next;
+
+            let element = widget.element;
+
+            if(widget.sources[0])
+                widget.sources[0].destroy();
+
+            widget.sources = [];
+            
+            if(element.parentElement)
+                widget.element.parentElement.removeChild(element);
+
+        }else{
+            widget = this;
+            widget.element = document.createElement("div");
+            widget.element.classList.add("widget_component");
+        }
+
         if(controler_component_package)
-            this.controller = controler_component_package.mount(this.element, this, false, this);
+            widget.controller = controler_component_package.mount(widget.element, widget, false, widget);
         
-        this.IS_ON_MASTER = false;
+        document.body.append(widget.element);
 
-        document.body.append(this.element);
-
-        this._ml = 0;
-        this._mr = 0;
-        this._mt = 0;
-        this._mb = 0;
-
-        this._pl = 0;
-        this._pr = 0;
-        this._pt = 0;
-        this._pb = 0;
-
-        this.bl = 0;
-        this.br = 0;
-        this.bt = 0;
-        this.bb = 0;
-
-        this.posl = 0;
-        this.posr = 0;
-        this.post = 0;
-        this.posb = 0;
-
-        this.x = 0; //left of border box
-        this.y = 0; //top of border box
-        this.w = 0; //width of border box
-        this.h = 0; //height of border box
-        this.br = 0;
-
-        this.target = {
+        widget.target = {
             IS_COMPONENT: false,
             component: null,
             element: null,
             action: null,
             box: { l: 0, r: 0, t: 0, b: 0 }
         };
+    
+        
+        widget.IS_ON_MASTER = false;
+
+        widget._ml = 0;
+        widget._mr = 0;
+        widget._mt = 0;
+        widget._mb = 0;
+
+        widget._pl = 0;
+        widget._pr = 0;
+        widget._pt = 0;
+        widget._pb = 0;
+
+        widget.bl = 0;
+        widget.br = 0;
+        widget.bt = 0;
+        widget.bb = 0;
+
+        widget.posl = 0;
+        widget.posr = 0;
+        widget.post = 0;
+        widget.posb = 0;
+
+        widget.x = 0; //left of border box
+        widget.y = 0; //top of border box
+        widget.w = 0; //width of border box
+        widget.h = 0; //height of border box
+        widget.br = 0;
+
+
+        return widget;
+    }
+
+    destroy(){
+        this.next = ControlWidget.cache;
+        ControlWidget.cache = this;
     }
 
     setBox() {
@@ -19640,11 +19668,18 @@ class ControlWidget {
             gripPoint(ctx, pl, pb, r);
             gripPoint(ctx, pr, pb, r);
         }
+
+        //Update Wick Controls
+        this.sources[0].update(this);
     }
 
 
     addView(source){
         source.model = this;
+    }
+
+    removeView(source){
+        source.model = null;
     }
 
     setTarget(component, element, IS_ON_MASTER = false) {
@@ -19654,6 +19689,8 @@ class ControlWidget {
         this.IS_ON_MASTER = IS_ON_MASTER;
     }
 }
+
+ControlWidget.cache = null;
 
 class ControlsManager {
     constructor() {
@@ -19672,6 +19709,10 @@ class ControlsManager {
     }
    
     setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
+
+        if(this.widget)
+            this.widget.destroy();
+        
         const box = new ControlWidget(ui.active_handler.package);
         box.IS_ON_MASTER = IS_ON_MASTER;
         box.setTarget(component, element, IS_COMPONENT);

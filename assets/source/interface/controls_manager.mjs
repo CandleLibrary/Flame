@@ -18,6 +18,10 @@ export class ControlsManager {
     }
    
     setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
+
+        if(this.widget)
+            this.widget.destroy();
+        
         const box = new ControlWidget(ui.active_handler.package);
         box.IS_ON_MASTER = IS_ON_MASTER;
         box.setTarget(component, element, IS_COMPONENT);

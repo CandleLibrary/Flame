@@ -124,5 +124,6 @@ iframe {
     height:0;
     background-color: rgba(256,120,52,0.3);
     user-select: none;
+    pointer-events: none;
 }
 

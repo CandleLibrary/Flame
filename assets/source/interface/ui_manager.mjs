@@ -281,7 +281,7 @@ export class UI_Manager {
                     this.handleContextMenu(e, component);
                 } else {
                     if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true, this);
+                        this.controls.setTarget(component, component.element, true, true, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {

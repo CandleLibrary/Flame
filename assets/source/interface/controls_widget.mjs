@@ -48,6 +48,7 @@ export class ControlWidget {
             widget = this;
             widget.element = document.createElement("div");
             widget.element.classList.add("widget_component");
+            widget.element.setAttribute("tabindex",-1)
         }
 
         if(controler_component_package)
@@ -270,11 +271,13 @@ export class ControlWidget {
 
         this.element.style.width = `${(cbr-cbl)*scale}px`;
         this.element.style.height = `${(cbb-cbt)*scale}px`;
-        this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
-        this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
 
-
-        if (!IS_COMPONENT) {
+        if(IS_COMPONENT){
+            this.element.style.left = `${this.x}px`
+            this.element.style.top = `${this.y}px`;
+        }else{
+            this.element.style.left = `${transform.px+(this.x+4)*scale}px`
+            this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
             ctx.strokeRect(ml, mt, mr - ml, mb - mt);
             ctx.strokeRect(pl, pt, pr - pl, pb - pt);
         }

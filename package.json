@@ -27,12 +27,12 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
-    "@candlefw/charcoal": "*",
-    "@candlefw/css": "*",
-    "@candlefw/glow": "*",
-    "@candlefw/ll": "*",
-    "@candlefw/whind": "*",
-    "@candlefw/wick": "*",
+    "@candlefw/charcoal": "latest",
+    "@candlefw/css": "latest",
+    "@candlefw/glow": "latest",
+    "@candlefw/ll": "latest",
+    "@candlefw/whind": "latest",
+    "@candlefw/wick": "latest",
     "electron": "^4.0.0",
     "paper": "^0.12.0"
   },

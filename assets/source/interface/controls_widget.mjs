@@ -177,7 +177,7 @@ export class ControlWidget {
     setDimensions() {
         const component = this.target.component;
         const IS_COMPONENT = !!this.target.IS_COMPONENT;
-        const IS_ON_MASTER = !!this.IS_ON_MASTER;
+        const IS_ON_MASTER = true //!!this.IS_ON_MASTER;
 
         if (IS_COMPONENT) {
             const rect = this.target.element.getBoundingClientRect();
@@ -187,8 +187,8 @@ export class ControlWidget {
             this.h = rect.height;
         } else {
             const rect = this.target.element.getBoundingClientRect();
-            this.x = rect.left + component.x;
-            this.y = rect.top + component.y;
+            this.x = rect.left;
+            this.y = rect.top;
             this.w = rect.width;
             this.h = rect.height;
         }
@@ -222,8 +222,8 @@ export class ControlWidget {
     }
 
     //Margin box
-    get ml() { return this.x - this._ml - this.posl }
-    get mt() { return this.y - this._mt - this.post }
+    get ml() { return this.x - this._ml }
+    get mt() { return this.y - this._mt }
     get mr() { return this.w + this._mr + this._ml + this.ml }
     get mb() { return this.h + this._mb + this._mt + this.mt }
 
@@ -329,7 +329,7 @@ export class ControlWidget {
         this.target.element = element;
         this.target.component = component;
         this.target.IS_COMPONENT = (element) == component.element;
-        this.IS_ON_MASTER = IS_ON_MASTER;
+        this.IS_ON_MASTER = true //IS_ON_MASTER;
     }
 }
 

@@ -2,7 +2,7 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var path = _interopDefault(require('path'));
+var path$1 = _interopDefault(require('path'));
 var fs = _interopDefault(require('fs'));
 
 //Main dna for containing line tokens
@@ -1163,27 +1163,49 @@ class Lexer {
     }
 
     /**
+    Creates and error message with a diagrame illustrating the location of the error. 
+    */
+    errorMessage(message = ""){
+        const arrow = String.fromCharCode(0x2b89),
+            trs = String.fromCharCode(0x2500),
+            line = String.fromCharCode(0x2500),
+            thick_line = String.fromCharCode(0x2501),
+            line_number = "    " + this.line + ": ",
+            line_fill = line_number.length,
+            t$$1 = thick_line.repeat(line_fill + 48),
+            is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
+        const pk = this.copy();
+        pk.IWS = false;
+        while (!pk.END && pk.ty !== Types.nl) { pk.next(); }
+        const end = pk.off;
+
+        return `${message} at ${this.line}:${this.char}
+${t$$1}
+${line_number+this.str.slice(Math.max(this.off - this.char, 0), end)}
+${line.repeat(this.char-1+line_fill)+trs+arrow}
+${t$$1}
+${is_iws}`;
+    }
+
+    /**
      * Will throw a new Error, appending the parsed string line and position information to the the error message passed into the function.
      * @instance
      * @public
      * @param {String} message - The error message.
+     * @param {Bool} DEFER - if true, returns an Error object instead of throwing.
      */
-    throw (message) {
-        let t$$1 = ("________________________________________________"),
-            n$$1 = "\n",
-            is_iws = (!this.IWS) ? "\n The Lexer produced whitespace tokens" : "";
-        this.IWS = false;
-        let pk = this.copy();
-        while (!pk.END && pk.ty !== Types.nl) { pk.next(); }
-        let end = pk.off;
-        throw new Error(`${message} at ${this.line}:${this.char}\n${t$$1}\n${this.str.slice(this.off + this.tl + 1 - this.char, end)}\n${("").padStart(this.char - 2)}^\n${t$$1}\n${is_iws}`);
+    throw (message, DEFER = false) {
+        const error = new Error(this.errorMessage(message));
+        if(DEFER)
+            return error;
+        throw error;
     }
 
     /**
      * Proxy for Lexer.prototype.reset
      * @public
      */
-    r() { return this.reset(); }
+    r() { return this.reset() }
 
     /**
      * Restore the Lexer back to it's initial state.
@@ -1216,24 +1238,26 @@ class Lexer {
      */
     next(marker = this) {
 
-        let str = marker.str;
-
         if (marker.sl < 1) {
             marker.off = 0;
             marker.type = 32768;
             marker.tl = 0;
+            marker.line = 0;
+            marker.char = 0;
             return marker;
         }
 
         //Token builder
-        let length = marker.tl;
-        let off = marker.off + length;
-        let l$$1 = marker.sl;
-        let IWS = marker.IWS;
-        let type = symbol;
-        let char = marker.char + length;
-        let line = marker.line;
-        let base = off;
+        const l$$1 = marker.sl,
+            str = marker.str,
+            IWS = marker.IWS;
+
+        let length = marker.tl,
+            off = marker.off + length,
+            type = symbol,
+            char = marker.char + length,
+            line = marker.line,
+            base = off;
 
         if (off >= l$$1) {
             length = 0;
@@ -1247,19 +1271,19 @@ class Lexer {
             return marker;
         }
 
-        while (true) {
+        for (;;) {
 
             base = off;
 
             length = 1;
 
-            let code = str.charCodeAt(off);
+            const code = str.charCodeAt(off);
 
             if (code < 128) {
 
                 switch (jump_table[code]) {
                     case 0: //NUMBER
-                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) {}
+                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) ;
 
                         if (str[off] == "e" || str[off] == "E") {
                             off++;
@@ -1276,7 +1300,7 @@ class Lexer {
 
                         break;
                     case 1: //IDENTIFIER
-                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) {}
+                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) ;
                         type = identifier;
                         length = off - base;
                         break;
@@ -1284,23 +1308,24 @@ class Lexer {
                         if (this.PARSE_STRING) {
                             type = symbol;
                         } else {
-                            while (++off < l$$1 && str.charCodeAt(off) !== code) {}
+                            while (++off < l$$1 && str.charCodeAt(off) !== code) ;
                             type = string;
                             length = off - base + 1;
                         }
                         break;
                     case 3: //SPACE SET
-                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) {}
+                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) ;
                         type = white_space;
                         length = off - base;
                         break;
                     case 4: //TAB SET
-                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) {}
+                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) ;
                         type = white_space;
                         length = off - base;
                         break;
                     case 5: //CARIAGE RETURN
                         length = 2;
+                        //Intentional
                     case 6: //LINEFEED
                         type = new_line;
                         char = 0;
@@ -1312,7 +1337,6 @@ class Lexer {
                         break;
                     case 8: //OPERATOR
                         type = operator;
-
                         break;
                     case 9: //OPEN BRACKET
                         type = open_bracket;
@@ -1384,7 +1408,7 @@ class Lexer {
      * Proxy for Lexer.prototype.assertCharacter
      * @public
      */
-    aC(char) { return this.assertCharacter(char); }
+    aC(char) { return this.assertCharacter(char) }
     /**
      * Compares the character value of the current token to the value passed in. Advances to next token if the two are equal.
      * @public
@@ -1393,7 +1417,7 @@ class Lexer {
      */
     assertCharacter(char) {
 
-        if (this.off < 0) this.throw(`Expecting ${text} got null`);
+        if (this.off < 0) this.throw(`Expecting ${char[0]} got null`);
 
         if (this.ch == char[0])
             this.next();
@@ -1435,7 +1459,7 @@ class Lexer {
      * Proxy for Lexer.prototype.slice
      * @public
      */
-    s(start) { return this.slice(start); }
+    s(start) { return this.slice(start) }
 
     /**
      * Returns a slice of the parsed string beginning at `start` and ending at the current token.
@@ -1465,8 +1489,8 @@ class Lexer {
                 while (!marker.END && (marker.next().ch != "*" || marker.pk.ch != "/")) { /* NO OP */ }
                 marker.sync().assert("/");
             } else if (marker.pk.ch == "/") {
-                let IWS = marker.IWS;
-                while (marker.next().ty != types.new_line && !marker.END) { /* NO OP */ }
+                const IWS = marker.IWS;
+                while (marker.next().ty != Types.new_line && !marker.END) { /* NO OP */ }
                 marker.IWS = IWS;
                 marker.next();
             } else
@@ -1490,10 +1514,10 @@ class Lexer {
      * Returns new Whind Lexer that has leading and trailing whitespace characters removed from input. 
      */
     trim() {
-        let lex = this.copy();
+        const lex = this.copy();
 
         for (; lex.off < lex.sl; lex.off++) {
-            let c$$1 = jump_table[lex.string.charCodeAt(lex.off)];
+            const c$$1 = jump_table[lex.string.charCodeAt(lex.off)];
 
             if (c$$1 > 2 && c$$1 < 7)
                 continue;
@@ -1502,7 +1526,7 @@ class Lexer {
         }
 
         for (; lex.sl > lex.off; lex.sl--) {
-            let c$$1 = jump_table[lex.string.charCodeAt(lex.sl - 1)];
+            const c$$1 = jump_table[lex.string.charCodeAt(lex.sl - 1)];
 
             if (c$$1 > 2 && c$$1 < 7)
                 continue;
@@ -1549,7 +1573,7 @@ class Lexer {
      * @type {String}
      * @readonly
      */
-    get tx() { return this.text; }
+    get tx() { return this.text }
 
     /**
      * The string value of the current token.
@@ -1567,7 +1591,7 @@ class Lexer {
      * @public
      * @readonly
      */
-    get ty() { return this.type; }
+    get ty() { return this.type }
 
     /**
      * The current token's offset position from the start of the string.
@@ -1585,15 +1609,15 @@ class Lexer {
      * @readonly
      * @type {Lexer}
      */
-    get pk() { return this.peek(); }
+    get pk() { return this.peek() }
 
     /**
      * Proxy for Lexer.prototype.next
      * @public
      */
-    get n() { return this.next(); }
+    get n() { return this.next() }
 
-    get END() { return this.off >= this.sl; }
+    get END() { return this.off >= this.sl }
     set END(v$$1) {}
 
     get type() {
@@ -1662,7 +1686,7 @@ class Lexer {
     }
 }
 
-function whind$1(string, INCLUDE_WHITE_SPACE_TOKENS = false) { return new Lexer(string, INCLUDE_WHITE_SPACE_TOKENS); }
+function whind$1(string, INCLUDE_WHITE_SPACE_TOKENS = false) { return new Lexer(string, INCLUDE_WHITE_SPACE_TOKENS) }
 
 whind$1.constructor = Lexer;
 
@@ -4544,6 +4568,34 @@ const STOCK_LOCATION = {
     search:""
 };
 
+/** Implement Basic Fetch Mechanism for NodeJS **/
+if(typeof(fetch) == "undefined" && typeof(global) !== "undefined" ){
+
+    
+    Promise.resolve(require("fs")).then(fs$$1=>{
+
+
+     global.fetch = (url, data) =>
+        new Promise((res, rej) => {
+            let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+            fs$$1.readFile(p, "utf8", (err, data) => {
+                if (err) {
+                    rej(err);
+                } else {
+                    res({
+                        status: 200,
+                        text: () => {
+                            return {
+                                then: (f) => f(data)
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    });
+}
+
 function fetchLocalText(URL, m = "same-origin") {
     return new Promise((res, rej) => {
         fetch(URL, {
@@ -4819,9 +4871,9 @@ class URL {
         if (lfv > 0) class_map.set(key_val, lex.s(lfv));
     }
 
-    setPath(path$$1) {
+    setPath(path) {
 
-        this.path = path$$1;
+        this.path = path;
 
         return new URL(this);
     }
@@ -5089,8 +5141,8 @@ URL.R = {
         return;
         URL.G.map = v;
     },
-    setPath(path$$1) {
-        return URL.G.setPath(path$$1);
+    setPath(path) {
+        return URL.G.setPath(path);
     },
     setLocation() {
         return URL.G.setLocation();
@@ -5873,7 +5925,7 @@ function getValue(lex, attribute) {
 
     let n = parseFloat(v) * mult;
 
-    lex.n;
+    lex.next();
 
     if (lex.ch !== ")" && lex.ch !== ",") {
         switch (lex.tx) {
@@ -5895,7 +5947,7 @@ function getValue(lex, attribute) {
             case "em":
                 break;
         }
-        lex.n;
+        lex.next();
     }
     return n;
 }
@@ -5905,7 +5957,7 @@ function ParseString(string, transform) {
     
     while (!lex.END) {
         let tx = lex.tx;
-        lex.n;
+        lex.next();
         switch (tx) {
             case "matrix":
 
@@ -5984,7 +6036,7 @@ function ParseString(string, transform) {
             case "perspective":
                 break;
         }
-        lex.n;
+        lex.next();
     }
 }
 // A 2D transform composition of 2D position, 2D scale, and 1D rotation.
@@ -6164,13 +6216,13 @@ function getSignedNumber(lex) {
         mult = -1;
         tx = lex.n.tx;
     }
-    lex.n;
+    lex.next();
     return parseFloat(tx) * mult;
 }
 
 function getNumberPair(lex, array) {
     let x = getSignedNumber(lex);
-    if (lex.ch == ',') lex.n;
+    if (lex.ch == ',') lex.next();
     let y = getSignedNumber(lex);
     array.push(x, y);
 }
@@ -6196,7 +6248,7 @@ class CSS_Path extends Array {
                 case "m":
                     relative = true;
                 case "M":
-                    lex.n; //
+                    lex.next(); //
                     array.push((relative) ? PathSym.m : PathSym.M);
                     getNumberPair(lex, array);
                     parseNumberPairs(lex, array);
@@ -6205,21 +6257,21 @@ class CSS_Path extends Array {
                 case "h":
                     relative = true;
                 case "H":
-                    lex.n;
+                    lex.next();
                     x = getSignedNumber(lex);
                     array.push((relative) ? PathSym.h : PathSym.H, x);
                     continue;
                 case "v":
                     relative = true;
                 case "V":
-                    lex.n;
+                    lex.next();
                     y = getSignedNumber(lex);
                     array.push((relative) ? PathSym.v : PathSym.V, y);
                     continue;
                 case "l":
                     relative = true;
                 case "L":
-                    lex.n;
+                    lex.next();
                     array.push((relative) ? PathSym.l : PathSym.L);
                     getNumberPair(lex, array);
                     parseNumberPairs(lex, array);
@@ -6265,7 +6317,7 @@ class CSS_Path extends Array {
                 case "Z":
                     array.push((relative) ? PathSym.z : PathSym.Z);
             }
-            lex.n;
+            lex.next();
         }
     }
 
@@ -6372,7 +6424,7 @@ class CSS_Path extends Array {
  * @alias module:wick~internals.css.types.
  * @enum {object}
  */
-const types$1 = {
+const types = {
     color: CSS_Color,
     length: CSS_Length,
     time: CSS_Length,
@@ -6930,7 +6982,7 @@ class ValueTerm {
 
         const IS_VIRTUAL = { is: false };
 
-        if (!(this._value_ = types$1[value]))
+        if (!(this._value_ = types[value]))
             this._value_ = getPropertyParser(value, IS_VIRTUAL, definitions);
 
         this._prop_ = "";
@@ -7656,7 +7708,7 @@ class CSSRuleBody {
                             case "import":
                                 /* https://drafts.csswg.org/css-cascade/#at-ruledef-import */
                                 let type;
-                                if (type = types$1.url.parse(lexer.next())) {
+                                if (type = types.url.parse(lexer.next())) {
                                     lexer.a(";");
                                     /**
                                      * The {@link CSS_URL} incorporates a fetch mechanism that returns a Promise instance.
@@ -7952,7 +8004,7 @@ const _err_ = "Expecting Identifier";
  */
 const CSSParser = (css_string, root = null) => (root = (!root || !(root instanceof CSSRootNode)) ? new CSSRootNode() : root, root.parse(whind$1(css_string)));
 
-CSSParser.types = types$1;
+CSSParser.types = types;
 
 let cache_de_cache = null;
 
@@ -8038,7 +8090,7 @@ class Cache {
         if(!system)
             return
 
-        this.generateMovementCache(system, this.element, this.component);
+        this.generateMovementCache(system, this.component, this.element);
     }
 
     generateMovementCache(system, component, element) {
@@ -8252,7 +8304,7 @@ function TEXT(system, component, element, dx, dy) {
     text.update(pos, data);
 }
 
-let types$2 = CSSParser.types;
+let types$1 = CSSParser.types;
 
 function getContentBox(ele, win = window) {
 
@@ -8329,13 +8381,13 @@ function setNumericalValue(propname, system, component, element, value, relative
         }
         if (!KEEP_UNIQUE) {
             let type = (system.project.components.default_unit || "px");
-            let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
+            let value = (type == "%") ? new types$1.percentage(0) : new types$1.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
             prop = props[propname];
         } else {
             let type = (system.project.components.default_unit || "px");
-            let value = (type == "%") ? new types$2.percentage(0) : new types$2.length(0, type);
+            let value = (type == "%") ? new types$1.percentage(0) : new types$1.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
             props = cache.unique.r.props;
             prop = props[propname];
@@ -8345,8 +8397,8 @@ function setNumericalValue(propname, system, component, element, value, relative
 
     if (prop == "auto") {
         //convert to numerical form;
-        props[propname] = new types$2.length(value, "px");
-    } else if (prop instanceof types$2.percentage) {
+        props[propname] = new types$1.length(value, "px");
+    } else if (prop instanceof types$1.percentage) {
         //get the nearest positioned ancestor
 
         let denominator = 0,
@@ -8385,7 +8437,7 @@ function setNumericalValue(propname, system, component, element, value, relative
             props[propname] = prop.copy(value);
         else {
             if (value !== 0)
-                props[propname] = new types$2.length(value, "px");
+                props[propname] = new types$1.length(value, "px");
             else
                 props[propname] = 0;
         }
@@ -8470,7 +8522,7 @@ function SETDELTAHEIGHT(system, component, element, dx, ratio = 0, LINKED = fals
     return ratio;
 }
 
-const types$3 = CSSParser.types;
+const types$2 = CSSParser.types;
 
 function SETLEFT(system, component, element, x, LINKED = false) {
     let cache = CacheFactory(system, component, element);
@@ -8708,7 +8760,7 @@ function RESIZEBR(system, component, element, dx, dy, IS_COMPONENT) {
     element.wick_node.prepRebuild();
 }
 
-const types$4 = CSSParser.types;
+const types$3 = CSSParser.types;
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
@@ -8774,8 +8826,8 @@ function CENTER(system, component, element, HORIZONTAL = true, VERTICAL = true, 
     switch (cache.move_hori_type) {
         case "left right":
             //get the width of the parent element
-            css.props.left = new types$4.length(diff, "px");
-            css.props.right = new types$4.length(diff, "px");
+            css.props.left = new types$3.length(diff, "px");
+            css.props.right = new types$3.length(diff, "px");
             cache.unique.addProp(`margin-left:auto; margin-right:auto`);
             break;
         case "left":
@@ -10024,13 +10076,13 @@ class MultiIndexedContainer extends ModelContainerBase {
 
         let out = false;
 
-        out = this.primary_index.__removeAll__(term, out_container);
+        out = this.primary_index.__removeAll__();
 
         for (let name in this.secondary_indexes) {
 
             let index = this.secondary_indexes[name];
 
-            if (index.__removeAll__(model))
+            if (index.__removeAll__())
                 out = true;
         }
 
@@ -10519,7 +10571,7 @@ class BtreeNode {
         this.nodes = null;
         this.keys = null;
 
-        if (!this.LEAF) {
+        if (!this.LEAF && this.nodes) {
             for (let i = 0, l = this.nodes.length; i < l; i++)
                 this.nodes[i].destroy();
         }
@@ -11973,6 +12025,12 @@ class HTMLNode {
          */
         this.single = false;
 
+
+        //Charactar positional information from input.
+        this.line=0;
+        this.char=0;
+        this.offset=0;
+
     }
 
     /******************************************* ATTRIBUTE AND ELEMENT ACCESS ******************************************************************************************************************/
@@ -12387,6 +12445,11 @@ class HTMLNode {
 
 
                             URL$$1 = this.parseOpenTag(lex.n, false, old_url);
+                            
+                            this.char = lex.char;
+                            this.offset = lex.off;
+                            this.line = lex.line;
+                            
                             start = lex.pos + 1;
                             lex.IWS = false;
                             if (lex.ch == "/") lex.n;
@@ -12439,6 +12502,9 @@ class HTMLNode {
 
                             let prom = node.parseRunner(lex, false, false, this, this.url || old_url);
                             
+                            if(!this.url)
+                                this.url = old_url;
+                            
                             if(prom instanceof Promise){
                                 return prom.then(child => {
                                     if (child.DTD) this.removeChild(child);
@@ -12450,6 +12516,8 @@ class HTMLNode {
                             }
                             
                         }
+
+
                         //}
                     }
                     lex.IWS = false;
@@ -12469,7 +12537,7 @@ class HTMLNode {
         }
 
         if (OPENED && start < lex.off) {
-            //Got here from an network import, need produce a text node;
+            //Got here from a network import, need produce a text node;
             this.createTextNode(lex, start);
         }
 
@@ -12521,12 +12589,12 @@ class HTMLNode {
     createHTMLNodeHook(tag, start) { return new HTMLNode(tag); }
 
     processFetchHook(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
-        let path$$1 = this.url.path,
+        let path = this.url.path,
             CAN_FETCH = true;
 
         //make sure URL is not already called by a parent.
         while (parent) {
-            if (parent.url && parent.url.path == path$$1) {
+            if (parent.url && parent.url.path == path) {
                 console.warn(`Preventing recursion on resource ${this.url.path}`);
                 CAN_FETCH = false;
                 break;
@@ -15466,10 +15534,12 @@ const Transitioneer = (function() {
         let seq;
 
         if (typeof(anim_data_or_duration) == "object") {
-            if (anim_data_or_duration.match && this.TT[anim_data_or_duration.match]) {
-                let duration = anim_data_or_duration.duration;
-                let easing = anim_data_or_duration.easing;
-                seq = this.TT[anim_data_or_duration.match](anim_data_or_duration.obj, duration, easing);
+            if (anim_data_or_duration.match) {
+                if (this.TT[anim_data_or_duration.match]) {
+                    let duration = anim_data_or_duration.duration;
+                    let easing = anim_data_or_duration.easing;
+                    seq = this.TT[anim_data_or_duration.match](anim_data_or_duration.obj, duration, easing);
+                }
             } else
                 seq = Animation.createSequence(anim_data_or_duration);
 
@@ -15706,7 +15776,8 @@ class SourceTemplate extends View {
 
     get data() {}
     set data(container) {
-
+        
+        console.log(container);
         if (container instanceof ModelContainerBase) {
             container.pin();
             container.addView(this);
@@ -16121,6 +16192,7 @@ class SourceTemplate extends View {
      * @protected
      */
     cull(new_items) {
+        console.log(new_items);
         if (!new_items) new_items = [];
         let transition = Transitioneer.createTransition();
         if (new_items.length == 0) {
@@ -16851,6 +16923,12 @@ class SourcePackage {
         this.errors = [];
 
         /**
+         * An Array of style trees.
+         */
+        this.styles = [];
+
+
+        /**
          * Flag to indicate SourcePackage was compiled with errors
          */
         this.HAVE_ERRORS = false;
@@ -17026,18 +17104,18 @@ PackageNode.prototype.SourcePackage = SourcePackage;
 
 /** This is the entire object structure of Wick, minus the platform specific outputs found in /source/root/ */
 
-const model$1 = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
-model$1.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
-model$1.constr = SchemedModel;
-model$1.any = (data) => new Model(data);
-model$1.any.constr = Model;
-model$1.container = {
+const model = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
+model.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
+model.constr = SchemedModel;
+model.any = (data) => new Model(data);
+model.any.constr = Model;
+model.container = {
     multi: MultiIndexedContainer,
     array: ArrayModelContainer,
     btree: BTreeModelContainer,
     constr: ModelContainerBase
 };
-model$1.store = (data) => new Store(data);
+model.store = (data) => new Store(data);
 
 //Construct Schema Exports
 const scheme = Object.create(schemes);
@@ -17051,16 +17129,16 @@ scheme.constr.time = TimeSchemeConstructor;
 Object.freeze(scheme.constr);
 Object.freeze(scheme);
 Object.freeze(Presets);
-Object.freeze(model$1.container.constr);
-Object.freeze(model$1.container);
-Object.freeze(model$1.any);
-Object.freeze(model$1);
+Object.freeze(model.container.constr);
+Object.freeze(model.container);
+Object.freeze(model.any);
+Object.freeze(model);
 
 const core = {
     presets: a => new Presets(a),
     view: View,
     scheme: scheme,
-    model: model$1,
+    model: model,
     source: (...a) => new SourcePackage(...a)
 };
 
@@ -17087,12 +17165,17 @@ Object.freeze(core);
 
 let source = core.source;
 
+function compile(element, presets, RETURN_PROMISE){
+		return new SourcePackage(element, presets, RETURN_PROMISE);
+}
+
 const wick$1 = {
 	source,
 	scheme,
-	model: model$1,
+	model,
 	core,
-	internals
+	internals,
+	compile
 };
 
 /**
@@ -17153,6 +17236,25 @@ class Component {
 
     createFrameElement() {
 
+        this.frame = document.createElement("div");
+        this.frame.classList.add("flame_component");
+
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+        // this.frame.src = "component_frame.html";
+        //this.frame.setAttribute("frameBorder", "0");
+        this.frame.style.position = "fixed";
+
+
+        this.mountListeners();
+        this.IFRAME_LOADED = true;
+
+        return this.frame;
+    }
+    /*
+    createFrameElement() {
+
         this.frame = document.createElement("iframe");
         this.frame.src = "component_frame.html";
 
@@ -17173,9 +17275,10 @@ class Component {
 
         return this.frame;
     }
+    */
 
     mountListeners() {
-        this.system.ui.integrateComponentFrame(this.frame.contentWindow, this);
+        this.system.ui.integrateComponentFrame(this.frame, this);
     }
 
     addStyle(tree, INLINE) {
@@ -17231,7 +17334,7 @@ class Component {
                 });
 
             if (this.IFRAME_LOADED) {
-                this.manager = pkg.mount(this.content, null, false, this);
+                this.manager = pkg.mount(this.content, null, true, this);
                 this.sources[0].window = this.window;
                 this.rebuild();
 
@@ -17268,11 +17371,30 @@ class Component {
     }
 
     query(query) {
-        return this.window.document.querySelector(query);
+        return this.frame.querySelector(query);
     }
 
     get window() {
-        return this.frame.contentWindow;
+        return this;
+        return new Proxy(this,{get:(obj, prop)=>{
+            console.log(prop, obj[prop]);
+            return obj[prop]
+        }});
+        return window;
+        return this.frame;
+    }
+
+    get getComputedStyle(){
+        return Component.getComputedStyle;
+    }
+
+    get innerWidth(){
+        return this.width;
+
+    }
+
+    get innerHeight(){
+        return this.height;
     }
 
     set x(x) {
@@ -17281,17 +17403,16 @@ class Component {
 
     set y(y) {
         this.element.style.top = y + "px";
-
     }
 
     set width(w) {
-        this.frame.width = w;
+        this.frame.style.width = w + "px";
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
 
     set height(h) {
-        this.frame.height = h;
+        this.frame.style.height = h + "px";
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
@@ -17305,11 +17426,11 @@ class Component {
     }
 
     get width() {
-        return parseFloat(this.frame.width);
+        return parseFloat(this.frame.style.width);
     }
 
     get height() {
-        return parseFloat(this.frame.height);
+        return parseFloat(this.frame.style.height);
     }
 
     get target() {
@@ -17317,11 +17438,11 @@ class Component {
     }
 
     get element() {
-        return this.style_frame;
+        return this.frame;
     }
 
     get content() {
-        return this.frame.contentDocument.body;
+        return this.frame;
     }
 
     toJSON() {
@@ -17336,6 +17457,8 @@ class Component {
         };
     }
 }
+
+Component.getComputedStyle = window.getComputedStyle.bind(window);
 
 function CLEARLEFT(system, component, element, LINKED = false) {
     let cache = CacheFactory(system, component, element);
@@ -17572,7 +17695,7 @@ function RESIZEMARGINBR(system, component, element, dx, dy, IS_COMPONENT) {
     element.wick_node.prepRebuild();
 }
 
-let types$5 = CSSParser.types;
+let types$4 = CSSParser.types;
 
 /**
  * Actions for converting position and layout to different forms. 
@@ -17783,25 +17906,25 @@ function CONVERT_TOP(system, component, element, type) {
     
     switch (type) {
         case "%":
-            cache.rules.props.top = new types$5.percentage(1);
+            cache.rules.props.top = new types$4.percentage(1);
             break;
         case "em":
-            cache.rules.props.top = new types$5.length(1, "em");
+            cache.rules.props.top = new types$4.length(1, "em");
             break;
         case "vh":
-            cache.rules.props.top = new types$5.length(1, "vh");
+            cache.rules.props.top = new types$4.length(1, "vh");
             break;
         case "vw":
-            cache.rules.props.top = new types$5.length(1, "vw");
+            cache.rules.props.top = new types$4.length(1, "vw");
             break;
         case "vmin":
-            cache.rules.props.top = new types$5.length(1, "vmin");
+            cache.rules.props.top = new types$4.length(1, "vmin");
             break;
         case "vmax":
-            cache.rules.props.top = new types$5.length(1, "vmax");
+            cache.rules.props.top = new types$4.length(1, "vmax");
             break;
         default:
-            cache.rules.props.top = new types$5.length(1, 'px');
+            cache.rules.props.top = new types$4.length(1, 'px');
             break;
     }
     SETTOP(system, component, element, position);
@@ -17815,25 +17938,25 @@ function CONVERT_LEFT(system, component, element, type) {
 
     switch (type) {
         case "%":
-            cache.rules.props.left = new types$5.percentage(1);
+            cache.rules.props.left = new types$4.percentage(1);
             break;
         case "em":
-            cache.rules.props.left = new types$5.length(1, "em");
+            cache.rules.props.left = new types$4.length(1, "em");
             break;
         case "vh":
-            cache.rules.props.left = new types$5.length(1, "vh");
+            cache.rules.props.left = new types$4.length(1, "vh");
             break;
         case "vw":
-            cache.rules.props.left = new types$5.length(1, "vw");
+            cache.rules.props.left = new types$4.length(1, "vw");
             break;
         case "vmin":
-            cache.rules.props.left = new types$5.length(1, "vmin");
+            cache.rules.props.left = new types$4.length(1, "vmin");
             break;
         case "vmax":
-            cache.rules.props.left = new types$5.length(1, "vmax");
+            cache.rules.props.left = new types$4.length(1, "vmax");
             break;
         default:
-            cache.rules.props.left = new types$5.length(1, 'px');
+            cache.rules.props.left = new types$4.length(1, 'px');
             break;
     }
     SETLEFT(system, component, element, position);
@@ -17876,23 +17999,23 @@ function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
         switch (cache.move_hori_type) {
             case "left right":
             case "left right margin":
-                if (css.props.right instanceof types$5.length) {
-                    css.props.right = new types$5.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$4.length) {
+                    css.props.right = new types$4.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$5.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$4.length(rect.width * (css.props.right / 100), "px");
                 } /** Intentional fall through **/
             case "left":
-                if (css.props.left instanceof types$5.length) {
-                    css.props.left = new types$5.percentage((css.props.left / rect.width) * 100);
+                if (css.props.left instanceof types$4.length) {
+                    css.props.left = new types$4.percentage((css.props.left / rect.width) * 100);
                 } else {
-                    css.props.left = new types$5.length(rect.width * (css.props.left / 100), "px");
+                    css.props.left = new types$4.length(rect.width * (css.props.left / 100), "px");
                 }
                 break;
             case "right":
-                if (css.props.right instanceof types$5.length) {
-                    css.props.right = new types$5.percentage((css.props.right / rect.width) * 100);
+                if (css.props.right instanceof types$4.length) {
+                    css.props.right = new types$4.percentage((css.props.right / rect.width) * 100);
                 } else {
-                    css.props.right = new types$5.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right = new types$4.length(rect.width * (css.props.right / 100), "px");
                 }
                 break;
         }
@@ -17997,18 +18120,18 @@ function CREATE_CSS_DOC(system, doc, event) {
     comp.y = -event.y;
 }
 
-let types$6 = CSSParser.types;
+let types$5 = CSSParser.types;
 
 //set background color
 function SETBACKGROUNDCOLOR(system, component, element, r, g, b, a = 1){
-	let color = new types$6.color(r,g,b,a);
+	let color = new types$5.color(r,g,b,a);
 	setValue(system, component, element, "background_color", color);
 	element.wick_node.prepRebuild();
 }
 //set background image
 //set font color
 function SETCOLOR(system, component, element, r, g, b, a = 1){
-	let color = new types$6.color(r,g,b,a);
+	let color = new types$5.color(r,g,b,a);
 	setValue(system, component, element, "color", color);
 	element.wick_node.prepRebuild();
 }
@@ -18251,7 +18374,7 @@ function RESIZEPADDINGBR(system, component, element, dx, dy, IS_COMPONENT = fals
     prepRebuild(element, LINKED);
 }
 
-let types$7 = CSSParser.types;
+let types$6 = CSSParser.types;
 
 function resetBorder(system, component, element) {
     let cache = CacheFactory(system, component, element);
@@ -18400,22 +18523,22 @@ function RESIZEBORDERBR(system, component, element, dx, dy, IS_COMPONENT) {
 }
 
 function BORDERRADIUSTL(system, component, element, d){
-    setValue(system, component, element, "border_top_left_radius", new types$7.length(d, "px"));
+    setValue(system, component, element, "border_top_left_radius", new types$6.length(d, "px"));
     element.wick_node.prepRebuild();
 }
 
 function BORDERRADIUSTR(system, component, element, d){
-    setValue(system, component, element, "border_top_right_radius", new types$7.length(d, "px"));
+    setValue(system, component, element, "border_top_right_radius", new types$6.length(d, "px"));
     element.wick_node.prepRebuild();
 }
 
 function BORDERRADIUSBL(system, component, element, d){
-    setValue(system, component, element, "border_bottom_left_radius", new types$7.length(d, "px"));
+    setValue(system, component, element, "border_bottom_left_radius", new types$6.length(d, "px"));
     element.wick_node.prepRebuild();
 }
 
 function BORDERRADIUSBR(system, component, element, d){
-    setValue(system, component, element, "border_bottom_right_radius", new types$7.length(d, "px"));
+    setValue(system, component, element, "border_bottom_right_radius", new types$6.length(d, "px"));
     element.wick_node.prepRebuild();
 }
 
@@ -18597,8 +18720,8 @@ class UIComponent extends Component {
             this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
             this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
         });
-        this.frame.contentWindow.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
-        this.frame.contentWindow.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
     }
 
     documentReady(pkg) {
@@ -18716,24 +18839,24 @@ class LineBox {
         this.ON_MAIN = ON_MAIN;
     }
     get l() {
-        return this.rect.x + this.component.x;
+        return this.rect.x //+ this.component.x;
     }
 
     get t() {
-        return this.rect.y + this.component.y;
+        return this.rect.y //+ this.component.y;
     }
 
     get b() {
-        return this.rect.y + this.rect.height + this.component.y;
+        return this.rect.y + this.rect.height //+ this.component.y;
     }
 
     get r() {
-        return this.rect.x + this.rect.width + this.component.x;
+        return this.rect.x + this.rect.width //+ this.component.x;
     }
 
     getTransformed(trs){
 
-        if(this.ON_MAIN)
+        if(true || this.ON_MAIN)
             return {l:this.l, r:this.r, t:this.t, b:this.b};
         else{
 
@@ -18751,7 +18874,7 @@ class ElementLineBox extends LineBox {
     constructor(element, component) {
         super(!!component.IS_MASTER);
         this.rect = element.getBoundingClientRect();
-
+        console.log(this.rect);
         this.component = component;
     }
 }
@@ -18784,6 +18907,7 @@ function CreateBoxes(ele, c, LineMachine, target) {
     LineMachine.boxes.push(new ElementLineBox(ele, c));
 
     let children = ele.children;
+
     for (let i = 0; i < children.length; i++) {
         if (target == children[i]) continue;
         CreateBoxes(children[i], c, LineMachine, target);
@@ -18812,7 +18936,7 @@ class LineMachine {
             components.forEach(c => CreateComponentBoxes(c, this, component));
         } else {
             //get tree from component and create boxes from all elements inside the component. 
-            let tree = component.window.document.body;
+            let tree = component.element.shadowRoot.children[0];
 
             let ele = tree;
 
@@ -18991,7 +19115,7 @@ class SVGManager {
         let dx = 0;
         let dy = 0;
         let POINTER_DOWN = false;
-        let path$$1;
+        let path;
 
 
         this.canvas.addEventListener("pointerdown", (e) => {
@@ -19003,15 +19127,15 @@ class SVGManager {
             point.y = y;
 
             if (e.button == 0) {
-                if (!path$$1) {
-                    path$$1 = new Path$1();
-                    path$$1.strokeColor = "black";
-                    path$$1.fullySelected = true;
+                if (!path) {
+                    path = new Path$1();
+                    path.strokeColor = "black";
+                    path.fullySelected = true;
                 } else {
-                    path$$1.add(point);
+                    path.add(point);
                 }
             }else{
-            	path$$1.closePath();
+            	path.closePath();
             }
             this.proj.view.update();
 
@@ -19164,8 +19288,8 @@ class Default extends Handler {
     }
 
     start(event, ui, data) {
-        const x = data.x || ui.transform.getLocalX(event.pageX),
-              y = data.y || ui.transform.getLocalY(event.pageY);
+        const x = ui.transform.getLocalX(event.pageX),
+              y = ui.transform.getLocalY(event.pageY);
 
         if (event.button == 1) {
 
@@ -19408,6 +19532,7 @@ class ControlWidget {
             widget = this;
             widget.element = document.createElement("div");
             widget.element.classList.add("widget_component");
+            widget.element.setAttribute("tabindex",-1);
         }
 
         if(controler_component_package)
@@ -19536,7 +19661,7 @@ class ControlWidget {
     setDimensions() {
         const component = this.target.component;
         const IS_COMPONENT = !!this.target.IS_COMPONENT;
-        const IS_ON_MASTER = !!this.IS_ON_MASTER;
+        const IS_ON_MASTER = true; //!!this.IS_ON_MASTER;
 
         if (IS_COMPONENT) {
             const rect = this.target.element.getBoundingClientRect();
@@ -19546,8 +19671,8 @@ class ControlWidget {
             this.h = rect.height;
         } else {
             const rect = this.target.element.getBoundingClientRect();
-            this.x = rect.left + component.x;
-            this.y = rect.top + component.y;
+            this.x = rect.left;
+            this.y = rect.top;
             this.w = rect.width;
             this.h = rect.height;
         }
@@ -19581,8 +19706,8 @@ class ControlWidget {
     }
 
     //Margin box
-    get ml() { return this.x - this._ml - this.posl }
-    get mt() { return this.y - this._mt - this.post }
+    get ml() { return this.x - this._ml }
+    get mt() { return this.y - this._mt }
     get mr() { return this.w + this._mr + this._ml + this.ml }
     get mb() { return this.h + this._mb + this._mt + this.mt }
 
@@ -19630,11 +19755,13 @@ class ControlWidget {
 
         this.element.style.width = `${(cbr-cbl)*scale}px`;
         this.element.style.height = `${(cbb-cbt)*scale}px`;
-        this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
-        this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
 
-
-        if (!IS_COMPONENT) {
+        if(IS_COMPONENT){
+            this.element.style.left = `${this.x}px`;
+            this.element.style.top = `${this.y}px`;
+        }else{
+            this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
+            this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
             ctx.strokeRect(ml, mt, mr - ml, mb - mt);
             ctx.strokeRect(pl, pt, pr - pl, pb - pt);
         }
@@ -19686,7 +19813,7 @@ class ControlWidget {
         this.target.element = element;
         this.target.component = component;
         this.target.IS_COMPONENT = (element) == component.element;
-        this.IS_ON_MASTER = IS_ON_MASTER;
+        this.IS_ON_MASTER = true; //IS_ON_MASTER;
     }
 }
 
@@ -19708,6 +19835,7 @@ class ControlsManager {
 
     }
    
+
     setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
 
         if(this.widget)
@@ -19715,6 +19843,11 @@ class ControlsManager {
         
         const box = new ControlWidget(ui.active_handler.package);
         box.IS_ON_MASTER = IS_ON_MASTER;
+
+    //setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
+    //    const box = new ControlWidget(element);
+    //    box.IS_ON_MASTER = true//IS_ON_MASTER;
+//>>> shadow_dom
         box.setTarget(component, element, IS_COMPONENT);
         box.setDimensions(IS_COMPONENT);
         this.widget = box;
@@ -19746,6 +19879,7 @@ class ControlsManager {
 
     pointerDown(e, x, y, transform, IS_ON_MASTER = false) {
         const widget = this.widget;
+        
         if (widget) {
 
             widget.target.action = null;
@@ -19899,7 +20033,7 @@ class UI_Manager {
         system.ui = this;
 
         //Initialize Handlers
-        new Default(system, path.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
+        new Default(system, path$1.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
 
         this.d = Default;
         this.e = ElementDraw;
@@ -20069,7 +20203,8 @@ class UI_Manager {
                 if (this.target.IS_COMPONENT) {
                     this.line_machine.setPotentialBoxes(null, component, this.components);
                 } else {
-                    this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                    const target_element = e.composedPath()[0];
+                    this.line_machine.setPotentialBoxes(target_element, component, this.components);
                 }
             }
 
@@ -20088,15 +20223,11 @@ class UI_Manager {
 
         frame.addEventListener("mousedown", e => {
 
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
+            const x = e.pageX;// + component.x;
+            const y = e.pageY;// + component.y;
 
             this.last_action = Date.now();
-
-            if (component == this.master_component)
-                this.handlePointerDownEvent(e);
-            else
-                this.handlePointerDownEvent(e, x, y);
+            this.handlePointerDownEvent(e);
 
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
@@ -20105,7 +20236,11 @@ class UI_Manager {
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
-                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+
+                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+                        //shadow_dom
+                        const target_element = e.composedPath()[0];
+                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -20113,7 +20248,7 @@ class UI_Manager {
             }
             return false;
         });
-        
+        /*
         if (component !== this.master_component)
             frame.addEventListener("wheel", e => {
                 const x1 = e.pageX,
@@ -20125,24 +20260,16 @@ class UI_Manager {
 
                 this.handleScroll(e, x, y);
             });
-
+        */
         frame.addEventListener("mousemove", e => {
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
-
-            if (component == this.master_component) {
-
-                this.handlePointerMoveEvent(e);
-            } else
-                this.handlePointerMoveEvent(e, x, y);
-
+            this.handlePointerMoveEvent(e);
             return false;
         });
 
         frame.addEventListener("mouseup", e => {
             const t = Date.now();
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
+            const x = e.pageX;// + component.x;
+            const y = e.pageY;// + component.y;
 
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
@@ -20152,11 +20279,16 @@ class UI_Manager {
                     this.handleContextMenu(e, component);
                 } else {
                     if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true, this);
+                        this.controls.setTarget(component, component.element, true, true, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+
+                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+                        //shadow_dom
+                        const target_element = e.composedPath()[0];
+                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
+
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -20268,7 +20400,7 @@ class JSManager{
 let proto$1 = StyleNode$1.prototype;
 proto$1.cssInject = proto$1._processTextNodeHook_;
 
-const path$1 = require("path");
+const path$2 = require("path");
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 proto$1.processTextNodeHook = function(lex) {
     //Feed the lexer to a new CSS Builder
@@ -20283,8 +20415,8 @@ proto$1.processTextNodeHook = function(lex) {
 
     if (this.url) {
         URL = this.url.path;
-        if (!path$1.isAbsolute(URL))
-            URL = path$1.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
+        if (!path$2.isAbsolute(URL))
+            URL = path$2.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
     }
 
     this.css.parse(lex).catch((e) => {
@@ -20383,7 +20515,7 @@ class CSSManager {
         let css_docs = component.local_css;
 
         let selectors = [];
-
+        
         for (let i = 0; i < css_docs.length; i++) {
             let gen = css_docs[i].getApplicableSelectors(element, win),
                 sel = null;
@@ -20756,8 +20888,8 @@ class FileBuilder {
 
 class Document {
 
-    constructor(file_name, path$$1, system, IS_NEW_FILE, manager) {
-        this.path = path$$1;
+    constructor(file_name, path, system, IS_NEW_FILE, manager) {
+        this.path = path;
         this.name = file_name;
         this.data = null;
         this.old_data = "";
@@ -21159,10 +21291,10 @@ class DocumentManager {
          */
         global.fetch = (url) => new Promise((res) => {
             let p = url;
-            if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+            if (!path$1.isAbsolute(p)) p = path$1.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
             const doc_id = this.loadFile({
-                path: path.dirname(p),
-                name: path.basename(p),
+                path: path$1.dirname(p),
+                name: path$1.basename(p),
                 type: "text/css",
             });
             if (doc_id) {
@@ -21191,7 +21323,7 @@ class DocumentManager {
                         return canvas.id;
                 };
 
-                var p = path.parse(file);
+                var p = path$1.parse(file);
                 file = {
                     path: p.dir,
                     name: p.base
@@ -21200,23 +21332,23 @@ class DocumentManager {
             case "object": // Loandead data 
                 if (file.name && file.path) {
                     const name = file.name;
-                    let path$$1 = file.path;
+                    let path = file.path;
                     let type = "";
                     if (file.type) type = file.type; //.split("/")[1].toLowerCase();
                     else type = name.split(".").pop().toLowerCase();
-                    if (path$$1.includes(name)) path$$1 = path$$1.replace(name, "");
-                    if (path$$1[path$$1.length - 1] == "/" || path$$1[path$$1.length - 1] == "\\") path$$1 = path$$1.slice(0, -1);
-                    path$$1 = path$$1.replace(/\\/g, "/");
-                    const id = `${path$$1}/${name}`;
+                    if (path.includes(name)) path = path.replace(name, "");
+                    if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
+                    path = path.replace(/\\/g, "/");
+                    const id = `${path}/${name}`;
                     if (!this.docs.get(id)) {
                         let doc;
                         switch (type) {
                             case "html":
-                                doc = new WickDocument(name, path$$1, this.system, NEW_FILE, this);
+                                doc = new WickDocument(name, path, this.system, NEW_FILE, this);
                                 break;
                             case "css":
                             default:
-                                doc = new CSSDocument(name, path$$1, this.system, NEW_FILE, this);
+                                doc = new CSSDocument(name, path, this.system, NEW_FILE, this);
                         }
                         this.docs.set(id, doc);
 
@@ -21532,12 +21664,12 @@ RootNode.prototype.build = function(element, source$$1, presets, errors, taps, s
 
 RootNode.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
 
-    let path$$1 = this.url.path,
+    let path = this.url.path,
         CAN_FETCH = true;
 
     //make sure URL is not already called by a parent.
     while (parent) {
-        if (parent.url && parent.url.path == path$$1) {
+        if (parent.url && parent.url.path == path) {
             console.warn(`Preventing recursion on resource ${this.url.path}`);
             CAN_FETCH = false;
             break;
@@ -22109,7 +22241,7 @@ class Project {
     }
 
     scheduledUpdate(frame_time, time_since_last){
-        this.save(path.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
+        this.save(path$1.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
         this.scheduleAutoSave();
     }
 
@@ -22133,7 +22265,7 @@ class Project {
                 return console.error(`Could not load UI components: ${e}`);
 
             d.forEach((fn) => {
-                if (path.extname(fn) == ".html") {
+                if (path$1.extname(fn) == ".html") {
                     this.system.ui.addComponent(([dir, fn]).join("/"));
                 }
             });
@@ -22149,7 +22281,7 @@ class Project {
         this.components.move_type = "relative";
         this.components.KEEP_UNIQUE = true;
 
-        this.loadUIComponents(path.join(process.cwd(), "./assets/ui_components"));
+        this.loadUIComponents(path$1.join(process.cwd(), "./assets/ui_components"));
     }
 
     get meta(){
@@ -22549,8 +22681,8 @@ const flame = {
 
         if (DEV && !TEST) {
             //Load in the development component.
-            let path$$1 = require("path").join(process.cwd(), "assets/components/test.html");
-            let doc = system.docs.get(system.docs.loadFile(path$$1));
+            let path = require("path").join(process.cwd(), "assets/components/test.html");
+            let doc = system.docs.get(system.docs.loadFile(path));
             actions.CREATE_COMPONENT(system, doc, 200, 200);
             window.flame = flame;
         } else if (TEST) {

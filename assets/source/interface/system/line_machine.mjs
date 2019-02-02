@@ -4,24 +4,24 @@ class LineBox {
         this.ON_MAIN = ON_MAIN;
     }
     get l() {
-        return this.rect.x + this.component.x;
+        return this.rect.x //+ this.component.x;
     }
 
     get t() {
-        return this.rect.y + this.component.y;
+        return this.rect.y //+ this.component.y;
     }
 
     get b() {
-        return this.rect.y + this.rect.height + this.component.y;
+        return this.rect.y + this.rect.height //+ this.component.y;
     }
 
     get r() {
-        return this.rect.x + this.rect.width + this.component.x;
+        return this.rect.x + this.rect.width //+ this.component.x;
     }
 
     getTransformed(trs){
 
-        if(this.ON_MAIN)
+        if(true || this.ON_MAIN)
             return {l:this.l, r:this.r, t:this.t, b:this.b};
         else{
 
@@ -39,7 +39,7 @@ class ElementLineBox extends LineBox {
     constructor(element, component) {
         super(!!component.IS_MASTER);
         this.rect = element.getBoundingClientRect();
-
+        console.log(this.rect)
         this.component = component;
     }
 }
@@ -72,6 +72,7 @@ function CreateBoxes(ele, c, LineMachine, target) {
     LineMachine.boxes.push(new ElementLineBox(ele, c));
 
     let children = ele.children;
+
     for (let i = 0; i < children.length; i++) {
         if (target == children[i]) continue;
         CreateBoxes(children[i], c, LineMachine, target);
@@ -100,7 +101,7 @@ export class LineMachine {
             components.forEach(c => CreateComponentBoxes(c, this, component));
         } else {
             //get tree from component and create boxes from all elements inside the component. 
-            let tree = component.window.document.body;
+            let tree = component.element.shadowRoot.children[0];
 
             let ele = tree;
 

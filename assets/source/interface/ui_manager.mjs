@@ -198,7 +198,8 @@ export class UI_Manager {
                 if (this.target.IS_COMPONENT) {
                     this.line_machine.setPotentialBoxes(null, component, this.components);
                 } else {
-                    this.line_machine.setPotentialBoxes(this.target.element, component, this.components);
+                    const target_element = e.composedPath()[0];
+                    this.line_machine.setPotentialBoxes(target_element, component, this.components);
                 }
             }
 
@@ -217,15 +218,11 @@ export class UI_Manager {
 
         frame.addEventListener("mousedown", e => {
 
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
+            const x = e.pageX// + component.x;
+            const y = e.pageY// + component.y;
 
             this.last_action = Date.now();
-
-            if (component == this.master_component)
-                this.handlePointerDownEvent(e);
-            else
-                this.handlePointerDownEvent(e, x, y);
+            this.handlePointerDownEvent(e);
 
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
@@ -234,7 +231,11 @@ export class UI_Manager {
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
-                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+
+                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+                        //shadow_dom
+                        const target_element = e.composedPath()[0];
+                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
@@ -242,7 +243,7 @@ export class UI_Manager {
             }
             return false;
         });
-        
+        /*
         if (component !== this.master_component)
             frame.addEventListener("wheel", e => {
                 const x1 = e.pageX,
@@ -254,24 +255,16 @@ export class UI_Manager {
 
                 this.handleScroll(e, x, y);
             });
-
+        */
         frame.addEventListener("mousemove", e => {
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
-
-            if (component == this.master_component) {
-
-                this.handlePointerMoveEvent(e);
-            } else
-                this.handlePointerMoveEvent(e, x, y);
-
+            this.handlePointerMoveEvent(e);
             return false;
         });
 
         frame.addEventListener("mouseup", e => {
             const t = Date.now();
-            const x = e.pageX + component.x;
-            const y = e.pageY + component.y;
+            const x = e.pageX// + component.x;
+            const y = e.pageY// + component.y;
 
             if (t - this.last_action < 200) {
                 if (Date.now() - DD_Candidate < 200) {
@@ -285,7 +278,12 @@ export class UI_Manager {
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-                        this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+
+                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
+                        //shadow_dom
+                        const target_element = e.composedPath()[0];
+                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
+
                         this.render();
                         this.setTarget(e, component, x, y);
                     }

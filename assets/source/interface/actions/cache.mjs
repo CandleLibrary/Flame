@@ -82,7 +82,7 @@ class Cache {
         if(!system)
             return
 
-        this.generateMovementCache(system, this.element, this.component);
+        this.generateMovementCache(system, this.component, this.element);
     }
 
     generateMovementCache(system, component, element) {

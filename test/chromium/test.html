@@ -53,12 +53,12 @@
         };
 
         /** Loading Test Modules **/
-        //DATA(system, env);
-        //MOVE(system, env);
-        //BB(system, env);
         CREATION(system, env);
-        //HISTORY(system, env);
-        //UNSORTED(system, env);
+        MOVE(system, env);
+        BB(system, env);
+        HISTORY(system, env);
+        UNSORTED(system, env);
+        DATA(system, env);
 
         mocha.checkLeaks();
         mocha.run();

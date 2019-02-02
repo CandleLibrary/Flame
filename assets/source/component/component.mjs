@@ -56,6 +56,25 @@ export class Component {
 
     createFrameElement() {
 
+        this.frame = document.createElement("div");
+        this.frame.classList.add("flame_component")
+
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+        // this.frame.src = "component_frame.html";
+        //this.frame.setAttribute("frameBorder", "0");
+        this.frame.style.position = "fixed";
+
+
+        this.mountListeners();
+        this.IFRAME_LOADED = true;
+
+        return this.frame;
+    }
+    /*
+    createFrameElement() {
+
         this.frame = document.createElement("iframe");
         this.frame.src = "component_frame.html";
 
@@ -76,9 +95,10 @@ export class Component {
 
         return this.frame;
     }
+    */
 
     mountListeners() {
-        this.system.ui.integrateComponentFrame(this.frame.contentWindow, this);
+        this.system.ui.integrateComponentFrame(this.frame, this);
     }
 
     addStyle(tree, INLINE) {
@@ -134,7 +154,7 @@ export class Component {
                 });
 
             if (this.IFRAME_LOADED) {
-                this.manager = pkg.mount(this.content, null, false, this);
+                this.manager = pkg.mount(this.content, null, true, this);
                 this.sources[0].window = this.window;
                 this.rebuild();
 
@@ -171,11 +191,30 @@ export class Component {
     }
 
     query(query) {
-        return this.window.document.querySelector(query);
+        return this.frame.querySelector(query);
     }
 
     get window() {
-        return this.frame.contentWindow;
+        return this;
+        return new Proxy(this,{get:(obj, prop)=>{
+            console.log(prop, obj[prop])
+            return obj[prop]
+        }});
+        return window;
+        return this.frame;
+    }
+
+    get getComputedStyle(){
+        return Component.getComputedStyle;
+    }
+
+    get innerWidth(){
+        return this.width;
+
+    }
+
+    get innerHeight(){
+        return this.height;
     }
 
     set x(x) {
@@ -184,17 +223,16 @@ export class Component {
 
     set y(y) {
         this.element.style.top = y + "px";
-
     }
 
     set width(w) {
-        this.frame.width = w;
+        this.frame.style.width = w + "px";
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
 
     set height(h) {
-        this.frame.height = h;
+        this.frame.style.height = h + "px";
         this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
     }
@@ -208,11 +246,11 @@ export class Component {
     }
 
     get width() {
-        return parseFloat(this.frame.width);
+        return parseFloat(this.frame.style.width);
     }
 
     get height() {
-        return parseFloat(this.frame.height);
+        return parseFloat(this.frame.style.height);
     }
 
     get target() {
@@ -220,11 +258,11 @@ export class Component {
     }
 
     get element() {
-        return this.style_frame;
+        return this.frame;
     }
 
     get content() {
-        return this.frame.contentDocument.body;
+        return this.frame;
     }
 
     toJSON() {
@@ -239,3 +277,5 @@ export class Component {
         };
     }
 }
+
+Component.getComputedStyle = window.getComputedStyle.bind(window);

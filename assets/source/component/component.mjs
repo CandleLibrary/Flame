@@ -195,8 +195,26 @@ export class Component {
     }
 
     get window() {
+        return this;
+        return new Proxy(this,{get:(obj, prop)=>{
+            console.log(prop, obj[prop])
+            return obj[prop]
+        }});
         return window;
         return this.frame;
+    }
+
+    get getComputedStyle(){
+        return Component.getComputedStyle;
+    }
+
+    get innerWidth(){
+        return this.width;
+
+    }
+
+    get innerHeight(){
+        return this.height;
     }
 
     set x(x) {
@@ -259,3 +277,5 @@ export class Component {
         };
     }
 }
+
+Component.getComputedStyle = window.getComputedStyle.bind(window);

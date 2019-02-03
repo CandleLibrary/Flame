@@ -1,59 +1,65 @@
 import { actions } from "./actions/action";
+import path from "path";
 
 const pi2 = Math.PI * 2;
+let default_component = "";
 
 function gripPoint(ctx, x, y, r) {
     ctx.beginPath();
-    //ctx.moveTo(x,y); 
     ctx.arc(x, y, r, 0, pi2);
     ctx.fill();
     ctx.stroke();
 }
 
-function getTransformed(trs){
-if(this.ON_MAIN)
-            return {l:this.l, r:this.r, t:this.t, b:this.b};
-        else{
+function getTransformed(trs) {
+    if (this.ON_MAIN)
+        return { l: this.l, r: this.r, t: this.t, b: this.b };
+    else {
 
-            const 
-                l = (this.l)*trs.scale+trs.px,
-                t = (this.t)*trs.scale+trs.py,
-                r = (this.r)*trs.scale+trs.px,
-                b = (this.b)*trs.scale+trs.py;
+        const
+            l = (this.l) * trs.scale + trs.px,
+            t = (this.t) * trs.scale + trs.py,
+            r = (this.r) * trs.scale + trs.px,
+            b = (this.b) * trs.scale + trs.py;
 
-            return {l, r, t, b};
-        }
+        return { l, r, t, b };
+    }
 }
 
 
 export class ControlWidget {
-    constructor(controler_component_package) {
+    constructor(controler_component_package, system) {
         var widget = ControlWidget.cache;
 
-        if(widget){
+        if (widget) {            
 
             ControlWidget.cache = widget.next;
+            widget.next = null;
 
             let element = widget.element;
 
-            if(widget.sources[0])
-                widget.sources[0].destroy();
+        } else {
 
-            widget.sources = [];
-            
-            if(element.parentElement)
-                widget.element.parentElement.removeChild(element);
+            if (!ControlWidget.system)
+                ControlWidget.system = system;
 
-        }else{
             widget = this;
-            widget.element = document.createElement("div");
-            widget.element.classList.add("widget_component");
-            widget.element.setAttribute("tabindex",-1)
+            this.sources = [];
+            this.element = document.createElement("div");
+            this.element.classList.add("widget_component");
+            //this.element.setAttribute("tabindex", -1);
+            this.element.addEventListener("pointer_down", e => {
+                this.target.action = actions.MOVE;
+                this.ui.setWidgetTarget(this.target);
+                this.ui.handlePointerDownEvent({ button: 0 });
+            })
         }
 
-        if(controler_component_package)
-            widget.controller = controler_component_package.mount(widget.element, widget, false, widget);
-        
+        widget.ui = system.ui;
+
+        if (controler_component_package)
+            widget.loadComponent(controler_component_package);
+
         document.body.append(widget.element);
 
         widget.target = {
@@ -63,8 +69,8 @@ export class ControlWidget {
             action: null,
             box: { l: 0, r: 0, t: 0, b: 0 }
         };
-    
-        
+
+
         widget.IS_ON_MASTER = false;
 
         widget._ml = 0;
@@ -93,11 +99,17 @@ export class ControlWidget {
         widget.h = 0; //height of border box
         widget.br = 0;
 
-
         return widget;
     }
 
-    destroy(){
+    destroy() {
+        if (this.element.parentElement){
+            this.element.parentElement.removeChild(this.element);
+            if(this.sources[0])
+                this.sources[0].destroy;
+            this.sources = [];
+        }
+
         this.next = ControlWidget.cache;
         ControlWidget.cache = this;
     }
@@ -181,8 +193,8 @@ export class ControlWidget {
 
         if (IS_COMPONENT) {
             const rect = this.target.element.getBoundingClientRect();
-            this.x = rect.left;//component.x;
-            this.y = rect.top;//component.y;
+            this.x = rect.left; //component.x;
+            this.y = rect.top; //component.y;
             this.w = rect.width;
             this.h = rect.height;
         } else {
@@ -272,12 +284,12 @@ export class ControlWidget {
         this.element.style.width = `${(cbr-cbl)*scale}px`;
         this.element.style.height = `${(cbb-cbt)*scale}px`;
 
-        if(IS_COMPONENT){
+        if (IS_COMPONENT) {
             this.element.style.left = `${this.x}px`
             this.element.style.top = `${this.y}px`;
-        }else{
-            this.element.style.left = `${transform.px+(this.x+4)*scale}px`
-            this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
+        } else {
+            this.element.style.left = `${(this.x+4)*scale}px`
+            this.element.style.top = `${(this.y+4)*scale}px`;
             ctx.strokeRect(ml, mt, mr - ml, mb - mt);
             ctx.strokeRect(pl, pt, pr - pl, pb - pt);
         }
@@ -292,36 +304,46 @@ export class ControlWidget {
         ctx.lineWidth = 1 / scale;
         let r = 4 / scale;
 
-        gripPoint(ctx, cbl, cbt, r);
-        gripPoint(ctx, cbr, cbt, r);
-        gripPoint(ctx, cbl, cbb, r);
-        gripPoint(ctx, cbr, cbb, r);
-
-        if (!IS_COMPONENT) {
-
-            //Margin Markers
-            gripPoint(ctx, ml, mt, r);
-            gripPoint(ctx, mr, mt, r);
-            gripPoint(ctx, ml, mb, r);
-            gripPoint(ctx, mr, mb, r);
-
-            //Padding Markers
-            gripPoint(ctx, pl, pt, r);
-            gripPoint(ctx, pr, pt, r);
-            gripPoint(ctx, pl, pb, r);
-            gripPoint(ctx, pr, pb, r);
-        }
-
         //Update Wick Controls
         this.sources[0].update(this);
     }
 
+    loadComponent(pkg) {
+        if (pkg) {
+            if (this.sources.length > 0) {
+                this.sources.forEach(e=>e.destroy());
+                this.sources.length = 0;
+                this.element.innerHTML = "";
+            }
 
-    addView(source){
+            this.element.innerHTML = "";
+
+            this.controller = pkg.mount(this.element, this, false, this);
+        }
+    }
+
+    async upImport(key, value) {
+        console.log(key, value)
+        switch (key) {
+            case "move_action":
+                this.ui.setWidgetTarget(this.target);
+                this.ui.handlePointerDownEvent({ button: 0 });
+                break;
+            case "set_control":
+                this.loadComponent(await ControlWidget.loadComponent(value));
+                break;
+        }
+    }
+
+    get actions() {
+        return actions;
+    }
+
+    addView(source) {
         source.model = this;
     }
 
-    removeView(source){
+    removeView(source) {
         source.model = null;
     }
 
@@ -333,4 +355,15 @@ export class ControlWidget {
     }
 }
 
+ControlWidget.loadComponent = async function(component_path) {
+    component_path = path.resolve(process.cwd(), "./assets/ui_components/controls", component_path)
+    const system = ControlWidget.system;
+    let doc = system.docs.get(system.docs.loadFile(component_path));
+    if (doc) {
+        await doc.alert();
+        return doc.data;
+    }
+    return null;
+}
+ControlWidget.system = null;
 ControlWidget.cache = null;

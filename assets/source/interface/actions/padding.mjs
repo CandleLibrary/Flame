@@ -1,5 +1,5 @@
 import {
-    setNumericalValue,
+    setNumericValue,
     getRatio,
     ensureBlocklike,
     prepRebuild
@@ -63,7 +63,7 @@ function resetPadding(system, component, element) {
 export function SETPADDINGLEFT(system, component, element, x, LINKED = false) {
     resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_left", system, component, element, x, setNumericalValue.parent_width);
+    setNumericValue("padding_left", system, component, element, x, setNumericValue.parent_width);
     prepRebuild(element, LINKED);
 }
 
@@ -94,7 +94,7 @@ export function SETDELTAPADDINGLEFT(system, component, element, dx, ratio = 0, L
 export function SETPADDINGTOP(system, component, element, x, LINKED = false) {
     resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_top", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("padding_top", system, component, element, x, setNumericValue.parent_height);
     prepRebuild(element, LINKED);
 }
 
@@ -124,7 +124,7 @@ export function SETDELTAPADDINGTOP(system, component, element, dy, ratio = 0, LI
 export function SETPADDINGRIGHT(system, component, element, x, LINKED = false) {
     resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_right", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("padding_right", system, component, element, x, setNumericValue.parent_height);
     prepRebuild(element, LINKED);
 }
 
@@ -154,7 +154,7 @@ prepRebuild(element,LINKED);
 export function SETPADDINGBOTTOM(system, component, element, x, LINKED = false) {
     resetPadding(system, component, element);
     ensureBlocklike(system, component, element);
-    setNumericalValue("padding_bottom", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("padding_bottom", system, component, element, x, setNumericValue.parent_height);
     prepRebuild(element, LINKED);
 }
 

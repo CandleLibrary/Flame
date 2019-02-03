@@ -1,4 +1,4 @@
-import { setNumericalValue, getRatio } from "./common";
+import { setNumericValue, getRatio } from "./common";
 import {SETDELTALEFT, SETDELTATOP} from "./position";
 
 import { CacheFactory } from "./cache";
@@ -14,7 +14,7 @@ function resetMargin(system, component, element) {
 
 export function SETMARGINLEFT(system, component, element, x, LINKED = false) {
     resetMargin(system, component, element);
-    setNumericalValue("margin_left", system, component, element, x, setNumericalValue.parent_width);
+    setNumericValue("margin_left", system, component, element, x, setNumericValue.parent_width);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -33,7 +33,7 @@ export function SETDELTAMARGINLEFT(system, component, element, dx, ratio = 0, LI
 
 export function SETMARGINTOP(system, component, element, x, LINKED = false) {
     resetMargin(system, component, element);
-    setNumericalValue("margin_top", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("margin_top", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -52,7 +52,7 @@ export function SETDELTAMARGINTOP(system, component, element, dx, ratio = 0, LIN
 
 export function SETMARGINRIGHT(system, component, element, x, LINKED = false) {
     resetMargin(system, component, element);
-    setNumericalValue("margin_right", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("margin_right", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -72,7 +72,7 @@ export function SETDELTAMARGINRIGHT(system, component, element, dx, ratio = 0, L
 
 export function SETMARGINBOTTOM(system, component, element, x, LINKED = false) {
     resetMargin(system, component, element);
-    setNumericalValue("margin_bottom", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("margin_bottom", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 

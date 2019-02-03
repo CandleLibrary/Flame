@@ -1,9 +1,11 @@
+import path from "path";
 export default class Handler {
-    constructor(system, component) {
+    constructor(system, component_path) {
         this.package = null;
 
-        if(component){
-            const doc = system.docs.get(system.docs.loadFile(component));
+        if(component_path){
+            component_path = path.resolve(process.cwd(), component_path)
+            const doc = system.docs.get(system.docs.loadFile(component_path));
 
             if (doc) 
                 doc.bind(this)

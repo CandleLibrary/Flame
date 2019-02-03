@@ -1,5 +1,5 @@
 import {
-    setNumericalValue,
+    setNumericValue,
     getRatio,
     prepRebuild
 } from "./common";
@@ -22,9 +22,9 @@ export function SETLEFT(system, component, element, x, LINKED = false) {
         cache.rules.props.left = x;
     } else {
         if (cache.cssflagsA & 1)
-            setNumericalValue("left", system, component, element, x, setNumericalValue.parent_width);
+            setNumericValue("left", system, component, element, x, setNumericValue.parent_width);
         else
-            setNumericalValue("left", system, component, element, x, setNumericalValue.positioned_ancestor_width);
+            setNumericValue("left", system, component, element, x, setNumericValue.positioned_ancestor_width);
     }
 
     prepRebuild(element, LINKED);
@@ -37,9 +37,9 @@ export function SETTOP(system, component, element, x, LINKED = false) {
         cache.rules.props.top = x;
     } else {
         if (cache.cssflagsA & 1)
-            setNumericalValue("top", system, component, element, x, setNumericalValue.parent_height);
+            setNumericValue("top", system, component, element, x, setNumericValue.parent_height);
         else
-            setNumericalValue("top", system, component, element, x, setNumericalValue.positioned_ancestor_height);
+            setNumericValue("top", system, component, element, x, setNumericValue.positioned_ancestor_height);
     }
 
     prepRebuild(element, LINKED);
@@ -48,9 +48,9 @@ export function SETRIGHT(system, component, element, x, LINKED = false) {
     let cache = CacheFactory(system, component, element);
 
     if (cache.cssflagsA & 1)
-        setNumericalValue("right", system, component, element, x, setNumericalValue.parent_width);
+        setNumericValue("right", system, component, element, x, setNumericValue.parent_width);
     else
-        setNumericalValue("right", system, component, element, x, setNumericalValue.positioned_ancestor_width);
+        setNumericValue("right", system, component, element, x, setNumericValue.positioned_ancestor_width);
 
     prepRebuild(element, LINKED);
 }
@@ -59,9 +59,9 @@ export function SETBOTTOM(system, component, element, x, LINKED = false) {
     let cache = CacheFactory(system, component, element);
 
     if (cache.cssflagsA & 1)
-        setNumericalValue("bottom", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("bottom", system, component, element, x, setNumericValue.parent_height);
     else
-        setNumericalValue("bottom", system, component, element, x, setNumericalValue.positioned_ancestor_height);
+        setNumericValue("bottom", system, component, element, x, setNumericValue.positioned_ancestor_height);
 
     prepRebuild(element, LINKED);
 }

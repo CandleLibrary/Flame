@@ -1,16 +1,16 @@
-import { setNumericalValue, getRatio, ensureBlocklike, prepRebuild} from "./common";
+import { setNumericValue, getRatio, ensureBlocklike, prepRebuild} from "./common";
 
 export function SETWIDTH(system, component, element, x, LINKED = false) {
 
     ensureBlocklike(system, component, element);
-    setNumericalValue("width", system, component, element, x, setNumericalValue.parent_width);
+    setNumericValue("width", system, component, element, x, setNumericValue.parent_width);
     prepRebuild(element, LINKED);
 }
 
 export function SETHEIGHT(system, component, element, x, LINKED = false) {
 
     ensureBlocklike(system, component, element);
-    setNumericalValue("height", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("height", system, component, element, x, setNumericValue.parent_height);
     prepRebuild(element, LINKED);
 }
 

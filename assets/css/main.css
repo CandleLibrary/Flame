@@ -17,6 +17,11 @@ iframe {
     border: solid 0px black;
 }
 
+button{
+    border:none;
+    box-shadow: none;
+}
+
 
 /**************** Master Component *********************/
 #master_component{
@@ -123,8 +128,6 @@ iframe {
     left:0;
     width:0;
     height:0;
-    background-color: rgba(256,120,52,0.3);
-    user-select: none;
-    pointer-events: none;
+    background-color: rgba(256,120,52,0.03);
 }
 

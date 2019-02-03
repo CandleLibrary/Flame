@@ -1,6 +1,6 @@
 import {CSSParser} from "@candlefw/css";
 
-import { setNumericalValue, getRatio, setValue } from "./common";
+import { setNumericValue, getRatio, setValue,getFirstPositionedAncestor, prepRebuild } from "./common";
 import {SETDELTALEFT, SETDELTATOP} from "./position";
 
 import { CacheFactory } from "./cache";
@@ -10,6 +10,7 @@ import { CacheFactory } from "./cache";
 let types = CSSParser.types;
 
 function resetBorder(system, component, element) {
+    return 
     let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     if (css.props.border) {
@@ -20,12 +21,15 @@ function resetBorder(system, component, element) {
 
 export function SETBORDERLEFT(system, component, element, x, LINKED = false) {
     resetBorder(system, component, element);
-    setNumericalValue("border_left_width", system, component, element, x, setNumericalValue.parent_width);
+    setNumericValue("border_left_width", system, component, element, x, setNumericValue.parent_width);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
 export function SETDELTABORDERLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
+
+
     let start_x = parseFloat(component.window.getComputedStyle(element)["border-left-width"]);
+
 
     if (ratio > 0)
         SETBORDERLEFT(system, component, element, start_x + dx / ratio, true);
@@ -39,7 +43,7 @@ export function SETDELTABORDERLEFT(system, component, element, dx, ratio = 0, LI
 
 export function SETBORDERTOP(system, component, element, x, LINKED = false) {
     resetBorder(system, component, element);
-    setNumericalValue("border_top_width", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("border_top_width", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -58,7 +62,7 @@ export function SETDELTABORDERTOP(system, component, element, dx, ratio = 0, LIN
 
 export function SETBORDERRIGHT(system, component, element, x, LINKED = false) {
     resetBorder(system, component, element);
-    setNumericalValue("border_right_width", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("border_right_width", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -78,7 +82,7 @@ export function SETDELTABORDERRIGHT(system, component, element, dx, ratio = 0, L
 
 export function SETBORDERBOTTOM(system, component, element, x, LINKED = false) {
     resetBorder(system, component, element);
-    setNumericalValue("border_bottom_width", system, component, element, x, setNumericalValue.parent_height);
+    setNumericValue("border_bottom_width", system, component, element, x, setNumericValue.parent_height);
     if (!LINKED) element.wick_node.prepRebuild();
 }
 
@@ -131,14 +135,16 @@ export function RESIZEBORDERTL(system, component, element, dx, dy, IS_COMPONENT)
 
     SETDELTABORDERLEFT(system, component, element, -dx, 0, true);
     SETDELTABORDERTOP(system, component, element, -dy, 0, true);
-    element.wick_node.prepRebuild();
+    prepRebuild(element)
+    //element.wick_node.prepRebuild();
 }
 
 export function RESIZEBORDERTR(system, component, element, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return;
     SETDELTABORDERRIGHT(system, component, element, dx, 0, true);
     SETDELTABORDERTOP(system, component, element, dy, 0, true);
-    element.wick_node.prepRebuild();
+    prepRebuild(element)
+    //element.wick_node.prepRebuild();
 }
 
 export function RESIZEBORDERBL(system, component, element, dx, dy, IS_COMPONENT) {
@@ -161,6 +167,7 @@ export  function BORDERRADIUSTL(system, component, element, d){
 }
 
 export  function BORDERRADIUSTR(system, component, element, d){
+
     setValue(system, component, element, "border_top_right_radius", new types.length(d, "px"));
     element.wick_node.prepRebuild();
 }

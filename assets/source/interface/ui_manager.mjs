@@ -28,7 +28,7 @@ export class UI_Manager {
         system.ui = this;
 
         //Initialize Handlers
-        new Default(system, path.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
+        new Default(system);
 
         this.d = Default;
         this.e = ElementDraw;
@@ -96,7 +96,11 @@ export class UI_Manager {
             } else
                 this.handlePointerDownEvent(e, undefined, undefined, !!1);
         });
-        window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
+        window.addEventListener("pointermove", e => {
+            this.pointer_x = e.x;
+            this.pointer_y = e.y;
+            this.handlePointerMoveEvent(e);
+        });
         window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
 
         // // *********** Drag 'n Drop *********************
@@ -106,8 +110,6 @@ export class UI_Manager {
             e.dataTransfer.dropEffect = "copy";
         });
         document.body.addEventListener("dragstart", e => {});
-
-        //this.createMaster();
     }
 
     createMaster() {
@@ -181,6 +183,17 @@ export class UI_Manager {
         }
     }
 
+    setWidgetTarget(target) {
+        this.target = target;
+        
+        this.loadedComponents.forEach(c => c.set(this.target));
+
+        if (target.IS_COMPONENT)
+            this.line_machine.setPotentialBoxes(null, target.component, this.components);
+        else
+            this.line_machine.setPotentialBoxes(target.element, target.component, this.components);
+    }
+
     setTarget(e, component, x, y, SET_MENU = true) {
         let target = null;
 
@@ -214,12 +227,12 @@ export class UI_Manager {
 
     /******************** Component Iframe *************************/
 
-    integrateComponentFrame(frame, component) {
+    integrateComponentElement(element, component) {
 
-        frame.addEventListener("mousedown", e => {
+        element.addEventListener("mousedown", e => {
 
-            const x = e.pageX// + component.x;
-            const y = e.pageY// + component.y;
+            const x = e.pageX // + component.x;
+            const y = e.pageY // + component.y;
 
             this.last_action = Date.now();
             this.handlePointerDownEvent(e);
@@ -227,7 +240,7 @@ export class UI_Manager {
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
                     if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true, true, this);
+                        this.controls.setTarget(component, component.element, true, true, this.system);
                         this.render();
                         this.setTarget(e, component, x, y);
                     } else {
@@ -235,62 +248,13 @@ export class UI_Manager {
                         //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                         //shadow_dom
                         const target_element = e.composedPath()[0];
-                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
+                        this.controls.setTarget(component, target_element, component == this.master_component, false, this.system);
                         this.render();
                         this.setTarget(e, component, x, y);
                     }
                 }
             }
             return false;
-        });
-        /*
-        if (component !== this.master_component)
-            frame.addEventListener("wheel", e => {
-                const x1 = e.pageX,
-                    y1 = e.pageY,
-                    x2 = component.x,
-                    y2 = component.y,
-                    x = (x1 + x2) * this.transform.scale + this.transform.px,
-                    y = (y1 + y2) * this.transform.scale + this.transform.py;
-
-                this.handleScroll(e, x, y);
-            });
-        */
-        frame.addEventListener("mousemove", e => {
-            this.handlePointerMoveEvent(e);
-            return false;
-        });
-
-        frame.addEventListener("mouseup", e => {
-            const t = Date.now();
-            const x = e.pageX// + component.x;
-            const y = e.pageY// + component.y;
-
-            if (t - this.last_action < 200) {
-                if (Date.now() - DD_Candidate < 200) {
-                    DD_Candidate = 0;
-                    e.x = x;
-                    e.y = y;
-                    this.handleContextMenu(e, component);
-                } else {
-                    if (e.target.tagName == "BODY") {
-                        this.controls.setTarget(component, component.element, true, true, this);
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-
-                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
-                        //shadow_dom
-                        const target_element = e.composedPath()[0];
-                        this.controls.setTarget(component, target_element, component == this.master_component, false, this);
-
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    }
-                    DD_Candidate = Date.now();
-                }
-            }
-            this.handlePointerEndEvent(e);
         });
 
         this.components.push(component);
@@ -299,9 +263,8 @@ export class UI_Manager {
     /****************** Event responders **************************/
 
     handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-       // if (e.target == document.body || !this.target)
-       //     this.active_handler = Handler.element_draw;
-
+        // if (e.target == document.body || !this.target)
+        //     this.active_handler = Handler.element_draw;
         this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
         return false;
     }
@@ -372,6 +335,7 @@ export class UI_Manager {
 
         return await file_builder.writeS(JSON.stringify(data));
     }
+
 
     load(string) {
         const data = JSON.parse(string),

@@ -6,16 +6,14 @@
 	<div class="centerer">
 		<span class="top_position">top: ((post.toString().slice(0,8)))px</span>
 	</div>
-	<span class="center_position">((w.toString().slice(0,8)))px ✗ ((h.toString().slice(0,8)))px</span>
+
 
 	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
 	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
 	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
 	<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
 
-	<button onpointerdown="((set_control)('./border.html'))">test</button>
-
-
+	<button id="move" onpointerdown="((set_control)('./basic.html'))">test</button>
 
 	<script on=((grab))>
 		model.target.action = model.actions.MOVE;
@@ -24,25 +22,25 @@
 	</script>
 
 	<script on=((tl_grab))>
-		model.target.action = model.actions.RESIZETL;
+		model.target.action = model.actions.BORDERRADIUSTL;
 		emit.move_action = event;
 		return false;
 	</script>
 
 	<script on=((tr_grab))>
-		model.target.action = model.actions.RESIZETR;
+		model.target.action = model.actions.RESIZEBORDERTR;
 		emit.move_action = event;
 		return false;
 	</script>
 
 	<script on=((bl_grab))>
-		model.target.action = model.actions.RESIZEBL;
+		model.target.action = model.actions.RESIZEBORDERBL;
 		emit.move_action = event;
 		return false;
 	</script>
 
 	<script on=((br_grab))>
-		model.target.action = model.actions.RESIZEBR;
+		model.target.action = model.actions.RESIZEBORDERBR;
 		emit.move_action = event;
 		return false;
 	</script>
@@ -52,10 +50,17 @@
 		.move_handle{
 			width: 16px;
 			height: 16px;
-			background-color: red;
-  			pointer-events: auto;
+			background-color: green;
   			border-radius: 8px;
 			position: absolute;
+			box-shadow: 1px 1px 5px black;
+		}
+
+		#move{
+			position: absolute;
+			left: 50px;
+			position: absolute;
+			z-index: 100;
 		}
 
 		#tl{

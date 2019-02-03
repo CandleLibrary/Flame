@@ -304,7 +304,7 @@ export class CanvasManager {
             let cbb = widget.cbb; // widget.h - widget.bb - widget.bt + cbt;
             //Widget size
             while (true) {
-
+                /*
                 //Content box first / Can double as border
                 if (x >= cbl - tr && x <= cbr + tr) {
                     if (y >= cbt - tr && y <= cbb + tr) {
@@ -376,7 +376,9 @@ export class CanvasManager {
                     }
                 }
                 break;
+                */
             }
+            
             if (widget.target.action) {
 
                 widget.setBox();

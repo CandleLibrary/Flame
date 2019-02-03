@@ -79,6 +79,7 @@ export class DocumentManager {
                         let doc;
                         switch (type) {
                             case "html":
+                            case "text/html":
                                 doc = new WickDocument(name, path, this.system, NEW_FILE, this);
                                 break;
                             case "css":

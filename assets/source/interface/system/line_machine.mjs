@@ -39,7 +39,6 @@ class ElementLineBox extends LineBox {
     constructor(element, component) {
         super(!!component.IS_MASTER);
         this.rect = element.getBoundingClientRect();
-        console.log(this.rect)
         this.component = component;
     }
 }

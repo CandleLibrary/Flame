@@ -26,7 +26,10 @@ function getContentBox(ele, win = window) {
 */
 export function prepRebuild(element, LINKED = false) {
     element.wick_node.prepRebuild();
-    if (!LINKED) element.wick_node.rebuild();
+    if (!LINKED) {
+        console.log(1)
+        element.wick_node.rebuild();
+    }
 }
 
 /** 
@@ -63,7 +66,7 @@ export function getFirstPositionedAncestor(ele) {
     return ele;
 }
 
-export function setNumericalValue(propname, system, component, element, value, relative_type = 0) {
+export function setNumericValue(propname, system, component, element, value, relative_type = 0) {
     let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
@@ -102,26 +105,26 @@ export function setNumericalValue(propname, system, component, element, value, r
             ele;
 
         switch (relative_type) {
-            case setNumericalValue.parent_width:
+            case setNumericValue.parent_width:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).width;
                 break;
-            case setNumericalValue.parent_height:
+            case setNumericValue.parent_height:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).height;
                 break;
-            case setNumericalValue.positioned_ancestor_width:
+            case setNumericValue.positioned_ancestor_width:
                 ele = getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).width;
                 break;
-            case setNumericalValue.positioned_ancestor_height:
+            case setNumericValue.positioned_ancestor_height:
                 ele = getFirstPositionedAncestor(element);
                 if (ele) denominator = getContentBox(ele, component.window).height;
                 break;
-            case setNumericalValue.height:
+            case setNumericValue.height:
                 denominator = getContentBox(component, element.window).width;
                 break;
-            case setNumericalValue.width:
+            case setNumericValue.width:
                 denominator = getContentBox(component, element.window).width;
                 break;
         }
@@ -141,12 +144,12 @@ export function setNumericalValue(propname, system, component, element, value, r
     }
 }
 
-setNumericalValue.parent_width = 0;
-setNumericalValue.parent_height = 1;
-setNumericalValue.positioned_ancestor_width = 2;
-setNumericalValue.positioned_ancestor_height = 3;
-setNumericalValue.height = 4;
-setNumericalValue.width = 5;
+setNumericValue.parent_width = 0;
+setNumericValue.parent_height = 1;
+setNumericValue.positioned_ancestor_width = 2;
+setNumericValue.positioned_ancestor_height = 3;
+setNumericValue.height = 4;
+setNumericValue.width = 5;
 
 
 

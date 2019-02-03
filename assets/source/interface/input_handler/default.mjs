@@ -3,7 +3,7 @@ import { actions } from "../actions/action";
 
 export default class Default extends Handler {
 
-    constructor(system, component) {
+    constructor(system, component = "./assets/ui_components/controls/basic.html") {
         super(system, component);
 
         Handler.default = this;
@@ -15,8 +15,8 @@ export default class Default extends Handler {
     }
 
     start(event, ui, data) {
-        const x = ui.transform.getLocalX(event.pageX),
-              y = ui.transform.getLocalY(event.pageY);
+        const x = data.x || ui.transform.getLocalX(ui.pointer_x),
+              y = data.y || ui.transform.getLocalY(ui.pointer_y);
 
         if (event.button == 1) {
 
@@ -40,7 +40,7 @@ export default class Default extends Handler {
         if (event.target !== document.body)
             return this.constructor.default;
 
-        ui.canvas.clearTargets(ui.transform);
+        ui.controls.clearTargets(ui.transform);
         ui.main_menu.setAttribute("show", "false");
 
 
@@ -53,9 +53,10 @@ export default class Default extends Handler {
 
         if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
 
+
         if (this.UI_MOVE) {
-            x = (typeof(x) == "number") ? x : ui.transform.getLocalX(event.pageX);
-            y = (typeof(y) == "number") ? y : ui.transform.getLocalY(event.pageY);
+            x = (typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x);
+            y = (typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y);
             const diffx = this.origin_x - x;
             const diffy = this.origin_y - y;
 
@@ -67,14 +68,16 @@ export default class Default extends Handler {
             ui.render();
             ui.view_element.style.transform = ui.transform;
         } else if (ui.ui_target) {
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : event.pageX);
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : event.pageY);
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.pointer_x);
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.pointer_y);
             this.origin_x -= diffx;
             this.origin_y -= diffy;
             if (ui.ui_target.action) ui.ui_target.action(ui.system, ui.ui_target.component, diffx, diffy);
         } else if (ui.target) {
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(event.pageX));
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(event.pageY));
+
+
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x));
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y));
 
             const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.target.box, diffx, diffy);
 
@@ -106,7 +109,7 @@ export default class Default extends Handler {
     }
 
     drop(event, ui) {
-        Array.prototypevent.forEach.call(event.dataTransfer.files,
+        Array.prototype.forEach.call(event.dataTransfer.files,
             f => ui.mountDocument(
                 f,
                 ui.transform.getLocalX(event.clientX),

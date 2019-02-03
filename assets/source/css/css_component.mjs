@@ -1,3 +1,5 @@
+import whind from "@candlefw/whind";
+
 export class CSSComponent{
 	constructor(tree, manager){
 		this.manager = manager;
@@ -9,7 +11,8 @@ export class CSSComponent{
 	}
 
 	documentReady(data){
-		this.tree.parse(wick.core.lexer(data, true));
+		debugger
+		this.tree.parse(whind(data, true));
 		this.manager.updateStyle("zzz", data);
 		this.element.innerHTML = this.tree + "";
 	}

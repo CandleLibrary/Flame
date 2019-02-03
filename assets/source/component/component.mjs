@@ -98,7 +98,7 @@ export class Component {
     */
 
     mountListeners() {
-        this.system.ui.integrateComponentFrame(this.frame, this);
+        this.system.ui.integrateComponentElement(this.frame, this);
     }
 
     addStyle(tree, INLINE) {

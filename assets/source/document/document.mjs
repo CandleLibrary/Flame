@@ -97,6 +97,12 @@ export class Document {
         this.observers.push(object);
     }
 
+    async alert() {
+        return new Promise(res => {
+            this.bind({ documentReady: () => res() })
+        })
+    }
+
     alertObservers() {
         if (this.observers)
             for (let i = 0; i < this.observers.length; i++)

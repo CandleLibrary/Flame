@@ -1,21 +1,30 @@
 <w-s export="move_action set_control"  onpointerdown="((grab)())" style="width:100%;height:100%" element="div" >
+			<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
+		<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
+		<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
+		<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
+	<div class="test" badge="padding">
+
+	</div>
+
+	<div class="test" badge="margin">
+	</div>
+
+	<div class="test" badge="content">
+		
+	</div>
+
+
 	<div class="centerer" tabindex=1>
 		<span class="left_position">left: ((posl.toString().slice(0,8)))px</span>
 	</div>
 
 	<div class="centerer">
-		<span class="top_position">top: ((post.toString().slice(0,8)))px</span>
+		<span class="top_position">top:((post.toString().slice(0,8)))px</span>
 	</div>
 	<span class="center_position">((w.toString().slice(0,8)))px ✗ ((h.toString().slice(0,8)))px</span>
 
-	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
-	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
-	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
-	<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
-
 	<button onpointerdown="((set_control)('./border.html'))">test</button>
-
-
 
 	<script on=((grab))>
 		model.target.action = model.actions.MOVE;
@@ -26,29 +35,35 @@
 	<script on=((tl_grab))>
 		model.target.action = model.actions.RESIZETL;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((tr_grab))>
 		model.target.action = model.actions.RESIZETR;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((bl_grab))>
 		model.target.action = model.actions.RESIZEBL;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((br_grab))>
 		model.target.action = model.actions.RESIZEBR;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
-
 	<style>
+		.test{
+			background-color: rgba(255,50,120,0.5);
+			position: absolute;
+			
+			pointer-events: none;
+		}
+
 		.move_handle{
 			width: 16px;
 			height: 16px;

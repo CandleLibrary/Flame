@@ -7,16 +7,18 @@ export default class Default extends Handler {
         super(system, component);
 
         Handler.default = this;
-        
+
         this.origin_x = 0;
         this.origin_y = 0;
+        this.excess_x = 0;
+        this.excess_y = 0;
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
     }
 
     start(event, ui, data) {
         const x = data.x || ui.transform.getLocalX(ui.pointer_x),
-              y = data.y || ui.transform.getLocalY(ui.pointer_y);
+            y = data.y || ui.transform.getLocalY(ui.pointer_y);
 
         if (event.button == 1) {
 
@@ -57,6 +59,7 @@ export default class Default extends Handler {
         if (this.UI_MOVE) {
             x = (typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x);
             y = (typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y);
+
             const diffx = this.origin_x - x;
             const diffy = this.origin_y - y;
 
@@ -75,17 +78,35 @@ export default class Default extends Handler {
             if (ui.ui_target.action) ui.ui_target.action(ui.system, ui.ui_target.component, diffx, diffy);
         } else if (ui.target) {
 
-
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x));
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y));
+            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x)) + this.excess_x;
+            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y)) + this.excess_y;
 
             const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.target.box, diffx, diffy);
 
             this.origin_x -= (MX) ? dx : diffx;
             this.origin_y -= (MY) ? dy : diffy;
 
+            if (this.excess_x !== 0) {
+                //this.excess_x += diffx;
+                //diffx = 0;
+            }
+
+            if (this.excess_y !== 0) {
+                // this.excess_y += diffy;
+                // diffy = 0;
+            }
+
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
-            if (ui.target.action) ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
+            if (ui.target.action) {
+                let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
+                
+                if (out) {
+                    if (out.excess_x)
+                        this.excess_x += out.excess_x;
+                    if (out.excess_y)
+                        this.excess_y += out.excess_y;
+                }
+            }
 
             ui.render();
         }
@@ -104,6 +125,9 @@ export default class Default extends Handler {
 
         ui.RENDER_LINES = false;
         ui.render();
+
+        this.excess_x = 0;
+        this.excess_y = 0;
 
         return this.constructor.default;
     }

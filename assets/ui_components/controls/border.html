@@ -7,11 +7,12 @@
 		<span class="top_position">top: ((post.toString().slice(0,8)))px</span>
 	</div>
 
-
-	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
-	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
-	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
-	<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
+	<div class="test" badge="padding">
+		<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
+		<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
+		<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
+		<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
+    </div>
 
 	<button id="move" onpointerdown="((set_control)('./basic.html'))">test</button>
 
@@ -22,7 +23,7 @@
 	</script>
 
 	<script on=((tl_grab))>
-		model.target.action = model.actions.BORDERRADIUSTL;
+		model.target.action = model.actions.RESIZEBORDERTL;
 		emit.move_action = event;
 		return false;
 	</script>
@@ -47,6 +48,11 @@
 
 
 	<style>
+		.test{
+			background-color: rgba(255,50,120,0.5);
+			position: absolute;
+		}
+
 		.move_handle{
 			width: 16px;
 			height: 16px;

@@ -27,7 +27,6 @@ function getContentBox(ele, win = window) {
 export function prepRebuild(element, LINKED = false) {
     element.wick_node.prepRebuild();
     if (!LINKED) {
-        console.log(1)
         element.wick_node.rebuild();
     }
 }
@@ -66,13 +65,14 @@ export function getFirstPositionedAncestor(ele) {
     return ele;
 }
 
-export function setNumericValue(propname, system, component, element, value, relative_type = 0) {
+export function setNumericValue(propname, system, component, element, value, relative_type = 0, ALLOW_NEGATIVE = false) {
     let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
     let props = css.props;
     let prop = props[propname];
     let css_name = propname.replace(/_/g, "-");
+    let excess = 0;
 
     if (!prop) {
         if (cache.unique.r.props[propname]) {
@@ -94,6 +94,11 @@ export function setNumericValue(propname, system, component, element, value, rel
         }
     }
 
+    if (!ALLOW_NEGATIVE && value < 0) {
+        console.log("!!!!!!!!!!!!")
+        excess = value;
+        value = 0;
+    }
 
     if (prop == "auto") {
         //convert to numerical form;
@@ -142,6 +147,8 @@ export function setNumericValue(propname, system, component, element, value, rel
                 props[propname] = 0;
         }
     }
+
+    return excess;
 }
 
 setNumericValue.parent_width = 0;
@@ -153,19 +160,28 @@ setNumericValue.width = 5;
 
 
 
-export function getRatio(system, component, element, funct, original_value, delta_value, css_name) {
-    let ratio = 0;
-    funct(system, component, element, original_value + delta_value);
+export function getRatio(system, component, element, funct, original_value, delta_value, css_name, ALLOW_NEGATIVE = false) {
+    let excess = 0;
+
+    if (!ALLOW_NEGATIVE && original_value + delta_value < 0) {
+        excess = original_value + delta_value;
+        delta_value = -original_value;
+    }
+
+    let ratio = funct(system, component, element, original_value + delta_value).ratio;
+
     let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
     let diff_x = end_x - original_value;
     if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0) {
-            funct(system, component, element, original_value + diff, true);
+            out = funct(system, component, element, original_value + diff, true);
+            //excess += (out.excess ? out.excess : out.excess_x ? out.excess_x : out.excess_y);
+            ratio = out.ratio;
         }
     }
-    return ratio;
+    return { ratio, excess };
 }
 
 export function setValue(system, component, element, value_name, value) {

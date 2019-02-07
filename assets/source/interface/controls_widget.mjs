@@ -31,7 +31,7 @@ export class ControlWidget {
     constructor(controler_component_package, system) {
         var widget = ControlWidget.cache;
 
-        if (widget) {            
+        if (widget) {
 
             ControlWidget.cache = widget.next;
             widget.next = null;
@@ -56,6 +56,11 @@ export class ControlWidget {
         }
 
         widget.ui = system.ui;
+
+
+        widget.border_ele = null;
+        widget.content_ele = null;
+        widget.margin_ele = null;
 
         if (controler_component_package)
             widget.loadComponent(controler_component_package);
@@ -99,13 +104,14 @@ export class ControlWidget {
         widget.h = 0; //height of border box
         widget.br = 0;
 
+
         return widget;
     }
 
     destroy() {
-        if (this.element.parentElement){
+        if (this.element.parentElement) {
             this.element.parentElement.removeChild(this.element);
-            if(this.sources[0])
+            if (this.sources[0])
                 this.sources[0].destroy;
             this.sources = [];
         }
@@ -190,22 +196,22 @@ export class ControlWidget {
         const component = this.target.component;
         const IS_COMPONENT = !!this.target.IS_COMPONENT;
         const IS_ON_MASTER = true //!!this.IS_ON_MASTER;
+        const par_prop = component.window.getComputedStyle(this.target.element);
 
         if (IS_COMPONENT) {
             const rect = this.target.element.getBoundingClientRect();
             this.x = rect.left; //component.x;
             this.y = rect.top; //component.y;
-            this.w = rect.width;
-            this.h = rect.height;
+            this.w = parseFloat(par_prop.getPropertyValue("width"));
+            this.h = parseFloat(par_prop.getPropertyValue("height"));
         } else {
             const rect = this.target.element.getBoundingClientRect();
             this.x = rect.left;
             this.y = rect.top;
-            this.w = rect.width;
-            this.h = rect.height;
+            this.w = parseFloat(par_prop.getPropertyValue("width"));
+            this.h = parseFloat(par_prop.getPropertyValue("height"));
         }
 
-        const par_prop = component.window.getComputedStyle(this.target.element);
 
         //margin
         this._ml = parseFloat(par_prop.getPropertyValue("margin-left"));
@@ -234,14 +240,14 @@ export class ControlWidget {
     }
 
     //Margin box
-    get ml() { return this.x - this._ml }
-    get mt() { return this.y - this._mt }
-    get mr() { return this.w + this._mr + this._ml + this.ml }
-    get mb() { return this.h + this._mb + this._mt + this.mt }
+    get ml() { return this.x }
+    get mt() { return this.y }
+    get mr() { return this.w + this._mr + this._ml + this.ml + this._pl + this._pr }
+    get mb() { return this.h + this._mb + this._mt + this.mt + this._pl + this._pr }
 
     //Padding box
-    get pl() { return this.x + this._pl + this.bl }
-    get pt() { return this.y + this._pt + this.bt }
+    get pl() { return this._pl + this.bl }
+    get pt() { return this._pt + this.bt }
     get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl }
     get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt }
 
@@ -252,6 +258,9 @@ export class ControlWidget {
     get cbb() { return this.h - this.bb - this.bt + this.cbt }
 
     render(ctx, scale, transform) {
+        scale = transform.scale;
+
+        this.scale = transform.scale;
 
         const IS_COMPONENT = !!this.target.IS_COMPONENT;
 
@@ -261,7 +270,7 @@ export class ControlWidget {
         ctx.lineWidth = (1 / scale) * 0.95;
 
         //Border box
-        ctx.strokeRect(this.x, this.y, this.w, this.h);
+        //ctx.strokeRect(this.x, this.y, this.w, this.h);
 
         //Margin box
         let ml = this.ml;
@@ -281,37 +290,63 @@ export class ControlWidget {
         let cbr = this.cbr;
         let cbb = this.cbb;
 
-        this.element.style.width = `${(cbr-cbl)*scale}px`;
-        this.element.style.height = `${(cbb-cbt)*scale}px`;
+        this.element.style.width = `${(this.w + this._ml + this._mr + this.bl + this.br + this._pl + this._pr)*scale}px`;
+        this.element.style.height = `${(this.h + this._mt + this._mb + this.bt + this.bb + this._pt + this._pb)*scale}px`;
+        this.element.style.backgroundColor = "rgba(255,255,0,0.6)"
 
         if (IS_COMPONENT) {
             this.element.style.left = `${this.x}px`
             this.element.style.top = `${this.y}px`;
         } else {
-            this.element.style.left = `${(this.x+4)*scale}px`
-            this.element.style.top = `${(this.y+4)*scale}px`;
+            this.element.style.left = `${(this.x)}px`
+            this.element.style.top = `${(this.y)}px`;
             ctx.strokeRect(ml, mt, mr - ml, mb - mt);
             ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+
+            this.setExtendedElements(scale);
         }
 
-        ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
+        //ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
 
         //Render Markers
 
         //Box \ Border Markers 
-        ctx.fillStyle = "rgb(0,100,200)";
-        ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.lineWidth = 1 / scale;
-        let r = 4 / scale;
+        //ctx.fillStyle = "rgb(0,100,200)";
+        //ctx.strokeStyle = "rgb(250,250,250)";
+        //ctx.lineWidth = 1 / scale;
+        //let r = 4 / scale;
 
         //Update Wick Controls
         this.sources[0].update(this);
     }
 
+    setExtendedElements(scale = this.scale) {
+        if (this.border_ele) {
+            this.border_ele.style.left = `${(this._ml)*scale}px`;
+            this.border_ele.style.top = `${(this._mt)*scale}px`;
+            this.border_ele.style.width = `${(this.w + this.bl + this.br + this._pl + this._pr)*scale}px`;
+            this.border_ele.style.height = `${(this.h + this.bt + this.bb + this._pt + this._pb)*scale}px`;
+        }
+
+        if (this.padding_ele) {
+            this.padding_ele.style.left = `${(this._ml + this.bl)*scale}px`;
+            this.padding_ele.style.top = `${(this._mt + this.bt)*scale}px`;
+            this.padding_ele.style.width = `${(this.w + this._pl + this._pr)*scale}px`;
+            this.padding_ele.style.height = `${(this.h + this._pt + this._pb)*scale}px`;
+        }
+
+        if (this.content_ele) {
+            this.content_ele.style.left = `${(this._ml + this.bl + this._pl)*scale}px`;
+            this.content_ele.style.top = `${(this._mt + this.bt + this._pt)*scale}px`;
+            this.content_ele.style.width = `${(this.w)*scale}px`;
+            this.content_ele.style.height = `${(this.h)*scale}px`;
+        }
+    }
+
     loadComponent(pkg) {
         if (pkg) {
             if (this.sources.length > 0) {
-                this.sources.forEach(e=>e.destroy());
+                this.sources.forEach(e => e.destroy());
                 this.sources.length = 0;
                 this.element.innerHTML = "";
             }
@@ -319,6 +354,15 @@ export class ControlWidget {
             this.element.innerHTML = "";
 
             this.controller = pkg.mount(this.element, this, false, this);
+
+            let src = this.sources[0]
+
+            this.content_ele = (src.badges.content) ? src.badges.content : null;
+            this.margin_ele = (src.badges.margin) ? src.badges.margin : null;
+            this.border_ele = (src.badges.border) ? src.badges.border : null;
+            this.padding_ele = (src.badges.padding) ? src.badges.padding : null;
+
+            this.setExtendedElements();
         }
     }
 
@@ -326,6 +370,7 @@ export class ControlWidget {
         console.log(key, value)
         switch (key) {
             case "move_action":
+                console.log(key, this.target)
                 this.ui.setWidgetTarget(this.target);
                 this.ui.handlePointerDownEvent({ button: 0 });
                 break;

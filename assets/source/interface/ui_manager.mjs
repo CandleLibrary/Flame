@@ -263,8 +263,6 @@ export class UI_Manager {
     /****************** Event responders **************************/
 
     handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-        // if (e.target == document.body || !this.target)
-        //     this.active_handler = Handler.element_draw;
         this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
         return false;
     }

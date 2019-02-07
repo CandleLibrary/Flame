@@ -6,8 +6,8 @@ const default_handler = Handler.default;
 
 export default class ElementDraw extends Default {
 
-    constructor() {
-        super(null, null);
+    constructor(system) {
+        super(system, null);
         this.root_x = 0;
         this.root_y = 0;
     }

@@ -300,8 +300,8 @@ export class ControlWidget {
         } else {
             this.element.style.left = `${(this.x)}px`
             this.element.style.top = `${(this.y)}px`;
-            ctx.strokeRect(ml, mt, mr - ml, mb - mt);
-            ctx.strokeRect(pl, pt, pr - pl, pb - pt);
+            //ctx.strokeRect(ml, mt, mr - ml, mb - mt);
+            //ctx.strokeRect(pl, pt, pr - pl, pb - pt);
 
             this.setExtendedElements(scale);
         }
@@ -367,10 +367,9 @@ export class ControlWidget {
     }
 
     async upImport(key, value) {
-        console.log(key, value)
+
         switch (key) {
             case "move_action":
-                console.log(key, this.target)
                 this.ui.setWidgetTarget(this.target);
                 this.ui.handlePointerDownEvent({ button: 0 });
                 break;

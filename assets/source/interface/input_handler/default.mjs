@@ -81,20 +81,13 @@ export default class Default extends Handler {
             const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x)) + this.excess_x;
             const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y)) + this.excess_y;
 
-            const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.target.box, diffx, diffy);
+            let xx = Math.round(diffx)
+            let yy = Math.round(diffy)
 
-            this.origin_x -= (MX) ? dx : diffx;
-            this.origin_y -= (MY) ? dy : diffy;
+            const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.target.box, xx, yy);
 
-            if (this.excess_x !== 0) {
-                //this.excess_x += diffx;
-                //diffx = 0;
-            }
-
-            if (this.excess_y !== 0) {
-                // this.excess_y += diffy;
-                // diffy = 0;
-            }
+            this.origin_x -= (MX) ? dx : xx;
+            this.origin_y -= (MY) ? dy : yy;
 
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (ui.target.action) {

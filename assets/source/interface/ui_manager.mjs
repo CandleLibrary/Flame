@@ -31,7 +31,7 @@ export class UI_Manager {
         new Default(system);
 
         this.d = Default;
-        this.e = ElementDraw;
+        this.e = new ElementDraw(system);
 
         this.system = system;
         this.element = UIHTMLElement;
@@ -93,8 +93,10 @@ export class UI_Manager {
             if (this.setTarget(e, null, x, y, false)) {
                 this.origin_x = x;
                 this.origin_y = y;
-            } else
+            } else{
+                this.active_handler = this.e;
                 this.handlePointerDownEvent(e, undefined, undefined, !!1);
+            }
         });
         window.addEventListener("pointermove", e => {
             this.pointer_x = e.x;
@@ -110,6 +112,8 @@ export class UI_Manager {
             e.dataTransfer.dropEffect = "copy";
         });
         document.body.addEventListener("dragstart", e => {});
+
+        this.createMaster();
     }
 
     createMaster() {

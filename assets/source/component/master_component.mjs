@@ -22,7 +22,6 @@ export class MasterComponent extends Component {
         //this.frame.setAttribute("frameBorder", "0");
         this.frame.style.position = "fixed";
 
-
         this.mountListeners();
         this.IFRAME_LOADED = true;
 
@@ -30,7 +29,7 @@ export class MasterComponent extends Component {
     }
 
     mountListeners() {
-        this.system.ui.integrateComponentFrame(this.frame, this);
+        this.system.ui.integrateComponentElement(this.frame, this);
     }
 
     get window(){
@@ -38,7 +37,8 @@ export class MasterComponent extends Component {
     }
 
     get sourceElement(){
-    	return this.frame.firstChild;
+        debugger
+    	return this.sources[0].ele;
     }
 
     get content(){

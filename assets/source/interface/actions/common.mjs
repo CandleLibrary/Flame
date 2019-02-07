@@ -95,7 +95,6 @@ export function setNumericValue(propname, system, component, element, value, rel
     }
 
     if (!ALLOW_NEGATIVE && value < 0) {
-        console.log("!!!!!!!!!!!!")
         excess = value;
         value = 0;
     }

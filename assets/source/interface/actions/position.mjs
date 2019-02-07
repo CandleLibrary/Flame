@@ -22,7 +22,7 @@ const types = css.types;
 export function SETLEFT(system, component, element, x, LINKED = false) {
     let cache = CacheFactory(system, component, element),
         excess = 0;
-    console.log(x)
+        
     if (x.type) {
         cache.rules.props.left = x;
     } else {

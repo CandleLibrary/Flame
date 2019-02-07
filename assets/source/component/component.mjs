@@ -197,7 +197,6 @@ export class Component {
     get window() {
         return this;
         return new Proxy(this,{get:(obj, prop)=>{
-            console.log(prop, obj[prop])
             return obj[prop]
         }});
         return window;

@@ -32,7 +32,7 @@ app.on("ready", () => {
 
     if (DEV && !TEST) win.webContents.openDevTools();
 
-    win.loadFile("./assets/html/index.html");
+    win.loadFile("./assets/index.html");
 
     //win.webContents.openDevTools();
     globalShortcut.register('f5', function() {

@@ -33,7 +33,7 @@
     "@candlefw/ll": "latest",
     "@candlefw/whind": "latest",
     "@candlefw/wick": "latest",
-    "electron": "^4.0.0",
+    "electron": "^4.0.4",
     "paper": "^0.12.0"
   },
   "devDependencies": {

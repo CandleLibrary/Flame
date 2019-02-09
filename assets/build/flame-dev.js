@@ -1,7 +1,7 @@
-var flame = (function (path$1, fs) {
+var flame = (function (path, fs) {
     'use strict';
 
-    path$1 = path$1 && path$1.hasOwnProperty('default') ? path$1['default'] : path$1;
+    path = path && path.hasOwnProperty('default') ? path['default'] : path;
     fs = fs && fs.hasOwnProperty('default') ? fs['default'] : fs;
 
     //Main dna for containing line tokens
@@ -681,7 +681,7 @@ var flame = (function (path$1, fs) {
     const Q = 81;
     const QMARK = 63;
     const QUOTE = 39;
-    const r = 114;
+    const r$1 = 114;
     const R = 82;
     const RECORD_SEPERATOR = 30;
     const s = 115;
@@ -4558,41 +4558,38 @@ ${is_iws}`;
     const uri_reg_ex = /(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:\/\/))?(?:([^\:\?\[\]\@\/\#\b\s][^\:\?\[\]\@\/\#\b\s]*)(?:\:([^\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
 
     const STOCK_LOCATION = {
-        protocol :"",
-        host :"",
-        port :"",
-        path :"",
-        hash :"",
-        query :"",
-        search:""
+        protocol: "",
+        host: "",
+        port: "",
+        path: "",
+        hash: "",
+        query: "",
+        search: ""
     };
 
     /** Implement Basic Fetch Mechanism for NodeJS **/
-    if(typeof(fetch) == "undefined" && typeof(global) !== "undefined" ){
-
-        
-        import("fs").then(fs$$1=>{
-
-
-         global.fetch = (url, data) =>
-            new Promise((res, rej) => {
-                let p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-                fs$$1.readFile(p, "utf8", (err, data) => {
-                    if (err) {
-                        rej(err);
-                    } else {
-                        res({
+    if (typeof(fetch) == "undefined" && typeof(global) !== "undefined") {
+        (async () => {
+            const fs$$1 = (await import("fs")).default.promises;
+            const path$$1 = (await import("path")).default;
+            global.fetch = (url, data) =>
+                new Promise(async (res, rej) => {
+                    let p = await path$$1.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                    try {
+                        let data = await fs$$1.readFile(p, "utf8");
+                        return res({
                             status: 200,
                             text: () => {
                                 return {
                                     then: (f) => f(data)
                                 }
                             }
-                        });
+                        })
+                    } catch (err) {
+                        return rej(err);
                     }
                 });
-            });
-        });
+        })();
     }
 
     function fetchLocalText(URL, m = "same-origin") {
@@ -4684,7 +4681,7 @@ ${is_iws}`;
     class URL {
 
         static resolveRelative(URL_or_url_original, URL_or_url_new) {
-            
+
             let URL_old = (URL_or_url_original instanceof URL) ? URL_or_url_original : new URL(URL_or_url_original);
             let URL_new = (URL_or_url_new instanceof URL) ? URL_or_url_new : new URL(URL_or_url_new);
 
@@ -4715,13 +4712,20 @@ ${is_iws}`;
 
         constructor(url = "", USE_LOCATION = false) {
 
-            let IS_STRING = true;
-            
+            let IS_STRING = true,
+                IS_LOCATION = false;
 
-            const location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
 
+            let location = (typeof(document) !== "undefined") ? document.location : STOCK_LOCATION;
+
+            if (url instanceof Location) {
+                location = url;
+                url = "";
+                IS_LOCATION = true;
+            }
             if (!url || typeof(url) != "string") {
                 IS_STRING = false;
+                IS_LOCATION = true;
                 if (URL.GLOBAL && USE_LOCATION)
                     return URL.GLOBAL;
             }
@@ -4791,11 +4795,10 @@ ${is_iws}`;
                     this.path = part[8] || ((USE_LOCATION) ? location.pathname : "");
                     this.query = part[9] || ((USE_LOCATION) ? location.search.slice(1) : "");
                     this.hash = part[10] || ((USE_LOCATION) ? location.hash.slice(1) : "");
-                }
-            } else if (USE_LOCATION) {
 
-                URL.G = this;
-                this.protocol = location.protocol;
+                }
+            } else if (IS_LOCATION) {
+                this.protocol = location.protocol.replace(/\:/g,"");
                 this.host = location.hostname;
                 this.port = location.port;
                 this.path = location.pathname;
@@ -4803,7 +4806,10 @@ ${is_iws}`;
                 this.query = location.search.slice(1);
                 this._getQuery_(this.query);
 
-                return URL.R;
+                if (USE_LOCATION) {
+                    URL.G = this;
+                    return URL.R;
+                }
             }
             this._getQuery_(this.query);
         }
@@ -4870,9 +4876,9 @@ ${is_iws}`;
             if (lfv > 0) class_map.set(key_val, lex.s(lfv));
         }
 
-        setPath(path) {
+        setPath(path$$1) {
 
-            this.path = path;
+            this.path = path$$1;
 
             return new URL(this);
         }
@@ -4885,11 +4891,13 @@ ${is_iws}`;
         toString() {
             let str = [];
 
-            if (this.protocol && this.host)
-                str.push(`${this.protocol}://`);
+            if (this.host) {
 
-            if (this.host)
+                if (this.protocol)
+                    str.push(`${this.protocol}://`);
+
                 str.push(`${this.host}`);
+            }
 
             if (this.port)
                 str.push(`:${this.port}`);
@@ -4898,7 +4906,11 @@ ${is_iws}`;
                 str.push(`${this.path[0] == "/" ? "" : "/"}${this.path}`);
 
             if (this.query)
-                str.push(this.query);
+                str.push(((this.query[0] == "?" ? "" : "?") + this.query));
+
+            if (this.hash)
+                str.push("#"+this.hash);
+
 
             return str.join("");
         }
@@ -5041,11 +5053,11 @@ ${is_iws}`;
         }
 
         submitJSON(json_data) {
-                return submitJSON(this.toString(), json_data);
-            }
-            /**
-             * Goes to the current URL.
-             */
+            return submitJSON(this.toString(), json_data);
+        }
+        /**
+         * Goes to the current URL.
+         */
         goto() {
             return;
             let url = this.toString();
@@ -5140,8 +5152,8 @@ ${is_iws}`;
             return;
             URL.G.map = v;
         },
-        setPath(path) {
-            return URL.G.setPath(path);
+        setPath(path$$1) {
+            return URL.G.setPath(path$$1);
         },
         setLocation() {
             return URL.G.setLocation();
@@ -6596,6 +6608,19 @@ ${is_iws}`;
         line_height: `normal|<number>|<length>|<percentage>|inherit`,
         overflow: 'visible|hidden|scroll|auto|inherit',
 
+        /* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
+        align_items: `flex-start | flex-end | center | baseline | stretch`,
+        align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
+        align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
+        flex_direction:`row | row-reverse | column | column-reverse`,
+        flex_flow:`<flex-direction>||<flex-wrap>`,
+        flex_wrap:`nowrap|wrap|wrap-reverse`,
+        order:`<integer>`,
+        flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
+        flex_grow:`<number>`,
+        flex_shrink:`<number>`,
+        flex_basis:`content|<width>`,
+        width:`<length>|<percentage>|auto|inherit`,
 
         box_sizing: `content-box | border-box`,
 
@@ -6626,11 +6651,16 @@ ${is_iws}`;
         transition_duration: `<time>#`,
         transition_timing_function: `<timing_function>#`,
         transition_delay: `<time>#`,
+
+        
+        /* https://www.w3.org/TR/SVG11/interact.html#PointerEventsProperty */
+        pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|inherit|auto`,
     };
 
     /* Properties that are not directly accessible by CSS prop creator */
 
     const virtual_property_definitions = {
+
 
         alphavalue: '<number>',
 
@@ -8005,6 +8035,141 @@ ${is_iws}`;
 
     CSSParser.types = types;
 
+    /**
+     * Used to call the Scheduler after a JavaScript runtime tick.
+     *
+     * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
+     */
+     
+    const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
+        setTimeout(f, 1);
+    };
+
+    const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
+
+
+    /**
+     * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
+     *    
+     * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
+     */
+    class Spark {
+        /**
+         * Constructs the object.
+         */
+        constructor() {
+
+            this.update_queue_a = [];
+            this.update_queue_b = [];
+
+            this.update_queue = this.update_queue_a;
+
+            this.queue_switch = 0;
+
+            this.callback = () => this.update();
+
+            this.frame_time = perf.now();
+
+            this.SCHEDULE_PENDING = false;
+        }
+
+        /**
+         * Given an object that has a _SCHD_ Boolean property, the Scheduler will queue the object and call its .update function 
+         * the following tick. If the object does not have a _SCHD_ property, the Scheduler will persuade the object to have such a property.
+         * 
+         * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
+         */
+        queueUpdate(object, timestart = 1, timeend = 0) {
+
+            if (object._SCHD_ || object._SCHD_ > 0) {
+                if (this.SCHEDULE_PENDING)
+                    return;
+                else
+                    return caller(this.callback);
+            }
+
+            object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
+
+            this.update_queue.push(object);
+
+            if (this._SCHD_)
+                return;
+
+            this.frame_time = perf.now() | 0;
+
+            this.SCHEDULE_PENDING = true;
+
+            caller(this.callback);
+        }
+
+        removeFromQueue(object){
+
+            if(object._SCHD_)
+                for(let i = 0, l = this.update_queue.length; i < l; i++)
+                    if(this.update_queue[i] === object){
+                        this.update_queue.splice(i,1);
+                        object._SCHD_ = 0;
+
+                        if(l == 1)
+                            this.SCHEDULE_PENDING = false;
+
+                        return;
+                    }
+        }
+
+        /**
+         * Called by the caller function every tick. Calls .update on any object queued for an update. 
+         */
+        update() {
+
+            this.SCHEDULE_PENDING = false;
+
+            const uq = this.update_queue;
+            const time = perf.now() | 0;
+            const diff = Math.ceil(time - this.frame_time) | 1;
+            const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
+
+            this.frame_time = time;
+            
+            if (this.queue_switch == 0)
+                (this.update_queue = this.update_queue_b, this.queue_switch = 1);
+            else
+                (this.update_queue = this.update_queue_a, this.queue_switch = 0);
+
+            for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
+                let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
+                let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
+
+                o._SCHD_ = 0;
+                
+                if (timestart > 0) {
+                    this.queueUpdate(o, timestart, timeend);
+                    continue;
+                }
+
+                timestart = 0;
+
+                if (timeend > 0) 
+                    this.queueUpdate(o, timestart, timeend - diff);
+
+                /** 
+                    To ensure on code path doesn't block any others, 
+                    scheduledUpdate methods are called within a try catch block. 
+                    Errors by default are printed to console. 
+                **/
+                try {
+                    o.scheduledUpdate(step_ratio, diff);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            uq.length = 0;
+        }
+    }
+
+    const spark = new Spark();
+
     let cache_de_cache = null;
 
     function getApplicableRules(system, component, element) {
@@ -8305,7 +8470,8 @@ ${is_iws}`;
 
     let types$1 = CSSParser.types;
 
-    function getContentBox(ele, win = window) {
+    function getContentBox(ele, win = window, system) {
+        let scale = system.ui.transform.scale;
 
         let rect = ele.getBoundingClientRect();
         let par_prop = win.getComputedStyle(ele);
@@ -8315,10 +8481,10 @@ ${is_iws}`;
         let border_t = parseFloat(par_prop.getPropertyValue("border-top"));
         let border_b = parseFloat(par_prop.getPropertyValue("border-bottom"));
 
-        let top = rect.top + border_t;
-        let left = rect.left + border_l;
-        let width = rect.width - border_l - border_r;
-        let height = rect.height - border_t - border_b;
+        let top = rect.top / scale + border_t;
+        let left = rect.left / scale + border_l;
+        let width = rect.width / scale - border_l - border_r;
+        let height = rect.height / scale - border_t - border_b;
 
         return { top, left, width, height };
     }
@@ -8328,7 +8494,9 @@ ${is_iws}`;
     */
     function prepRebuild(element, LINKED = false) {
         element.wick_node.prepRebuild();
-        if (!LINKED) element.wick_node.rebuild();
+        if (!LINKED) {
+            element.wick_node.rebuild();
+        }
     }
 
     /** 
@@ -8365,13 +8533,14 @@ ${is_iws}`;
         return ele;
     }
 
-    function setNumericalValue(propname, system, component, element, value, relative_type = 0) {
+    function setNumericValue(propname, system, component, element, value, relative_type = 0, ALLOW_NEGATIVE = false) {
         let cache = CacheFactory(system, component, element);
         let css = cache.rules;
         let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
         let props = css.props;
         let prop = props[propname];
         let css_name = propname.replace(/_/g, "-");
+        let excess = 0;
 
         if (!prop) {
             if (cache.unique.r.props[propname]) {
@@ -8393,6 +8562,10 @@ ${is_iws}`;
             }
         }
 
+        if (!ALLOW_NEGATIVE && value < 0) {
+            excess = value;
+            value = 0;
+        }
 
         if (prop == "auto") {
             //convert to numerical form;
@@ -8404,27 +8577,27 @@ ${is_iws}`;
                 ele;
 
             switch (relative_type) {
-                case setNumericalValue.parent_width:
+                case setNumericValue.parent_width:
                     ele = element.parentElement; //getFirstPositionedAncestor(element);
-                    if (ele) denominator = getContentBox(ele, component.window).width;
+                    if (ele) denominator = getContentBox(ele, component.window, system).width;
                     break;
-                case setNumericalValue.parent_height:
+                case setNumericValue.parent_height:
                     ele = element.parentElement; //getFirstPositionedAncestor(element);
-                    if (ele) denominator = getContentBox(ele, component.window).height;
+                    if (ele) denominator = getContentBox(ele, component.window, system).height;
                     break;
-                case setNumericalValue.positioned_ancestor_width:
+                case setNumericValue.positioned_ancestor_width:
                     ele = getFirstPositionedAncestor(element);
-                    if (ele) denominator = getContentBox(ele, component.window).width;
+                    if (ele) denominator = getContentBox(ele, component.window, system).width;
                     break;
-                case setNumericalValue.positioned_ancestor_height:
+                case setNumericValue.positioned_ancestor_height:
                     ele = getFirstPositionedAncestor(element);
-                    if (ele) denominator = getContentBox(ele, component.window).height;
+                    if (ele) denominator = getContentBox(ele, component.window, system).height;
                     break;
-                case setNumericalValue.height:
-                    denominator = getContentBox(component, element.window).width;
+                case setNumericValue.height:
+                    denominator = getContentBox(component, element.window, system).width;
                     break;
-                case setNumericalValue.width:
-                    denominator = getContentBox(component, element.window).width;
+                case setNumericValue.width:
+                    denominator = getContentBox(component, element.window, system).width;
                     break;
             }
 
@@ -8441,30 +8614,49 @@ ${is_iws}`;
                     props[propname] = 0;
             }
         }
+
+        return excess;
     }
 
-    setNumericalValue.parent_width = 0;
-    setNumericalValue.parent_height = 1;
-    setNumericalValue.positioned_ancestor_width = 2;
-    setNumericalValue.positioned_ancestor_height = 3;
-    setNumericalValue.height = 4;
-    setNumericalValue.width = 5;
+    setNumericValue.parent_width = 0;
+    setNumericValue.parent_height = 1;
+    setNumericValue.positioned_ancestor_width = 2;
+    setNumericValue.positioned_ancestor_height = 3;
+    setNumericValue.height = 4;
+    setNumericValue.width = 5;
 
 
 
-    function getRatio(system, component, element, funct, original_value, delta_value, css_name) {
-        let ratio = 0;
+    function getRatio(system, component, element, funct, original_value, delta_value, delta_measure, ALLOW_NEGATIVE = false, NO_ADJUST = false) {
+        let excess = 0, ratio = 0, scale = system.ui.transform.scale;
+
+        let begin_x = element.getBoundingClientRect()[delta_measure] / scale;
+
+        ///*
+        if (!ALLOW_NEGATIVE && original_value + delta_value < 0) {
+            excess = original_value + delta_value;
+            delta_value = -original_value;
+        }
+        //*/
+
         funct(system, component, element, original_value + delta_value);
-        let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
-        let diff_x = end_x - original_value;
-        if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
+
+        let end_x = element.getBoundingClientRect()[delta_measure] / scale;
+        
+        let diff_x = end_x - begin_x;
+
+
+        if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
+     
             ratio = (diff_x / delta_value);
             let diff = delta_value / ratio;
-            if (diff !== 0) {
-                funct(system, component, element, original_value + diff, true);
+            if (diff !== 0 && !NO_ADJUST) {
+                let out = funct(system, component, element, original_value + diff, true);
+                excess += (out.excess ? out.excess : out.excess_x ? out.excess_x : out.excess_y);
+                //console.log(ratio)
             }
         }
-        return ratio;
+        return { ratio, excess };
     }
 
     function setValue(system, component, element, value_name, value) {
@@ -8480,235 +8672,312 @@ ${is_iws}`;
     }
 
     function SETWIDTH(system, component, element, x, LINKED = false) {
-
         ensureBlocklike(system, component, element);
-        setNumericalValue("width", system, component, element, x, setNumericalValue.parent_width);
+
+        const excess = setNumericValue("width", system, component, element, x, setNumericValue.parent_width);
+
         prepRebuild(element, LINKED);
+
+        return { excess_x: excess, ratio: 0 };
     }
 
-    function SETHEIGHT(system, component, element, x, LINKED = false) {
-
+    function SETHEIGHT(system, component, element, y, LINKED = false) {
         ensureBlocklike(system, component, element);
-        setNumericalValue("height", system, component, element, x, setNumericalValue.parent_height);
+
+        let excess = setNumericValue("height", system, component, element, y, setNumericValue.parent_height);
+
         prepRebuild(element, LINKED);
+
+        return { excess_y: excess, ratio: 0 };
     }
 
     function SETDELTAWIDTH(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).width);
+        let start_x = parseFloat(component.window.getComputedStyle(element).width),
+            excess = 0;
 
-        if (ratio > 0)
-            SETWIDTH(system, component, element, start_x + dx / ratio, true);
-        else {
+        if (ratio > 0) {
+            let { ratio : r, excess_x : e } = SETWIDTH(system, component, element, start_x + dx / ratio, true);
+            ratio = r;
+            excess = e;
+        } else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, component, element, SETWIDTH, start_x, dx, "width");
+            let { ratio: r, excess : e } = getRatio(system, component, element, SETWIDTH, start_x, dx, "width");
+            ratio = r;
+            excess = e;
         }
         prepRebuild(element, LINKED);
 
-        return ratio;
+        return { excess_x: excess, ratio };
     }
 
-    function SETDELTAHEIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).height);
-        
-        if (ratio > 0)
-            SETHEIGHT(system, component, element, start_x + dx / ratio, true);
-        else {
+    function SETDELTAHEIGHT(system, component, element, dy, ratio = 0, LINKED = false) {
+        let start_y = parseFloat(component.window.getComputedStyle(element).height),
+            excess_y = 0, out=null;
+
+        if (ratio > 0) {
+            out = SETHEIGHT(system, component, element, start_y + dy / ratio, true);
+            excess_y = out.excess_y;
+        } else {
             ensureBlocklike(system, component, element);
-            ratio = getRatio(system, component, element, SETHEIGHT, start_x, dx, "height");
+            out = getRatio(system, component, element, SETHEIGHT, start_y, dy, "bottom", false, ratio < 0);
+            excess_y = out.excess;
         }
-        
+
+        ratio = out.ratio;
+
+
         prepRebuild(element, LINKED);
-        return ratio;
+
+        return { excess_y, ratio };
     }
 
     const types$2 = CSSParser.types;
 
-    function SETLEFT(system, component, element, x, LINKED = false) {
-        let cache = CacheFactory(system, component, element);
+    /***************************************************************************************/
+    /********************************** POSITION SUB ACTIONS *************************************/
+    /***************************************************************************************/
 
+    function SETLEFT(system, component, element, x, LINKED = false) {
+        let cache = CacheFactory(system, component, element),
+            excess = 0;
+            
         if (x.type) {
             cache.rules.props.left = x;
         } else {
             if (cache.cssflagsA & 1)
-                setNumericalValue("left", system, component, element, x, setNumericalValue.parent_width);
+                excess = setNumericValue("left", system, component, element, x, setNumericValue.parent_width, true);
             else
-                setNumericalValue("left", system, component, element, x, setNumericalValue.positioned_ancestor_width);
+                excess = setNumericValue("left", system, component, element, x, setNumericValue.positioned_ancestor_width, true);
         }
 
         prepRebuild(element, LINKED);
+
+        return { excess_x: excess };
     }
 
-    function SETTOP(system, component, element, x, LINKED = false) {
-        let cache = CacheFactory(system, component, element);
+    function SETRIGHT(system, component, element, x, LINKED = false) {
+        let cache = CacheFactory(system, component, element),
+            excess = 0;
 
-        if (x.type) {
-            cache.rules.props.top = x;
+        if (cache.cssflagsA & 1)
+            excess = setNumericValue("right", system, component, element, x, setNumericValue.parent_width, true);
+        else
+            excess = setNumericValue("right", system, component, element, x, setNumericValue.positioned_ancestor_width, true);
+
+        prepRebuild(element, LINKED);
+
+        return { excess_x: excess };
+    }
+
+    function SETTOP(system, component, element, y, LINKED = false) {
+        let cache = CacheFactory(system, component, element),
+            excess = 0;
+
+        if (y.type) {
+            cache.rules.props.top = y;
         } else {
             if (cache.cssflagsA & 1)
-                setNumericalValue("top", system, component, element, x, setNumericalValue.parent_height);
+                excess = setNumericValue("top", system, component, element, y, setNumericValue.parent_height, true);
             else
-                setNumericalValue("top", system, component, element, x, setNumericalValue.positioned_ancestor_height);
+                excess = setNumericValue("top", system, component, element, y, setNumericValue.positioned_ancestor_height, true);
         }
 
         prepRebuild(element, LINKED);
+
+        return { excess_y: excess };
     }
-    function SETRIGHT(system, component, element, x, LINKED = false) {
-        let cache = CacheFactory(system, component, element);
+
+    function SETBOTTOM(system, component, element, y, LINKED = false) {
+        let cache = CacheFactory(system, component, element),
+            excess = 0;
 
         if (cache.cssflagsA & 1)
-            setNumericalValue("right", system, component, element, x, setNumericalValue.parent_width);
+            excess = setNumericValue("bottom", system, component, element, y, setNumericValue.parent_height, true);
         else
-            setNumericalValue("right", system, component, element, x, setNumericalValue.positioned_ancestor_width);
+            excess = setNumericValue("bottom", system, component, element, y, setNumericValue.positioned_ancestor_height, true);
 
         prepRebuild(element, LINKED);
+
+        return { excess_y: excess };
     }
 
-    function SETBOTTOM(system, component, element, x, LINKED = false) {
-        let cache = CacheFactory(system, component, element);
-
-        if (cache.cssflagsA & 1)
-            setNumericalValue("bottom", system, component, element, x, setNumericalValue.parent_height);
-        else
-            setNumericalValue("bottom", system, component, element, x, setNumericalValue.positioned_ancestor_height);
-
-        prepRebuild(element, LINKED);
-    }
+    /***************************************************************************************/
+    /********************************** DELTA SUB ACTIONS *************************************/
+    /***************************************************************************************/
 
     function SETDELTALEFT(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).left);
+        let start_x = parseFloat(component.window.getComputedStyle(element).left),
+            excess_x = 0;
 
         start_x = isNaN(start_x) ? 0 : start_x;
 
         if (ratio > 0)
-            SETLEFT(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETLEFT, start_x, dx, "left");
+            excess_x = SETLEFT(system, component, element, start_x + dx / ratio, true).excess_x;
+        else {
+            let { excess, ratio: r } = getRatio(system, component, element, SETLEFT, start_x, dx, "left", true);
+            ratio = r;
+            excess_x = excess;
+        }
 
         prepRebuild(element, LINKED);
 
-        return ratio;
-    }
-
-    function SETDELTATOP(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).top);
-
-        start_x = isNaN(start_x) ? 0 : start_x;
-
-        if (ratio > 0)
-            SETTOP(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETTOP, start_x, dx, "top");
-
-        prepRebuild(element, LINKED);
-
-        return ratio;
+        return { ratio, excess_x };
     }
 
     function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).right);
+        let start_x = parseFloat(component.window.getComputedStyle(element).right),
+            excess_x = 0;
 
         start_x = isNaN(start_x) ? 0 : start_x;
 
         if (ratio > 0)
-            SETRIGHT(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETRIGHT, start_x, dx, "right");
+            excess_x = SETRIGHT(system, component, element, start_x + dx / ratio, true).excess_x;
+        else {
+            let { excess, ratio: r } = getRatio(system, component, element, SETRIGHT, start_x, dx, "right", true);
+            ratio = r;
+            excess_x = excess;
+        }
 
         prepRebuild(element, LINKED);
 
-        return ratio;
+        return { ratio, excess_x };
     }
 
-    function SETDELTABOTTOM(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element).bottom);
+
+    function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false, origin = undefined) {
+        let start_x = parseFloat(component.window.getComputedStyle(element).top),
+            excess_y = 0;
 
         start_x = isNaN(start_x) ? 0 : start_x;
-        
-        if (ratio > 0)
-            SETBOTTOM(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETBOTTOM, start_x, dx, "bottom");
 
+        if (ratio > 0)
+            excess_y = SETTOP(system, component, element, start_x + dy / ratio, true).excess_y;
+        else {
+            let { excess, ratio: r } = getRatio(system, component, element, SETTOP, start_x, dy, "top", true, origin);
+            ratio = r;
+            excess_y = excess;
+        }
 
         prepRebuild(element, LINKED);
 
-        return ratio;
+        return { ratio, excess_y };
+    }
+    function SETDELTABOTTOM(system, component, element, dy, ratio = 0, LINKED = false) {
+        let start_x = parseFloat(component.window.getComputedStyle(element).bottom),
+            excess_y = 0;
+
+        start_x = isNaN(start_x) ? 0 : start_x;
+
+        if (ratio > 0)
+            excess_y = SETBOTTOM(system, component, element, start_x + dy / ratio, true).excess_y;
+        else {
+            let { excess, r: ratio } = getRatio(system, component, element, SETBOTTOM, start_x, dy, "bottom", true);
+            ratio = r;
+            excess_y = excess;
+        }
+
+        prepRebuild(element, LINKED);
+
+        return { ratio, excess_y };
     }
 
-    function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
-        if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
-        let cache = CacheFactory(system, component, element);
-        switch (cache.move_vert_type) {
-            case "top bottom":
-                SETDELTATOP(system, component, element, dy, 0, true);
-            case "top":
-                SETDELTATOP(system, component, element, dy, 0, true);
-                SETDELTAHEIGHT(system, component, element, -dy, 0, true);
+    /***************************************************************************************/
+    /********************************** RESIZE ACTIONS *************************************/
+    /***************************************************************************************/
+
+
+    function RESIZEL(system, component, element, dx, dy, IS_COMPONENT) {
+        if (IS_COMPONENT) return (component.x += dx, component.width -= dx);
+        let cache = CacheFactory(system, component, element),
+            excess_x = 0;
+        switch (cache.move_hori_type) {
+            case "left right":
+                excess_x = SETDELTALEFT(system, component, element, dx, 0, true).excess_x;
                 break;
-            case "bottom":
-                SETDELTAHEIGHT(system, component, element, -dy, 0, true);
+            case "left":
+                excess_x = SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
+                SETDELTALEFT(system, component, element, dx + excess_x, 0, true);
+                break;
+            case "right":
+                excess_x = SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
                 break;
         }
-        element.wick_node.prepRebuild();
+
+        prepRebuild(element, false);
+
+        return { excess_x }
     }
 
     function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return (component.width += dx);
-        let cache = CacheFactory(system, component, element);
+        let cache = CacheFactory(system, component, element),
+            excess_x = 0;
+
         switch (cache.move_hori_type) {
             case "left right":
-                SETDELTARIGHT(system, component, element, -dx, 0, true);
-                break;
-            case "left":
-                SETDELTAWIDTH(system, component, element, dx, 0, true);
+                excess_x = -SETDELTARIGHT(system, component, element, -dx, 0, true).excess_x;
                 break;
             case "right":
-                SETDELTARIGHT(system, component, element, -dx, 0, true);
-                SETDELTAWIDTH(system, component, element, -dx, 0, true);
-                break;
-        }
-        element.wick_node.prepRebuild();
-    }
-
-    function RESIZEL(system, component, element, dx, dy, IS_COMPONENT) {
-        if (IS_COMPONENT) return (component.x += dx, component.width -= dx);
-        let cache = CacheFactory(system, component, element);
-        switch (cache.move_hori_type) {
-            case "left right":
-                SETDELTALEFT(system, component, element, dx, 0, true);
+                excess_x = -SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
+                SETDELTARIGHT(system, component, element, -dx - excess_x, 0, true);
                 break;
             case "left":
-                SETDELTALEFT(system, component, element, dx, 0, true);
-                SETDELTAWIDTH(system, component, element, -dx, 0, true);
-                break;
-            case "right":
-                SETDELTAWIDTH(system, component, element, -dx, 0, true);
+                excess_x = -SETDELTAWIDTH(system, component, element, dx, 0, true).excess_x;
                 break;
         }
-        element.wick_node.prepRebuild();
+
+        prepRebuild(element, false);
+
+        return { excess_x }
     }
 
-    function SUBRESIZEB(system, component, element, dx, dy, ratio){
-        let cache = CacheFactory(system, component, element);
+    function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
+        if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
+        let cache = CacheFactory(system, component, element),
+            excess_y = 0;
         switch (cache.move_vert_type) {
             case "top bottom":
-                SETDELTABOTTOM(system, component, element, -dy, ratio * 0.5, true);
-                SETDELTAHEIGHT(system, component, element, dy, ratio * 0.5, true);
-                break;
+                excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
             case "top":
-                SETDELTAHEIGHT(system, component, element, dy, ratio, true);
+                let origin = element.getBoundingClientRect().top / system.ui.transform.scale;
+                let out = SETDELTAHEIGHT(system, component, element, -dy, -1, true);
+                excess_y = out.excess_y;
+                SETDELTATOP(system, component, element, dy+out.excess_y, 1/(out.ratio || 1), true);
                 break;
             case "bottom":
-                SETDELTABOTTOM(system, component, element, -dy, ratio * 0.5, true);
-                SETDELTAHEIGHT(system, component, element, dy, ratio * 0.5, true);
+                excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
                 break;
         }
 
-        element.wick_node.prepRebuild();
-        element.wick_node.rebuild();
+        prepRebuild(element, false);
+
+        return { excess_y }
     }
 
     function RESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
+        if (IS_COMPONENT) return (component.height += dy);
+        let cache = CacheFactory(system, component, element),
+            excess_y = 0;
+        switch (cache.move_vert_type) {
+            case "top bottom":
+                excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
+                //SETDELTABOTTOM(system, component, element, -dy, ratio * 0.5, true);
+                break;
+            case "bottom":
+                excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
+                SETDELTABOTTOM(system, component, element, -dy - excess_y, 0, true);
+                break;
+            case "top":
+                excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
+                break;
+        }
+
+        prepRebuild(element, false);
+
+        return { excess_y }
+    }
+
+    function SUBRESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return (component.height += dy);
         let cache = CacheFactory(system, component, element);
         //get the bottom value of the element;
@@ -8731,32 +9000,44 @@ ${is_iws}`;
             SUBRESIZEB(system, component, element, dx, dy, cache.valueB);
     }
 
+    /***************************************************************************************************/
+    /********************************** COMBINATION RESIZE ACTIONS *************************************/
+    /***************************************************************************************************/
+
     function RESIZETL(system, component, element, dx, dy, IS_COMPONENT) {
-        RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
-        RESIZET(system, component, element, dx, dy, IS_COMPONENT);
-        if (IS_COMPONENT) return;
-        element.wick_node.prepRebuild();
+        let { excess_x } = RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
+        let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
+        if (!IS_COMPONENT)
+            prepRebuild(element, false);
+
+        return { excess_x, excess_y };
     }
 
     function RESIZETR(system, component, element, dx, dy, IS_COMPONENT) {
-        RESIZER(system, component, element, dx, dy, IS_COMPONENT);
-        RESIZET(system, component, element, dx, dy, IS_COMPONENT);
-        if (IS_COMPONENT) return;
-        element.wick_node.prepRebuild();
+        let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
+        let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
+        if (!IS_COMPONENT)
+            prepRebuild(element, false);
+
+        return { excess_x, excess_y };
     }
 
     function RESIZEBL(system, component, element, dx, dy, IS_COMPONENT) {
-        RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
-        RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
-        if (IS_COMPONENT) return;
-        element.wick_node.prepRebuild();
+        let { excess_x } = RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
+        let { excess_y } = RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
+        if (!IS_COMPONENT)
+            prepRebuild(element, false);
+
+        return { excess_x, excess_y  };
     }
 
     function RESIZEBR(system, component, element, dx, dy, IS_COMPONENT) {
-        RESIZER(system, component, element, dx, dy, IS_COMPONENT);
-        RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
-        if (IS_COMPONENT) return;
-        element.wick_node.prepRebuild();
+        let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
+        let { excess_y } = RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
+        if (!IS_COMPONENT)
+            prepRebuild(element, false);
+
+        return { excess_x, excess_y };
     }
 
     const types$3 = CSSParser.types;
@@ -9003,141 +9284,6 @@ ${is_iws}`;
 
     const _SealedProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: true});
     const _FrozenProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: false});
-
-    /**
-     * Used to call the Scheduler after a JavaScript runtime tick.
-     *
-     * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
-     */
-     
-    const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
-        setTimeout(f, 1);
-    };
-
-    const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
-
-
-    /**
-     * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
-     *    
-     * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
-     */
-    class Spark {
-        /**
-         * Constructs the object.
-         */
-        constructor() {
-
-            this.update_queue_a = [];
-            this.update_queue_b = [];
-
-            this.update_queue = this.update_queue_a;
-
-            this.queue_switch = 0;
-
-            this.callback = () => this.update();
-
-            this.frame_time = perf.now();
-
-            this.SCHEDULE_PENDING = false;
-        }
-
-        /**
-         * Given an object that has a _SCHD_ Boolean property, the Scheduler will queue the object and call its .update function 
-         * the following tick. If the object does not have a _SCHD_ property, the Scheduler will persuade the object to have such a property.
-         * 
-         * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
-         */
-        queueUpdate(object, timestart = 1, timeend = 0) {
-
-            if (object._SCHD_ || object._SCHD_ > 0) {
-                if (this.SCHEDULE_PENDING)
-                    return;
-                else
-                    return caller(this.callback);
-            }
-
-            object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
-
-            this.update_queue.push(object);
-
-            if (this._SCHD_)
-                return;
-
-            this.frame_time = perf.now() | 0;
-
-            this.SCHEDULE_PENDING = true;
-
-            caller(this.callback);
-        }
-
-        removeFromQueue(object){
-
-            if(object._SCHD_)
-                for(let i = 0, l = this.update_queue.length; i < l; i++)
-                    if(this.update_queue[i] === object){
-                        this.update_queue.splice(i,1);
-                        object._SCHD_ = 0;
-
-                        if(l == 1)
-                            this.SCHEDULE_PENDING = false;
-
-                        return;
-                    }
-        }
-
-        /**
-         * Called by the caller function every tick. Calls .update on any object queued for an update. 
-         */
-        update() {
-
-            this.SCHEDULE_PENDING = false;
-
-            const uq = this.update_queue;
-            const time = perf.now() | 0;
-            const diff = Math.ceil(time - this.frame_time) | 1;
-            const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
-
-            this.frame_time = time;
-            
-            if (this.queue_switch == 0)
-                (this.update_queue = this.update_queue_b, this.queue_switch = 1);
-            else
-                (this.update_queue = this.update_queue_a, this.queue_switch = 0);
-
-            for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
-                let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
-                let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
-
-                o._SCHD_ = 0;
-                
-                if (timestart > 0) {
-                    this.queueUpdate(o, timestart, timeend);
-                    continue;
-                }
-
-                timestart = 0;
-
-                if (timeend > 0) 
-                    this.queueUpdate(o, timestart, timeend - diff);
-
-                /** 
-                    To ensure on code path doesn't block any others, 
-                    scheduledUpdate methods are called within a try catch block. 
-                    Errors by default are printed to console. 
-                **/
-                try {
-                    o.scheduledUpdate(step_ratio, diff);
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-
-            uq.length = 0;
-        }
-    }
-
-    const spark = new Spark();
 
     /**
      * The base class which all Model classes extend.
@@ -10075,13 +10221,13 @@ ${is_iws}`;
 
             let out = false;
 
-            out = this.primary_index.__removeAll__();
+            out = this.primary_index.__removeAll__(term, out_container);
 
             for (let name in this.secondary_indexes) {
 
                 let index = this.secondary_indexes[name];
 
-                if (index.__removeAll__())
+                if (index.__removeAll__(model))
                     out = true;
             }
 
@@ -10570,7 +10716,7 @@ ${is_iws}`;
             this.nodes = null;
             this.keys = null;
 
-            if (!this.LEAF && this.nodes) {
+            if (!this.LEAF) {
                 for (let i = 0, l = this.nodes.length; i < l; i++)
                     this.nodes[i].destroy();
             }
@@ -11339,13 +11485,13 @@ ${is_iws}`;
         constructor(preset_options = {}) {
 
             this.store = (preset_options.store instanceof Store) ? preset_options.store : null;
-            
+
             /**
              * {Object} Store for optional parameters used in the app
              */
             this.options = {
-                USE_SECURE:true,
-                USE_SHADOW:false,
+                USE_SECURE: true,
+                USE_SHADOW: false,
             };
 
             //Declaring the properties upfront to give the VM a chance to build an appropriate virtual class.
@@ -11451,10 +11597,10 @@ ${is_iws}`;
             c = preset_options.custom_components;
             if (c)
                 for (let cn in c)
-                        this.custom_components[cn] = c[cn];
+                    this.custom_components[cn] = c[cn];
 
             c = preset_options.models;
-            
+
             if (c)
                 for (let cn in c)
                     if (c[cn] instanceof ModelBase)
@@ -11472,12 +11618,27 @@ ${is_iws}`;
             Object.freeze(this.custom_sources);
             Object.freeze(this.schemas);
             Object.freeze(this.models);
-
-
-            //Object.freeze(this);
         }
 
-        processLink(link){}
+        processLink(link) {}
+
+        /**
+            Copies values of the Presets object into a generic object. The new object is not frozen.
+        */
+        copy() {
+            let obj = {};
+
+            for (let a in this) {
+                if (typeof(this[a]) == "object")
+                    obj[a] = Object.assign({}, this[a]);
+                else if (typeof(this[a]) == "array")
+                    obj[a] = this[a].slice();
+                else
+                    obj[a] = this[a];
+            }
+
+            return obj;
+        }
     }
 
     /**
@@ -11914,6 +12075,12 @@ ${is_iws}`;
         upImport(prop_name, data, meta) {
             if (this.parent)
                 this.parent.up(prop_name, data, meta, this);
+            else 
+                this.up(prop_name, data, meta);
+        }
+
+        up(prop_name, data, meta){
+
         }
 
         down(data, changed_values) {
@@ -12588,12 +12755,12 @@ ${is_iws}`;
         createHTMLNodeHook(tag, start) { return new HTMLNode(tag); }
 
         processFetchHook(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
-            let path = this.url.path,
+            let path$$1 = this.url.path,
                 CAN_FETCH = true;
 
             //make sure URL is not already called by a parent.
             while (parent) {
-                if (parent.url && parent.url.path == path) {
+                if (parent.url && parent.url.path == path$$1) {
                     console.warn(`Preventing recursion on resource ${this.url.path}`);
                     CAN_FETCH = false;
                     break;
@@ -12995,7 +13162,10 @@ ${is_iws}`;
                 this.sources[i].getBadges(this);
             }
 
-            model.addView(this);
+            if(model.addView)
+                model.addView(this);
+
+            this.model = model;
 
             for (let name in this.taps)
                 this.taps[name].load(this.model, false);
@@ -13100,10 +13270,13 @@ ${is_iws}`;
      */
     class IO extends IOBase {
 
-        constructor(source, errors, tap, element = null) {
+        constructor(source, errors, tap, element = null, default_val) {
             super(tap);
             //Appending the value to a text node prevents abuse from insertion of malicious DOM markup. 
             this.ele = element;
+            this.argument = null;
+
+            if(default_val) this.down(default_val);
         }
 
         destroy() {
@@ -13120,11 +13293,13 @@ ${is_iws}`;
         This IO object will update the attribute value of the watched element, using the "prop" property to select the attribute to update.
     */
     class AttribIO extends IOBase {
-        constructor(source, errors, tap, attr, element) {
+        constructor(source, errors, tap, attr, element, default_val) {
             super(tap);
 
             this.attrib = attr;
             this.ele = element;
+
+            if(default_val) this.down(default_val);
         }
 
         destroy() {
@@ -13143,13 +13318,15 @@ ${is_iws}`;
 
     class InputIO extends IOBase {
 
-        constructor(source, errors, tap, element) {
+        constructor(source, errors, tap, element, message_key) {
 
             super(tap);
 
             this.ele = element;
 
-            this.event = (e) => { this.parent.up(e.target.value, { event: e }); };
+            const up_tap = message_key ? source.getTap(message_key) : tap;
+
+            this.event = (e) => { up_tap.up(e.target.value, { event: e }); };
 
             this.ele.addEventListener("input", this.event);
         }
@@ -13520,53 +13697,54 @@ ${is_iws}`;
     }
 
     class EventIO {
-        constructor(source, errors, taps, element, event, event_bind, msg) {
+        constructor(source, errors, taps, element, event, event_bind, argument) {
 
             let Attrib_Watch = (typeof element[event] == "undefined");
 
             this.parent = source;
             source.ios.push(this);
 
-            this._ele_ = element;
-            this._event_bind_ = new IOBase(source.getTap(event_bind.tap_name));
-            this._event_ = event.replace("on", "");
+            this.ele = element;
+            this.event_bind = new IOBase(source.getTap(event_bind.tap_name));
+            this.event = event.replace("on", "");
 
-            this.prevent_defaults = false;
-            if (this._event_ == "dragstart") this.prevent_defaults = false;
-            this._msg_ = null;
+            this.prevent_defaults = true;
+            if (this.event == "dragstart") this.prevent_defaults = false;
+            this.argument = null;
             this.data = null;
-            if (msg) {
-                switch (msg.type) {
+
+            if (argument) {
+                switch (argument.type) {
                     case 0: //DYNAMICbindingID
-                        this._msg_ = msg._bind_(source, errors, taps, this);
+                        this.argument = argument._bind_(source, errors, taps, this);
                         break;
                     case 1: //RAW_VALUEbindingID
-                        this.data = msg.txt;
+                        this.data = argument.val;
                         break;
                     case 2: //TEMPLATEbindingID
-                        if (msg.bindings.length < 1) // Just a variable less expression.
-                            this.data = msg.func();
+                        if (argument.bindings.length < 1) // Just a variable less expression.
+                            this.data = argument.func();
                         else
-                            this._msg_ = msg._bind_(source, errors, taps, this);
+                            this.argument = argument._bind_(source, errors, taps, this);
                         break;
                 }
             }
 
 
             if (Attrib_Watch) {
-                this._event_handle_ = new MutationObserver((ml) => {
+                this.event_handle = new MutationObserver((ml) => {
                     ml.forEach((m) => {
                         if (m.type == "attributes") {
                             if (m.attributeName == event) {
-                                this._handleAttribUpdate_(m);
+                                this.handleAttribUpdate(m);
                             }
                         }
                     });
                 });
-                this._event_handle_.observe(this._ele_, { attributes: true });
+                this.event_handle.observe(this.ele, { attributes: true });
             } else {
-                this._event_handle_ = (e) => this._handleEvent_(e);
-                this._ele_.addEventListener(this._event_, this._event_handle_);
+                this.event_handle = (e) => this.handleEvent(e);
+                this.ele.addEventListener(this.event, this.event_handle);
             }
         }
 
@@ -13575,23 +13753,23 @@ ${is_iws}`;
          * Calls destroy on any child objects.
          */
         destroy() {
-            if (this._msg_)
-                this._msg_.destroy();
-            this._event_handle_ = null;
-            this._event_bind_.destroy();
-            this._msg_ = null;
-            this._ele_.removeEventListener(this._event_, this._event_handle_);
-            this._ele_ = null;
-            this._event_ = null;
+            if (this.argument)
+                this.argument.destroy();
+            this.event_handle = null;
+            this.event_bind.destroy();
+            this.argument = null;
+            this.ele.removeEventListener(this.event, this.event_handle);
+            this.ele = null;
+            this.event = null;
             this.parent.removeIO(this);
             this.parent = null;
             this.data = null;
         }
 
-        _handleEvent_(e) {
-            this._event_bind_.up(this.data, { event: e });
+        handleEvent(e) {
+            this.event_bind.up(this.data, { event: e });
 
-            if (this.prevent_defaults) {
+            if (this.prevent_defaults /*|| prevent === true*/) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
@@ -13599,35 +13777,47 @@ ${is_iws}`;
             }
         }
 
-        _handleAttribUpdate_(e) {
-            this._event_bind_.up(e.target.getAttribute(e.attributeName), { mutation: e });
+        handleAttribUpdate(e) {
+            this.event_bind.up(e.target.getAttribute(e.attributeName), { mutation: e });
         }
     }
 
     class ScriptIO extends IOBase {
-        constructor(source, errors, tap, binding) {
-
+        constructor(source, errors, tap, binding, node, statics) {
+            
             let func;
 
             try {
                 if (binding._func_) {
                     func = binding._func_;
                 } else {
-                    func = Function(binding.tap_name, "event", "model", "emit", "presets", "static", "src", binding.val).bind(source);
+                    func = Function(binding.tap_name, "event", "model", "emit", "presets", "static", "src", binding.val);
                     binding._func_ = func;
                 }
             } catch (e) {
                 errors.push(e);
+                console.error(`Script error encountered in ${statics.url || "virtual file"}:${node.line+1}:${node.char}`);
+                console.warn(binding.val);
+                console.error(e);
                 func = () => {};
             }
+
+
 
             super(tap);
 
             this.function = binding.val;
-            this._func_ = func;
+            this._func_ = func.bind(source);
             this.source = source;
             this._bound_emit_function_ = new Proxy(this._emit_.bind(this), { set: (obj, name, value) => { obj(name, value); } });
             this.meta = null;
+            this.url = statics.url;
+
+            this.offset = node.offset;
+            this.char = node.char;
+            this.line = node.line;
+
+
         }
 
         /**
@@ -13648,6 +13838,7 @@ ${is_iws}`;
             try {
                 this._func_(value, meta.event, src.model, this._bound_emit_function_, src.presets, src.statics, src);
             } catch (e) {
+                console.error(`Script error encountered in ${this.url || "virtual file"}:${this.line+1}:${this.char}`);
                 console.warn(this.function);
                 console.error(e);
             }
@@ -13683,22 +13874,22 @@ ${is_iws}`;
      */
     class EventBinding {
         constructor(prop) {
-            this.bind = null;
-            this._event_ = prop;
+            this.arg = null;
+            this.event = prop;
         }
 
         _bind_(source, errors, taps, element, eventname) {
-            return new EventIO(source, errors, taps, element, eventname, this._event_, this.bind);
+            return new EventIO(source, errors, taps, element, eventname, this.event, this.arg);
         }
 
         get bindings() {
-            if (this.bind) {
-                if (this.bind.type == TEMPLATEbindingID)
-                    return [...this.bind.bindings, this._event_];
+            if (this.argument) {
+                if (this.argument.type == TEMPLATEbindingID)
+                    return [...this.argument.bindings, this.event];
                 else
-                    return [this.bind, this._event_];
+                    return [this.argument, this.event];
             }
-            return [this._event_];
+            return [this.event];
         }
         set bindings(v) {}
 
@@ -13706,6 +13897,10 @@ ${is_iws}`;
             return TEMPLATEbindingID;
         }
         set type(v) {}
+
+        set argument(binding) {
+            this.arg = binding;
+        }
     }
 
     /**
@@ -13717,10 +13912,11 @@ ${is_iws}`;
         constructor(binds, func) {
             this.bindings = binds;
             this.func = func;
+            this.arg = null;
         }
 
         _bind_(source, errors, taps, element) {
-            
+
             switch (this.method) {
                 case INPUT:
                     return new InputExpresionIO(source, errors, taps, element, this.bindings, this.func);
@@ -13744,19 +13940,21 @@ ${is_iws}`;
             this.val = "";
             this._func_ = null;
             this.method = 0;
+            this.argKey = null;
+            this.argVal = null;
         }
 
-        _bind_(source, errors, taps, element) {
+        _bind_(source, errors, taps, element, attr = "", node = null, statics = null) {
             let tap = source.getTap(this.tap_name); //taps[this.tap_id];
             switch (this.method) {
                 case INPUT:
-                    return new InputIO(source, errors, tap, element);
+                    return new InputIO(source, errors, tap, element, this.argKey);
                 case ATTRIB:
-                    return new AttribIO(source, errors, tap, this.val, element);
+                    return new AttribIO(source, errors, tap, attr, element, this.argVal);
                 case SCRIPT:
-                    return new ScriptIO(source, errors, tap, this);
+                    return new ScriptIO(source, errors, tap, this, node, statics);
                 default:
-                    return new IO(source, errors, tap, element);
+                    return new IO(source, errors, tap, element, this.argVal);
             }
         }
 
@@ -13765,34 +13963,48 @@ ${is_iws}`;
         }
         set type(v) {}
 
-        toString(){return `((${this.tap_name}))`;}
+        toString() { return `((${this.tap_name}))`; }
+
+        set argument(binding) {
+            if (binding instanceof DynamicBinding) {
+                this.argKey = binding.tap_name;
+                this.argVal = binding.val;
+            } else if (binding instanceof RawValueBinding) {
+                this.argVal = binding.val;
+            }
+        }
     }
 
     class RawValueBinding {
-        constructor(txt) {
-            this.txt = txt;
+        constructor(val) {
+            this.val = val;
             this.method = 0;
         }
 
         _bind_(source, errors, taps, element, prop = "") {
-
-            switch (this.method) {
-                case TEXT$2:
-                    element.data = this.txt;
-                    break;
-                case ATTRIB:{
-                    if(prop == "class"){
-                        element.classList.add.apply(element.classList, this.txt.split(" "));
-                    }else
-                        element.setAttribute(prop, this.txt);
+            try {
+                switch (this.method) {
+                    case TEXT$2:
+                        element.data = this.val;
+                        break;
+                    case ATTRIB:
+                        {
+                            if (prop == "class") {
+                                element.classList.add.apply(element.classList, this.val.split(" "));
+                            } else
+                                element.setAttribute(prop, this.val);
+                        }
                 }
+            } catch (e) {
+                console.error(`Unable to process the value ${this.val}`);
+                console.error(e);
             }
         }
-        get _value_() { return this.txt; }
+        get _value_() { return this.val; }
         set _value_(v) {}
         get type() { return RAW_VALUEbindingID; }
         set type(v) {}
-        toString(){return this.txt;}
+        toString() { return this.val; }
     }
 
     /**
@@ -13874,7 +14086,7 @@ ${is_iws}`;
     const barrier_b_start = "|";
     const barrier_b_end = "|";
 
-    const BannedIdentifiers = { "true": true, "false": 1, "class": 1, "function": 1,  "return": 1, "for" : 1, "new" : 1, "let" : 1, "var" : 1, "const" : 1, "Date": 1, "null": 1, "parseFloat":1, "parseInt":1};
+    const BannedIdentifiers = { "true": true, "false": 1, "class": 1, "function": 1, "return": 1, "for": 1, "new": 1, "let": 1, "var": 1, "const": 1, "Date": 1, "null": 1, "parseFloat": 1, "parseInt": 1 };
 
     function setIdentifier(id, store, cache) {
         if (!cache[id] && !BannedIdentifiers[id]) {
@@ -13895,7 +14107,7 @@ ${is_iws}`;
          * "return (implied)" name ? "User has a name!" : "User does not have a name!"
          * ```
          */
-         
+
         const bind_ids = [];
 
         const function_string = lex.slice();
@@ -13963,14 +14175,14 @@ ${is_iws}`;
                         lex.sync().n;
                         lex.IWS = true; // Do not produce white space tokens during this portion.
                         let pk = lex.pk;
-                        let Message= false;
+                        let Message = false;
 
 
-                        while (!pk.END && (pk.ch !== sentinel || (pk.pk.ch !== barrier_a_end && pk.p.ch !== barrier_a_start) || (pk.p.n.ch === barrier_a_end))) { 
+                        while (!pk.END && (pk.ch !== sentinel || (pk.pk.ch !== barrier_a_end && pk.p.ch !== barrier_a_start) || (pk.p.n.ch === barrier_a_end))) {
                             let prev = pk.ch;
-                            pk.n; 
-                            if(pk.ch == barrier_a_start && prev == barrier_a_end)
-                                Message =true;
+                            pk.n;
+                            if (pk.ch == barrier_a_start && prev == barrier_a_end)
+                                Message = true;
                         }
 
 
@@ -13993,86 +14205,90 @@ ${is_iws}`;
                         } else {
 
                             /************************** Start Single Identifier Binding *******************************/
+                            
                             let id = lex.tx;
                             let binding = new DynamicBinding();
                             binding.tap_name = id;
                             let index = binds.push(binding) - 1;
                             lex.n.a(sentinel);
 
-                            if (EVENT$$1) {
-                                /***************************** Looking for Event Bindings ******************************************/
-                                
-                                if (lex.ch == barrier_a_start || lex.ch == barrier_b_start) {
+                            /***************************** Looking for Event Bindings ******************************************/
 
-                                    binds[index] = new EventBinding(binds[index]);
+                            if (lex.ch == barrier_a_start || lex.ch == barrier_b_start) {
 
-                                    let sentinel = (lex.ch == barrier_a_start) ? barrier_a_end : barrier_b_end;
+                                if(EVENT$$1){
+                                    binding = new EventBinding(binding); 
+                                    binds[index] = binding;
+                                }
 
-                                    lex.IWS = true; // Do not produce white space tokens during this portion.
+                                let sentinel = (lex.ch == barrier_a_start) ? barrier_a_end : barrier_b_end;
 
-                                    let pk = lex.pk;
+                                lex.IWS = true; // Do not produce white space tokens during this portion.
 
-                                    while (!pk.END && (pk.ch !== sentinel || (pk.pk.ch !== barrier_a_end))) { pk.n; }
+                                let pk = lex.pk;
 
-                                    lex.n;
+                                while (!pk.END && (pk.ch !== sentinel || (pk.pk.ch !== barrier_a_end))) { pk.n; }
 
-                                    if (lex.tl < pk.off - lex.off || BannedIdentifiers[lex.tx]) {
+                                lex.n;
 
-                                        const elex = lex.copy(); //The expression Lexer
+                                if (lex.tl < pk.off - lex.off || BannedIdentifiers[lex.tx]) {
 
-                                        elex.fence(pk);
+                                    const elex = lex.copy(); //The expression Lexer
 
-                                        lex.sync();
+                                    elex.fence(pk);
 
-                                        if (pk.END) //Should still have `))` or `|)` in the input string
-                                            throw new Error("Should be more to this!");
+                                    lex.sync();
 
-                                        const event_binds = [];
+                                    if (pk.END) //Should still have `))` or `|)` in the input string
+                                        throw new Error("Should be more to this!");
 
-                                        processExpression(elex, event_binds);
+                                    const event_binds = [];
 
-                                        binds[index].bind = event_binds[0];
+                                    processExpression(elex, event_binds);
 
-                                        lex.a(sentinel);
+                                    binding.argument = event_binds[0];
 
-                                    } else {
-                                        if (lex.ch !== sentinel) {
-                                            let id = lex.tx,
-                                                binding;
-                                            if (lex.ty !== lex.types.id) {
-                                                switch (lex.ty) {
-                                                    case lex.types.num:
-                                                        binding = new RawValueBinding(parseFloat(id));
-                                                        break;
-                                                    case lex.types.str:
-                                                        binding = new RawValueBinding(id.slice(1, -1));
-                                                        break;
-                                                    default:
-                                                        binding = new RawValueBinding(id.slice);
-                                                }
-                                            } else {
-                                                binding = new DynamicBinding();
-                                                binding.tap_name = id;
+                                    lex.a(sentinel);
+
+                                } else {
+
+                                    if (lex.ch !== sentinel) {
+                                        let id = lex.tx, arg_binding = null;
+                                        if (lex.ty !== lex.types.id) {
+                                            switch (lex.ty) {
+                                                case lex.types.num:
+                                                    arg_binding = new RawValueBinding(parseFloat(id));
+                                                    break;
+                                                case lex.types.str:
+                                                    arg_binding = new RawValueBinding(id.slice(1, -1));
+                                                    break;
+                                                default:
+                                                    arg_binding = new RawValueBinding(id.slice);
                                             }
-                                            binds[index].bind = binding;
-                                            lex.n;
+                                        } else {
+                                            arg_binding = new DynamicBinding();
+                                            arg_binding.tap_name = id;
                                         }
-                                        lex.a(sentinel);
+                                        binding.argument = arg_binding;
+                                        lex.n;
                                     }
+                                    lex.a(sentinel);
                                 }
                             }
                         }
 
                         lex.IWS = false;
-                        
+
                         start = lex.off + 1; //Should at the sentinel.
-                        
+
                         lex.a(barrier_a_end);
-                        
+
                         continue;
                     }
+
                     break;
             }
+
             lex.n;
         }
 
@@ -14087,7 +14303,7 @@ ${is_iws}`;
             while (!lex.n.END)
                 if (!(lex.ty & (lex.types.ws | lex.types.nl)))
                     DATA_END = lex.off + lex.tl;
-                
+
             if (DATA_END > start) {
                 lex.sl = DATA_END;
                 binds.push(new RawValueBinding(lex.slice(start)));
@@ -14106,7 +14322,6 @@ ${is_iws}`;
         }
         return null;
     }
-
 
     function OutTemplate(binds = []) {
         this.bindings = binds;
@@ -14129,7 +14344,7 @@ ${is_iws}`;
             let binding = this.bindings[this.bindings.length - 1];
 
             if (binding && binding.type == RAW_VALUEbindingID) {
-                binding.txt += string;
+                binding.val += string;
             } else {
                 this.bindings.push(new RawValueBinding(string));
             }
@@ -14253,9 +14468,9 @@ ${is_iws}`;
             this.binding = binding;
         }
 
-        build(element, source, presets, errors, taps) {
+        build(element, source, presets, errors, taps, statics) {
             let ele = document.createTextNode(this.txt);
-            this.binding._bind_(source, errors, taps, ele);
+            this.binding._bind_(source, errors, taps, ele, "", this, statics);
             appendChild(element, ele);
         }
 
@@ -14283,12 +14498,22 @@ ${is_iws}`;
 
             this.css = null;
 
-            this._merged_ = false;
+            this.merged = false;
 
             this._badge_name_ = "";
 
             this.__presets__ = null;
             this.__statics__ = null;
+        }
+
+        /******************************************* ERROR ****************************************************/
+
+        getURL() {
+            if (this.url)
+                return this.url;
+            if (this.par)
+                return this.par.getURL();
+            return null;
         }
 
         /******************************************* STATICS ****************************************************/
@@ -14297,13 +14522,13 @@ ${is_iws}`;
             if (this.__statics__) return this.__statics__;
 
             if (this.par)
-                return (this.__statics__ = Object.assign({}, this.par.statics));
+                return (this.__statics__ = Object.assign({}, this.par.statics, { slots: {} }));
 
-            return (this.__statics__ = {});
+            return (this.__statics__ = { slots: {} });
         }
 
         set statics(statics) {
-            this.__statics__ = statics;
+            //this.__statics__ = statics;
         }
 
         /******************************************* PRESETS ****************************************************/
@@ -14320,13 +14545,13 @@ ${is_iws}`;
         /****************************************** COMPONENTIZATION *****************************************/
 
         mergeComponent() {
+            if (this.presets.components) {
 
-            let component = this.presets.components[this.tag];
+                let component = this.presets.components[this.tag];
 
-            if (component) {
-                this._merged_ = component;
+                if (component)
+                    this.merged = component;
             }
-
         }
 
         /******************************************* CSS ****************************************************/
@@ -14409,7 +14634,7 @@ ${is_iws}`;
                 if (typeof(classes.value) == "string")
                     return classes.value.split(" ");
                 else
-                    return classes.value.txt.split(" ");
+                    return classes.value.val.split(" ");
             }
             return [];
         }
@@ -14529,36 +14754,38 @@ ${is_iws}`;
          * @param      {null}  model    The model
          * @return     {null}  { description_of_the_return_value }
          */
-        build(element, source, presets, errors, taps, statics, out_ele) {
+        build(element, source, presets, errors, taps, statics, out_ele = null) {
 
-            const out_statics = this.__statics__ || statics;
-            let own_out_ele;
+            let out_statics = statics;
 
-            if (this._merged_) {
+            if (this.url || this.__statics__)
+                out_statics = Object.assign({}, statics, this.__statics__, { url: this.getURL() });
 
-                own_out_ele = {
+            const MERGED = !!this.merged;
+            
+            let own_element = null;
+
+            if (MERGED) {
+
+                let own_out_ele = {
                     ele: null
                 };
 
-                let out_source = this._merged_.build(element, source, presets, errors, taps, out_statics, own_out_ele);
+                let out_source = this.merged.build(element, source, presets, errors, taps, out_statics, own_out_ele);
 
                 if (!source)
                     source = out_source;
-            }
 
-            let own_element;
-
-            if (own_out_ele) {
                 own_element = own_out_ele.ele;
+
             } else {
+
                 if (!source) {
                     source = new Source(null, presets, own_element, this);
                     own_element = this.createElement(presets, source);
                     source.ele = own_element;
                 } else
                     own_element = this.createElement(presets, source);
-
-                if (element) appendChild(element, own_element);
 
                 if (out_ele)
                     out_ele.ele = own_element;
@@ -14578,17 +14805,18 @@ ${is_iws}`;
 
                 for (let i = 0, l = this.bindings.length; i < l; i++) {
                     let attr = this.bindings[i];
-                    attr.binding._bind_(source, errors, taps, own_element, attr.name);
+                    attr.binding._bind_(source, errors, taps, own_element, attr.name, this, statics);
                 }
 
-                for (let node = this.fch; node; node = this.getNextChild(node))
-                    node.build(own_element, source, presets, errors, taps, out_statics);
-
-            } else {
-                for (let node = this.fch; node; node = this.getNextChild(node))
-                    node.build(element, source, presets, errors, taps, out_statics);
             }
 
+            if (!MERGED) {
+
+                const ele = own_element ? own_element : element;
+
+                for (let node = this.fch; node; node = this.getNextChild(node))
+                    node.build(ele, source, presets, errors, taps, out_statics);
+            }
 
             return source;
         }
@@ -14619,9 +14847,7 @@ ${is_iws}`;
         }
 
         endOfElementHook() {
-            if (!this.fch) {
-                this.mergeComponent();
-            }
+            this.mergeComponent();
         }
 
 
@@ -14638,7 +14864,7 @@ ${is_iws}`;
 
             let start = lex.off,
                 basic = {
-                    IGNORE:true,
+                    IGNORE: true,
                     name,
                     value: lex.slice(start)
                 };
@@ -14686,25 +14912,28 @@ ${is_iws}`;
                         this._badge_name_ = lex.tx;
                         return basic;
                     }
+                case "s":
+                    if (name == "slot" && this.par) {
+                        this.par.statics.slots[basic.value] = this;
+                        return basic;
+                    }
             }
 
             if (this.checkTapMethodGate(name, lex))
-                return {
-                    name,
-                    value: lex.slice(start)
-                };
+                return basic.IGNORE = false, basic;
 
             basic.IGNORE = false;
+
             if ((lex.sl - lex.off) > 0) {
                 let binding = Template(lex, FOR_EVENT);
                 if (!binding) {
                     return basic;
                 }
 
-                binding.val = name;
+                binding.attrib = name;
                 binding.method = bind_method;
                 let attr = {
-                    IGNORE:false,
+                    IGNORE: false,
                     name,
                     value: (start < lex.off) ? lex.slice(start) : true,
                     binding: this.processTapBinding(binding)
@@ -14787,9 +15016,16 @@ ${is_iws}`;
 
             return { name, value: lex.slice() };
         }
-        build(element, source, presets, errors, taps) {
+        build(element, source, presets, errors, taps, statics = {}) {
+            
+            if(this.url){
+                statics = Object.assign({}, statics);
+                statics.url = this.url;
+            }
+            
+            
             if (this.binding)
-                this.binding._bind_(source, errors, taps, element);
+                this.binding._bind_(source, errors, taps, element, "", this, statics);
         }
     }
 
@@ -14802,7 +15038,6 @@ ${is_iws}`;
             super();
             this._model_name_ = "";
             this._schema_name_ = "";
-            this.statics = {};
         }
 
         delegateTapBinding() {
@@ -14832,7 +15067,7 @@ ${is_iws}`;
             return createElement(this.getAttribute("element") || "div");
         }
 
-        build(element, source, presets, errors, taps = null, statics = null, out_ele = null) {
+        build(element, source, presets, errors, taps = null, statics = {}, out_ele = null) {
 
             let data = {};
 
@@ -14918,20 +15153,24 @@ ${is_iws}`;
                 if (!attr.value) {
                     //let value = this.par.importAttrib()
                     //if(value) data[attr.name];
-                } else {
+                } else
                     data[attr.name] = attr.value;
-
-                }
             }
+
+            if (this.url) {
+                statics = Object.assign({}, statics);
+                statics.url = this.url;
+            }
+
 
             for (let node = this.fch; node; node = this.getNextChild(node))
                 node.build(element, me, presets, errors, out_taps, statics);
 
-            if (statics) {
-                me.statics = statics;
-                me.update(statics);
-            }
-
+            if (statics || this.__statics__) {
+                let s = Object.assign({}, statics ? statics : {}, this.__statics__);
+                me.statics = s;
+                me.update(me.statics);
+            } 
 
             return me;
         }
@@ -14950,7 +15189,7 @@ ${is_iws}`;
         processAttributeHook(name, lex, value) {
             let start = lex.off,
                 basic = {
-                    IGNORE:true,
+                    IGNORE: true,
                     name,
                     value: lex.slice(start)
                 };
@@ -15010,18 +15249,26 @@ ${is_iws}`;
 
             if ((lex.sl - lex.off) > 0) {
                 let binding = Template(lex, true);
-                if (!binding) {
+
+                if (!binding)
                     return basic;
-                }
-                binding.val = name;
+
+
+
+                //}
+                //binding.val = name;
+                binding.attrib = name;
                 binding.method = ATTRIB;
+
                 let attr = {
-                    IGNORE:false,
+                    IGNORE: false,
                     name,
                     value: (start < lex.off) ? lex.slice(start) : true,
                     binding: this.processTapBinding(binding)
                 };
+
                 this.bindings.push(attr);
+
                 return attr;
             }
 
@@ -15775,8 +16022,7 @@ ${is_iws}`;
 
         get data() {}
         set data(container) {
-            
-            console.log(container);
+
             if (container instanceof ModelContainerBase) {
                 container.pin();
                 container.addView(this);
@@ -16191,7 +16437,7 @@ ${is_iws}`;
          * @protected
          */
         cull(new_items) {
-            console.log(new_items);
+            
             if (!new_items) new_items = [];
             let transition = Transitioneer.createTransition();
             if (new_items.length == 0) {
@@ -16476,6 +16722,7 @@ ${is_iws}`;
         constructor(start) {
             super();
             this._start_ = start;
+            this.url = this.getURL();
         }
 
         /******************************************* HOOKS ****************************************************/
@@ -16537,7 +16784,12 @@ ${is_iws}`;
 
 
                 let me = new SourceTemplate(source, presets, ele);
+                
                 me.package = this.package;
+
+                if(!me.package.skeletons[0].tree.url)
+                    me.package.skeletons[0].tree.url = this.getURL();
+            
                 me.prop = this.property_bind._bind_(source, errors, taps, me);
 
                 appendChild(element, ele);
@@ -16639,7 +16891,6 @@ ${is_iws}`;
         }
 
         createHTMLNodeHook(tag) {
-        	console.log(tag);
             //jump table.
             switch (tag[0]) {
                 case "w":
@@ -16671,6 +16922,46 @@ ${is_iws}`;
         }
     }
 
+    /**
+     * Slot Node. 
+     */
+    class SlotNode extends RootNode {
+        constructor() {
+            super();
+            this.name = "";
+        }
+
+        delegateTapBinding() {
+            return null;
+        }
+
+        build(element, source, presets, errors, taps, statics, out_ele) {
+            return (statics.slots && statics.slots[this.name]) ?
+                statics.slots[this.name].build(element, source, presets, errors, taps, statics, out_ele): source;
+        }
+
+        processAttributeHook(name, lex) {
+
+            if (!name) return null;
+
+            let start = lex.off,
+                basic = {
+                    IGNORE:true,
+                    name,
+                    value: lex.slice(start)
+                };
+
+            let bind_method = ATTRIB,
+                FOR_EVENT = false;
+
+            if(name == "name")
+                this.name = basic.value;
+
+            return basic;
+        }
+
+    }
+
     //Since all nodes extend the RootNode, this needs to be declared here to prevent module cycles. 
     function CreateHTMLNode(tag) {
         //jump table.
@@ -16697,6 +16988,8 @@ ${is_iws}`;
                     case "svg":
                     case "path":
                         return new SVGNode();
+                    case "slot":
+                        return new SlotNode();
                 }
         }
 
@@ -16776,6 +17069,12 @@ ${is_iws}`;
     }
 
     function complete(lex, SourcePackage, presets, ast, url, win) {
+
+
+        //Record URL if present for proper error messaging. 
+        if(url && !ast.url)
+            ast.url = url;    
+
         /*
          * Only accept certain nodes for mounting to the DOM. 
          * The custom element `import` is simply used to import extra HTML data from network for use with template system. It should not exist otherwise.
@@ -16854,6 +17153,10 @@ ${is_iws}`;
      * @alias CompileSource
      */
     function CompileSource(SourcePackage, presets, element, url, win = window) {
+        
+        if(!url)
+            url = URL.G;
+
         let lex;
         if (element instanceof whind$1.constructor) {
             lex = element;
@@ -17069,10 +17372,11 @@ ${is_iws}`;
 
                 element = shadow_root;
 
-                for (i = 0, l = this.styles.length; i < l; i++) {
-                    let style = cloneNode(this.styles[i], true);
-                    appendChild(element, style);
-                }
+                if(this.styles)
+                    for (i = 0, l = this.styles.length; i < l; i++) {
+                        let style = cloneNode(this.styles[i], true);
+                        appendChild(element, style);
+                    }
             }
 
             for (i = 0, l = this.skeletons.length; i < l; i++) {
@@ -17103,18 +17407,18 @@ ${is_iws}`;
 
     /** This is the entire object structure of Wick, minus the platform specific outputs found in /source/root/ */
 
-    const model = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
-    model.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
-    model.constr = SchemedModel;
-    model.any = (data) => new Model(data);
-    model.any.constr = Model;
-    model.container = {
+    const model$1 = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
+    model$1.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
+    model$1.constr = SchemedModel;
+    model$1.any = (data) => new Model(data);
+    model$1.any.constr = Model;
+    model$1.container = {
         multi: MultiIndexedContainer,
         array: ArrayModelContainer,
         btree: BTreeModelContainer,
         constr: ModelContainerBase
     };
-    model.store = (data) => new Store(data);
+    model$1.store = (data) => new Store(data);
 
     //Construct Schema Exports
     const scheme = Object.create(schemes);
@@ -17128,16 +17432,16 @@ ${is_iws}`;
     Object.freeze(scheme.constr);
     Object.freeze(scheme);
     Object.freeze(Presets);
-    Object.freeze(model.container.constr);
-    Object.freeze(model.container);
-    Object.freeze(model.any);
-    Object.freeze(model);
+    Object.freeze(model$1.container.constr);
+    Object.freeze(model$1.container);
+    Object.freeze(model$1.any);
+    Object.freeze(model$1);
 
     const core = {
         presets: a => new Presets(a),
         view: View,
         scheme: scheme,
-        model: model,
+        model: model$1,
         source: (...a) => new SourcePackage(...a)
     };
 
@@ -17171,7 +17475,7 @@ ${is_iws}`;
     const wick$1 = {
     	source,
     	scheme,
-    	model,
+    	model: model$1,
     	core,
     	internals,
     	compile
@@ -17277,7 +17581,7 @@ ${is_iws}`;
         */
 
         mountListeners() {
-            this.system.ui.integrateComponentFrame(this.frame, this);
+            this.system.ui.integrateComponentElement(this.frame, this);
         }
 
         addStyle(tree, INLINE) {
@@ -17376,7 +17680,6 @@ ${is_iws}`;
         get window() {
             return this;
             return new Proxy(this,{get:(obj, prop)=>{
-                console.log(prop, obj[prop]);
                 return obj[prop]
             }});
             return window;
@@ -17558,7 +17861,7 @@ ${is_iws}`;
 
     function SETMARGINLEFT(system, component, element, x, LINKED = false) {
         resetMargin(system, component, element);
-        setNumericalValue("margin_left", system, component, element, x, setNumericalValue.parent_width);
+        setNumericValue("margin_left", system, component, element, x, setNumericValue.parent_width);
         if (!LINKED) element.wick_node.prepRebuild();
     }
 
@@ -17577,7 +17880,7 @@ ${is_iws}`;
 
     function SETMARGINTOP(system, component, element, x, LINKED = false) {
         resetMargin(system, component, element);
-        setNumericalValue("margin_top", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("margin_top", system, component, element, x, setNumericValue.parent_height);
         if (!LINKED) element.wick_node.prepRebuild();
     }
 
@@ -17596,7 +17899,7 @@ ${is_iws}`;
 
     function SETMARGINRIGHT(system, component, element, x, LINKED = false) {
         resetMargin(system, component, element);
-        setNumericalValue("margin_right", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("margin_right", system, component, element, x, setNumericValue.parent_height);
         if (!LINKED) element.wick_node.prepRebuild();
     }
 
@@ -17616,7 +17919,7 @@ ${is_iws}`;
 
     function SETMARGINBOTTOM(system, component, element, x, LINKED = false) {
         resetMargin(system, component, element);
-        setNumericalValue("margin_bottom", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("margin_bottom", system, component, element, x, setNumericValue.parent_height);
         if (!LINKED) element.wick_node.prepRebuild();
     }
 
@@ -18203,7 +18506,7 @@ ${is_iws}`;
     function SETPADDINGLEFT(system, component, element, x, LINKED = false) {
         resetPadding(system, component, element);
         ensureBlocklike(system, component, element);
-        setNumericalValue("padding_left", system, component, element, x, setNumericalValue.parent_width);
+        setNumericValue("padding_left", system, component, element, x, setNumericValue.parent_width);
         prepRebuild(element, LINKED);
     }
 
@@ -18234,7 +18537,7 @@ ${is_iws}`;
     function SETPADDINGTOP(system, component, element, x, LINKED = false) {
         resetPadding(system, component, element);
         ensureBlocklike(system, component, element);
-        setNumericalValue("padding_top", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("padding_top", system, component, element, x, setNumericValue.parent_height);
         prepRebuild(element, LINKED);
     }
 
@@ -18264,7 +18567,7 @@ ${is_iws}`;
     function SETPADDINGRIGHT(system, component, element, x, LINKED = false) {
         resetPadding(system, component, element);
         ensureBlocklike(system, component, element);
-        setNumericalValue("padding_right", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("padding_right", system, component, element, x, setNumericValue.parent_height);
         prepRebuild(element, LINKED);
     }
 
@@ -18294,7 +18597,7 @@ ${is_iws}`;
     function SETPADDINGBOTTOM(system, component, element, x, LINKED = false) {
         resetPadding(system, component, element);
         ensureBlocklike(system, component, element);
-        setNumericalValue("padding_bottom", system, component, element, x, setNumericalValue.parent_height);
+        setNumericValue("padding_bottom", system, component, element, x, setNumericValue.parent_height);
         prepRebuild(element, LINKED);
     }
 
@@ -18376,6 +18679,7 @@ ${is_iws}`;
     let types$6 = CSSParser.types;
 
     function resetBorder(system, component, element) {
+        return
         let cache = CacheFactory(system, component, element);
         let css = cache.rules;
         if (css.props.border) {
@@ -18386,159 +18690,222 @@ ${is_iws}`;
 
     function SETBORDERLEFT(system, component, element, x, LINKED = false) {
         resetBorder(system, component, element);
-        setNumericalValue("border_left_width", system, component, element, x, setNumericalValue.parent_width);
-        if (!LINKED) element.wick_node.prepRebuild();
-    }
-
-    function SETDELTABORDERLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element)["border-left-width"]);
-
-        if (ratio > 0)
-            SETBORDERLEFT(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETBORDERLEFT, start_x, dx, "border-left-width");
-
-        if (!LINKED) element.wick_node.prepRebuild();
-
-        return ratio;
-    }
-
-    function SETBORDERTOP(system, component, element, x, LINKED = false) {
-        resetBorder(system, component, element);
-        setNumericalValue("border_top_width", system, component, element, x, setNumericalValue.parent_height);
-        if (!LINKED) element.wick_node.prepRebuild();
-    }
-
-    function SETDELTABORDERTOP(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element)["border-top-width"]);
-
-        if (ratio > 0)
-            SETBORDERTOP(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETBORDERTOP, start_x, dx, "border-top-width");
-
-        if (!LINKED) element.wick_node.prepRebuild();
-
-        return ratio;
+        let excess_x = setNumericValue("border_left_width", system, component, element, x, setNumericValue.parent_width);
+        prepRebuild(element, LINKED);
+        return { ratio: 0, excess_x }
     }
 
     function SETBORDERRIGHT(system, component, element, x, LINKED = false) {
         resetBorder(system, component, element);
-        setNumericalValue("border_right_width", system, component, element, x, setNumericalValue.parent_height);
-        if (!LINKED) element.wick_node.prepRebuild();
+        let excess_y = setNumericValue("border_right_width", system, component, element, x, setNumericValue.parent_height);
+        prepRebuild(element, LINKED);
+        return { ratio: 0, excess_y }
     }
 
-
-    function SETDELTABORDERRIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element)["border-right-width"]);
-
-        if (ratio > 0)
-            SETBORDERRIGHT(system, component, element, start_x + dx / ratio, true);
-        else
-            ratio = getRatio(system, component, element, SETBORDERRIGHT, start_x, dx, "border-right-width");
-
-        if (!LINKED) element.wick_node.prepRebuild();
-
-        return ratio;
+    function SETBORDERTOP(system, component, element, x, LINKED = false) {    
+        resetBorder(system, component, element);
+        let excess_y = setNumericValue("border_top_width", system, component, element, x, setNumericValue.parent_height);
+        prepRebuild(element, LINKED);
+        return { ratio: 0, excess_y }
     }
 
     function SETBORDERBOTTOM(system, component, element, x, LINKED = false) {
         resetBorder(system, component, element);
-        setNumericalValue("border_bottom_width", system, component, element, x, setNumericalValue.parent_height);
-        if (!LINKED) element.wick_node.prepRebuild();
+        let excess_y =  setNumericValue("border_bottom_width", system, component, element, x, setNumericValue.parent_height);
+        prepRebuild(element, LINKED);
+        return { ratio: 0, excess_y }
+    }
+
+    function SETDELTABORDERLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
+
+        let start_x = parseFloat(component.window.getComputedStyle(element)["border-left-width"]),
+            width = parseFloat(component.window.getComputedStyle(element)["width"]),
+            excess_x = 0,
+            excess_x_extra = 0;
+
+        if (dx > 0 && width - dx < 0) {
+            excess_x_extra = (width - dx);
+            dx = width;
+        }
+
+        if (ratio > 0)
+            excess_x = -SETBORDERLEFT(system, component, element, start_x + dx / ratio, true).excess_x;
+        else
+            excess_x = -getRatio(system, component, element, SETBORDERLEFT, start_x, dx, "border-left-width").excess;
+
+        prepRebuild(element, LINKED);
+
+        SETDELTAWIDTH(system, component, element, -dx - excess_x, 0, true);
+
+        excess_x += excess_x_extra;
+
+        return { excess_x };
     }
 
 
-    function SETDELTABORDERBOTTOM(system, component, element, dx, ratio = 0, LINKED = false) {
-        let start_x = parseFloat(component.window.getComputedStyle(element)["border-bottom-width"]);
+    function SETDELTABORDERRIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
+
+        let start_x = parseFloat(component.window.getComputedStyle(element)["border-right-width"]),
+            width = parseFloat(component.window.getComputedStyle(element)["width"]),
+            excess_x = 0,
+            excess_x_extra = 0;
+
+        if (dx > 0 && width - dx < 0) {
+            excess_x_extra = -(width - dx);
+            dx = width;
+        }
 
         if (ratio > 0)
-            SETBORDERBOTTOM(system, component, element, start_x + dx / ratio, true);
+            excess_x = SETBORDERRIGHT(system, component, element, start_x + dx / ratio, true).excess_x;
         else
-            ratio = getRatio(system, component, element, SETBORDERBOTTOM, start_x, dx, "border-bottom-width");
+            excess_x = getRatio(system, component, element, SETBORDERRIGHT, start_x, dx, "border-right-width").excess;
 
-        if (!LINKED) element.wick_node.prepRebuild();
+        prepRebuild(element, LINKED);
 
-        return ratio;
+        SETDELTAWIDTH(system, component, element, -dx + excess_x, 0, true);
+
+        excess_x += excess_x_extra;
+
+        return { excess_x };
+    }
+
+
+
+
+    function SETDELTABORDERTOP(system, component, element, dy, ratio = 0, LINKED = false) {
+        let start_x = parseFloat(component.window.getComputedStyle(element)["border-top-width"]),
+            height = parseFloat(component.window.getComputedStyle(element)["height"]),
+            excess_y = 0,
+            excess_y_extra = 0;
+
+        if (dy > 0 && height - dy < 0) {
+            excess_y_extra = (height - dy);
+            dy = height;
+        }
+
+        if (ratio > 0)
+            excess_y = -SETBORDERTOP(system, component, element, start_x + dy / ratio, true).excess_y;
+        else
+            excess_y = -getRatio(system, component, element, SETBORDERTOP, start_x, dy, "border-top-width").excess;
+
+        prepRebuild(element, LINKED);
+
+        SETDELTAHEIGHT(system, component, element, -dy - excess_y, 0, true);
+
+        excess_y += excess_y_extra;
+
+        return { excess_y };
+    }
+
+
+    function SETDELTABORDERBOTTOM(system, component, element, dy, ratio = 0, LINKED = false) {
+        let start_x = parseFloat(component.window.getComputedStyle(element)["border-bottom-width"]),
+            height = parseFloat(component.window.getComputedStyle(element)["height"]),
+            excess_y = 0,
+            excess_y_extra = 0;
+
+        if (dy > 0 && height - dy < 0) {
+            excess_y_extra = -(height - dy);
+            dy = height;
+        }
+
+        if (ratio > 0)
+            excess_y = SETBORDERBOTTOM(system, component, element, start_x + dy / ratio, true).excess_y;
+        else
+            excess_y = getRatio(system, component, element, SETBORDERBOTTOM, start_x, dy, "border-bottom-width").excess;
+
+        prepRebuild(element, LINKED);
+
+        SETDELTAHEIGHT(system, component, element, -dy + excess_y, 0, true);
+
+        excess_y += excess_y_extra;
+
+        return { excess_y };
     }
 
     function RESIZEBORDERT(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
         SETDELTABORDERTOP(system, component, element, dy, 0, true);
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
     function RESIZEBORDERR(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
         SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
     function RESIZEBORDERL(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
         SETDELTABORDERLEFT(system, component, element, dx, 0, true);
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
     function RESIZEBORDERB(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
         SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
     function RESIZEBORDERTL(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
-        let cache = CacheFactory(system, component, element);
+        let { excess_x } = SETDELTABORDERLEFT(system, component, element, dx, 0, true);
+        let { excess_y } = SETDELTABORDERTOP(system, component, element, dy, 0, true);
 
-        if((cache.cssflagsA & 1)){
-            SETDELTALEFT(system, component, element, dx, 0, true);
-            SETDELTATOP(system, component, element, dy, 0, true);
-        }
+        prepRebuild(element);
 
-        SETDELTABORDERLEFT(system, component, element, -dx, 0, true);
-        SETDELTABORDERTOP(system, component, element, -dy, 0, true);
-        element.wick_node.prepRebuild();
+        return { excess_x, excess_y };
     }
 
     function RESIZEBORDERTR(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
-        SETDELTABORDERRIGHT(system, component, element, dx, 0, true);
-        SETDELTABORDERTOP(system, component, element, dy, 0, true);
-        element.wick_node.prepRebuild();
+        let { excess_x } = SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
+        let { excess_y } = SETDELTABORDERTOP(system, component, element, dy, 0, true);
+
+        prepRebuild(element);
+
+        return { excess_x, excess_y };
     }
 
     function RESIZEBORDERBL(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
-        SETDELTABORDERLEFT(system, component, element, dx, 0, true);
-        SETDELTABORDERBOTTOM(system, component, element, dy, 0, true);
-        element.wick_node.prepRebuild();
+        let { excess_x } = SETDELTABORDERLEFT(system, component, element, dx, 0, true);
+        let { excess_y } = SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
+
+        prepRebuild(element);
+
+        return { excess_x, excess_y };
     }
 
     function RESIZEBORDERBR(system, component, element, dx, dy, IS_COMPONENT) {
         if (IS_COMPONENT) return;
-        SETDELTABORDERRIGHT(system, component, element, dx, 0, true);
-        SETDELTABORDERBOTTOM(system, component, element, dy, 0, true);
-        element.wick_node.prepRebuild();
+        let { excess_x } = SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
+        let { excess_y } = SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
+
+        prepRebuild(element);
+
+        return { excess_x, excess_y };
     }
 
-    function BORDERRADIUSTL(system, component, element, d){
+    function BORDERRADIUSTL(system, component, element, d) {
         setValue(system, component, element, "border_top_left_radius", new types$6.length(d, "px"));
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
-    function BORDERRADIUSTR(system, component, element, d){
+    function BORDERRADIUSTR(system, component, element, d) {
+
         setValue(system, component, element, "border_top_right_radius", new types$6.length(d, "px"));
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
-    function BORDERRADIUSBL(system, component, element, d){
+    function BORDERRADIUSBL(system, component, element, d) {
         setValue(system, component, element, "border_bottom_left_radius", new types$6.length(d, "px"));
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
-    function BORDERRADIUSBR(system, component, element, d){
+    function BORDERRADIUSBR(system, component, element, d) {
         setValue(system, component, element, "border_bottom_right_radius", new types$6.length(d, "px"));
-        element.wick_node.prepRebuild();
+        prepRebuild(element);
     }
 
     const actions = {
@@ -18783,16 +19150,13 @@ ${is_iws}`;
     }
 
     /**
-     * This module is responsible for storing, updating, and caching compents. 
-     * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
-     * Any associated stylesheets are managed through this componnent. 
+     * This module handles the master component, wich stores alements that are not members of other components. 
      */
     class MasterComponent extends Component {
         constructor(system){
             super(system);
-
-            this.width = 1920;
-            this.height = 1080;
+            this.width = 1;
+            this.height = 1;
             this.IS_MASTER = true;
         }
 
@@ -18804,7 +19168,6 @@ ${is_iws}`;
             //this.frame.setAttribute("frameBorder", "0");
             this.frame.style.position = "fixed";
 
-
             this.mountListeners();
             this.IFRAME_LOADED = true;
 
@@ -18812,7 +19175,7 @@ ${is_iws}`;
         }
 
         mountListeners() {
-            this.system.ui.integrateComponentFrame(this.frame, this);
+            this.system.ui.integrateComponentElement(this.frame, this);
         }
 
         get window(){
@@ -18820,7 +19183,7 @@ ${is_iws}`;
         }
 
         get sourceElement(){
-        	return this.frame.firstChild;
+        	return this.sources[0].ele;
         }
 
         get content(){
@@ -18832,84 +19195,328 @@ ${is_iws}`;
         }
     }
 
-    class LineBox {
-        constructor(ON_MAIN = false){
-            this.rect = null;
-            this.ON_MAIN = ON_MAIN;
+    /***
+    	This module is responsible for measuring an element and making that data available to other modules.
+    ***/
+
+    function getOffsetPos(element) {
+        const a = { x: element.offsetLeft, y: element.offsetTop };
+        if (element.offsetParent) {
+            const b = getOffsetPos(element.offsetParent);
+            a.x += b.x;
+            a.y += b.y;
         }
-        get l() {
-            return this.rect.x //+ this.component.x;
+        return a;
+    }
+
+    class ElementBox {
+        constructor() {
+            //Caching the global transform object for reuse.
+            this.element = null;
+
+            this.margin_l = 0;
+            this.margin_r = 0;
+            this.margin_t = 0;
+            this.margin_b = 0;
+
+            this.padding_l = 0;
+            this.padding_r = 0;
+            this.padding_t = 0;
+            this.padding_b = 0;
+
+            this.border_l = 0;
+            this.border_r = 0;
+            this.border_t = 0;
+            this.border_b = 0;
+
+            this.x = 0;
+            this.y = 0;
+            this.w = 0;
+            this.h = 0;
         }
 
-        get t() {
-            return this.rect.y //+ this.component.y;
+        destroy() {
+            this.element = null;
         }
 
-        get b() {
-            return this.rect.y + this.rect.height //+ this.component.y;
+        setDimensions(element = this.element) {
+
+            this.element = element;
+
+            const par_prop = window.getComputedStyle(this.element);
+            const rect = getOffsetPos(this.element);
+
+            this.x = rect.x;
+            this.y = rect.y;
+
+            this.w = parseFloat(par_prop.width);
+            this.h = parseFloat(par_prop.height);
+
+            //margin
+            this.margin_l = parseFloat(par_prop.marginLeft) || 0;
+            this.margin_r = parseFloat(par_prop.marginRight) || 0;
+            this.margin_t = parseFloat(par_prop.marginTop) || 0;
+            this.margin_b = parseFloat(par_prop.marginBottom) || 0;
+
+            //border
+            this.border_l = parseFloat(par_prop.borderLeftWidth) || 0;
+            this.border_r = parseFloat(par_prop.borderRightWidth) || 0;
+            this.border_t = parseFloat(par_prop.borderTopWidth) || 0;
+            this.border_b = parseFloat(par_prop.borderBottomWidth) || 0;
+
+            //padding
+            this.padding_l = parseFloat(par_prop.paddingLeft) || 0;
+            this.padding_r = parseFloat(par_prop.paddingRight) || 0;
+            this.padding_t = parseFloat(par_prop.paddingTop) || 0;
+            this.padding_b = parseFloat(par_prop.paddingBottom) || 0;
+
+            this.posl = parseFloat(par_prop.left) || 0;
+            this.posr = parseFloat(par_prop.right) || 0;
+            this.post = parseFloat(par_prop.top) || 0;
+            this.posb = parseFloat(par_prop.bottom) || 0;
         }
 
-        get r() {
-            return this.rect.x + this.rect.width //+ this.component.x;
+        get MarginX() {
+            return this.x;
         }
 
-        getTransformed(trs){
+        get MarginY() {
+            return this.y;
+        }
 
-            if(true || this.ON_MAIN)
-                return {l:this.l, r:this.r, t:this.t, b:this.b};
-            else{
+        get BorderX() {
+            return (this.x + this.margin_l);
+        }
 
-                const 
-                    l = (this.l)*trs.scale+trs.px,
-                    t = (this.t)*trs.scale+trs.py,
-                    r = (this.r)*trs.scale+trs.px,
-                    b = (this.b)*trs.scale+trs.py;
-                return {l, r, t, b};
+        get BorderY() {
+            return (this.y + this.margin_t);
+        }
+
+        get PaddingX() {
+            return (this.x + this.margin_l + this.border_l);
+        }
+
+        get PaddingY() {
+            return (this.y + this.margin_t + this.border_t);
+        }
+
+        get ContentX() {
+            return (this.x + this.margin_l + this.border_l + this.padding_l);
+        }
+
+        get ContentY() {
+            return (this.y + this.margin_t + this.border_t + this.padding_t);
+        }
+
+        get MarginWidth() {
+            return (this.margin_l + this.border_l + this.padding_l + this.w + this.padding_r + this.border_r + this.margin_r);
+        }
+
+        get MarginHeight() {
+            return (this.margin_t + this.border_t + this.padding_t + this.h + this.padding_b + this.border_b + this.margin_b);
+        }
+
+        get BorderWidth() {
+            return (this.border_l + this.padding_l + this.w + this.padding_r + this.border_r);
+        }
+
+        get BorderHeight() {
+            return (this.border_t + this.padding_t + this.h + this.padding_b + this.border_b);
+        }
+
+        get PaddingWidth() {
+            return (this.padding_l + this.w + this.padding_r);
+        }
+
+        get PaddingHeight() {
+            return (this.padding_t + this.h + this.padding_b);
+        }
+
+        get ContentWidth() {
+            return (this.w);
+        }
+
+        get ContentHeight() {
+            return (this.height);
+        }
+
+        get Margin_H() {
+            return {
+                l: this.MarginX,
+                r: this.MarginX + this.MarginWidth
             }
         }
-    }
 
-    class ElementLineBox extends LineBox {
-        constructor(element, component) {
-            super(!!component.IS_MASTER);
-            this.rect = element.getBoundingClientRect();
-            console.log(this.rect);
-            this.component = component;
+        get Margin_V() {
+            return {
+                t: this.MarginY,
+                b: this.MarginY + this.MarginHeight
+            }
+        }
+
+        get MarginBox() {
+            const v = this.Margin_V;
+            const h = this.Margin_H;
+            return {
+                l: h.l,
+                r: h.r,
+                t: v.t,
+                b: v.b
+            }
+        }
+
+        get Padding_H() {
+            return {
+                l: this.PaddingX,
+                r: this.PaddingX + this.PaddingWidth
+            }
+        }
+
+        get Padding_V() {
+            return {
+                t: this.PaddingY,
+                b: this.PaddingY + this.PaddingHeight
+            }
+        }
+
+        get PaddingBox() {
+            const v = this.Padding_V;
+            const h = this.Padding_H;
+            return {
+                l: h.l,
+                r: h.r,
+                t: v.t,
+                b: v.b
+            }
+        }
+
+        get Border_H() {
+            return {
+                l: this.BorderX,
+                r: this.BorderX + this.BorderWidth
+            }
+        }
+
+        get Border_V() {
+            return {
+                t: this.BorderY,
+                b: this.BorderY + this.BorderHeight
+            }
+        }
+
+        get BorderBox() {
+            const v = this.Border_V;
+            const h = this.Border_H;
+            return {
+                l: h.l,
+                r: h.r,
+                t: v.t,
+                b: v.b
+            }
+        }
+
+        get Content_H() {
+            return {
+                l: this.ContentX,
+                r: this.ContentX + this.ContentWidth
+            }
+        }
+
+        get Content_V() {
+            return {
+                t: this.ContentY,
+                b: this.ContentY + this.ContentHeight
+            }
+        }
+
+        get ContentBox() {
+            const v = this.Content_V;
+            const h = this.Content_H;
+            return {
+                l: h.l,
+                r: h.r,
+                t: v.t,
+                b: v.b
+            }
+        }
+
+        getBox(box_type = ElementBox.types.margin, edge_type = ElementBox.types.edge.all, transform = null) {
+            let box = null;
+
+            switch (box_type) {
+                case 0://ElementBox.types.margin:
+                    box = this.MarginBox;
+                    break;
+                case 1://ElementBox.types.border:
+                    box = this.BorderBox;
+                    break;
+                case 2://ElementBox.types.padding:
+                    box = this.PaddingBox;
+                    break;
+                case 3://ElementBox.types.content:
+                    box = this.ContentBox;
+                    break;
+            }
+
+            if ((edge_type & 15)) {
+
+                if ((edge_type & 1)/*ElementBox.types.edge.left*/)
+                    box.r = box.l;
+                else if ((edge_type & 2)/*ElementBox.types.edge.right*/)
+                    box.l = box.r;
+
+                if ((edge_type & 4)/*ElementBox.types.edge.top*/)
+                    box.b = box.t;
+                else if ((edge_type & 8)/*ElementBox.types.edge.bottom*/)
+                    box.t = box.b;
+            }
+
+            if (transform) {
+                const px = transform.px,
+                    py = transform.py,
+                    s = transform.scale;
+
+                box.l = transform.px + box.l * s;
+                box.t = transform.py + box.t * s;
+                box.r = transform.px + box.r * s;
+                box.b = transform.py + box.b * s;
+            }
+
+            return box;
         }
     }
 
-    class ComponentLineBox extends LineBox {
-        constructor(component) {
-            super();
-            this.component = component;
-        }
 
-        get l() {
-            return this.component.x;
-        }
+    ElementBox.types = Object.freeze({
+        margin: 0,
+        border: 1,
+        padding: 2,
+        content: 3,
+        edge: Object.freeze({
+            all: 0,
+            left: 1,
+            right: 2,
+            top: 4,
+            bottom: 8,
+        })
+    });
 
-        get t() {
-            return this.component.y;
-        }
-
-        get b() {
-            return this.component.height + this.component.y;
-        }
-
-        get r() {
-            return this.component.width + this.component.x;
-        }
+    class BoxWidget extends ElementBox{
+    	constructor(element){
+    		super();
+    		this.setDimensions(element);
+    	}
     }
 
-    function CreateBoxes(ele, c, LineMachine, target) {
+    function CreateBoxes(ele, LineMachine, target) {
 
-        LineMachine.boxes.push(new ElementLineBox(ele, c));
+        LineMachine.boxes.push(new BoxWidget(ele));
 
         let children = ele.children;
 
         for (let i = 0; i < children.length; i++) {
             if (target == children[i]) continue;
-            CreateBoxes(children[i], c, LineMachine, target);
+            CreateBoxes(children[i], LineMachine, target);
         }
     }
 
@@ -18921,52 +19528,51 @@ ${is_iws}`;
     class LineMachine {
         constructor() {
             this.boxes = [];
-            this.tolerance = 10;
+            this.tolerance = 5;
 
             this.activex = { id: -1, ot: 0, tt: 0 };
             this.activey = { id: -1, ot: 0, tt: 0 };
         }
 
-        setPotentialBoxes(element, component, components) {
+        setPotentialBoxes(widget, components) {
 
             this.boxes.length = 0;
 
-            if (!element) {
+            if (!widget) {
                 components.forEach(c => CreateComponentBoxes(c, this, component));
-            } else {
-                //get tree from component and create boxes from all elements inside the component. 
-                let tree = component.element.shadowRoot.children[0];
-
-                let ele = tree;
-
-                CreateBoxes(ele, component, this, element);
-            }
-
+            } else
+                //get root of component and create boxes from elements inside the component. 
+                CreateBoxes(
+                    widget.component.element.shadowRoot.children[0],
+                    this,
+                    widget.element
+                );
         }
 
-        getSuggestedLine(box, dx, dy) {
+        getSuggestedLine(scale, widget, dx, dy) {
 
-            if (!box) return { dx, dy };
+            if (!widget) return { dx, dy };
 
             //tolerance based on rate
             let mx = this.tolerance - 0.5; //Math.min(this.tolerance / Math.max(Math.abs(dx)*1.55, 0.1), this.tolerance);
-            let my = this.tolerance - 0.5;  //Math.min(this.tolerance / Math.max(Math.abs(dy) * 1.55, 0.1), this.tolerance);
+            let my = this.tolerance - 0.5; //Math.min(this.tolerance / Math.max(Math.abs(dy) * 1.55, 0.1), this.tolerance);
+
             let x_set = false;
             let y_set = false;
-            const l = box.l;
-            const r = box.r;
 
-            const LO = (l - r == 0);
-
-            const t = box.t;
-            const b = box.b;
-            const ch = (l + r) / 2;
-            const cv = (t + b) / 2;
-            const tolx = mx;
-            const toly = my;
+            const box = widget.getBox(widget.boxType, widget.edgeType),
+                l = box.l,
+                r = box.r,
+                LO = (l - r == 0),
+                t = box.t,
+                b = box.b,
+                ch = (l + r) / 2,
+                cv = (t + b) / 2,
+                tolx = mx,
+                toly = my;
 
             for (let i = 0; i < this.boxes.length; i++) {
-                let box = this.boxes[i];
+                let box = this.boxes[i].MarginBox;
 
                 //Make sure the ranges overlap
 
@@ -19027,61 +19633,85 @@ ${is_iws}`;
             }
 
             let dx_ = dx,
-                dy_ = dy, MX =false, MY = false;
+                dy_ = dy,
+                MX = false,
+                MY = false;
 
-            if (Math.abs(mx) < tolx && Math.abs(dx) < tolx){
+            if (Math.abs(mx) < tolx && Math.abs(dx) < tolx) {
                 MX = true;
                 dx_ = mx;
-            }
-            else
+            } else
                 this.activex.id = -1;
 
-            if (Math.abs(my) < toly && Math.abs(dy) < toly){
+            if (Math.abs(my) < toly && Math.abs(dy) < toly) {
                 MY = true;
                 dy_ = my;
-            }
-            else
+            } else
                 this.activey.id = -1;
 
             return { dx: dx_, dy: dy_, MX, MY };
         }
 
-        render(ctx, transform, boxc) {
+        render(ctx, transform, widget) {
 
-            if (!boxc || this.boxes.length == 0) return;
+            let component = widget.component;
 
-            boxc = boxc.getTransformed(transform);
+            let min_x = transform.px + (component.x) * transform.scale;
+            let max_x = transform.px + (component.x + component.width) * transform.scale;
+            let min_y = transform.py + (component.y) * transform.scale;
+            let max_y = transform.py + (component.y + component.height) * transform.scale;
+
+            if (!widget || this.boxes.length == 0) return;
+
+            const boxc = widget.getBox(widget.boxType, widget.edgeType);
+
+
 
             ctx.save();
 
+            //Horizontal Alignement
+
             if (this.activex.id > -1) {
                 //0 = l, 1 = r, 2 = c 
-                ctx.strokeStyle = "red";
 
-                const   
-                    box = this.boxes[this.activex.id].getTransformed(transform),
-                    x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt],
-                    y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
-                    y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+                const
+                    box = this.boxes[this.activex.id].getBox(0, 0, transform),
+                    x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
+                    //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
+                    //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
                 ctx.beginPath();
-                ctx.moveTo(x, y1);
-                ctx.lineTo(x, y2);
+                ctx.moveTo(x, min_y);
+                ctx.lineTo(x, max_y);
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 1;
                 ctx.stroke();
             }
+
+            //Vertical Alignement
 
             if (this.activey.id > -1) {
                 //0 = t, 1 = b, 2 = c 
                 ctx.strokeStyle = "green";
 
-                const 
-                    box = this.boxes[this.activey.id].getTransformed(transform),
-                    y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt],
-                    x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
-                    x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+                const
+                    box = this.boxes[this.activey.id].getBox(0, 0, transform),
+                    y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
+                    //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
+                    //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
 
                 ctx.beginPath();
-                ctx.moveTo(x1, y);
-                ctx.lineTo(x2, y);
+                ctx.moveTo(min_x, y);
+                ctx.lineTo(max_x, y);
+
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.strokeStyle = "green";
+                ctx.lineWidth = 1;
                 ctx.stroke();
             }
 
@@ -19114,7 +19744,7 @@ ${is_iws}`;
             let dx = 0;
             let dy = 0;
             let POINTER_DOWN = false;
-            let path;
+            let path$$1;
 
 
             this.canvas.addEventListener("pointerdown", (e) => {
@@ -19126,15 +19756,15 @@ ${is_iws}`;
                 point.y = y;
 
                 if (e.button == 0) {
-                    if (!path) {
-                        path = new Path$1();
-                        path.strokeColor = "black";
-                        path.fullySelected = true;
+                    if (!path$$1) {
+                        path$$1 = new Path$1();
+                        path$$1.strokeColor = "black";
+                        path$$1.fullySelected = true;
                     } else {
-                        path.add(point);
+                        path$$1.add(point);
                     }
                 }else{
-                	path.closePath();
+                	path$$1.closePath();
                 }
                 this.proj.view.update();
 
@@ -19222,11 +19852,12 @@ ${is_iws}`;
     }
 
     class Handler {
-        constructor(system, component) {
+        constructor(system, component_path) {
             this.package = null;
 
-            if(component){
-                const doc = system.docs.get(system.docs.loadFile(component));
+            if(component_path){
+                component_path = path.resolve(process.cwd(), component_path);
+                const doc = system.docs.get(system.docs.loadFile(component_path));
 
                 if (doc) 
                     doc.bind(this);
@@ -19275,20 +19906,23 @@ ${is_iws}`;
 
     class Default extends Handler {
 
-        constructor(system, component) {
+        constructor(system, component = "./assets/ui_components/controls/basic.html") {
             super(system, component);
 
-            Handler.default = this;
-            
+            if(!Handler.default)
+                Handler.default = this;
+
             this.origin_x = 0;
             this.origin_y = 0;
+            this.excess_x = 0;
+            this.excess_y = 0;
             this.UI_MOVE = false;
             this.ACTIVE_POINTER_INPUT = false;
         }
 
         start(event, ui, data) {
-            const x = ui.transform.getLocalX(event.pageX),
-                  y = ui.transform.getLocalY(event.pageY);
+            const x = data.x || ui.transform.getLocalX(ui.pointer_x),
+                y = data.y || ui.transform.getLocalY(ui.pointer_y);
 
             if (event.button == 1) {
 
@@ -19312,49 +19946,65 @@ ${is_iws}`;
             if (event.target !== document.body)
                 return this.constructor.default;
 
-            ui.canvas.clearTargets(ui.transform);
-            ui.main_menu.setAttribute("show", "false");
 
+            ui.controls.clearTargets(ui.transform);
+            ui.main_menu.setAttribute("show", "false");
 
             return this.constructor.default;
         }
 
         move(event, ui, data) {
+
+            
+            if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
+
             let x = data.x,
                 y = data.y;
 
-            if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
-
             if (this.UI_MOVE) {
-                x = (typeof(x) == "number") ? x : ui.transform.getLocalX(event.pageX);
-                y = (typeof(y) == "number") ? y : ui.transform.getLocalY(event.pageY);
+                // /x /= ui.transform.scale // (typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x);
+                // /y /= ui.transform.scale // (typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y);
                 const diffx = this.origin_x - x;
                 const diffy = this.origin_y - y;
 
 
                 ui.transform.px -= diffx * ui.transform.sx;
                 ui.transform.py -= diffy * ui.transform.sy;
-                this.origin_x = x + diffx;
-                this.origin_y = y + diffy;
-                ui.render();
+
+                this.origin_x -=  diffx;
+                this.origin_y -=  diffy;
+
                 ui.view_element.style.transform = ui.transform;
+                ui.render();
             } else if (ui.ui_target) {
-                const diffx = this.origin_x - ((typeof(x) == "number") ? x : event.pageX);
-                const diffy = this.origin_y - ((typeof(y) == "number") ? y : event.pageY);
+                const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.pointer_x);
+                const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.pointer_y);
                 this.origin_x -= diffx;
                 this.origin_y -= diffy;
                 if (ui.ui_target.action) ui.ui_target.action(ui.system, ui.ui_target.component, diffx, diffy);
             } else if (ui.target) {
-                const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(event.pageX));
-                const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(event.pageY));
 
-                const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.target.box, diffx, diffy);
+                const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x)) + this.excess_x;
+                const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y)) + this.excess_y;
 
-                this.origin_x -= (MX) ? dx : diffx;
-                this.origin_y -= (MY) ? dy : diffy;
+                let xx = Math.round(diffx);
+                let yy = Math.round(diffy);
 
+                const { dx, dy, MX, MY } = ui.line_machine.getSuggestedLine(ui.transform.scale, ui.target, xx, yy);
+
+                this.origin_x -= (MX) ? dx : xx;
+                this.origin_y -= (MY) ? dy : yy;
                 //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
-                if (ui.target.action) ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
+                if (ui.target.action) {
+                    let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
+                    
+                    if (out) {
+                        if (out.excess_x)
+                            this.excess_x += out.excess_x;
+                        if (out.excess_y)
+                            this.excess_y += out.excess_y;
+                    }
+                }
 
                 ui.render();
             }
@@ -19374,11 +20024,14 @@ ${is_iws}`;
             ui.RENDER_LINES = false;
             ui.render();
 
+            this.excess_x = 0;
+            this.excess_y = 0;
+
             return this.constructor.default;
         }
 
         drop(event, ui) {
-            Array.prototypevent.forEach.call(event.dataTransfer.files,
+            Array.prototype.forEach.call(event.dataTransfer.files,
                 f => ui.mountDocument(
                     f,
                     ui.transform.getLocalX(event.clientX),
@@ -19400,9 +20053,9 @@ ${is_iws}`;
 
             ui.transform.px -= ((((px - data.x) * os) - ((px - data.x) * s))) / (os);
             ui.transform.py -= ((((py - data.y) * os) - ((py - data.y) * s))) / (os);
-            ui.render();
             ui.view_element.style.transform = ui.transform;
 
+            ui.render();
             return this.constructor.default;
         }
 
@@ -19421,22 +20074,27 @@ ${is_iws}`;
         }
     }
 
-    const default_handler = Handler.default;
-
     class ElementDraw extends Default {
 
-        constructor() {
-            super();
+        constructor(system) {
+            super(system, "./assets/ui_components/controls/element_draw.html");
             this.root_x = 0;
             this.root_y = 0;
+
+            if(!Handler.element_draw)
+                Handler.element_draw = this;
         }
 
         start(event, ui, data) {
-            if (event.button == 1) 
-                return default_handler.start(event, ui, data);
+
+
+            if(!data.FROM_MAIN || event.button == 1)
+                return Handler.default.start(event, ui, data);
+
 
             const x = data.x || ui.transform.getLocalX(event.pageX),
                 y = data.y || ui.transform.getLocalY(event.pageY);
+
 
             this.origin_x = x;
             this.origin_y = y;
@@ -19447,8 +20105,6 @@ ${is_iws}`;
         }
 
         move(event, ui, data) {
-
-            //if (!this.ACTIVE_POINTER_INPUT) return this;
 
             const x = data.x || ui.transform.getLocalX(event.pageX),
                 y = data.y || ui.transform.getLocalY(event.pageY);
@@ -19468,6 +20124,13 @@ ${is_iws}`;
             const x2 = Math.max(this.origin_x, this.root_x);
             const y2 = Math.max(this.origin_y, this.root_y);
 
+            let x = x2 - x1;
+            let y = y2 - y1;
+
+            if(Math.sqrt(x*x+y*y) < 70.711)
+                return Handler.default;
+            
+
             actions.CREATE_ELEMENT(
                 ui.system,
                 ui.master_component,
@@ -19477,67 +20140,61 @@ ${is_iws}`;
 
             ui.render();
 
-            return default_handler;
+            return Handler.default;
         }
     }
 
-    Handler.element_draw = new ElementDraw();
+    function getTransformed(trs) {
+        if (this.ON_MAIN)
+            return { l: this.l, r: this.r, t: this.t, b: this.b };
+        else {
 
-    const pi2 = Math.PI * 2;
+            const
+                l = (this.l) * trs.scale + trs.px,
+                t = (this.t) * trs.scale + trs.py,
+                r = (this.r) * trs.scale + trs.px,
+                b = (this.b) * trs.scale + trs.py;
 
-    function gripPoint(ctx, x, y, r) {
-        ctx.beginPath();
-        //ctx.moveTo(x,y); 
-        ctx.arc(x, y, r, 0, pi2);
-        ctx.fill();
-        ctx.stroke();
+            return { l, r, t, b };
+        }
     }
 
-    function getTransformed(trs){
-    if(this.ON_MAIN)
-                return {l:this.l, r:this.r, t:this.t, b:this.b};
-            else{
+    class ControlWidget extends ElementBox {
+        constructor(controler_component_package, system) {
+            super();
 
-                const 
-                    l = (this.l)*trs.scale+trs.px,
-                    t = (this.t)*trs.scale+trs.py,
-                    r = (this.r)*trs.scale+trs.px,
-                    b = (this.b)*trs.scale+trs.py;
-
-                return {l, r, t, b};
-            }
-    }
-
-
-    class ControlWidget {
-        constructor(controler_component_package) {
             var widget = ControlWidget.cache;
 
-            if(widget){
-
+            if (widget) {
                 ControlWidget.cache = widget.next;
+                widget.next = null;
+            } else {
 
-                let element = widget.element;
+                if (!ControlWidget.system)
+                    ControlWidget.system = system;
 
-                if(widget.sources[0])
-                    widget.sources[0].destroy();
-
-                widget.sources = [];
-                
-                if(element.parentElement)
-                    widget.element.parentElement.removeChild(element);
-
-            }else{
                 widget = this;
-                widget.element = document.createElement("div");
-                widget.element.classList.add("widget_component");
-                widget.element.setAttribute("tabindex",-1);
+                this.sources = [];
+                this.component_element = document.createElement("div");
+                this.component_element.classList.add("widget_component");
+                this.component_element.addEventListener("pointer_down", e => {
+                    this.target.action = actions.MOVE;
+                    this.ui.setWidgetTarget(this.target);
+                    this.ui.handlePointerDownEvent({ button: 0 });
+                });
             }
 
-            if(controler_component_package)
-                widget.controller = controler_component_package.mount(widget.element, widget, false, widget);
-            
-            document.body.append(widget.element);
+            widget.ui = system.ui;
+
+
+            widget.border_ele = null;
+            widget.content_ele = null;
+            widget.margin_ele = null;
+
+            if (controler_component_package)
+                widget.loadComponent(controler_component_package);
+
+            document.body.append(widget.component_element);
 
             widget.target = {
                 IS_COMPONENT: false,
@@ -19546,183 +20203,76 @@ ${is_iws}`;
                 action: null,
                 box: { l: 0, r: 0, t: 0, b: 0 }
             };
-        
-            
+
+
             widget.IS_ON_MASTER = false;
-
-            widget._ml = 0;
-            widget._mr = 0;
-            widget._mt = 0;
-            widget._mb = 0;
-
-            widget._pl = 0;
-            widget._pr = 0;
-            widget._pt = 0;
-            widget._pb = 0;
-
-            widget.bl = 0;
-            widget.br = 0;
-            widget.bt = 0;
-            widget.bb = 0;
 
             widget.posl = 0;
             widget.posr = 0;
             widget.post = 0;
             widget.posb = 0;
 
+            widget.boxType = 0;
+            widget.edgeType = 0;
+
             widget.x = 0; //left of border box
             widget.y = 0; //top of border box
             widget.w = 0; //width of border box
             widget.h = 0; //height of border box
-            widget.br = 0;
 
+            widget.next = null;
+
+            widget.action = null;
 
             return widget;
         }
 
-        destroy(){
+        destroy() {
+            super.destroy();
+
+            if (this.component_element.parentElement) {
+                this.component_element.parentElement.removeChild(this.component_element);
+                if (this.sources[0])
+                    this.sources[0].destroy;
+                this.sources = [];
+            }
+
+            this.component = null;
+
+
+            //Caching this object for future use. This should serve as an object pool of ControlWidgets
             this.next = ControlWidget.cache;
             ControlWidget.cache = this;
         }
 
-        setBox() {
-
-            const box = (this.target.box) ? this.target.box : { l: 0, r: 0, t: 0, b: 0 };
-            this.target.box = box;
-            this.target.box.ON_MAIN = this.IS_ON_MASTER;
-            this.target.box.getTransformed = getTransformed;
-            switch (this.target.action) {
-                case actions.MOVE:
-                    box.l = this.cbl;
-                    box.r = this.cbr;
-                    box.b = this.cbb;
-                    box.t = this.cbt;
-                    break;
-                case actions.RESIZETL:
-                    box.l = this.cbl;
-                    box.r = this.cbl;
-                    box.b = this.cbt;
-                    box.t = this.cbt;
-                    break;
-                case actions.RESIZEBL:
-                    box.l = this.cbl;
-                    box.r = this.cbl;
-                    box.b = this.cbb;
-                    box.t = this.cbb;
-                    break;
-                case actions.RESIZETR:
-                    box.l = this.cbr;
-                    box.r = this.cbr;
-                    box.b = this.cbt;
-                    box.t = this.cbt;
-                    break;
-                case actions.RESIZEBR:
-                    box.l = this.cbr;
-                    box.r = this.cbr;
-                    box.b = this.cbb;
-                    box.t = this.cbb;
-                    break;
-                case actions.RESIZEMARGINTL:
-                    box.l = this.ml;
-                    box.r = this.ml;
-                    box.b = this.mt;
-                    box.t = this.mt;
-                    break;
-                case actions.RESIZEMARGINBL:
-                    box.l = this.ml;
-                    box.r = this.ml;
-                    box.b = this.mb;
-                    box.t = this.mb;
-                    break;
-                case actions.RESIZEMARGINTR:
-                    box.l = this.mr;
-                    box.r = this.mr;
-                    box.b = this.mt;
-                    box.t = this.mt;
-                    break;
-                case actions.RESIZEMARGINBR:
-                    box.l = this.mr;
-                    box.r = this.mr;
-                    box.b = this.mb;
-                    box.t = this.mb;
-                    break;
-                case actions.RESIZEPADDINGTL:
-                    break;
-                case actions.RESIZEPADDINGBL:
-                    break;
-                case actions.RESIZEPADDINGTR:
-                    break;
-                case actions.RESIZEPADDINGBR:
-                    break;
-            }
-        }
-
-        setDimensions() {
-            const component = this.target.component;
-            const IS_COMPONENT = !!this.target.IS_COMPONENT;
-            const IS_ON_MASTER = true; //!!this.IS_ON_MASTER;
-
-            if (IS_COMPONENT) {
-                const rect = this.target.element.getBoundingClientRect();
-                this.x = rect.left;//component.x;
-                this.y = rect.top;//component.y;
-                this.w = rect.width;
-                this.h = rect.height;
-            } else {
-                const rect = this.target.element.getBoundingClientRect();
-                this.x = rect.left;
-                this.y = rect.top;
-                this.w = rect.width;
-                this.h = rect.height;
-            }
-
-            const par_prop = component.window.getComputedStyle(this.target.element);
-
-            //margin
-            this._ml = parseFloat(par_prop.getPropertyValue("margin-left"));
-            this._mr = parseFloat(par_prop.getPropertyValue("margin-right"));
-            this._mt = parseFloat(par_prop.getPropertyValue("margin-top"));
-            this._mb = parseFloat(par_prop.getPropertyValue("margin-bottom"));
-
-            //border
-            this.bl = parseFloat(par_prop.getPropertyValue("border-left"));
-            this.br = parseFloat(par_prop.getPropertyValue("border-right"));
-            this.bt = parseFloat(par_prop.getPropertyValue("border-top"));
-            this.bb = parseFloat(par_prop.getPropertyValue("border-bottom"));
-
-            //padding
-            this._pl = parseFloat(par_prop.getPropertyValue("padding-left"));
-            this._pr = parseFloat(par_prop.getPropertyValue("padding-right"));
-            this._pt = parseFloat(par_prop.getPropertyValue("padding-top"));
-            this._pb = parseFloat(par_prop.getPropertyValue("padding-bottom"));
-
-            this.posl = parseFloat(par_prop.getPropertyValue("left"));
-            this.posr = parseFloat(par_prop.getPropertyValue("right"));
-            this.post = parseFloat(par_prop.getPropertyValue("top"));
-            this.posb = parseFloat(par_prop.getPropertyValue("bottom"));
-
-            this.setBox();
-        }
-
         //Margin box
-        get ml() { return this.x - this._ml }
-        get mt() { return this.y - this._mt }
-        get mr() { return this.w + this._mr + this._ml + this.ml }
-        get mb() { return this.h + this._mb + this._mt + this.mt }
+        get ml() { return this.MarginX }
+        get mt() { return this.MarginY }
+        get mr() { return this.MarginX + this.MarginWidth }
+        get mb() { return this.MarginY + this.MarginHeight }
 
         //Padding box
-        get pl() { return this.x + this._pl + this.bl }
-        get pt() { return this.y + this._pt + this.bt }
-        get pr() { return this.w - this._pr - this._pl - this.br - this.bl + this.pl }
-        get pb() { return this.h - this._pb - this._pt - this.bb - this.bt + this.pt }
+        get pl() { return this.PaddingX }
+        get pt() { return this.PaddingY }
+        get pr() { return this.PaddingX + this.PaddingWidth }
+        get pb() { return this.PaddingY + this.PaddingHeight }
+
+        //Border box
+        get bl() { return this.BorderX }
+        get bt() { return this.BorderY }
+        get br() { return this.BorderX + this.BorderWidth }
+        get bb() { return this.BorderY + this.BorderHeight }
 
         //Content box
-        get cbl() { return this.x + this.bl }
-        get cbt() { return this.y + this.bt }
-        get cbr() { return this.w - this.br - this.bl + this.cbl }
-        get cbb() { return this.h - this.bb - this.bt + this.cbt }
+        get cl() { return this.ContentX }
+        get ct() { return this.ContentY }
+        get cr() { return this.ContentX + this.ContentWidth }
+        get cb() { return this.ContentY + this.ContentHeight }
 
         render(ctx, scale, transform) {
+            scale = transform.scale;
+
+            this.scale = transform.scale;
 
             const IS_COMPONENT = !!this.target.IS_COMPONENT;
 
@@ -19731,91 +20281,111 @@ ${is_iws}`;
             ctx.strokeStyle = "rgb(0,0,0)";
             ctx.lineWidth = (1 / scale) * 0.95;
 
-            //Border box
-            ctx.strokeRect(this.x, this.y, this.w, this.h);
+            this.component_element.style.left = `${transform.px + this.x * scale}px`;
+            this.component_element.style.top = `${transform.py + this.y * scale}px`;
+            this.component_element.style.width = `${(this.w + this.margin_l + this.margin_r + this.border_l + this.border_r + this.padding_l + this.padding_r)*scale}px`;
+            this.component_element.style.height = `${(this.h + this.margin_t + this.margin_b + this.border_t + this.border_b + this.padding_t + this.padding_b)*scale}px`;
 
-            //Margin box
-            let ml = this.ml;
-            let mt = this.mt;
-            let mr = this.mr;
-            let mb = this.mb;
+            this.component_element.style.backgroundColor = "rgba(255,255,0,0.6)";
 
-            //Padding box
-            let pl = this.pl;
-            let pt = this.pt;
-            let pr = this.pr;
-            let pb = this.pb;
-
-            //Content box
-            let cbl = this.cbl;
-            let cbt = this.cbt;
-            let cbr = this.cbr;
-            let cbb = this.cbb;
-
-            this.element.style.width = `${(cbr-cbl)*scale}px`;
-            this.element.style.height = `${(cbb-cbt)*scale}px`;
-
-            if(IS_COMPONENT){
-                this.element.style.left = `${this.x}px`;
-                this.element.style.top = `${this.y}px`;
-            }else{
-                this.element.style.left = `${transform.px+(this.x+4)*scale}px`;
-                this.element.style.top = `${transform.py+(this.y+4)*scale}px`;
-                ctx.strokeRect(ml, mt, mr - ml, mb - mt);
-                ctx.strokeRect(pl, pt, pr - pl, pb - pt);
-            }
-
-            ctx.strokeRect(cbl, cbt, cbr - cbl, cbb - cbt);
-
-            //Render Markers
-
-            //Box \ Border Markers 
-            ctx.fillStyle = "rgb(0,100,200)";
-            ctx.strokeStyle = "rgb(250,250,250)";
-            ctx.lineWidth = 1 / scale;
-            let r = 4 / scale;
-
-            gripPoint(ctx, cbl, cbt, r);
-            gripPoint(ctx, cbr, cbt, r);
-            gripPoint(ctx, cbl, cbb, r);
-            gripPoint(ctx, cbr, cbb, r);
-
-            if (!IS_COMPONENT) {
-
-                //Margin Markers
-                gripPoint(ctx, ml, mt, r);
-                gripPoint(ctx, mr, mt, r);
-                gripPoint(ctx, ml, mb, r);
-                gripPoint(ctx, mr, mb, r);
-
-                //Padding Markers
-                gripPoint(ctx, pl, pt, r);
-                gripPoint(ctx, pr, pt, r);
-                gripPoint(ctx, pl, pb, r);
-                gripPoint(ctx, pr, pb, r);
-            }
+            if (!IS_COMPONENT)
+                this.setExtendedElements(scale);
 
             //Update Wick Controls
             this.sources[0].update(this);
         }
 
+        setExtendedElements(scale = this.scale) {
+            if (this.border_order_ele) {
+                this.border_order_ele.style.left = `${(this.margin_l)*scale}px`;
+                this.border_order_ele.style.top = `${(this.margin_t)*scale}px`;
+                this.border_order_ele.style.width = `${(this.w + this.border_l + this.border_r + this.padding_l + this.padding_r)*scale}px`;
+                this.border_order_ele.style.height = `${(this.h + this.border_t + this.border_b + this.padding_t + this.padding_b)*scale}px`;
+            }
 
-        addView(source){
+            if (this.padding_ele) {
+                this.padding_ele.style.left = `${(this.margin_l + this.border_l)*scale}px`;
+                this.padding_ele.style.top = `${(this.margin_t + this.border_t)*scale}px`;
+                this.padding_ele.style.width = `${(this.w + this.padding_l + this.padding_r)*scale}px`;
+                this.padding_ele.style.height = `${(this.h + this.padding_t + this.padding_b)*scale}px`;
+            }
+
+            if (this.content_ele) {
+                this.content_ele.style.left = `${(this.margin_l + this.border_l + this.padding_l)*scale}px`;
+                this.content_ele.style.top = `${(this.margin_t + this.border_t + this.padding_t)*scale}px`;
+                this.content_ele.style.width = `${(this.w)*scale}px`;
+                this.content_ele.style.height = `${(this.h)*scale}px`;
+            }
+        }
+
+        loadComponent(pkg) {
+            if (pkg) {
+                if (this.sources.length > 0) {
+                    this.sources.forEach(e => e.destroy());
+                    this.sources.length = 0;
+                    this.component_element.innerHTML = "";
+                }
+
+                this.component_element.innerHTML = "";
+
+                this.controller = pkg.mount(this.component_element, this, false, this);
+
+                let src = this.sources[0];
+
+                this.content_ele = (src.badges.content) ? src.badges.content : null;
+                this.margin_ele = (src.badges.margin) ? src.badges.margin : null;
+                this.border_order_ele = (src.badges.border) ? src.badges.border : null;
+                this.padding_ele = (src.badges.padding) ? src.badges.padding : null;
+
+                this.setExtendedElements();
+            }
+        }
+
+        async upImport(key, value) {
+
+            switch (key) {
+                case "move_action":
+                    this.ui.setWidgetTarget(this);
+                    this.ui.handlePointerDownEvent({ button: 0 });
+                    break;
+                case "set_control":
+                    this.loadComponent(await ControlWidget.loadComponent(value));
+                    break;
+            }
+        }
+
+        get actions() {
+            return actions;
+        }
+
+        addView(source) {
             source.model = this;
         }
 
-        removeView(source){
+        removeView(source) {
             source.model = null;
         }
 
         setTarget(component, element, IS_ON_MASTER = false) {
-            this.target.element = element;
-            this.target.component = component;
-            this.target.IS_COMPONENT = (element) == component.element;
+            this.element = element;
+            this.component = component;
+            this.IS_COMPONENT = (element) == component.element;
             this.IS_ON_MASTER = true; //IS_ON_MASTER;
+            this.setDimensions();
         }
     }
 
+    ControlWidget.loadComponent = async function(component_path) {
+        component_path = path.resolve(process.cwd(), "./assets/ui_components/controls", component_path);
+        const system = ControlWidget.system;
+        let doc = system.docs.get(system.docs.loadFile(component_path));
+        if (doc) {
+            await doc.alert();
+            return doc.data;
+        }
+        return null;
+    };
+    ControlWidget.system = null;
     ControlWidget.cache = null;
 
     class ControlsManager {
@@ -19835,24 +20405,22 @@ ${is_iws}`;
         }
        
 
-        setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, ui) {
+        setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false, system) {
 
             if(this.widget)
                 this.widget.destroy();
             
-            const box = new ControlWidget(ui.active_handler.package);
+            const box = new ControlWidget(system.ui.active_handler.package, system);
             box.IS_ON_MASTER = IS_ON_MASTER;
-
-        //setTarget(component, element, IS_COMPONENT = false, IS_ON_MASTER = false) {
-        //    const box = new ControlWidget(element);
-        //    box.IS_ON_MASTER = true//IS_ON_MASTER;
-    //>>> shadow_dom
             box.setTarget(component, element, IS_COMPONENT);
-            box.setDimensions(IS_COMPONENT);
+            box.setDimensions(element);
             this.widget = box;
         }
         
         clearTargets(transform) {
+            if(this.widget)
+                this.widget.destroy();
+            
             this.widget = null;
             this.render(transform);
         }
@@ -19877,136 +20445,7 @@ ${is_iws}`;
         }
 
         pointerDown(e, x, y, transform, IS_ON_MASTER = false) {
-            const widget = this.widget;
-            
-            if (widget) {
-
-                widget.target.action = null;
-
-                let tr = 5 / transform.scale; //(false) ? 1 : transform.scale; //touch radius
-
-                //Margin box
-                let ml = widget.ml; // widget.x - widget.ml - widget.posl;
-                let mt = widget.mt; // widget.y - widget.mt - widget.post;
-                let mr = widget.mr; // widget.w + widget.mr + widget.ml + ml;
-                let mb = widget.mb; // widget.h + widget.mb + widget.mt + mt;
-
-                //Padding box
-                let pl = widget.pl; // widget.x + widget.pl + widget.bl;
-                let pt = widget.pt; // widget.y + widget.pt + widget.bt;
-                let pr = widget.pr; // widget.w - widget.pr - widget.pl - widget.br - widget.bl + pl;
-                let pb = widget.pb; // widget.h - widget.pb - widget.pt - widget.bb - widget.bt + pt;
-
-                //Content box
-                let cbl = widget.cbl; // widget.x + widget.bl;
-                let cbt = widget.cbt; // widget.y + widget.bt;
-                let cbr = widget.cbr; // widget.w - widget.br - widget.bl + cbl;
-                let cbb = widget.cbb; // widget.h - widget.bb - widget.bt + cbt;
-                //Widget size
-                while (true) {
-
-                    //Content box first / Can double as border
-                    if (x >= cbl - tr && x <= cbr + tr) {
-                        if (y >= cbt - tr && y <= cbb + tr) {
-                            if (x <= cbl + tr) {
-                                if (y <= cbt + tr) {
-                                    this.widget.target.action = actions.RESIZETL;
-                                    break;
-                                } else if (y >= cbb - tr) {
-                                    this.widget.target.action = actions.RESIZEBL;
-                                    break;
-                                }
-                            } else if (x >= cbr - tr) {
-                                if (y <= cbt + tr) {
-                                    this.widget.target.action = actions.RESIZETR;
-                                    break;
-                                } else if (y >= cbb - tr) {
-                                    this.widget.target.action = actions.RESIZEBR;
-                                    break;
-                                }
-                            } else {
-                                widget.target.action = actions.MOVE;
-                            }
-                        }
-                    }
-
-                    //Margin box
-                    if (x >= ml - tr && x <= mr + tr) {
-                        if (y >= mt - tr && y <= mb + tr) {
-                            if (x <= ml + tr) {
-                                if (y <= mt + tr) {
-                                    this.widget.target.action = actions.RESIZEMARGINTL;
-                                    break;
-                                } else if (y >= mb - tr) {
-                                    this.widget.target.action = actions.RESIZEMARGINBL;
-                                    break;
-                                }
-                            } else if (x >= mr - tr) {
-                                if (y <= mt + tr) {
-                                    this.widget.target.action = actions.RESIZEMARGINTR;
-                                    break;
-                                } else if (y >= mb - tr) {
-                                    this.widget.target.action = actions.RESIZEMARGINBR;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    //Padding box
-                    if (x >= pl - tr && x <= pr + tr) {
-                        if (y >= pt - tr && y <= pb + tr) {
-                            if (x <= pl + tr) {
-                                if (y <= pt + tr) {
-                                    this.widget.target.action = actions.RESIZEPADDINGTL;
-                                    break;
-                                } else if (y >= pb - tr) {
-                                    this.widget.target.action = actions.RESIZEPADDINGBL;
-                                    break;
-                                }
-                            } else if (x >= pr - tr) {
-                                if (y <= pt + tr) {
-                                    this.widget.target.action = actions.RESIZEPADDINGTR;
-                                    break;
-                                } else if (y >= pb - tr) {
-                                    this.widget.target.action = actions.RESIZEPADDINGBR;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                }
-
-                if (widget.target.action) {
-                    widget.setBox();
-                    return widget.target;
-                }
-                /*
-                            if (dx > 0 && dx < w)
-                                if (dy > 0 && dy < h) {
-                                    //Check corners for action;
-                                    this.widget.target.action = actions.MOVE;
-
-                                    if (dx <= ws) {
-                                        if (dy <= ws)
-                                            this.widget.target.action = actions.SCALETL;
-                                        else if (dy >= h - ws)
-                                            this.widget.target.action = actions.SCALEBL;
-                                    }
-
-                                    if (dx >= w - ws) {
-                                        if (dy <= ws)
-                                            this.widget.target.action = actions.SCALETR;
-                                        else if (dy >= h - ws)
-                                            this.widget.target.action = actions.SCALEBR;
-                                    }
-
-                                    return this.widget.target;
-                                }
-                                */
-            }
-            return false;
+            return false
         }
 
         resize(transform) {
@@ -20018,7 +20457,22 @@ ${is_iws}`;
 
     //*********** Actions ******************
 
+
+    /*** HOST UTILITIES ***/
+
+    const electron = require("electron");
+
+    function getCursorPos(ui){
+        let scale = ui.transform.scale;
+        let point = electron.screen.getCursorScreenPoint();
+
+        return {x:point.x/scale, y:point.y/scale};
+
+            //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
+    }
+
     /** GLOBAL EVENTS FILLS **/
+
 
     var DD_Candidate = false;
     /**
@@ -20032,10 +20486,10 @@ ${is_iws}`;
             system.ui = this;
 
             //Initialize Handlers
-            new Default(system, path$1.join(process.cwd(), "./assets/ui_components/controls/basic.html"));
+            new Default(system);
 
             this.d = Default;
-            this.e = ElementDraw;
+            this.e = new ElementDraw(system);
 
             this.system = system;
             this.element = UIHTMLElement;
@@ -20065,7 +20519,7 @@ ${is_iws}`;
             */
             this.components = [];
             this.ui_components = new Map();
-            this.loadedComponents = [];
+            this.loadedUIComponents = [];
 
             //Menu array
             this.main_menu = document.createElement("div");
@@ -20094,13 +20548,23 @@ ${is_iws}`;
             window.addEventListener("pointerdown", e => {
                 const x = this.transform.getLocalX(e.pageX);
                 const y = this.transform.getLocalY(e.pageY);
+                
+                e.stopPropagation();
+                e.preventDefault();
+                
                 if (this.setTarget(e, null, x, y, false)) {
                     this.origin_x = x;
                     this.origin_y = y;
-                } else
+                } else{
+                    this.active_handler = this.e;
                     this.handlePointerDownEvent(e, undefined, undefined, !!1);
+                }
             });
-            window.addEventListener("pointermove", e => this.handlePointerMoveEvent(e));
+            window.addEventListener("pointermove", e => {
+                this.pointer_x = e.x;
+                this.pointer_y = e.y;
+                this.handlePointerMoveEvent(e);
+            });
             window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
 
             // // *********** Drag 'n Drop *********************
@@ -20111,7 +20575,9 @@ ${is_iws}`;
             });
             document.body.addEventListener("dragstart", e => {});
 
-            //this.createMaster();
+            this.createMaster();
+
+            requestAnimationFrame(()=>this.updatePointer());
         }
 
         createMaster() {
@@ -20144,8 +20610,8 @@ ${is_iws}`;
         render() {
             this.controls.render(this.transform);
             if (this.target && this.RENDER_LINES)
-                this.line_machine.render(this.controls.ctx, this.transform, this.target.box);
-            this.loadedComponents.forEach(c => c.set(this.target));
+                this.line_machine.render(this.controls.ctx, this.transform, this.target);
+            this.loadedUIComponents.forEach(c => c.set(this.target));
         }
 
         /******************** Components *************************/
@@ -20160,7 +20626,7 @@ ${is_iws}`;
 
         mountUIComponent(component) {
             component.mount(this.element);
-            this.loadedComponents.push(component);
+            this.loadedUIComponents.push(component);
             component.set(this.target);
         }
 
@@ -20185,53 +20651,51 @@ ${is_iws}`;
             }
         }
 
+        setWidgetTarget(target) {
+            this.target = target;
+            
+            this.loadedUIComponents.forEach(c => c.set(this.target));
+
+            this.line_machine.setPotentialBoxes(target, this.components);
+            /*
+
+            if (target.IS_COMPONENT)
+                this.line_machine.setPotentialBoxes(null, target.component, this.components);
+            else
+                this.line_machine.setPotentialBoxes(target.element, target.component, this.components);
+            */
+        }
+
         setTarget(e, component, x, y, SET_MENU = true) {
             let target = null;
 
             const IS_ON_MASTER = component == this.master_component;
 
-            if ((target = this.controls.pointerDown(e, x, y, this.transform, IS_ON_MASTER))) {
-
-                this.target = target;
-
-                if (SET_MENU) this.main_menu.setAttribute("show", "true");
-
-                this.loadedComponents.forEach(c => c.set(this.target));
-
-                if (component) {
-                    if (this.target.IS_COMPONENT) {
-                        this.line_machine.setPotentialBoxes(null, component, this.components);
-                    } else {
-                        const target_element = e.composedPath()[0];
-                        this.line_machine.setPotentialBoxes(target_element, component, this.components);
-                    }
-                }
-
-                return true;
-            }
-
             if (SET_MENU) this.main_menu.setAttribute("show", "false");
 
             return false;
-
         }
 
         /******************** Component Iframe *************************/
 
-        integrateComponentFrame(frame, component) {
+        integrateComponentElement(element, component) {
 
-            frame.addEventListener("mousedown", e => {
+            element.addEventListener("pointerdown", e => {
 
-                const x = e.pageX;// + component.x;
-                const y = e.pageY;// + component.y;
+                const x = e.pageX; // + component.x;
+                const y = e.pageY; // + component.y;
+
+                e.stopPropagation();
+                e.preventDefault();
 
                 this.last_action = Date.now();
                 this.handlePointerDownEvent(e);
 
                 if (e.button == 0) {
                     if (!this.setTarget(e, component, x, y)) {
-                        if (e.target.tagName == "BODY") {
-                            this.controls.setTarget(component, component.element, true, true, this);
+                        if (e.target.tagName == "BODY") { 
+                            debugger
+                            this.controls.setTarget(component, component.element, true, true, this.system);
                             this.render();
                             this.setTarget(e, component, x, y);
                         } else {
@@ -20239,62 +20703,13 @@ ${is_iws}`;
                             //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
                             //shadow_dom
                             const target_element = e.composedPath()[0];
-                            this.controls.setTarget(component, target_element, component == this.master_component, false, this);
+                            this.controls.setTarget(component, target_element, component == this.master_component, false, this.system);
                             this.render();
                             this.setTarget(e, component, x, y);
                         }
                     }
                 }
                 return false;
-            });
-            /*
-            if (component !== this.master_component)
-                frame.addEventListener("wheel", e => {
-                    const x1 = e.pageX,
-                        y1 = e.pageY,
-                        x2 = component.x,
-                        y2 = component.y,
-                        x = (x1 + x2) * this.transform.scale + this.transform.px,
-                        y = (y1 + y2) * this.transform.scale + this.transform.py;
-
-                    this.handleScroll(e, x, y);
-                });
-            */
-            frame.addEventListener("mousemove", e => {
-                this.handlePointerMoveEvent(e);
-                return false;
-            });
-
-            frame.addEventListener("mouseup", e => {
-                const t = Date.now();
-                const x = e.pageX;// + component.x;
-                const y = e.pageY;// + component.y;
-
-                if (t - this.last_action < 200) {
-                    if (Date.now() - DD_Candidate < 200) {
-                        DD_Candidate = 0;
-                        e.x = x;
-                        e.y = y;
-                        this.handleContextMenu(e, component);
-                    } else {
-                        if (e.target.tagName == "BODY") {
-                            this.controls.setTarget(component, component.element, true, true, this);
-                            this.render();
-                            this.setTarget(e, component, x, y);
-                        } else if (this.setTarget(e, component, x, y) && this.target.action == actions.MOVE) {
-
-                            //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
-                            //shadow_dom
-                            const target_element = e.composedPath()[0];
-                            this.controls.setTarget(component, target_element, component == this.master_component, false, this);
-
-                            this.render();
-                            this.setTarget(e, component, x, y);
-                        }
-                        DD_Candidate = Date.now();
-                    }
-                }
-                this.handlePointerEndEvent(e);
             });
 
             this.components.push(component);
@@ -20303,15 +20718,19 @@ ${is_iws}`;
         /****************** Event responders **************************/
 
         handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-           // if (e.target == document.body || !this.target)
-           //     this.active_handler = Handler.element_draw;
-
-            this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
+            let point = getCursorPos(this); // { x:this.px, y:this.py };
+            this.active_handler = this.active_handler.input("start", e, this, { x:point.x, y:point.y, FROM_MAIN });
             return false;
         }
 
         handlePointerMoveEvent(e, x, y) {
-            this.active_handler = this.active_handler.input("move", e, this, { x, y });
+            this.px = e.x;
+            this.py = e.y;
+        }
+
+        updatePointer(){
+            this.active_handler.input("move", {}, this, getCursorPos(this));
+            requestAnimationFrame(()=>this.updatePointer());
         }
 
         handlePointerEndEvent(event) {
@@ -20331,8 +20750,7 @@ ${is_iws}`;
         }
 
         handleScroll(e, x, y) {
-            //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
-            this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
+            this.active_handler = this.active_handler.input("scroll", e, this, {x,y});
             e.preventDefault();
         }
 
@@ -20377,6 +20795,7 @@ ${is_iws}`;
             return await file_builder.writeS(JSON.stringify(data));
         }
 
+
         load(string) {
             const data = JSON.parse(string),
                 components = data.components;
@@ -20399,7 +20818,7 @@ ${is_iws}`;
     let proto$1 = StyleNode$1.prototype;
     proto$1.cssInject = proto$1._processTextNodeHook_;
 
-    const path$2 = require("path");
+    const path$1 = require("path");
     //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
     proto$1.processTextNodeHook = function(lex) {
         //Feed the lexer to a new CSS Builder
@@ -20414,8 +20833,8 @@ ${is_iws}`;
 
         if (this.url) {
             URL = this.url.path;
-            if (!path$2.isAbsolute(URL))
-                URL = path$2.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
+            if (!path$1.isAbsolute(URL))
+                URL = path$1.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);
         }
 
         this.css.parse(lex).catch((e) => {
@@ -20468,7 +20887,8 @@ ${is_iws}`;
     	}
 
     	documentReady(data){
-    		this.tree.parse(wick.core.lexer(data, true));
+    		debugger
+    		this.tree.parse(whind$1(data, true));
     		this.manager.updateStyle("zzz", data);
     		this.element.innerHTML = this.tree + "";
     	}
@@ -20887,8 +21307,8 @@ ${is_iws}`;
 
     class Document {
 
-        constructor(file_name, path, system, IS_NEW_FILE, manager) {
-            this.path = path;
+        constructor(file_name, path$$1, system, IS_NEW_FILE, manager) {
+            this.path = path$$1;
             this.name = file_name;
             this.data = null;
             this.old_data = "";
@@ -20973,6 +21393,12 @@ ${is_iws}`;
         bind(object) {
             if (this.LOADED && object.documentReady(this.data) === false) return;
             this.observers.push(object);
+        }
+
+        async alert() {
+            return new Promise(res => {
+                this.bind({ documentReady: () => res() });
+            })
         }
 
         alertObservers() {
@@ -21290,10 +21716,10 @@ ${is_iws}`;
              */
             global.fetch = (url) => new Promise((res) => {
                 let p = url;
-                if (!path$1.isAbsolute(p)) p = path$1.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
+                if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
                 const doc_id = this.loadFile({
-                    path: path$1.dirname(p),
-                    name: path$1.basename(p),
+                    path: path.dirname(p),
+                    name: path.basename(p),
                     type: "text/css",
                 });
                 if (doc_id) {
@@ -21322,7 +21748,7 @@ ${is_iws}`;
                             return canvas.id;
                     };
 
-                    var p = path$1.parse(file);
+                    var p = path.parse(file);
                     file = {
                         path: p.dir,
                         name: p.base
@@ -21331,23 +21757,24 @@ ${is_iws}`;
                 case "object": // Loandead data 
                     if (file.name && file.path) {
                         const name = file.name;
-                        let path = file.path;
+                        let path$$1 = file.path;
                         let type = "";
                         if (file.type) type = file.type; //.split("/")[1].toLowerCase();
                         else type = name.split(".").pop().toLowerCase();
-                        if (path.includes(name)) path = path.replace(name, "");
-                        if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
-                        path = path.replace(/\\/g, "/");
-                        const id = `${path}/${name}`;
+                        if (path$$1.includes(name)) path$$1 = path$$1.replace(name, "");
+                        if (path$$1[path$$1.length - 1] == "/" || path$$1[path$$1.length - 1] == "\\") path$$1 = path$$1.slice(0, -1);
+                        path$$1 = path$$1.replace(/\\/g, "/");
+                        const id = `${path$$1}/${name}`;
                         if (!this.docs.get(id)) {
                             let doc;
                             switch (type) {
                                 case "html":
-                                    doc = new WickDocument(name, path, this.system, NEW_FILE, this);
+                                case "text/html":
+                                    doc = new WickDocument(name, path$$1, this.system, NEW_FILE, this);
                                     break;
                                 case "css":
                                 default:
-                                    doc = new CSSDocument(name, path, this.system, NEW_FILE, this);
+                                    doc = new CSSDocument(name, path$$1, this.system, NEW_FILE, this);
                             }
                             this.docs.set(id, doc);
 
@@ -21663,12 +22090,12 @@ ${is_iws}`;
 
     RootNode.prototype._processFetchHook_ = function(lexer, OPENED, IGNORE_TEXT_TILL_CLOSE_TAG, parent, url) {
 
-        let path = this.url.path,
+        let path$$1 = this.url.path,
             CAN_FETCH = true;
 
         //make sure URL is not already called by a parent.
         while (parent) {
-            if (parent.url && parent.url.path == path) {
+            if (parent.url && parent.url.path == path$$1) {
                 console.warn(`Preventing recursion on resource ${this.url.path}`);
                 CAN_FETCH = false;
                 break;
@@ -22240,7 +22667,7 @@ ${is_iws}`;
         }
 
         scheduledUpdate(frame_time, time_since_last){
-            this.save(path$1.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
+            this.save(path.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
             this.scheduleAutoSave();
         }
 
@@ -22264,7 +22691,7 @@ ${is_iws}`;
                     return console.error(`Could not load UI components: ${e}`);
 
                 d.forEach((fn) => {
-                    if (path$1.extname(fn) == ".html") {
+                    if (path.extname(fn) == ".html") {
                         this.system.ui.addComponent(([dir, fn]).join("/"));
                     }
                 });
@@ -22280,7 +22707,7 @@ ${is_iws}`;
             this.components.move_type = "relative";
             this.components.KEEP_UNIQUE = true;
 
-            this.loadUIComponents(path$1.join(process.cwd(), "./assets/ui_components"));
+            this.loadUIComponents(path.join(process.cwd(), "./assets/ui_components"));
         }
 
         get meta(){
@@ -22680,8 +23107,8 @@ ${is_iws}`;
 
             if (DEV && !TEST) {
                 //Load in the development component.
-                let path = require("path").join(process.cwd(), "assets/components/test.html");
-                let doc = system.docs.get(system.docs.loadFile(path));
+                let path$$1 = require("path").join(process.cwd(), "assets/components/test.html");
+                let doc = system.docs.get(system.docs.loadFile(path$$1));
                 actions.CREATE_COMPONENT(system, doc, 200, 200);
                 window.flame = flame;
             } else if (TEST) {
@@ -22738,4 +23165,4 @@ ${is_iws}`;
 
     return flame;
 
-}(path$1, fs));
+}(path, fs));

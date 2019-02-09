@@ -97,6 +97,7 @@ button{
     overflow: hidden;
     border-radius: 2px;
     background-color: white;
+    border: 1px solid rgb(220,220,220);
 }
 .flame_component_background {
     top:-1px;

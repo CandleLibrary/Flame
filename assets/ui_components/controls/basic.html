@@ -27,31 +27,36 @@
 	<button onpointerdown="((set_control)('./border.html'))">test</button>
 
 	<script on=((grab))>
-		model.target.action = model.actions.MOVE;
+		model.action = model.actions.MOVE;
+		model.edgeType = 0;
 		emit.move_action = event;
 		return false;
 	</script>
 
 	<script on=((tl_grab))>
-		model.target.action = model.actions.RESIZETL;
+		model.action = model.actions.RESIZETL;
+		model.edgeType = 5;
 		emit.move_action = event;
 		return true;
 	</script>
 
 	<script on=((tr_grab))>
-		model.target.action = model.actions.RESIZETR;
+		model.action = model.actions.RESIZETR;
+		model.edgeType = 6;
 		emit.move_action = event;
 		return true;
 	</script>
 
 	<script on=((bl_grab))>
-		model.target.action = model.actions.RESIZEBL;
+		model.action = model.actions.RESIZEBL;
+		model.edgeType = 9;
 		emit.move_action = event;
 		return true;
 	</script>
 
 	<script on=((br_grab))>
-		model.target.action = model.actions.RESIZEBR;
+		model.action = model.actions.RESIZEBR;
+		model.edgeType = 10;
 		emit.move_action = event;
 		return true;
 	</script>

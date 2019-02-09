@@ -1,6 +1,6 @@
 {
   "name": "@galactrax/flame",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A browser tech web editing app based on wick and electron",
   "main": "main.js",
   "scripts": {

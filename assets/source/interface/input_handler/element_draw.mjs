@@ -2,22 +2,27 @@ import Default from "./default.mjs";
 import Handler from "./handler.mjs";
 import { actions } from "../actions/action";
 
-const default_handler = Handler.default;
-
 export default class ElementDraw extends Default {
 
     constructor(system) {
-        super(system, null);
+        super(system, "./assets/ui_components/controls/element_draw.html");
         this.root_x = 0;
         this.root_y = 0;
+
+        if(!Handler.element_draw)
+            Handler.element_draw = this;
     }
 
     start(event, ui, data) {
-        if (event.button == 1) 
-            return default_handler.start(event, ui, data);
+
+
+        if(!data.FROM_MAIN || event.button == 1)
+            return Handler.default.start(event, ui, data);
+
 
         const x = data.x || ui.transform.getLocalX(event.pageX),
             y = data.y || ui.transform.getLocalY(event.pageY);
+
 
         this.origin_x = x;
         this.origin_y = y;
@@ -28,8 +33,6 @@ export default class ElementDraw extends Default {
     }
 
     move(event, ui, data) {
-
-        //if (!this.ACTIVE_POINTER_INPUT) return this;
 
         const x = data.x || ui.transform.getLocalX(event.pageX),
             y = data.y || ui.transform.getLocalY(event.pageY);
@@ -49,6 +52,13 @@ export default class ElementDraw extends Default {
         const x2 = Math.max(this.origin_x, this.root_x);
         const y2 = Math.max(this.origin_y, this.root_y);
 
+        let x = x2 - x1;
+        let y = y2 - y1;
+
+        if(Math.sqrt(x*x+y*y) < 70.711)
+            return Handler.default;
+        
+
         actions.CREATE_ELEMENT(
             ui.system,
             ui.master_component,
@@ -58,8 +68,6 @@ export default class ElementDraw extends Default {
 
         ui.render();
 
-        return default_handler;
+        return Handler.default;
     }
 }
-
-Handler.element_draw = new ElementDraw();

@@ -1,7 +1,5 @@
 import { actions } from "./actions/action";
-import { ControlWidget } from "./controls_widget.mjs";
-
-
+import { ControlWidget } from "./widget/controls_widget.mjs";
 
 export class ControlsManager {
     constructor() {
@@ -27,9 +25,8 @@ export class ControlsManager {
         
         const box = new ControlWidget(system.ui.active_handler.package, system);
         box.IS_ON_MASTER = IS_ON_MASTER;
-
         box.setTarget(component, element, IS_COMPONENT);
-        box.setDimensions(IS_COMPONENT);
+        box.setDimensions(element);
         this.widget = box;
     }
     

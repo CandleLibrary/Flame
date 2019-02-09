@@ -48,11 +48,12 @@ export function SETDELTAHEIGHT(system, component, element, dy, ratio = 0, LINKED
         excess_y = out.excess_y;
     } else {
         ensureBlocklike(system, component, element);
-        out = getRatio(system, component, element, SETHEIGHT, start_y, dy, "height");
+        out = getRatio(system, component, element, SETHEIGHT, start_y, dy, "bottom", false, ratio < 0);
         excess_y = out.excess;
     }
 
     ratio = out.ratio;
+
 
     prepRebuild(element, LINKED);
 

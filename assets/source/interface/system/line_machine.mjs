@@ -1,80 +1,14 @@
-class LineBox {
-    constructor(ON_MAIN = false){
-        this.rect = null;
-        this.ON_MAIN = ON_MAIN;
-    }
-    get l() {
-        return this.rect.x //+ this.component.x;
-    }
+import BoxWidget from "../widget/box_widget.mjs";
 
-    get t() {
-        return this.rect.y //+ this.component.y;
-    }
+function CreateBoxes(ele, LineMachine, target) {
 
-    get b() {
-        return this.rect.y + this.rect.height //+ this.component.y;
-    }
-
-    get r() {
-        return this.rect.x + this.rect.width //+ this.component.x;
-    }
-
-    getTransformed(trs){
-
-        if(true || this.ON_MAIN)
-            return {l:this.l, r:this.r, t:this.t, b:this.b};
-        else{
-
-            const 
-                l = (this.l)*trs.scale+trs.px,
-                t = (this.t)*trs.scale+trs.py,
-                r = (this.r)*trs.scale+trs.px,
-                b = (this.b)*trs.scale+trs.py;
-            return {l, r, t, b};
-        }
-    }
-}
-
-class ElementLineBox extends LineBox {
-    constructor(element, component) {
-        super(!!component.IS_MASTER);
-        this.rect = element.getBoundingClientRect();
-        this.component = component;
-    }
-}
-
-class ComponentLineBox extends LineBox {
-    constructor(component) {
-        super();
-        this.component = component;
-    }
-
-    get l() {
-        return this.component.x;
-    }
-
-    get t() {
-        return this.component.y;
-    }
-
-    get b() {
-        return this.component.height + this.component.y;
-    }
-
-    get r() {
-        return this.component.width + this.component.x;
-    }
-}
-
-function CreateBoxes(ele, c, LineMachine, target) {
-
-    LineMachine.boxes.push(new ElementLineBox(ele, c));
+    LineMachine.boxes.push(new BoxWidget(ele));
 
     let children = ele.children;
 
     for (let i = 0; i < children.length; i++) {
         if (target == children[i]) continue;
-        CreateBoxes(children[i], c, LineMachine, target);
+        CreateBoxes(children[i], LineMachine, target);
     }
 }
 
@@ -86,52 +20,51 @@ function CreateComponentBoxes(c, LineMachine, target) {
 export class LineMachine {
     constructor() {
         this.boxes = [];
-        this.tolerance = 10;
+        this.tolerance = 5;
 
         this.activex = { id: -1, ot: 0, tt: 0 };
         this.activey = { id: -1, ot: 0, tt: 0 };
     }
 
-    setPotentialBoxes(element, component, components) {
+    setPotentialBoxes(widget, components) {
 
         this.boxes.length = 0;
 
-        if (!element) {
+        if (!widget) {
             components.forEach(c => CreateComponentBoxes(c, this, component));
-        } else {
-            //get tree from component and create boxes from all elements inside the component. 
-            let tree = component.element.shadowRoot.children[0];
-
-            let ele = tree;
-
-            CreateBoxes(ele, component, this, element);
-        }
-
+        } else
+            //get root of component and create boxes from elements inside the component. 
+            CreateBoxes(
+                widget.component.element.shadowRoot.children[0],
+                this,
+                widget.element
+            );
     }
 
-    getSuggestedLine(box, dx, dy) {
+    getSuggestedLine(scale, widget, dx, dy) {
 
-        if (!box) return { dx, dy };
+        if (!widget) return { dx, dy };
 
         //tolerance based on rate
         let mx = this.tolerance - 0.5; //Math.min(this.tolerance / Math.max(Math.abs(dx)*1.55, 0.1), this.tolerance);
-        let my = this.tolerance - 0.5;  //Math.min(this.tolerance / Math.max(Math.abs(dy) * 1.55, 0.1), this.tolerance);
+        let my = this.tolerance - 0.5; //Math.min(this.tolerance / Math.max(Math.abs(dy) * 1.55, 0.1), this.tolerance);
+
         let x_set = false;
         let y_set = false;
-        const l = box.l;
-        const r = box.r;
 
-        const LO = (l - r == 0);
-
-        const t = box.t;
-        const b = box.b;
-        const ch = (l + r) / 2;
-        const cv = (t + b) / 2;
-        const tolx = mx;
-        const toly = my;
+        const box = widget.getBox(widget.boxType, widget.edgeType),
+            l = box.l,
+            r = box.r,
+            LO = (l - r == 0),
+            t = box.t,
+            b = box.b,
+            ch = (l + r) / 2,
+            cv = (t + b) / 2,
+            tolx = mx,
+            toly = my;
 
         for (let i = 0; i < this.boxes.length; i++) {
-            let box = this.boxes[i];
+            let box = this.boxes[i].MarginBox;
 
             //Make sure the ranges overlap
 
@@ -192,61 +125,85 @@ export class LineMachine {
         }
 
         let dx_ = dx,
-            dy_ = dy, MX =false, MY = false;
+            dy_ = dy,
+            MX = false,
+            MY = false;
 
-        if (Math.abs(mx) < tolx && Math.abs(dx) < tolx){
+        if (Math.abs(mx) < tolx && Math.abs(dx) < tolx) {
             MX = true;
             dx_ = mx;
-        }
-        else
+        } else
             this.activex.id = -1;
 
-        if (Math.abs(my) < toly && Math.abs(dy) < toly){
+        if (Math.abs(my) < toly && Math.abs(dy) < toly) {
             MY = true;
             dy_ = my;
-        }
-        else
+        } else
             this.activey.id = -1;
 
         return { dx: dx_, dy: dy_, MX, MY };
     }
 
-    render(ctx, transform, boxc) {
+    render(ctx, transform, widget) {
 
-        if (!boxc || this.boxes.length == 0) return;
+        let component = widget.component;
 
-        boxc = boxc.getTransformed(transform);
+        let min_x = transform.px + (component.x) * transform.scale;
+        let max_x = transform.px + (component.x + component.width) * transform.scale;
+        let min_y = transform.py + (component.y) * transform.scale;
+        let max_y = transform.py + (component.y + component.height) * transform.scale;
+
+        if (!widget || this.boxes.length == 0) return;
+
+        const boxc = widget.getBox(widget.boxType, widget.edgeType);
+
+
 
         ctx.save();
 
+        //Horizontal Alignement
+
         if (this.activex.id > -1) {
             //0 = l, 1 = r, 2 = c 
-            ctx.strokeStyle = "red";
 
-            const   
-                box = this.boxes[this.activex.id].getTransformed(transform),
-                x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt],
-                y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
-                y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+            const
+                box = this.boxes[this.activex.id].getBox(0, 0, transform),
+                x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
+                //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
+                //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
             ctx.beginPath();
-            ctx.moveTo(x, y1);
-            ctx.lineTo(x, y2);
+            ctx.moveTo(x, min_y);
+            ctx.lineTo(x, max_y);
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
+
+        //Vertical Alignement
 
         if (this.activey.id > -1) {
             //0 = t, 1 = b, 2 = c 
             ctx.strokeStyle = "green";
 
-            const 
-                box = this.boxes[this.activey.id].getTransformed(transform),
-                y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt],
-                x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
-                x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+            const
+                box = this.boxes[this.activey.id].getBox(0, 0, transform),
+                y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
+                //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
+                //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
 
             ctx.beginPath();
-            ctx.moveTo(x1, y);
-            ctx.lineTo(x2, y);
+            ctx.moveTo(min_x, y);
+            ctx.lineTo(max_x, y);
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.strokeStyle = "green";
+            ctx.lineWidth = 1;
             ctx.stroke();
         }
 

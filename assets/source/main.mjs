@@ -134,9 +134,6 @@ const flame = {
     }
 };
 
-
-
-
 export default flame;
 
 /* Interface files */

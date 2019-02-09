@@ -1,5 +1,6 @@
 //*********** Actions ******************
 import css from "@candlefw/css";
+import spark from "@candlefw/spark";
 import { actions } from "./actions/action";
 import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";
@@ -11,10 +12,25 @@ import Handler from "./input_handler/handler.mjs";
 import Default from "./input_handler/default.mjs";
 import ElementDraw from "./input_handler/element_draw.mjs";
 
+
+/*** HOST UTILITIES ***/
+
+const electron = require("electron")
+
+function getCursorPos(ui){
+    let scale = ui.transform.scale;
+    let point = electron.screen.getCursorScreenPoint()
+
+    return {x:point.x/scale, y:point.y/scale};
+
+        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
+}
+
 //OTHER imports
 import { ControlsManager } from "./controls_manager";
 
 /** GLOBAL EVENTS FILLS **/
+
 
 var DD_Candidate = false;
 /**
@@ -61,7 +77,7 @@ export class UI_Manager {
         */
         this.components = [];
         this.ui_components = new Map();
-        this.loadedComponents = [];
+        this.loadedUIComponents = [];
 
         //Menu array
         this.main_menu = document.createElement("div");
@@ -90,6 +106,10 @@ export class UI_Manager {
         window.addEventListener("pointerdown", e => {
             const x = this.transform.getLocalX(e.pageX);
             const y = this.transform.getLocalY(e.pageY);
+            
+            e.stopPropagation();
+            e.preventDefault();
+            
             if (this.setTarget(e, null, x, y, false)) {
                 this.origin_x = x;
                 this.origin_y = y;
@@ -114,6 +134,8 @@ export class UI_Manager {
         document.body.addEventListener("dragstart", e => {});
 
         this.createMaster();
+
+        requestAnimationFrame(()=>this.updatePointer());
     }
 
     createMaster() {
@@ -146,8 +168,8 @@ export class UI_Manager {
     render() {
         this.controls.render(this.transform);
         if (this.target && this.RENDER_LINES)
-            this.line_machine.render(this.controls.ctx, this.transform, this.target.box);
-        this.loadedComponents.forEach(c => c.set(this.target));
+            this.line_machine.render(this.controls.ctx, this.transform, this.target);
+        this.loadedUIComponents.forEach(c => c.set(this.target));
     }
 
     /******************** Components *************************/
@@ -162,7 +184,7 @@ export class UI_Manager {
 
     mountUIComponent(component) {
         component.mount(this.element);
-        this.loadedComponents.push(component);
+        this.loadedUIComponents.push(component);
         component.set(this.target);
     }
 
@@ -190,12 +212,16 @@ export class UI_Manager {
     setWidgetTarget(target) {
         this.target = target;
         
-        this.loadedComponents.forEach(c => c.set(this.target));
+        this.loadedUIComponents.forEach(c => c.set(this.target));
+
+        this.line_machine.setPotentialBoxes(target, this.components);
+        /*
 
         if (target.IS_COMPONENT)
             this.line_machine.setPotentialBoxes(null, target.component, this.components);
         else
             this.line_machine.setPotentialBoxes(target.element, target.component, this.components);
+        */
     }
 
     setTarget(e, component, x, y, SET_MENU = true) {
@@ -203,47 +229,30 @@ export class UI_Manager {
 
         const IS_ON_MASTER = component == this.master_component;
 
-        if ((target = this.controls.pointerDown(e, x, y, this.transform, IS_ON_MASTER))) {
-
-            this.target = target;
-
-            if (SET_MENU) this.main_menu.setAttribute("show", "true");
-
-            this.loadedComponents.forEach(c => c.set(this.target));
-
-            if (component) {
-                if (this.target.IS_COMPONENT) {
-                    this.line_machine.setPotentialBoxes(null, component, this.components);
-                } else {
-                    const target_element = e.composedPath()[0];
-                    this.line_machine.setPotentialBoxes(target_element, component, this.components);
-                }
-            }
-
-            return true;
-        }
-
         if (SET_MENU) this.main_menu.setAttribute("show", "false");
 
         return false;
-
     }
 
     /******************** Component Iframe *************************/
 
     integrateComponentElement(element, component) {
 
-        element.addEventListener("mousedown", e => {
+        element.addEventListener("pointerdown", e => {
 
             const x = e.pageX // + component.x;
             const y = e.pageY // + component.y;
+
+            e.stopPropagation();
+            e.preventDefault();
 
             this.last_action = Date.now();
             this.handlePointerDownEvent(e);
 
             if (e.button == 0) {
                 if (!this.setTarget(e, component, x, y)) {
-                    if (e.target.tagName == "BODY") {
+                    if (e.target.tagName == "BODY") { 
+                        debugger
                         this.controls.setTarget(component, component.element, true, true, this.system);
                         this.render();
                         this.setTarget(e, component, x, y);
@@ -267,12 +276,19 @@ export class UI_Manager {
     /****************** Event responders **************************/
 
     handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-        this.active_handler = this.active_handler.input("start", e, this, { x, y, FROM_MAIN });
+        let point = getCursorPos(this) // { x:this.px, y:this.py };
+        this.active_handler = this.active_handler.input("start", e, this, { x:point.x, y:point.y, FROM_MAIN });
         return false;
     }
 
     handlePointerMoveEvent(e, x, y) {
-        this.active_handler = this.active_handler.input("move", e, this, { x, y });
+        this.px = e.x;
+        this.py = e.y;
+    }
+
+    updatePointer(){
+        this.active_handler.input("move", {}, this, getCursorPos(this));
+        requestAnimationFrame(()=>this.updatePointer());
     }
 
     handlePointerEndEvent(event) {
@@ -292,8 +308,7 @@ export class UI_Manager {
     }
 
     handleScroll(e, x, y) {
-        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
-        this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
+        this.active_handler = this.active_handler.input("scroll", e, this, {x,y});
         e.preventDefault();
     }
 

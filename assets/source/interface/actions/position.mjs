@@ -126,7 +126,7 @@ export function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED 
 }
 
 
-export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false) {
+export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false, origin = undefined) {
     let start_x = parseFloat(component.window.getComputedStyle(element).top),
         excess_y = 0;
 
@@ -135,7 +135,7 @@ export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = 
     if (ratio > 0)
         excess_y = SETTOP(system, component, element, start_x + dy / ratio, true).excess_y;
     else {
-        let { excess, ratio: r } = getRatio(system, component, element, SETTOP, start_x, dy, "top", true);
+        let { excess, ratio: r } = getRatio(system, component, element, SETTOP, start_x, dy, "top", true, origin);
         ratio = r;
         excess_y = excess;
     }
@@ -221,8 +221,10 @@ export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
         case "top bottom":
             excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
         case "top":
-            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
-            SETDELTATOP(system, component, element, dy + excess_y, 0, true);
+            let origin = element.getBoundingClientRect().top / system.ui.transform.scale;
+            let out = SETDELTAHEIGHT(system, component, element, -dy, -1, true);
+            excess_y = out.excess_y;
+            SETDELTATOP(system, component, element, dy+out.excess_y, 1/(out.ratio || 1), true);
             break;
         case "bottom":
             excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;

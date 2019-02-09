@@ -3,7 +3,8 @@ let types = css.types;
 
 import { CacheFactory } from "./cache";
 
-function getContentBox(ele, win = window) {
+function getContentBox(ele, win = window, system) {
+    let scale = system.ui.transform.scale;
 
     let rect = ele.getBoundingClientRect();
     let par_prop = win.getComputedStyle(ele);
@@ -13,10 +14,10 @@ function getContentBox(ele, win = window) {
     let border_t = parseFloat(par_prop.getPropertyValue("border-top"));
     let border_b = parseFloat(par_prop.getPropertyValue("border-bottom"));
 
-    let top = rect.top + border_t;
-    let left = rect.left + border_l;
-    let width = rect.width - border_l - border_r;
-    let height = rect.height - border_t - border_b;
+    let top = rect.top / scale + border_t;
+    let left = rect.left / scale + border_l;
+    let width = rect.width / scale - border_l - border_r;
+    let height = rect.height / scale - border_t - border_b;
 
     return { top, left, width, height };
 }
@@ -111,25 +112,25 @@ export function setNumericValue(propname, system, component, element, value, rel
         switch (relative_type) {
             case setNumericValue.parent_width:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, component.window).width;
+                if (ele) denominator = getContentBox(ele, component.window, system).width;
                 break;
             case setNumericValue.parent_height:
                 ele = element.parentElement; //getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, component.window).height;
+                if (ele) denominator = getContentBox(ele, component.window, system).height;
                 break;
             case setNumericValue.positioned_ancestor_width:
                 ele = getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, component.window).width;
+                if (ele) denominator = getContentBox(ele, component.window, system).width;
                 break;
             case setNumericValue.positioned_ancestor_height:
                 ele = getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, component.window).height;
+                if (ele) denominator = getContentBox(ele, component.window, system).height;
                 break;
             case setNumericValue.height:
-                denominator = getContentBox(component, element.window).width;
+                denominator = getContentBox(component, element.window, system).width;
                 break;
             case setNumericValue.width:
-                denominator = getContentBox(component, element.window).width;
+                denominator = getContentBox(component, element.window, system).width;
                 break;
         }
 
@@ -159,25 +160,33 @@ setNumericValue.width = 5;
 
 
 
-export function getRatio(system, component, element, funct, original_value, delta_value, css_name, ALLOW_NEGATIVE = false) {
-    let excess = 0;
+export function getRatio(system, component, element, funct, original_value, delta_value, delta_measure, ALLOW_NEGATIVE = false, NO_ADJUST = false) {
+    let excess = 0, ratio = 0, scale = system.ui.transform.scale;
 
+    let begin_x = element.getBoundingClientRect()[delta_measure] / scale;
+
+    ///*
     if (!ALLOW_NEGATIVE && original_value + delta_value < 0) {
         excess = original_value + delta_value;
         delta_value = -original_value;
     }
+    //*/
 
-    let ratio = funct(system, component, element, original_value + delta_value).ratio;
+    funct(system, component, element, original_value + delta_value);
 
-    let end_x = parseFloat(component.window.getComputedStyle(element)[css_name]);
-    let diff_x = end_x - original_value;
-    if (false && Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
+    let end_x = element.getBoundingClientRect()[delta_measure] / scale;
+    
+    let diff_x = end_x - begin_x;
+
+
+    if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
+ 
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
-        if (diff !== 0) {
-            out = funct(system, component, element, original_value + diff, true);
-            //excess += (out.excess ? out.excess : out.excess_x ? out.excess_x : out.excess_y);
-            ratio = out.ratio;
+        if (diff !== 0 && !NO_ADJUST) {
+            let out = funct(system, component, element, original_value + diff, true);
+            excess += (out.excess ? out.excess : out.excess_x ? out.excess_x : out.excess_y);
+            //console.log(ratio)
         }
     }
     return { ratio, excess };

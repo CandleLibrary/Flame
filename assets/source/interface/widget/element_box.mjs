@@ -287,6 +287,10 @@ export default class ElementBox {
 
         return box;
     }
+
+    get types(){
+    	return ElementBox.types;
+    }
 }
 
 

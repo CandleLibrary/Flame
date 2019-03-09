@@ -226,4 +226,23 @@ export class DocumentManager {
                 lex.next();
         }
     }
+
+    createInternalCSSDoc(component, css){
+        const i = Math.round(Math.random()*100000);
+
+        if(css.doc)
+            return css.doc;
+
+        let css_name = `css${i}`
+        let css_path = `${component.doc_path}/${component.doc_name}#`;
+        let css_doc = new CSSDocument(css_name, css_path, this.system, true, this);
+        css_doc.tree = css;
+        css.doc = css_doc;
+        
+        css.addObserver(css_doc);
+
+        this.docs.set(`${css_path}${css_name}`, css_doc);
+
+        return css_doc;
+    }
 }

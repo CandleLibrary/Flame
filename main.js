@@ -1,7 +1,10 @@
 //Import the needed electron components. 
 const { app, BrowserWindow } = require("electron");
 const globalShortcut = require("electron").globalShortcut;
+const mouse = require("./assets/cpp/build/Release/addon");
 //Wait for app to be ready. 
+
+
 
 app.on("ready", () => {
 

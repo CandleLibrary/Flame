@@ -18,6 +18,10 @@ export default class Handler {
 
     input(type, event, ui_manager, target) {
         switch (type) {
+            case "key":
+                return this.char(event, ui_manager, target);
+            case "char":
+                return this.key(event, ui_manager, target);
             case "end":
                 return this.end(event, ui_manager, target);
             case "start":

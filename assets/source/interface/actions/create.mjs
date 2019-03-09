@@ -1,5 +1,6 @@
 import { RootNode } from "@candlefw/wick";
 import { Component } from "../../component/component.mjs";
+import { CSSComponent } from "../../component/css_component.mjs";
 import { MOVE } from "./move.mjs";
 import { SETLEFT, SETTOP } from "./position.mjs";
 import { SETWIDTH, SETHEIGHT } from "./dimensions.mjs";
@@ -9,27 +10,27 @@ import { prepRebuild } from "./common.mjs";
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
 
-export function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false){
+export function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false) {
     let new_element = null,
         node_c = child_element.wick_node;
-    
+
     const node_p = target_element.wick_node;
 
-    if(COPY){
+    if (COPY) {
         node_c = node_c.clone();
-    }else{
+    } else {
         const par = node_c.par;
-        
+
         node_c.extract();
-        
+
         par.prepRebuild();
         par.rebuild();
     }
     node_p.addChild(node_c);
-    
+
     node_c.prepRebuild(false, false, true);
     node_c.rebuild();
-    
+
     new_element = target_element.lastChild;
 
     SETLEFT(system, target_component, new_element, px, true);
@@ -41,7 +42,7 @@ export function TRANSFER_ELEMENT(system, target_component, target_element, child
 }
 
 export function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px = 0, py = 0, w = 50, h = 50) {
-    if(typeof(tag_name) !== "string" || tag_name== "") 
+    if (typeof(tag_name) !== "string" || tag_name == "")
         throw new Error(`Invalid argument for \`tag_name\`:${tag_name} in call to CREATE_ELEMENT.`);
 
     let node = createHTMLNodeHook(tag_name);
@@ -61,25 +62,53 @@ export function CREATE_ELEMENT(system, component, parent_element, tag_name = "di
 
     prepRebuild(element);
 
-    return {element, node};
+    return { element, node };
 }
 
-export function CREATE_COMPONENT(system, doc, px, py) {
+export function CREATE_COMPONENT(system, doc, px, py, type = "css") {
     //if(!(doc instanceof Document))
     //    throw new Error("Action CREATE_COMPONENT cannot continue: doc is not an instance of Document.");
 
-    const component = new Component(system);
+    if (doc instanceof Component) {
+        switch (type) {
+            case "css":
 
-    component.load(doc);
+                let out = [];
+                //Pull out css information;
+                for (let i = 0; i < doc.local_css.length; i++) {
 
-    const element = component.element;
+                    const css = doc.local_css[i];
+                    const out_doc = (css.doc) ? css.doc : system.docs.createInternalCSSDoc(doc, css);
 
+                    out.push(CREATE_COMPONENT(system, out_doc, px+(i*-400), py, "css"));
+                }
+
+                return out;
+        }
+    }
+
+    let comp = null;
+
+    switch (doc.type) {
+        case "css":
+            comp = new CSSComponent(system);
+            break;
+        case "js":
+            comp = new Component(system);
+            break;
+        case "html":
+            comp = new Component(system);
+    }
+
+    comp.load(doc);
+
+    const element = comp.element;
     document.querySelector("#main_view").appendChild(element);
 
-    component.x = px;
-    component.y = py;
+    comp.x = px;
+    comp.y = py;
 
-    return component;
+    return comp;
 }
 
 export function REMOVE_COMPONENT(system, component) {

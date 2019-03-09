@@ -17,33 +17,43 @@
 	<button id="move" onpointerdown="((set_control)('./basic.html'))">test</button>
 
 	<script on=((grab))>
-		model.target.action = model.actions.MOVE;
+		model.action = model.actions.MOVE;
+		model.boxType = model.types.padding;
+		model.edgeType = model.types.edge.all;
 		emit.move_action = event;
 		return false;
 	</script>
 
 	<script on=((tl_grab))>
-		model.target.action = model.actions.RESIZEBORDERTL;
+		model.action = model.actions.RESIZEBORDERTL;
+		model.boxType = 2;
+		model.edgeType = 5;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((tr_grab))>
-		model.target.action = model.actions.RESIZEBORDERTR;
+		model.action = model.actions.RESIZEBORDERTR;
+		model.boxType = 2;
+		model.edgeType = 6;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((bl_grab))>
-		model.target.action = model.actions.RESIZEBORDERBL;
+		model.action = model.actions.RESIZEBORDERBL;
+		model.boxType = 2;
+		model.edgeType = 9;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 	<script on=((br_grab))>
-		model.target.action = model.actions.RESIZEBORDERBR;
+		model.action = model.actions.RESIZEBORDERBR;
+		model.boxType = 2;
+		model.edgeType = 10;
 		emit.move_action = event;
-		return false;
+		return true;
 	</script>
 
 

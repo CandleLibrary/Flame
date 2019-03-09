@@ -7,7 +7,7 @@ const CSS_Rule_Constructor = CSSRule;
 
 import {
     CSSComponent
-} from "./css_component";
+} from "../component/css_component";
 
 /**
  *  This module maintains CSS documents and handles the updating of their contents. 
@@ -188,6 +188,7 @@ export class CSSManager {
             } else {
                 tree = doc.tree;
             }
+            tree.doc = doc;
         }
 
         this.css_files.push(tree);
@@ -206,6 +207,7 @@ export class CSSManager {
     }
 
     createComponent(doc) {
+        debugger
         let css_file = new CSS_Root_Constructor();
         let component = new CSSComponent(css_file, this);
         doc.bind(component);

@@ -1,6 +1,6 @@
 import whind from "@candlefw/whind";
 
-export class CSSComponent{
+export class CSSComponent extends Component{
 	constructor(tree, manager){
 		this.manager = manager;
 		this.tree = tree;
@@ -8,6 +8,10 @@ export class CSSComponent{
 		this.element = document.createElement("div");
 
 		this.tree.addObserver(this);
+	}
+
+	destroy(){
+
 	}
 
 	documentReady(data){

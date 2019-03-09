@@ -83,8 +83,16 @@ const flame = {
             //Load in the development component.
             let path = require("path").join(process.cwd(), "assets/components/test.html");
             let doc = system.docs.get(system.docs.loadFile(path));
-            actions.CREATE_COMPONENT(system, doc, 200, 200);
+            let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
             window.flame = flame;
+
+            //Activate its CSS window.
+            setTimeout(
+                ()=>{
+            actions.CREATE_COMPONENT(system, comp, 0, 200);
+                    
+                },200)
+
         } else if (TEST) {
             //Load in HTML test runner
             const test_iframe = document.createElement("iframe");

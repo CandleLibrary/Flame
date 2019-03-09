@@ -1,6 +1,5 @@
 //*********** Actions ******************
 import css from "@candlefw/css";
-import spark from "@candlefw/spark";
 import { actions } from "./actions/action";
 import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";
@@ -12,19 +11,10 @@ import Handler from "./input_handler/handler.mjs";
 import Default from "./input_handler/default.mjs";
 import ElementDraw from "./input_handler/element_draw.mjs";
 
+import BrowserEngine from "./input_engine/browser_input.mjs";
 
-/*** HOST UTILITIES ***/
 
-const electron = require("electron")
-
-function getCursorPos(ui){
-    let scale = ui.transform.scale;
-    let point = electron.screen.getCursorScreenPoint()
-
-    return {x:point.x/scale, y:point.y/scale};
-
-        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
-}
+/*** END HOST UTILITIES ---***/
 
 //OTHER imports
 import { ControlsManager } from "./controls_manager";
@@ -33,6 +23,8 @@ import { ControlsManager } from "./controls_manager";
 
 
 var DD_Candidate = false;
+
+
 /**
  * @brief Handles user input and rendering of UI elements
  * 
@@ -43,9 +35,8 @@ export class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui = this;
 
-        //Initialize Handlers
+        //Initialize Input Handlers
         new Default(system);
-
         this.d = Default;
         this.e = new ElementDraw(system);
 
@@ -58,17 +49,18 @@ export class UI_Manager {
         this.last_action = Date.now();
 
         this.active_handler = Handler.default;
-        this.x = 0;
-        this.y = 0;
+        this.cur_x = 0;
+        this.cur_y = 0;
+        this.ptr_x = 0;
+        this.ptr_y = 0;
 
         this.ui_target = null;
+
         /**
             Unbounded "master" component that sits behind other components and allows the creation of elements.
-            Component itself is not selectable. 
+            The component itself is not selectable. 
         */
         this.master_component = null;
-
-        this.dxdx = 0;
 
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
@@ -95,47 +87,9 @@ export class UI_Manager {
         this.svg_manager = new SVGManager(system);
         this.line_machine = new LineMachine();
 
-        // **************** Eventing *****************
-        window.addEventListener("resize", e => this.controls.resize(this.transform));
-
-        // // *********** Mouse *********************
-        window.addEventListener("mouseover", e => {});
-        window.addEventListener("wheel", e => this.handleScroll(e, e.pageX, e.pageY));
-
-        // // *********** Pointer *********************
-        window.addEventListener("pointerdown", e => {
-            const x = this.transform.getLocalX(e.pageX);
-            const y = this.transform.getLocalY(e.pageY);
-            
-            e.stopPropagation();
-            e.preventDefault();
-            
-            if (this.setTarget(e, null, x, y, false)) {
-                this.origin_x = x;
-                this.origin_y = y;
-            } else{
-                this.active_handler = this.e;
-                this.handlePointerDownEvent(e, undefined, undefined, !!1);
-            }
-        });
-        window.addEventListener("pointermove", e => {
-            this.pointer_x = e.x;
-            this.pointer_y = e.y;
-            this.handlePointerMoveEvent(e);
-        });
-        window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
-
-        // // *********** Drag 'n Drop *********************
-        document.body.addEventListener("drop", e => this.handleDocumentDrop(e));
-        document.body.addEventListener("dragover", e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
-        });
-        document.body.addEventListener("dragstart", e => {});
+        this.engine = new BrowserEngine(this);
 
         this.createMaster();
-
-        requestAnimationFrame(()=>this.updatePointer());
     }
 
     createMaster() {
@@ -166,9 +120,12 @@ export class UI_Manager {
     }
 
     render() {
+
         this.controls.render(this.transform);
+
         if (this.target && this.RENDER_LINES)
             this.line_machine.render(this.controls.ctx, this.transform, this.target);
+
         this.loadedUIComponents.forEach(c => c.set(this.target));
     }
 
@@ -211,20 +168,13 @@ export class UI_Manager {
 
     setWidgetTarget(target) {
         this.target = target;
-        
+
         this.loadedUIComponents.forEach(c => c.set(this.target));
 
         this.line_machine.setPotentialBoxes(target, this.components);
-        /*
-
-        if (target.IS_COMPONENT)
-            this.line_machine.setPotentialBoxes(null, target.component, this.components);
-        else
-            this.line_machine.setPotentialBoxes(target.element, target.component, this.components);
-        */
     }
 
-    setTarget(e, component, x, y, SET_MENU = true) {
+    setTarget(e, component, SET_MENU = true) {
         let target = null;
 
         const IS_ON_MASTER = component == this.master_component;
@@ -237,58 +187,47 @@ export class UI_Manager {
     /******************** Component Iframe *************************/
 
     integrateComponentElement(element, component) {
-
-        element.addEventListener("pointerdown", e => {
-
-            const x = e.pageX // + component.x;
-            const y = e.pageY // + component.y;
-
-            e.stopPropagation();
-            e.preventDefault();
-
-            this.last_action = Date.now();
-            this.handlePointerDownEvent(e);
-
-            if (e.button == 0) {
-                if (!this.setTarget(e, component, x, y)) {
-                    if (e.target.tagName == "BODY") { 
-                        debugger
-                        this.controls.setTarget(component, component.element, true, true, this.system);
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    } else {
-
-                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
-                        //shadow_dom
-                        const target_element = e.composedPath()[0];
-                        this.controls.setTarget(component, target_element, component == this.master_component, false, this.system);
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    }
-                }
-            }
-            return false;
-        });
-
         this.components.push(component);
     }
 
     /****************** Event responders **************************/
 
-    handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-        let point = getCursorPos(this) // { x:this.px, y:this.py };
-        this.active_handler = this.active_handler.input("start", e, this, { x:point.x, y:point.y, FROM_MAIN });
+    handlePointerMoveEvent(e, point) {
+        this.active_handler.input("move", {}, this, point);
+    }
+
+    handlePointerDownEvent(e, point = this.engine.point, FROM_MAIN = false) {
+        let component = null,
+            element = null;
+
+        this.active_handler = this.e;
+
+        this.last_action = Date.now();
+
+        //document.body.requestPointerLock();
+        //let point = getCursorPos(this) // { x:this.px, y:this.py };
+        this.active_handler = this.active_handler.input("start", e, this, { x: point.x, y: point.y, FROM_MAIN });
+
+        if (point) {
+
+            let element = document.elementFromPoint(point.x, point.y);
+            if (element) {
+
+                if (element.component) {
+                    component = element.component;
+                    if (component.type == "css") {
+                        element = component.element
+                    } else {
+                        element = element.shadowRoot.elementFromPoint(point.x, point.y);
+                    }
+                    this.controls.setTarget(component, element, component == this.master_component, false, this.system);
+                        this.setTarget(e, component);
+                        this.render();
+                }
+            }
+        }
+
         return false;
-    }
-
-    handlePointerMoveEvent(e, x, y) {
-        this.px = e.x;
-        this.py = e.y;
-    }
-
-    updatePointer(){
-        this.active_handler.input("move", {}, this, getCursorPos(this));
-        requestAnimationFrame(()=>this.updatePointer());
     }
 
     handlePointerEndEvent(event) {
@@ -302,14 +241,17 @@ export class UI_Manager {
     }
 
     handleContextMenu(e, component = null) {
-        //Load text editor in the bar.
         this.active_handler = this.active_handler.input("context", e, this, { component });
         e.preventDefault();
     }
 
     handleScroll(e, x, y) {
-        this.active_handler = this.active_handler.input("scroll", e, this, {x,y});
+        this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
         e.preventDefault();
+    }
+
+    handleKeyUp(e){
+        this.active_handler = this.active_handler.input("key", e, this, this.target);
     }
 
     /******** FILE HANDLING ************/

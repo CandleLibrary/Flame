@@ -6,7 +6,7 @@ export default class Default extends Handler {
     constructor(system, component = "./assets/ui_components/controls/basic.html") {
         super(system, component);
 
-        if(!Handler.default)
+        if (!Handler.default)
             Handler.default = this;
 
         this.origin_x = 0;
@@ -18,8 +18,8 @@ export default class Default extends Handler {
     }
 
     start(event, ui, data) {
-        const x = data.x || ui.transform.getLocalX(ui.pointer_x),
-            y = data.y || ui.transform.getLocalY(ui.pointer_y);
+        const x = data.x,
+            y = data.y;
 
         if (event.button == 1) {
 
@@ -36,8 +36,8 @@ export default class Default extends Handler {
 
         ui.RENDER_LINES = true;
 
-        this.origin_x = x;
-        this.origin_y = y;
+        this.origin_x = (x / ui.transform.scale);
+        this.origin_y = (y / ui.transform.scale);
         this.ACTIVE_POINTER_INPUT = true;
 
         if (event.target !== document.body)
@@ -52,7 +52,6 @@ export default class Default extends Handler {
 
     move(event, ui, data) {
 
-        
         if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
 
         let x = data.x,
@@ -65,24 +64,24 @@ export default class Default extends Handler {
             const diffy = this.origin_y - y;
 
 
-            ui.transform.px -= diffx * ui.transform.sx;
-            ui.transform.py -= diffy * ui.transform.sy;
+            ui.transform.px -= diffx //* ui.transform.sx;
+            ui.transform.py -= diffy //* ui.transform.sy;
 
-            this.origin_x -=  diffx;
-            this.origin_y -=  diffy;
+            this.origin_x -= diffx;
+            this.origin_y -= diffy;
 
             ui.view_element.style.transform = ui.transform;
             ui.render();
         } else if (ui.ui_target) {
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.pointer_x);
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.pointer_y);
+            const diffx = this.origin_x - x;
+            const diffy = this.origin_y - y;
             this.origin_x -= diffx;
             this.origin_y -= diffy;
             if (ui.ui_target.action) ui.ui_target.action(ui.system, ui.ui_target.component, diffx, diffy);
         } else if (ui.target) {
 
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x)) + this.excess_x;
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y)) + this.excess_y;
+            const diffx = this.origin_x - (x / ui.transform.scale) + this.excess_x;
+            const diffy = this.origin_y - (y / ui.transform.scale) + this.excess_y;
 
             let xx = Math.round(diffx)
             let yy = Math.round(diffy)
@@ -94,7 +93,7 @@ export default class Default extends Handler {
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (ui.target.action) {
                 let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
-                
+
                 if (out) {
                     if (out.excess_x)
                         this.excess_x += out.excess_x;
@@ -103,8 +102,8 @@ export default class Default extends Handler {
                 }
             }
 
-            ui.render();
         }
+    ui.render();
 
         return this.constructor.default;
     }
@@ -136,6 +135,14 @@ export default class Default extends Handler {
         );
 
         return this.constructor.default;
+    }
+
+    key(){
+
+    }
+
+    char(){
+
     }
 
     scroll(event, ui, data) {

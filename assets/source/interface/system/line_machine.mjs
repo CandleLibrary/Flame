@@ -1,15 +1,16 @@
 import BoxWidget from "../widget/box_widget.mjs";
 
-function CreateBoxes(ele, LineMachine, target) {
+function CreateBoxes(ele, LineMachine, target, IS_COMPONENT = false) {
 
     LineMachine.boxes.push(new BoxWidget(ele));
 
     let children = ele.children;
 
-    for (let i = 0; i < children.length; i++) {
-        if (target == children[i]) continue;
-        CreateBoxes(children[i], LineMachine, target);
-    }
+    if (!IS_COMPONENT)
+        for (let i = 0; i < children.length; i++) {
+            if (target == children[i]) continue;
+            CreateBoxes(children[i], LineMachine, target);
+        }
 }
 
 function CreateComponentBoxes(c, LineMachine, target) {
@@ -20,7 +21,7 @@ function CreateComponentBoxes(c, LineMachine, target) {
 export class LineMachine {
     constructor() {
         this.boxes = [];
-        this.tolerance = 5;
+        this.tolerance = 7;
 
         this.activex = { id: -1, ot: 0, tt: 0 };
         this.activey = { id: -1, ot: 0, tt: 0 };
@@ -30,9 +31,9 @@ export class LineMachine {
 
         this.boxes.length = 0;
 
-        if (!widget) {
-            components.forEach(c => CreateComponentBoxes(c, this, component));
-        } else
+        if (widget.IS_COMPONENT)
+            components.forEach(c => CreateBoxes(c.element, this, widget.component.element, true));
+        else
             //get root of component and create boxes from elements inside the component. 
             CreateBoxes(
                 widget.component.element.shadowRoot.children[0],
@@ -62,6 +63,7 @@ export class LineMachine {
             cv = (t + b) / 2,
             tolx = mx,
             toly = my;
+        // console.log(box)
 
         for (let i = 0; i < this.boxes.length; i++) {
             let box = this.boxes[i].MarginBox;
@@ -169,8 +171,8 @@ export class LineMachine {
             const
                 box = this.boxes[this.activex.id].getBox(0, 0, transform),
                 x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
-                //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
-                //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+            //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
+            //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
             ctx.beginPath();
             ctx.moveTo(x, min_y);
             ctx.lineTo(x, max_y);
@@ -192,8 +194,8 @@ export class LineMachine {
             const
                 box = this.boxes[this.activey.id].getBox(0, 0, transform),
                 y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
-                //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
-                //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+            //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
+            //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
 
             ctx.beginPath();
             ctx.moveTo(min_x, y);

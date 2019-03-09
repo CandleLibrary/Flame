@@ -47,6 +47,7 @@ export class Component {
         this.action = null;
 
         const frame = this.createFrameElement();
+        frame.component = this;
 
         this.style_frame.appendChild(frame);
 
@@ -262,6 +263,10 @@ export class Component {
 
     get content() {
         return this.frame;
+    }
+
+    get type(){
+        return "wick";
     }
 
     toJSON() {

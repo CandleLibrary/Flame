@@ -4090,12 +4090,22 @@ class Color extends Float64Array {
 */
 class CSS_Color extends Color {
 
-    constructor(r, g, b, a) {
-        super(r, g, b, a);
+    static valueHandler(existing_value){
+        let ele = document.createElement("input");
+        ele.type = "color";
+        ele.value = (existing_value) ? existing_value+ "" : "#000000";
+        return ele;
+    }
 
-        if (typeof(r) == "string")
-            this.set(CSS_Color._fs_(r) || {r:255,g:255,b:255,a:0});
+    static setInput(input, value){
+        input.type = "color";
+        input.value = value;
+    }
 
+    static buildInput(){
+        let ele = document.createElement("input");
+        ele.type = "color";
+        return ele;
     }
 
     static parse(l, rule, r) {
@@ -4103,7 +4113,6 @@ class CSS_Color extends Color {
         let c = CSS_Color._fs_(l);
 
         if (c) {
-            l.next();
 
             let color = new CSS_Color();
 
@@ -4168,7 +4177,7 @@ class CSS_Color extends Color {
                     out.b = parseInt(l.next().tx);
                     l.next(); // ,
                     out.a = parseFloat(l.next().tx);
-                    l.next();
+                    l.next().a(")");
                     c = new CSS_Color();
                     c.set(out);
                     return c;
@@ -4180,21 +4189,38 @@ class CSS_Color extends Color {
                     out.g = parseInt(l.next().tx);
                     l.next(); // ,
                     out.b = parseInt(l.next().tx);
-                    l.next();
+                    l.next().a(")");
                     c = new CSS_Color();
                     c.set(out);
                     return c;
                 } // intentional
             default:
+
                 let string = l.tx;
 
-                if (l.ty == l.types.str)
+                if (l.ty == l.types.str){
                     string = string.slice(1, -1);
+                }
 
                 out = CSS_Color.colors[string.toLowerCase()];
+
+                if(out)
+                    l.next();
         }
 
         return out;
+    }
+
+    constructor(r, g, b, a) {
+        super(r, g, b, a);
+
+        if (typeof(r) == "string")
+            this.set(CSS_Color._fs_(r) || {r:255,g:255,b:255,a:0});
+
+    }
+
+    toString(){
+        return `#${("0"+this.r.toString(16)).slice(-2)}${("0"+this.g.toString(16)).slice(-2)}${("0"+this.b.toString(16)).slice(-2)}`
     }
 } {
 
@@ -4348,6 +4374,17 @@ class CSS_Color extends Color {
 }
 
 class CSS_Percentage extends Number {
+    static setInput(input, value){
+        input.type = "number";
+        input.value = parseFloat(value);
+    }
+
+    static buildInput(value){
+        let ele = document.createElement("input");
+        ele.type = "number";
+         input.value = parseFloat(value) || 0;
+        return ele;
+    }
     
     static parse(l, rule, r) {
         let tx = l.tx,
@@ -4370,6 +4407,19 @@ class CSS_Percentage extends Number {
         return null;
     }
 
+    static _verify_(l) {
+        if(typeof(l) == "string" &&  !isNaN(parseInt(l)) && l.includes("%"))
+            return true;
+        return false;
+    }
+
+    static valueHandler(){
+        let ele = document.createElement("input");
+        ele.type = "number";
+        ele.value = 100;
+        return ele;
+    }
+
     constructor(v) {
 
         if (typeof(v) == "string") {
@@ -4380,12 +4430,6 @@ class CSS_Percentage extends Number {
         }
         
         super(v);
-    }
-
-    static _verify_(l) {
-        if(typeof(l) == "string" &&  !isNaN(parseInt(l)) && l.includes("%"))
-            return true;
-        return false;
     }
 
     toJSON() {
@@ -4414,6 +4458,25 @@ class CSS_Percentage extends Number {
 }
 
 class CSS_Length extends Number {
+
+    static valueHandler(value){
+        let ele = document.createElement("input");
+        ele.type = "number";
+        ele.value = (value) ? value + 0 : 0;
+        return ele;
+    }
+
+    static setInput(input, value){
+        input.type = "number";
+        input.value = value;
+    }
+
+    static buildInput(){
+        let ele = document.createElement("input");
+        ele.type = "number";
+        return ele;
+    }
+
     static parse(l, rule, r) {
         let tx = l.tx,
             pky = l.pk.ty;
@@ -5928,6 +5991,8 @@ function CSS_Media_handle(type, prefix) {
     };
 }
 
+//import whind from "@candlefw/whind";
+
 function getValue(lex, attribute) {
     let v = lex.tx,
         mult = 1;
@@ -5965,7 +6030,7 @@ function getValue(lex, attribute) {
 }
 
 function ParseString(string, transform) {
-    var lex = whind$1(string);
+    //var lex = whind(string);
     
     while (!lex.END) {
         let tx = lex.tx;
@@ -6435,6 +6500,7 @@ class CSS_Path extends Array {
  * CSS Type constructors
  * @alias module:wick~internals.css.types.
  * @enum {object}
+ * https://www.w3.org/TR/CSS2/about.html#property-defs
  */
 const types = {
     color: CSS_Color,
@@ -6498,11 +6564,9 @@ const property_definitions = {
     background: `<bg_layer>#,<final_bg_layer>`,
 
     /* Font https://www.w3.org/TR/css-fonts-4*/
-    font_family: `[[<family_name>|<generic_family>],]*[<family_name>|<generic_family>]`,
-    family_name: `<id>||<string>`,
-    generic_name: `serif|sans_serif|cursive|fantasy|monospace`,
+    font_family: `[[<generic_family>|<family_name>],]*[<generic_family>|<family_name>]`,
     font: `[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>`,
-    font_variant: `normal|small_caps`,
+    font_variant: `normal|small-caps`,
     font_style: `normal | italic | oblique <angle>?`,
     font_kerning: ` auto | normal | none`,
     font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
@@ -6679,9 +6743,13 @@ const virtual_property_definitions = {
     attachment: `scroll|fixed|local`,
     line_style: `none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset`,
     line_width: `thin|medium|thick|<length>`,
-
     shadow: `inset?&&<length>{2,4}&&<color>?`,
 
+    /* Font https://www.w3.org/TR/css-fonts-4/#family-name-value */
+    
+    family_name: `<id>||<string>`,
+    generic_family: `serif|sans-serif|cursive|fantasy|monospace`,
+    
     /* Identifier https://drafts.csswg.org/css-values-4/ */
 
     identifier: `<id>`,
@@ -6732,7 +6800,7 @@ const virtual_property_definitions = {
     //Display
     display_outside  : `block | inline | run-in`,
     display_inside   : `flow | flow-root | table | flex | grid | ruby`,
-    display_listitem : `<display-outside>? && [ flow | flow-root ]? && list-item`,
+    display_listitem : `<display_outside>? && [ flow | flow-root ]? && list-item`,
     display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
     display_box      : `contents | none`,
     display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
@@ -6848,16 +6916,28 @@ class CSSRule {
             this.props[prop.name] = prop.value;
     }
 
-    toString(off = 0) {
+
+
+    toString(off = 0, rule = "") {
         let str = [],
             offset = ("    ").repeat(off);
 
-        for (let a in this.props) {
-            if (this.props[a] !== null) {
-                if (Array.isArray(this.props[a]))
-                    str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+        if (rule) {
+            if (this.props[rule]) {
+                if (Array.isArray(this.props[rule]))
+                    str.push(this.props[rule].join(" "));
                 else
-                    str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                    str.push(this.props[rule].toString());
+            }else
+                return "";
+        } else {
+            for (let a in this.props) {
+                if (this.props[a] !== null) {
+                    if (Array.isArray(this.props[a]))
+                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+                    else
+                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                }
             }
         }
 
@@ -6886,18 +6966,23 @@ class NR { //Notation Rule
     constructor() {
 
         this.r = [NaN, NaN];
-        this._terms_ = [];
-        this._prop_ = null;
-        this._virtual_ = false;
+        this.terms = [];
+        this.prop = null;
+        this.name = "";
+        this.virtual = false;
+    }
+
+    seal(){
+
     }
 
     sp(value, rule) { //Set Property
-        if (this._prop_){
+        if (this.prop){
             if (value)
                 if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0]))
-                    rule[this._prop_] = value[0];
+                    rule[this.prop] = value[0];
                 else
-                    rule[this._prop_] = value;
+                    rule[this.prop] = value;
         }
     }
 
@@ -6920,8 +7005,8 @@ class NR { //Notation Rule
         let bool = true;
         for (let j = 0; j < end && !lx.END; j++) {
 
-            for (let i = 0, l = this._terms_.length; i < l; i++) {
-                bool = this._terms_[i].parse(lx, rule, r);
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                bool = this.terms[i].parse(lx, rule, r);
                 if (!bool) break;
             }
 
@@ -6947,8 +7032,8 @@ class AND extends NR {
 
         outer:
             for (let j = 0; j < end && !lx.END; j++) {
-                for (let i = 0, l = this._terms_.length; i < l; i++)
-                    if (!this._terms_[i].parse(lx, rule, r)) return false;
+                for (let i = 0, l = this.terms.length; i < l; i++)
+                    if (!this.terms[i].parse(lx, rule, r)) return false;
             }
 
         this.sp(r.v, rule);
@@ -6964,8 +7049,8 @@ class OR extends NR {
         for (let j = 0; j < end && !lx.END; j++) {
             bool = false;
 
-            for (let i = 0, l = this._terms_.length; i < l; i++)
-                if (this._terms_[i].parse(lx, rule, r)) bool = true;
+            for (let i = 0, l = this.terms.length; i < l; i++)
+                if (this.terms[i].parse(lx, rule, r)) bool = true;
 
             if (!bool && j < start) {
                 this.sp(r.v, rule);
@@ -6986,8 +7071,8 @@ class ONE_OF extends NR {
         for (let j = 0; j < end && !lx.END; j++) {
             bool = false;
 
-            for (let i = 0, l = this._terms_.length; i < l; i++) {
-                bool = this._terms_[i].parse(lx, rule, r);
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                bool = this.terms[i].parse(lx, rule, r);
                 if (bool) break;
             }
 
@@ -7006,23 +7091,32 @@ class ONE_OF extends NR {
 
 class ValueTerm {
 
-    constructor(value, getPropertyParser, definitions) {
+    constructor(value, getPropertyParser, definitions, productions) {
 
-        this._value_ = null;
+        if(value instanceof NR)
+            return value;
+
+        this.value = null;
 
         const IS_VIRTUAL = { is: false };
 
-        if (!(this._value_ = types[value]))
-            this._value_ = getPropertyParser(value, IS_VIRTUAL, definitions);
+        if (!(this.value = types[value]))
+            this.value = getPropertyParser(value, IS_VIRTUAL, definitions, productions);
 
-        this._prop_ = "";
+        this.prop = "";
 
-        if (!this._value_)
+        if (!this.value)
             return new LiteralTerm(value);
 
-        if (this._value_ instanceof NR && IS_VIRTUAL.is)
-            this._virtual_ = true;
+        if(this.value instanceof NR){
+            if (IS_VIRTUAL.is)
+                this.value.virtual = true;
+            return this.value;
+        }
+        //this.virtual = true;
     }
+
+    seal(){}
 
     parse(l, rule, r) {
         if (typeof(l) == "string")
@@ -7030,27 +7124,27 @@ class ValueTerm {
 
         let rn = { v: null };
 
-        let v = this._value_.parse(l, rule, rn);
+        let v = this.value.parse(l, rule, rn);
 
         if (rn.v) {
             if (r)
                 if (r.v) {
                     if (Array.isArray(r.v)) {
-                        if (Array.isArray(rn.v) && !this._virtual_)
+                        if (Array.isArray(rn.v) && !this.virtual)
                             r.v = r.v.concat(rn.v);
                         else
                             r.v.push(rn.v);
                     } else {
-                        if (Array.isArray(rn.v) && !this._virtual_)
+                        if (Array.isArray(rn.v) && !this.virtual)
                             r.v = ([r.v]).concat(rn.v);
                         else
                             r.v = [r.v, rn.v];
                     }
                 } else
-                    r.v = (this._virtual_) ? [rn.v] : rn.v;
+                    r.v = (this.virtual) ? [rn.v] : rn.v;
 
-            if (this._prop_)
-                rule[this._prop_] = rn.v;
+            if (this.prop)
+                rule[this.prop] = rn.v;
 
             return true;
 
@@ -7064,8 +7158,8 @@ class ValueTerm {
                 } else
                     r.v = v;
 
-            if (this._prop_)
-                rule[this._prop_] = v;
+            if (this.prop)
+                rule[this.prop] = v;
 
             return true;
         } else
@@ -7076,9 +7170,11 @@ class ValueTerm {
 class LiteralTerm {
 
     constructor(value) {
-        this._value_ = value;
-        this._prop_ = null;
+        this.value = value;
+        this.prop = null;
     }
+
+    seal(){}
 
     parse(l, rule, r) {
 
@@ -7086,7 +7182,7 @@ class LiteralTerm {
             l = whind$1(l);
 
         let v = l.tx;
-        if (v == this._value_) {
+        if (v == this.value) {
             l.next();
 
             if (r)
@@ -7100,8 +7196,8 @@ class LiteralTerm {
                 } else
                     r.v = v;
 
-            if (this._prop_)
-                rule[this._prop_] = v;
+            if (this.prop)
+                rule[this.prop] = v;
 
             return true;
         }
@@ -7114,7 +7210,7 @@ class SymbolTerm extends LiteralTerm {
         if (typeof(l) == "string")
             l = whind$1(l);
 
-        if (l.tx == this._value_) {
+        if (l.tx == this.value) {
             l.next();
             return true;
         }
@@ -7123,26 +7219,40 @@ class SymbolTerm extends LiteralTerm {
     }
 }
 
-function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definitions = null) {
+const standard_productions = {
+    NR,
+    AND,
+    OR,
+    ONE_OF,
+    LiteralTerm,
+    ValueTerm,
+    SymbolTerm
+};
+function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definitions = null, productions = standard_productions) {
 
     let prop = definitions[property_name];
 
     if (prop) {
 
         if (typeof(prop) == "string")
-            prop = definitions[property_name] = CreatePropertyParser(prop, property_name, definitions);
-
+            prop = definitions[property_name] = CreatePropertyParser(prop, property_name, definitions, productions);
+        prop.name = property_name;
         return prop;
     }
 
-    prop = virtual_property_definitions[property_name];
+    if (!definitions.__virtual)
+        definitions.__virtual = Object.assign({}, virtual_property_definitions);
+
+    prop = definitions.__virtual[property_name];
 
     if (prop) {
 
         IS_VIRTUAL.is = true;
 
-        if (typeof(prop) == "string")
-            prop = virtual_property_definitions[property_name] = CreatePropertyParser(prop, "", definitions);
+        if (typeof(prop) == "string"){
+            prop = definitions.__virtual[property_name] = CreatePropertyParser(prop, "", definitions, productions);
+            prop.name = property_name;
+        }
 
         return prop;
     }
@@ -7151,35 +7261,37 @@ function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definition
 }
 
 
-function CreatePropertyParser(notation, name, definitions) {
+function CreatePropertyParser(notation, name, definitions, productions) {
 
     const l = whind$1(notation);
 
     const important = { is: false };
 
-    let n = d$1(l, definitions);
+    let n = d$1(l, definitions, productions);
+    n.seal();
 
-    if (n instanceof NR && n._terms_.length == 1)
-        n = n._terms_[0];
+    //if (n instanceof productions.NR && n.terms.length == 1 && n.r[1] < 2)
+    //    n = n.terms[0];
 
-    n._prop_ = name;
+    n.prop = name;
     n.IMP = important.is;
 
     return n;
 }
 
-function d$1(l, definitions, super_term = false, group = false, need_group = false, and_group = false, important = null) {
+function d$1(l, definitions, productions, super_term = false, group = false, need_group = false, and_group = false, important = null) {
     let term, nt;
+    const { NR: NR$$1, AND: AND$$1, OR: OR$$1, ONE_OF: ONE_OF$$1, LiteralTerm: LiteralTerm$$1, ValueTerm: ValueTerm$$1, SymbolTerm: SymbolTerm$$1 } = productions;
 
     while (!l.END) {
         switch (l.ch) {
             case "]":
                 if (term) return term;
-                else 
+                else
                     throw new Error("Expected to have term before \"]\"");
             case "[":
                 if (term) return term;
-                term = d$1(l.next(), definitions);
+                term = d$1(l.next(), definitions, productions);
                 l.a("]");
                 break;
             case "&":
@@ -7187,14 +7299,14 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                     if (and_group)
                         return term;
 
-                    nt = new AND();
+                    nt = new AND$$1();
 
-                    nt._terms_.push(term);
+                    nt.terms.push(term);
 
                     l.sync().next();
 
                     while (!l.END) {
-                        nt._terms_.push(d$1(l, definitions, super_term, group, need_group, true, important));
+                        nt.terms.push(d$1(l, definitions, productions, super_term, group, need_group, true, important));
                         if (l.ch !== "&" || l.pk.ch !== "&") break;
                         l.a("&").a("&");
                     }
@@ -7208,14 +7320,14 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                         if (need_group)
                             return term;
 
-                        nt = new OR();
+                        nt = new OR$$1();
 
-                        nt._terms_.push(term);
+                        nt.terms.push(term);
 
                         l.sync().next();
 
                         while (!l.END) {
-                            nt._terms_.push(d$1(l, definitions, super_term, group, true, and_group, important));
+                            nt.terms.push(d$1(l, definitions, productions, super_term, group, true, and_group, important));
                             if (l.ch !== "|" || l.pk.ch !== "|") break;
                             l.a("|").a("|");
                         }
@@ -7227,14 +7339,14 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                             return term;
                         }
 
-                        nt = new ONE_OF();
+                        nt = new ONE_OF$$1();
 
-                        nt._terms_.push(term);
+                        nt.terms.push(term);
 
                         l.next();
 
                         while (!l.END) {
-                            nt._terms_.push(d$1(l, definitions, super_term, true, need_group, and_group, important));
+                            nt.terms.push(d$1(l, definitions, productions, super_term, true, need_group, and_group, important));
                             if (l.ch !== "|") break;
                             l.a("|");
                         }
@@ -7244,15 +7356,16 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                 }
                 break;
             case "{":
-                term = _Jux_(term);
+                term = _Jux_(productions, term);
                 term.r[0] = parseInt(l.next().tx);
                 if (l.next().ch == ",") {
                     l.next();
-                    if (l.next().ch == "}")
-                        term.r[1] = Infinity;
-                    else {
+                    if (l.pk.ch == "}") {
+
                         term.r[1] = parseInt(l.tx);
                         l.next();
+                    } else {
+                        term.r[1] = Infinity;
                     }
                 } else
                     term.r[1] = term.r[0];
@@ -7260,29 +7373,29 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                 if (super_term) return term;
                 break;
             case "*":
-                term = _Jux_(term);
+                term = _Jux_(productions, term);
                 term.r[0] = 0;
                 term.r[1] = Infinity;
                 l.next();
                 if (super_term) return term;
                 break;
             case "+":
-                term = _Jux_(term);
+                term = _Jux_(productions, term);
                 term.r[0] = 1;
                 term.r[1] = Infinity;
                 l.next();
                 if (super_term) return term;
                 break;
             case "?":
-                term = _Jux_(term);
+                term = _Jux_(productions, term);
                 term.r[0] = 0;
                 term.r[1] = 1;
                 l.next();
                 if (super_term) return term;
                 break;
             case "#":
-                term = _Jux_(term);
-                term._terms_.push(new SymbolTerm(","));
+                term = _Jux_(productions, term);
+                term.terms.push(new SymbolTerm$$1(","));
                 term.r[0] = 1;
                 term.r[1] = Infinity;
                 l.next();
@@ -7297,11 +7410,11 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                 let v;
 
                 if (term) {
-                    if (term instanceof NR && term.isRepeating()) term = _Jux_(new NR, term);
-                    let v = d$1(l, definitions, true);
-                    term = _Jux_(term, v);
+                    if (term instanceof NR$$1 && term.isRepeating()) term = _Jux_(productions, new NR$$1, term);
+                    let v = d$1(l, definitions, productions, true);
+                    term = _Jux_(productions, term, v);
                 } else {
-                    let v = new ValueTerm(l.next().tx, getPropertyParser, definitions);
+                    let v = new ValueTerm$$1(l.next().tx, getPropertyParser, definitions, productions);
                     l.next().a(">");
                     term = v;
                 }
@@ -7314,27 +7427,31 @@ function d$1(l, definitions, super_term = false, group = false, need_group = fal
                 break;
             default:
                 if (term) {
-                    if (term instanceof NR && term.isRepeating()) term = _Jux_(new NR, term);
-                    let v = d$1(l, definitions, true);
-                    term = _Jux_(term, v);
+                    if (term instanceof NR$$1 && term.isRepeating()) term = _Jux_(productions, new NR$$1, term);
+                    let v = d$1(l, definitions, productions, true);
+                    term = _Jux_(productions, term, v);
                 } else {
-                    let v = (l.ty == l.types.symbol) ? new SymbolTerm(l.tx) : new LiteralTerm(l.tx);
+                    let v = (l.ty == l.types.symbol) ? new SymbolTerm$$1(l.tx) : new LiteralTerm$$1(l.tx);
                     l.next();
                     term = v;
                 }
         }
     }
+
     return term;
 }
 
-function _Jux_(term, new_term = null) {
+function _Jux_(productions, term, new_term = null) {
     if (term) {
-        if (!(term instanceof NR)) {
-            let nr = new NR();
-            nr._terms_.push(term);
+        if (!(term instanceof productions.NR)) {
+            let nr = new productions.NR();
+            nr.terms.push(term);
             term = nr;
         }
-        if (new_term) term._terms_.push(new_term);
+        if (new_term) {
+            term.seal();
+            term.terms.push(new_term);
+        }
         return term;
     }
     return new_term;
@@ -7973,6 +8090,9 @@ class CSSRootNode {
     }
 
     parse(lex, root) {
+        if (typeof(lex) == "string")
+            lex = whind$1(lex);
+
         if (lex.sl > 0) {
 
             if (!root && root !== null) {
@@ -7982,6 +8102,7 @@ class CSSRootNode {
 
             return this.fch.parse(lex, this).then(e => {
                 this._setREADY_();
+                this.updated();
                 return this;
             });
         }
@@ -8035,141 +8156,6 @@ const _err_ = "Expecting Identifier";
 const CSSParser = (css_string, root = null) => (root = (!root || !(root instanceof CSSRootNode)) ? new CSSRootNode() : root, root.parse(whind$1(css_string)));
 
 CSSParser.types = types;
-
-/**
- * Used to call the Scheduler after a JavaScript runtime tick.
- *
- * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
- */
- 
-const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
-    setTimeout(f, 1);
-};
-
-const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
-
-
-/**
- * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
- *    
- * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
- */
-class Spark {
-    /**
-     * Constructs the object.
-     */
-    constructor() {
-
-        this.update_queue_a = [];
-        this.update_queue_b = [];
-
-        this.update_queue = this.update_queue_a;
-
-        this.queue_switch = 0;
-
-        this.callback = () => this.update();
-
-        this.frame_time = perf.now();
-
-        this.SCHEDULE_PENDING = false;
-    }
-
-    /**
-     * Given an object that has a _SCHD_ Boolean property, the Scheduler will queue the object and call its .update function 
-     * the following tick. If the object does not have a _SCHD_ property, the Scheduler will persuade the object to have such a property.
-     * 
-     * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
-     */
-    queueUpdate(object, timestart = 1, timeend = 0) {
-
-        if (object._SCHD_ || object._SCHD_ > 0) {
-            if (this.SCHEDULE_PENDING)
-                return;
-            else
-                return caller(this.callback);
-        }
-
-        object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
-
-        this.update_queue.push(object);
-
-        if (this._SCHD_)
-            return;
-
-        this.frame_time = perf.now() | 0;
-
-        this.SCHEDULE_PENDING = true;
-
-        caller(this.callback);
-    }
-
-    removeFromQueue(object){
-
-        if(object._SCHD_)
-            for(let i = 0, l = this.update_queue.length; i < l; i++)
-                if(this.update_queue[i] === object){
-                    this.update_queue.splice(i,1);
-                    object._SCHD_ = 0;
-
-                    if(l == 1)
-                        this.SCHEDULE_PENDING = false;
-
-                    return;
-                }
-    }
-
-    /**
-     * Called by the caller function every tick. Calls .update on any object queued for an update. 
-     */
-    update() {
-
-        this.SCHEDULE_PENDING = false;
-
-        const uq = this.update_queue;
-        const time = perf.now() | 0;
-        const diff = Math.ceil(time - this.frame_time) | 1;
-        const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
-
-        this.frame_time = time;
-        
-        if (this.queue_switch == 0)
-            (this.update_queue = this.update_queue_b, this.queue_switch = 1);
-        else
-            (this.update_queue = this.update_queue_a, this.queue_switch = 0);
-
-        for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
-            let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
-            let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
-
-            o._SCHD_ = 0;
-            
-            if (timestart > 0) {
-                this.queueUpdate(o, timestart, timeend);
-                continue;
-            }
-
-            timestart = 0;
-
-            if (timeend > 0) 
-                this.queueUpdate(o, timestart, timeend - diff);
-
-            /** 
-                To ensure on code path doesn't block any others, 
-                scheduledUpdate methods are called within a try catch block. 
-                Errors by default are printed to console. 
-            **/
-            try {
-                o.scheduledUpdate(step_ratio, diff);
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        uq.length = 0;
-    }
-}
-
-const spark = new Spark();
 
 let cache_de_cache = null;
 
@@ -9285,6 +9271,141 @@ const _instanceOf_ = (inst, constr) => inst instanceof constr;
 
 const _SealedProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: true});
 const _FrozenProperty_ = (object, name, value) => OB.defineProperty(object, name, {value, configurable: false, enumerable: false, writable: false});
+
+/**
+ * Used to call the Scheduler after a JavaScript runtime tick.
+ *
+ * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
+ */
+ 
+const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
+    setTimeout(f, 1);
+};
+
+const perf = (typeof(performance) == "undefined") ? { now: () => Date.now() } : performance;
+
+
+/**
+ * Handles updating objects. It does this by splitting up update cycles, to respect the browser event model. 
+ *    
+ * If any object is scheduled to be updated, it will be blocked from scheduling more updates until the next ES VM tick.
+ */
+class Spark {
+    /**
+     * Constructs the object.
+     */
+    constructor() {
+
+        this.update_queue_a = [];
+        this.update_queue_b = [];
+
+        this.update_queue = this.update_queue_a;
+
+        this.queue_switch = 0;
+
+        this.callback = () => this.update();
+
+        this.frame_time = perf.now();
+
+        this.SCHEDULE_PENDING = false;
+    }
+
+    /**
+     * Given an object that has a _SCHD_ Boolean property, the Scheduler will queue the object and call its .update function 
+     * the following tick. If the object does not have a _SCHD_ property, the Scheduler will persuade the object to have such a property.
+     * 
+     * If there are currently no queued objects when this is called, then the Scheduler will user caller to schedule an update.
+     */
+    queueUpdate(object, timestart = 1, timeend = 0) {
+
+        if (object._SCHD_ || object._SCHD_ > 0) {
+            if (this.SCHEDULE_PENDING)
+                return;
+            else
+                return caller(this.callback);
+        }
+
+        object._SCHD_ = ((timestart & 0xFFFF) | ((timeend) << 16));
+
+        this.update_queue.push(object);
+
+        if (this._SCHD_)
+            return;
+
+        this.frame_time = perf.now() | 0;
+
+        this.SCHEDULE_PENDING = true;
+
+        caller(this.callback);
+    }
+
+    removeFromQueue(object){
+
+        if(object._SCHD_)
+            for(let i = 0, l = this.update_queue.length; i < l; i++)
+                if(this.update_queue[i] === object){
+                    this.update_queue.splice(i,1);
+                    object._SCHD_ = 0;
+
+                    if(l == 1)
+                        this.SCHEDULE_PENDING = false;
+
+                    return;
+                }
+    }
+
+    /**
+     * Called by the caller function every tick. Calls .update on any object queued for an update. 
+     */
+    update() {
+
+        this.SCHEDULE_PENDING = false;
+
+        const uq = this.update_queue;
+        const time = perf.now() | 0;
+        const diff = Math.ceil(time - this.frame_time) | 1;
+        const step_ratio = (diff * 0.06); //  step_ratio of 1 = 16.66666666 or 1000 / 60 for 60 FPS
+
+        this.frame_time = time;
+        
+        if (this.queue_switch == 0)
+            (this.update_queue = this.update_queue_b, this.queue_switch = 1);
+        else
+            (this.update_queue = this.update_queue_a, this.queue_switch = 0);
+
+        for (let i = 0, l = uq.length, o = uq[0]; i < l; o = uq[++i]) {
+            let timestart = ((o._SCHD_ & 0xFFFF)) - diff;
+            let timeend = ((o._SCHD_ >> 16) & 0xFFFF);
+
+            o._SCHD_ = 0;
+            
+            if (timestart > 0) {
+                this.queueUpdate(o, timestart, timeend);
+                continue;
+            }
+
+            timestart = 0;
+
+            if (timeend > 0) 
+                this.queueUpdate(o, timestart, timeend - diff);
+
+            /** 
+                To ensure on code path doesn't block any others, 
+                scheduledUpdate methods are called within a try catch block. 
+                Errors by default are printed to console. 
+            **/
+            try {
+                o.scheduledUpdate(step_ratio, diff);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        uq.length = 0;
+    }
+}
+
+const spark = new Spark();
 
 /**
  * The base class which all Model classes extend.
@@ -17531,6 +17652,7 @@ class Component {
         this.action = null;
 
         const frame = this.createFrameElement();
+        frame.component = this;
 
         this.style_frame.appendChild(frame);
 
@@ -17748,6 +17870,10 @@ class Component {
         return this.frame;
     }
 
+    get type(){
+        return "wick";
+    }
+
     toJSON() {
         return {
             x: this.x,
@@ -17762,6 +17888,75 @@ class Component {
 }
 
 Component.getComputedStyle = window.getComputedStyle.bind(window);
+
+class CSSComponent extends Component{
+	constructor(system){
+		super(system);
+		
+		this.fw = new TextFramework();
+		this.io = new TextIO(this.element);
+		this.io.fw = this.fw;
+		this.element.addEventListener("pointerdown", e => {
+			if(e.button !== 1){	
+				e.preventDefault();
+				e.stopPropagation();
+			}
+		});
+		
+		//this.element.addEventListener("pointerup", e => {this.element.focus(); this.io.onMouseUp(e)});
+        //this.element.addEventListener("keypress", e => {debugger;this.io.onKeyPress(e)});
+        //this.element.addEventListener("keydown", e => {this.io.onKeyDown(e)});
+        //this.element.addEventListener("wheel", e => {this.io.onMouseWheel(e)});
+	}
+
+	destroy(){
+
+		if(this.tree)
+			this.tree.removeObserver(this);
+
+		this.tree = null;
+
+		this.fw.destroy();
+		this.fw = null;
+
+		this.io.destroy();
+		this.io = null;
+
+		super.destroy();
+	}
+
+	load(document) {
+        this.name.innerHTML = document.name;
+        this.doc_name = document.name;
+        this.doc_path = document.path;
+        this.doc = document;
+        document.bind(this);
+    }
+
+	documentReady(data){
+		this.tree = this.doc.tree;
+		this.tree.addObserver(this);
+		//this.tree.parse(whind(data, true));
+		//this.manager.updateStyle("zzz", data);
+		this.fw.insertText(this.tree +"");
+		this.fw.updateText(this.io);
+		this.io.render();
+	}
+
+	updatedCSS(){
+		this.fw.clearContents();
+		this.fw.insertText(this.tree +"");
+		this.fw.updateText(this.io);
+		this.io.render();
+		// /this.element.innerHTML = this.tree + "";
+		//this.element.innerHTML = this.tree + "";
+		//this.manager.updateStyle("zzz", this.tree + "");
+	}
+
+	get type(){
+		return "css";
+	}
+}
 
 function CLEARLEFT(system, component, element, LINKED = false) {
     let cache = CacheFactory(system, component, element);
@@ -18329,27 +18524,27 @@ function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
 
-function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false){
+function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false) {
     let new_element = null,
         node_c = child_element.wick_node;
-    
+
     const node_p = target_element.wick_node;
 
-    if(COPY){
+    if (COPY) {
         node_c = node_c.clone();
-    }else{
+    } else {
         const par = node_c.par;
-        
+
         node_c.extract();
-        
+
         par.prepRebuild();
         par.rebuild();
     }
     node_p.addChild(node_c);
-    
+
     node_c.prepRebuild(false, false, true);
     node_c.rebuild();
-    
+
     new_element = target_element.lastChild;
 
     SETLEFT(system, target_component, new_element, px, true);
@@ -18361,7 +18556,7 @@ function TRANSFER_ELEMENT(system, target_component, target_element, child_elemen
 }
 
 function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px = 0, py = 0, w = 50, h = 50) {
-    if(typeof(tag_name) !== "string" || tag_name== "") 
+    if (typeof(tag_name) !== "string" || tag_name == "")
         throw new Error(`Invalid argument for \`tag_name\`:${tag_name} in call to CREATE_ELEMENT.`);
 
     let node = createHTMLNodeHook(tag_name);
@@ -18381,25 +18576,53 @@ function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px 
 
     prepRebuild(element);
 
-    return {element, node};
+    return { element, node };
 }
 
-function CREATE_COMPONENT(system, doc, px, py) {
+function CREATE_COMPONENT(system, doc, px, py, type = "css") {
     //if(!(doc instanceof Document))
     //    throw new Error("Action CREATE_COMPONENT cannot continue: doc is not an instance of Document.");
 
-    const component = new Component(system);
+    if (doc instanceof Component) {
+        switch (type) {
+            case "css":
 
-    component.load(doc);
+                let out = [];
+                //Pull out css information;
+                for (let i = 0; i < doc.local_css.length; i++) {
 
-    const element = component.element;
+                    const css = doc.local_css[i];
+                    const out_doc = (css.doc) ? css.doc : system.docs.createInternalCSSDoc(doc, css);
 
+                    out.push(CREATE_COMPONENT(system, out_doc, px+(i*-400), py, "css"));
+                }
+
+                return out;
+        }
+    }
+
+    let comp = null;
+
+    switch (doc.type) {
+        case "css":
+            comp = new CSSComponent(system);
+            break;
+        case "js":
+            comp = new Component(system);
+            break;
+        case "html":
+            comp = new Component(system);
+    }
+
+    comp.load(doc);
+
+    const element = comp.element;
     document.querySelector("#main_view").appendChild(element);
 
-    component.x = px;
-    component.y = py;
+    comp.x = px;
+    comp.y = py;
 
-    return component;
+    return comp;
 }
 
 function REMOVE_COMPONENT(system, component) {
@@ -19485,6 +19708,10 @@ class ElementBox {
 
         return box;
     }
+
+    get types(){
+    	return ElementBox.types;
+    }
 }
 
 
@@ -19509,16 +19736,17 @@ class BoxWidget extends ElementBox{
 	}
 }
 
-function CreateBoxes(ele, LineMachine, target) {
+function CreateBoxes(ele, LineMachine, target, IS_COMPONENT = false) {
 
     LineMachine.boxes.push(new BoxWidget(ele));
 
     let children = ele.children;
 
-    for (let i = 0; i < children.length; i++) {
-        if (target == children[i]) continue;
-        CreateBoxes(children[i], LineMachine, target);
-    }
+    if (!IS_COMPONENT)
+        for (let i = 0; i < children.length; i++) {
+            if (target == children[i]) continue;
+            CreateBoxes(children[i], LineMachine, target);
+        }
 }
 
 function CreateComponentBoxes(c, LineMachine, target) {
@@ -19529,7 +19757,7 @@ function CreateComponentBoxes(c, LineMachine, target) {
 class LineMachine {
     constructor() {
         this.boxes = [];
-        this.tolerance = 5;
+        this.tolerance = 7;
 
         this.activex = { id: -1, ot: 0, tt: 0 };
         this.activey = { id: -1, ot: 0, tt: 0 };
@@ -19539,9 +19767,9 @@ class LineMachine {
 
         this.boxes.length = 0;
 
-        if (!widget) {
-            components.forEach(c => CreateComponentBoxes(c, this, component));
-        } else
+        if (widget.IS_COMPONENT)
+            components.forEach(c => CreateBoxes(c.element, this, widget.component.element, true));
+        else
             //get root of component and create boxes from elements inside the component. 
             CreateBoxes(
                 widget.component.element.shadowRoot.children[0],
@@ -19571,6 +19799,7 @@ class LineMachine {
             cv = (t + b) / 2,
             tolx = mx,
             toly = my;
+        // console.log(box)
 
         for (let i = 0; i < this.boxes.length; i++) {
             let box = this.boxes[i].MarginBox;
@@ -19678,8 +19907,8 @@ class LineMachine {
             const
                 box = this.boxes[this.activex.id].getBox(0, 0, transform),
                 x = [box.l, box.r, (box.r + box.l) / 2][this.activex.tt];
-                //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
-                //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
+            //y1 = [box.t, box.t, (box.t + box.b) / 2][this.activex.tt],
+            //y2 = [boxc.t, boxc.t, (boxc.t + boxc.b) / 2][this.activex.ot];
             ctx.beginPath();
             ctx.moveTo(x, min_y);
             ctx.lineTo(x, max_y);
@@ -19701,8 +19930,8 @@ class LineMachine {
             const
                 box = this.boxes[this.activey.id].getBox(0, 0, transform),
                 y = [box.t, box.b, (box.t + box.b) / 2][this.activey.tt];
-                //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
-                //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
+            //x1 = [box.l, box.l, (box.r + box.l) / 2][this.activey.tt],
+            //x2 = [boxc.l, boxc.l, (boxc.r + boxc.l) / 2][this.activey.ot];
 
             ctx.beginPath();
             ctx.moveTo(min_x, y);
@@ -19871,6 +20100,10 @@ class Handler {
 
     input(type, event, ui_manager, target) {
         switch (type) {
+            case "key":
+                return this.char(event, ui_manager, target);
+            case "char":
+                return this.key(event, ui_manager, target);
             case "end":
                 return this.end(event, ui_manager, target);
             case "start":
@@ -19910,7 +20143,7 @@ class Default extends Handler {
     constructor(system, component = "./assets/ui_components/controls/basic.html") {
         super(system, component);
 
-        if(!Handler.default)
+        if (!Handler.default)
             Handler.default = this;
 
         this.origin_x = 0;
@@ -19922,8 +20155,8 @@ class Default extends Handler {
     }
 
     start(event, ui, data) {
-        const x = data.x || ui.transform.getLocalX(ui.pointer_x),
-            y = data.y || ui.transform.getLocalY(ui.pointer_y);
+        const x = data.x,
+            y = data.y;
 
         if (event.button == 1) {
 
@@ -19940,8 +20173,8 @@ class Default extends Handler {
 
         ui.RENDER_LINES = true;
 
-        this.origin_x = x;
-        this.origin_y = y;
+        this.origin_x = (x / ui.transform.scale);
+        this.origin_y = (y / ui.transform.scale);
         this.ACTIVE_POINTER_INPUT = true;
 
         if (event.target !== document.body)
@@ -19956,7 +20189,6 @@ class Default extends Handler {
 
     move(event, ui, data) {
 
-        
         if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
 
         let x = data.x,
@@ -19969,24 +20201,24 @@ class Default extends Handler {
             const diffy = this.origin_y - y;
 
 
-            ui.transform.px -= diffx * ui.transform.sx;
-            ui.transform.py -= diffy * ui.transform.sy;
+            ui.transform.px -= diffx; //* ui.transform.sx;
+            ui.transform.py -= diffy; //* ui.transform.sy;
 
-            this.origin_x -=  diffx;
-            this.origin_y -=  diffy;
+            this.origin_x -= diffx;
+            this.origin_y -= diffy;
 
             ui.view_element.style.transform = ui.transform;
             ui.render();
         } else if (ui.ui_target) {
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.pointer_x);
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.pointer_y);
+            const diffx = this.origin_x - x;
+            const diffy = this.origin_y - y;
             this.origin_x -= diffx;
             this.origin_y -= diffy;
             if (ui.ui_target.action) ui.ui_target.action(ui.system, ui.ui_target.component, diffx, diffy);
         } else if (ui.target) {
 
-            const diffx = this.origin_x - ((typeof(x) == "number") ? x : ui.transform.getLocalX(ui.pointer_x)) + this.excess_x;
-            const diffy = this.origin_y - ((typeof(y) == "number") ? y : ui.transform.getLocalY(ui.pointer_y)) + this.excess_y;
+            const diffx = this.origin_x - (x / ui.transform.scale) + this.excess_x;
+            const diffy = this.origin_y - (y / ui.transform.scale) + this.excess_y;
 
             let xx = Math.round(diffx);
             let yy = Math.round(diffy);
@@ -19998,7 +20230,7 @@ class Default extends Handler {
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
             if (ui.target.action) {
                 let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
-                
+
                 if (out) {
                     if (out.excess_x)
                         this.excess_x += out.excess_x;
@@ -20007,8 +20239,8 @@ class Default extends Handler {
                 }
             }
 
-            ui.render();
         }
+    ui.render();
 
         return this.constructor.default;
     }
@@ -20040,6 +20272,14 @@ class Default extends Handler {
         );
 
         return this.constructor.default;
+    }
+
+    key(){
+
+    }
+
+    char(){
+
     }
 
     scroll(event, ui, data) {
@@ -20128,6 +20368,8 @@ class ElementDraw extends Default {
         let x = x2 - x1;
         let y = y2 - y1;
 
+        console.log(x1,y1,x2,y2);
+
         if(Math.sqrt(x*x+y*y) < 70.711)
             return Handler.default;
         
@@ -20142,6 +20384,75 @@ class ElementDraw extends Default {
         ui.render();
 
         return Handler.default;
+    }
+}
+
+const mouse= require("./cpp/build/Release/addon");
+class BrowserEngine {
+    constructor(ui) {
+        this.ui = ui;
+
+        this.x = 0;
+        this.y = 0;
+
+       this.setEvents();
+       setInterval(()=>{
+            let pos = mouse.mouse_pos();
+            let x = (pos >> 16) &  0xFFFF;
+            let y = (pos) &  0xFFFF;
+            this.x = x;
+            this.y = y;
+            ui.handlePointerMoveEvent({}, this);
+       },5);
+    }
+
+    setEvents(){
+        const ui = this.ui;
+         // **************** Eventing *****************
+        //window.addEventListener("resize", e => this.controls.resize(this.transform));
+
+        // // *********** Mouse *********************
+        window.addEventListener("wheel", e => ui.handleScroll(e, e.pageX, e.pageY));
+
+        // // *********** Pointer *********************
+        window.addEventListener("pointerdown", e => {
+            this.x = e.x;
+            this.y = e.y;
+            e.stopPropagation();
+            e.preventDefault();
+            ui.handlePointerDownEvent(e, this, !!0);
+        });
+
+        window.addEventListener("pointermove", e => {
+            //this.x = e.x;
+            //this.y = e.y;
+            //ui.handlePointerMoveEvent({}, this)
+        });
+
+        window.addEventListener("pointerup", e => ui.handlePointerEndEvent(e));
+
+        // // *********** Drag 'n Drop *********************
+        document.body.addEventListener("drop", e => ui.handleDocumentDrop(e));
+        document.body.addEventListener("dragover", e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+        });
+        document.body.addEventListener("dragstart", e => {});
+
+        requestAnimationFrame(() => this.updatePointer());
+
+    }
+
+    destroy(){
+
+    }
+
+    updatePointer() {
+        requestAnimationFrame(() => this.updatePointer());
+    }
+
+    get point() {
+        return this;
     }
 }
 
@@ -20458,24 +20769,12 @@ class ControlsManager {
 
 //*********** Actions ******************
 
-
-/*** HOST UTILITIES ***/
-
-const electron = require("electron");
-
-function getCursorPos(ui){
-    let scale = ui.transform.scale;
-    let point = electron.screen.getCursorScreenPoint();
-
-    return {x:point.x/scale, y:point.y/scale};
-
-        //this.active_handler = this.active_handler.input("scroll", e, this, { x:300, y:300 });
-}
-
 /** GLOBAL EVENTS FILLS **/
 
 
 var DD_Candidate = false;
+
+
 /**
  * @brief Handles user input and rendering of UI elements
  * 
@@ -20486,9 +20785,8 @@ class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui = this;
 
-        //Initialize Handlers
+        //Initialize Input Handlers
         new Default(system);
-
         this.d = Default;
         this.e = new ElementDraw(system);
 
@@ -20501,17 +20799,18 @@ class UI_Manager {
         this.last_action = Date.now();
 
         this.active_handler = Handler.default;
-        this.x = 0;
-        this.y = 0;
+        this.cur_x = 0;
+        this.cur_y = 0;
+        this.ptr_x = 0;
+        this.ptr_y = 0;
 
         this.ui_target = null;
+
         /**
             Unbounded "master" component that sits behind other components and allows the creation of elements.
-            Component itself is not selectable. 
+            The component itself is not selectable. 
         */
         this.master_component = null;
-
-        this.dxdx = 0;
 
         /* 
             UI components serve as UX/UI handlers for all tools that comprise flame.
@@ -20538,47 +20837,9 @@ class UI_Manager {
         this.svg_manager = new SVGManager(system);
         this.line_machine = new LineMachine();
 
-        // **************** Eventing *****************
-        window.addEventListener("resize", e => this.controls.resize(this.transform));
-
-        // // *********** Mouse *********************
-        window.addEventListener("mouseover", e => {});
-        window.addEventListener("wheel", e => this.handleScroll(e, e.pageX, e.pageY));
-
-        // // *********** Pointer *********************
-        window.addEventListener("pointerdown", e => {
-            const x = this.transform.getLocalX(e.pageX);
-            const y = this.transform.getLocalY(e.pageY);
-            
-            e.stopPropagation();
-            e.preventDefault();
-            
-            if (this.setTarget(e, null, x, y, false)) {
-                this.origin_x = x;
-                this.origin_y = y;
-            } else{
-                this.active_handler = this.e;
-                this.handlePointerDownEvent(e, undefined, undefined, !!1);
-            }
-        });
-        window.addEventListener("pointermove", e => {
-            this.pointer_x = e.x;
-            this.pointer_y = e.y;
-            this.handlePointerMoveEvent(e);
-        });
-        window.addEventListener("pointerup", e => this.handlePointerEndEvent(e));
-
-        // // *********** Drag 'n Drop *********************
-        document.body.addEventListener("drop", e => this.handleDocumentDrop(e));
-        document.body.addEventListener("dragover", e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
-        });
-        document.body.addEventListener("dragstart", e => {});
+        this.engine = new BrowserEngine(this);
 
         this.createMaster();
-
-        requestAnimationFrame(()=>this.updatePointer());
     }
 
     createMaster() {
@@ -20609,9 +20870,12 @@ class UI_Manager {
     }
 
     render() {
+
         this.controls.render(this.transform);
+
         if (this.target && this.RENDER_LINES)
             this.line_machine.render(this.controls.ctx, this.transform, this.target);
+
         this.loadedUIComponents.forEach(c => c.set(this.target));
     }
 
@@ -20654,20 +20918,13 @@ class UI_Manager {
 
     setWidgetTarget(target) {
         this.target = target;
-        
+
         this.loadedUIComponents.forEach(c => c.set(this.target));
 
         this.line_machine.setPotentialBoxes(target, this.components);
-        /*
-
-        if (target.IS_COMPONENT)
-            this.line_machine.setPotentialBoxes(null, target.component, this.components);
-        else
-            this.line_machine.setPotentialBoxes(target.element, target.component, this.components);
-        */
     }
 
-    setTarget(e, component, x, y, SET_MENU = true) {
+    setTarget(e, component, SET_MENU = true) {
         let target = null;
 
         const IS_ON_MASTER = component == this.master_component;
@@ -20680,58 +20937,47 @@ class UI_Manager {
     /******************** Component Iframe *************************/
 
     integrateComponentElement(element, component) {
-
-        element.addEventListener("pointerdown", e => {
-
-            const x = e.pageX; // + component.x;
-            const y = e.pageY; // + component.y;
-
-            e.stopPropagation();
-            e.preventDefault();
-
-            this.last_action = Date.now();
-            this.handlePointerDownEvent(e);
-
-            if (e.button == 0) {
-                if (!this.setTarget(e, component, x, y)) {
-                    if (e.target.tagName == "BODY") { 
-                        debugger
-                        this.controls.setTarget(component, component.element, true, true, this.system);
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    } else {
-
-                        //this.controls.setTarget(component, e.target, component == this.master_component, false, this);
-                        //shadow_dom
-                        const target_element = e.composedPath()[0];
-                        this.controls.setTarget(component, target_element, component == this.master_component, false, this.system);
-                        this.render();
-                        this.setTarget(e, component, x, y);
-                    }
-                }
-            }
-            return false;
-        });
-
         this.components.push(component);
     }
 
     /****************** Event responders **************************/
 
-    handlePointerDownEvent(e, x, y, FROM_MAIN = false) {
-        let point = getCursorPos(this); // { x:this.px, y:this.py };
-        this.active_handler = this.active_handler.input("start", e, this, { x:point.x, y:point.y, FROM_MAIN });
+    handlePointerMoveEvent(e, point) {
+        this.active_handler.input("move", {}, this, point);
+    }
+
+    handlePointerDownEvent(e, point = this.engine.point, FROM_MAIN = false) {
+        let component = null,
+            element = null;
+
+        this.active_handler = this.e;
+
+        this.last_action = Date.now();
+
+        //document.body.requestPointerLock();
+        //let point = getCursorPos(this) // { x:this.px, y:this.py };
+        this.active_handler = this.active_handler.input("start", e, this, { x: point.x, y: point.y, FROM_MAIN });
+
+        if (point) {
+
+            let element = document.elementFromPoint(point.x, point.y);
+            if (element) {
+
+                if (element.component) {
+                    component = element.component;
+                    if (component.type == "css") {
+                        element = component.element;
+                    } else {
+                        element = element.shadowRoot.elementFromPoint(point.x, point.y);
+                    }
+                    this.controls.setTarget(component, element, component == this.master_component, false, this.system);
+                        this.setTarget(e, component);
+                        this.render();
+                }
+            }
+        }
+
         return false;
-    }
-
-    handlePointerMoveEvent(e, x, y) {
-        this.px = e.x;
-        this.py = e.y;
-    }
-
-    updatePointer(){
-        this.active_handler.input("move", {}, this, getCursorPos(this));
-        requestAnimationFrame(()=>this.updatePointer());
     }
 
     handlePointerEndEvent(event) {
@@ -20745,14 +20991,17 @@ class UI_Manager {
     }
 
     handleContextMenu(e, component = null) {
-        //Load text editor in the bar.
         this.active_handler = this.active_handler.input("context", e, this, { component });
         e.preventDefault();
     }
 
     handleScroll(e, x, y) {
-        this.active_handler = this.active_handler.input("scroll", e, this, {x,y});
+        this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
         e.preventDefault();
+    }
+
+    handleKeyUp(e){
+        this.active_handler = this.active_handler.input("key", e, this, this.target);
     }
 
     /******** FILE HANDLING ************/
@@ -20876,33 +21125,6 @@ proto$1.updatedCSS = function() {
 };
 
 proto$1.buildExisting = () => { return false };
-
-class CSSComponent{
-	constructor(tree, manager){
-		this.manager = manager;
-		this.tree = tree;
-		this.doc = null;
-		this.element = document.createElement("div");
-
-		this.tree.addObserver(this);
-	}
-
-	documentReady(data){
-		debugger
-		this.tree.parse(whind$1(data, true));
-		this.manager.updateStyle("zzz", data);
-		this.element.innerHTML = this.tree + "";
-	}
-
-	documentUpdate(data){
-
-	}
-
-	updatedCSS(){
-		//this.element.innerHTML = this.tree + "";
-		this.manager.updateStyle("zzz", this.tree + "");
-	}
-}
 
 const CSS_Rule_Constructor = CSSRule;
 
@@ -21085,6 +21307,7 @@ class CSSManager {
             } else {
                 tree = doc.tree;
             }
+            tree.doc = doc;
         }
 
         this.css_files.push(tree);
@@ -21103,6 +21326,7 @@ class CSSManager {
     }
 
     createComponent(doc) {
+        debugger
         let css_file = new CSS_Root_Constructor();
         let component = new CSSComponent(css_file, this);
         doc.bind(component);
@@ -21916,6 +22140,25 @@ class DocumentManager {
             } else
                 lex.next();
         }
+    }
+
+    createInternalCSSDoc(component, css){
+        const i = Math.round(Math.random()*100000);
+
+        if(css.doc)
+            return css.doc;
+
+        let css_name = `css${i}`;
+        let css_path = `${component.doc_path}/${component.doc_name}#`;
+        let css_doc = new CSSDocument(css_name, css_path, this.system, true, this);
+        css_doc.tree = css;
+        css.doc = css_doc;
+        
+        css.addObserver(css_doc);
+
+        this.docs.set(`${css_path}${css_name}`, css_doc);
+
+        return css_doc;
     }
 }
 
@@ -23110,8 +23353,16 @@ const flame = {
             //Load in the development component.
             let path$$1 = require("path").join(process.cwd(), "assets/components/test.html");
             let doc = system.docs.get(system.docs.loadFile(path$$1));
-            actions.CREATE_COMPONENT(system, doc, 200, 200);
+            let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
             window.flame = flame;
+
+            //Activate its CSS window.
+            setTimeout(
+                ()=>{
+            actions.CREATE_COMPONENT(system, comp, 0, 200);
+                    
+                },200);
+
         } else if (TEST) {
             //Load in HTML test runner
             const test_iframe = document.createElement("iframe");

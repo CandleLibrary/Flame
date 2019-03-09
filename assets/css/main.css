@@ -21,7 +21,18 @@ button{
     border:none;
     box-shadow: none;
 }
+.cursor_pointer{
+    width: 20px;
+    height:20px;
+    position:  absolute;
+    top:0;
+    left:0;
+    background-color: pink;
 
+    user-select: none;
+    pointer-events: none;
+    z-index: 10000;
+}
 
 /**************** Master Component *********************/
 #master_component{

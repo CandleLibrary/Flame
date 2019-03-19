@@ -45,9 +45,9 @@ class System {
     constructor() {
         this.TEST_MODE = TEST;
         this.docs = new DocumentManager(this);
-        this.css = new CSSManager(this.docs);
+        this.css = new CSSManager(this.docs, this);
         this.html = new HTMLManager(this.docs);
-        this.mjs = new JSManager(this.docs);
+        this.js = new JSManager(this.docs);
         this.presets = new Presets();
         this.actions = actions;
         this.history = new StateMachine(this);
@@ -81,9 +81,14 @@ const flame = {
 
         if (DEV && !TEST) {
             //Load in the development component.
-            let path = require("path").join(process.cwd(), "assets/components/test.html");
-            let doc = system.docs.get(system.docs.loadFile(path));
+            let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
+            let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
+            let doc = system.docs.get(system.docs.loadFile(comp_path));
+            let css = system.docs.get(system.docs.loadFile(css_path));
+
             actions.CREATE_COMPONENT(system, doc, 200, 200);
+            actions.CREATE_COMPONENT(system, css, 0, 200);
+            
             window.flame = flame;
         } else if (TEST) {
             //Load in HTML test runner

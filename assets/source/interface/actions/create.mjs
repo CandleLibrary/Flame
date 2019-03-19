@@ -1,10 +1,11 @@
 import { RootNode } from "@candlefw/wick";
 import { Component } from "../../component/component.mjs";
+import { prepRebuild } from "./common.mjs";
+
 import { MOVE } from "./move.mjs";
 import { SETLEFT, SETTOP } from "./position.mjs";
 import { SETWIDTH, SETHEIGHT } from "./dimensions.mjs";
 import { TOPOSITIONABSOLUTE } from "./convert.mjs";
-import { prepRebuild } from "./common.mjs";
 
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
@@ -68,9 +69,17 @@ export function CREATE_COMPONENT(system, doc, px, py) {
     //if(!(doc instanceof Document))
     //    throw new Error("Action CREATE_COMPONENT cannot continue: doc is not an instance of Document.");
 
-    const component = new Component(system);
+    let component;
+    
+    switch(doc.type){
+        case "css":
+            component = system.css.createComponent(doc);
+            break;
+        default:
+            component = new Component(system);
+            component.load(doc);
+    }
 
-    component.load(doc);
 
     const element = component.element;
 

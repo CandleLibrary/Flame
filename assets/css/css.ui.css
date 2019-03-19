@@ -1,0 +1,204 @@
+.cfw_css input[type=color]{
+	border:0;
+	padding:0;
+	margin:0;
+	width: 20px;
+	height: 20px;
+	display: inline-block;
+	border-radius: 5px;
+	outline-style: none;
+}
+
+.cfw_css {
+	font-size: 12px;
+	line-height: 12px;
+	padding: 0;
+	margin: 0;
+	border: none;
+	color:white;
+	position: absolute;
+}
+
+.cfw_css input {
+	border: none;
+    text-decoration: none;
+    font-size: 12px;
+    margin: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    /* color: white; */
+	outline: none;
+	width: unset;
+    max-width: 60px;
+}
+
+
+
+.cfw_css .rule {
+	/*background-color: rgb(230,230,230);*/
+	border-radius: 5px;
+	width:fit-content;
+	margin: 5px;
+
+}
+
+.cfw_css .rule_selectors {
+	padding: 1px;
+	/*border-radius: 5px;*/
+	border-bottom: 2px solid #cecece;
+}
+
+.cfw_css .rule_selectors .selector {
+	color: white;
+	text-align: center;
+	display: inline-block;
+	margin: 2px;
+	padding: 1px 5px;
+	border: 2px solid rgb(120,120,120);
+	border-radius: 3px;
+	background-color: rgb(120,120,120);
+}
+
+.cfw_css .rule_body {
+	padding-top: 8px;
+	position: relative;
+	margin-left: 5px;
+	min-height: 20px;
+	color: rgb(80,80,80);
+}
+
+.cfw_css .rule_body .prop {
+	width: fit-content;
+	position: relative;
+	margin-left: 100px;
+	/*border: 2px solid rgb(230,230,230);*/
+	border-radius: 20px;
+	/*background-color: rgb(230,230,230);*/
+	font-weight: 700;
+	padding-bottom: 8px;
+}
+
+.cfw_css .rule_body .prop_label{
+	position: absolute;
+	text-align: right;
+	width: 100px;
+	left:-100px;
+}
+
+
+.cfw_css .rule_body .prop_slot{
+	background-color:gray;
+}
+
+.cfw_css .rule_body .prop_slot{
+	background-color:rgba(0,255,0,0.01);
+}
+
+.cfw_css .rule_body .prop_list {
+	font-weight: normal;
+	color: black;
+	position: absolute;
+	top: 5px;
+	display: none;
+	background-color: white;
+	padding: 4px;
+	box-shadow: 2px 2px 8px rgb(200,200,200);
+	border-radius: 3px;
+	z-index: 20;
+}
+
+.cfw_css .rule_body .prop_list .option:hover{
+	background-color:red;
+	color: white;
+	cursor: pointer;
+}
+
+.cfw_css .rule_body .prop_list_icon{
+	position: absolute;
+	text-anchor: middle;
+	display: inline-block;
+		border-radius: 5px;
+	background-color: rgba(0,0,0,0.1);
+	color: rgba(0,0,0,0.1);
+	font-weight: 800;
+	text-align: center;
+	width: 100%;
+	height: 6px;
+		 bottom: -8px;
+		 left:0;
+}
+
+.cfw_css .rule_body .prop_list_icon[superset=true]{
+	position: relative;
+	text-anchor: middle;
+	display: inline-block;
+	width: 15px;
+	height: 15px;
+	border-radius: 5px;
+	color: rgba(0,0,0,0.1);
+	font-weight: 800;
+	text-align: center;
+	margin-right: 3px;
+	top:0;
+	background-color: rgba(0,120,50,0.8);
+}
+
+.cfw_css .rule_body .prop_list_icon:hover {
+	cursor: pointer;
+}
+
+.cfw_css .rule_body .prop_list_icon:hover>.prop_list{
+	display: block;
+}
+
+.cfw_css .rule_body .prop_list_icon>.prop_list{
+	display: none;
+}
+
+.cfw_css .rule_body .prop_segment{
+	vertical-align: top;
+	font-weight: normal;;
+	position: relative;
+	display: inline-block;
+	top:0;
+	left:0;
+	padding: 0 0px;
+	margin: 0 4px;
+	background-color:rgba(0,255,0,0.01);
+}
+
+/* Icon/UI Handle to allow the user to copy the curreent property value. */
+
+.cfw_css .prop_extender{
+	display: inline-block;
+	width: 15px;
+	height: 15px;
+	border:none;
+	border-radius: 5px;
+	outline-style: none;
+	padding: none;
+	color:#ababab;
+	position: relative;
+	text-align: center;
+}
+.cfw_css .prop_extender::after {
+	font-weight:700;
+	position: absolute;
+	width:100%;
+	height:100%;
+	top:-2px;
+	left:0;
+	text-align: center;
+}
+
+.cfw_css .prop_extender[action=ext]::after {
+	content: "⯈"
+}
+.cfw_css .prop_extender[action=ret]::after {
+	content: "⯇"
+}
+.cfw_css .prop_extender[action=both]::after {
+	content: "⬥"
+}

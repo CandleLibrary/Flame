@@ -4566,11 +4566,10 @@ ${is_iws}`;
         static buildInput(value){
             let ele = document.createElement("input");
             ele.type = "number";
+            ele.value = parseFloat(value) || 0;
             ele.addEventListener("change", (e)=>{
-                debugger
                 ele.css_value = ele.value + "%";
             });
-            input.value = parseFloat(value) || 0;
             return ele;
         }
         
@@ -4649,10 +4648,15 @@ ${is_iws}`;
 
     class CSS_Length extends Number {
 
-        static valueHandler(value){
+        static valueHandler(value, ui_seg){
             let ele = document.createElement("input");
+
+
             ele.type = "number";
             ele.value = (value) ? value + 0 : 0;
+            
+            ui_seg.css_value = ele.value + "%";
+            
             ele.addEventListener("change", (e)=>{
                 ele.css_value = ele.value + "px";
             });
@@ -8920,23 +8924,23 @@ ${is_iws}`;
     class ValueTerm$1 extends ValueTerm {
 
         default (seg, APPEND = false, value = null) {
+            if (!APPEND) {
+                let element = this.value.valueHandler(value, seg);
 
-            let element = this.value.valueHandler(value);
-
-            if(!APPEND){  
-                if(value)
-                    seg.css_val = value + "";
-                    seg.setValueHandler(element, (ele, seg, event)=>{
-                        seg.css_val = element.css_value;
-                        seg.update();
+                if (value) {
+                    seg.css_val = value.toString();
+                }
+                seg.setValueHandler(element, (ele, seg, event) => {
+                    seg.css_val = element.css_value;
+                    seg.update();
                 });
-            }else{
+            } else {
                 let sub = new Segment();
-                
-                if(value)
-                    sub.css_val = value + "";
-                
-                sub.setValueHandler(element, (ele, seg, event)=>{
+                let element = this.value.valueHandler(value, sub);
+                if (value)
+                    sub.css_val = value.toString();
+
+                sub.setValueHandler(element, (ele, seg, event) => {
                     seg.css_val = element.css_value;
                     seg.update();
                 });
@@ -8945,7 +8949,7 @@ ${is_iws}`;
             }
         }
 
-        buildInput(rep = 1, value){
+        buildInput(rep = 1, value) {
             let seg = new Segment();
             this.default(seg, false, value);
             return seg;
@@ -8969,7 +8973,7 @@ ${is_iws}`;
             ele.appendChild(element);
 
             element.addEventListener("click", e => {
-                
+
                 slot.innerHTML = this.value;
                 if (slot) {
                     let element = this.value.valueHandler();
@@ -8999,9 +9003,9 @@ ${is_iws}`;
 
         default (seg, APPEND = false) {
 
-            if(!APPEND){
+            if (!APPEND) {
                 seg.value = "  ";
-            }else{
+            } else {
                 let sub = new Segment();
                 sub.value = "";
                 seg.addSub(sub);
@@ -9012,7 +9016,7 @@ ${is_iws}`;
             let element = document.createElement("div");
             element.innerHTML = this.value;
             element.classList.add("option");
-    //        ele.appendChild(element) 
+            //        ele.appendChild(element) 
 
             return 1;
         }
@@ -9025,10 +9029,10 @@ ${is_iws}`;
 
     class LiteralTerm$1 extends LiteralTerm {
 
-    	default (seg, APPEND = false) {
-            if(!APPEND){
+        default (seg, APPEND = false) {
+            if (!APPEND) {
                 seg.value = this.value;
-            }else{
+            } else {
                 let sub = new Segment();
                 sub.value = this.value;
                 seg.addSub(sub);
@@ -9039,7 +9043,7 @@ ${is_iws}`;
             let element = document.createElement("div");
             element.innerHTML = this.value;
             element.classList.add("option");
-            ele.appendChild(element); 
+            ele.appendChild(element);
             element.addEventListener("click", e => {
                 slot.value = this.value + "";
                 slot.update();
@@ -9063,7 +9067,7 @@ ${is_iws}`;
     }
 
     class SymbolTerm$1 extends LiteralTerm$1 {
-        list() {return 0}
+        list() { return 0 }
 
         parseInput(l, seg, r) {
             if (typeof(l) == "string")
@@ -9813,7 +9817,6 @@ ${is_iws}`;
         }
 
         rebuild(rule_body){
-            console.log(1);
             if(true || this.ver !== rule_body.ver){
                 this.rule_space.innerHTML = "";
                 this.rules.length = 0;
@@ -9825,6 +9828,8 @@ ${is_iws}`;
         update(type, value) {
 
             if(type && value){
+
+                console.log(type, value);
 
                 let lexer = whind$1(value);
                 
@@ -22450,8 +22455,8 @@ ${is_iws}`;
                 this.x = e.pageX;
                 this.y = e.pageY;
 
-                e.stopPropagation();
-                e.preventDefault();
+                //e.stopPropagation();
+                //e.preventDefault();
 
                 ui.handlePointerDownEvent(e, this, !!0);
             });

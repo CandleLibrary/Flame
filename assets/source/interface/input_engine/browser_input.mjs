@@ -23,8 +23,8 @@ export default class BrowserEngine {
             this.x = e.pageX;
             this.y = e.pageY;
 
-            e.stopPropagation();
-            e.preventDefault();
+            //e.stopPropagation();
+            //e.preventDefault();
 
             ui.handlePointerDownEvent(e, this, !!0);
         });

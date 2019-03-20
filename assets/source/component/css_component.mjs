@@ -1,11 +1,16 @@
 import {Component} from "./component.mjs"
 import whind from "@candlefw/whind";
 import {TextIO, TextFramework} from "@candlefw/charcoal"
+import {UIMaster} from "@candlefw/css";
 
 export class CSSComponent extends Component{
-	constructor(system){
-		super(system);
+	constructor(system, tree){
+		super(system, tree);
+		this.tree = tree;
+		this.ui = new UIMaster(this.tree);
+		this.element.appendChild(this.ui.element);
 		
+		/*
 		this.fw = new TextFramework();
 		this.io = new TextIO(this.element);
 		this.io.fw = this.fw;
@@ -15,6 +20,7 @@ export class CSSComponent extends Component{
 				e.stopPropagation();
 			}
 		});
+		*/
 		
 		//this.element.addEventListener("pointerup", e => {this.element.focus(); this.io.onMouseUp(e)});
         //this.element.addEventListener("keypress", e => {debugger;this.io.onKeyPress(e)});
@@ -24,8 +30,8 @@ export class CSSComponent extends Component{
 
 	destroy(){
 
-		if(this.tree)
-			this.tree.removeObserver(this);
+		//if(this.tree)
+		//	this.tree.removeObserver(this);
 
 		this.tree = null;
 
@@ -47,20 +53,20 @@ export class CSSComponent extends Component{
     }
 
 	documentReady(data){
-		this.tree = this.doc.tree;
-		this.tree.addObserver(this);
+		//this.tree = this.doc.tree;
+		//this.tree.addObserver(this);
 		//this.tree.parse(whind(data, true));
 		//this.manager.updateStyle("zzz", data);
-		this.fw.insertText(this.tree +"");
-		this.fw.updateText(this.io);
-		this.io.render();
+		//this.fw.insertText(this.tree +"");
+		//this.fw.updateText(this.io);
+		//this.io.render();
 	}
 
 	updatedCSS(){
-		this.fw.clearContents();
-		this.fw.insertText(this.tree +"");
-		this.fw.updateText(this.io);
-		this.io.render();
+		//this.fw.clearContents();
+		//this.fw.insertText(this.tree +"");
+		//this.fw.updateText(this.io);
+		//this.io.render();
 		// /this.element.innerHTML = this.tree + "";
 		//this.element.innerHTML = this.tree + "";
 		//this.manager.updateStyle("zzz", this.tree + "");

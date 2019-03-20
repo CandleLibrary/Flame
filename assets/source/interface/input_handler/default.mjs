@@ -4,6 +4,7 @@ import { actions } from "../actions/action";
 export default class Default extends Handler {
 
     constructor(system, component = "./assets/ui_components/controls/basic.html") {
+
         super(system, component);
 
         if (!Handler.default)

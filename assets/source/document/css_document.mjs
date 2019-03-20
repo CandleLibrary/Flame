@@ -14,7 +14,7 @@ export class CSSDocument extends Document {
     }
 
     fromString(string, ALLOW_SEAL = true) {
-    	
+
         this.data = string;
 
         if (this.tree) {

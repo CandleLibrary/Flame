@@ -23,7 +23,7 @@ import { SVGNode } from "./wick_compiler_nodes/svg.mjs";
 import { StyleNode } from "./wick_compiler_nodes/style.mjs";
 import { RootText } from "./wick_compiler_nodes/text.mjs";
 import { SourceNode } from "./wick_compiler_nodes/source.mjs";
-import { SourceTemplateNode } from "./wick_compiler_nodes/template.mjs";
+import { SourceContainerNode } from "./wick_compiler_nodes/container.mjs";
 import { PackageNode } from "./wick_compiler_nodes/package.mjs";
 import { ScriptNode } from "./wick_compiler_nodes/script.mjs";
 
@@ -45,9 +45,9 @@ class System {
     constructor() {
         this.TEST_MODE = TEST;
         this.docs = new DocumentManager(this);
-        this.css = new CSSManager(this.docs);
+        this.css = new CSSManager(this.docs, this);
         this.html = new HTMLManager(this.docs);
-        this.mjs = new JSManager(this.docs);
+        this.js = new JSManager(this.docs);
         this.presets = new Presets();
         this.actions = actions;
         this.history = new StateMachine(this);
@@ -81,9 +81,15 @@ const flame = {
 
         if (DEV && !TEST) {
             //Load in the development component.
-            let path = require("path").join(process.cwd(), "assets/components/test.html");
-            let doc = system.docs.get(system.docs.loadFile(path));
+
+            let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
+            let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
+            let doc = system.docs.get(system.docs.loadFile(comp_path));
+            let css = system.docs.get(system.docs.loadFile(css_path));
+
             let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
+           // actions.CREATE_COMPONENT(system, css, 0, 200);
+            
             window.flame = flame;
 
             //Activate its CSS window.

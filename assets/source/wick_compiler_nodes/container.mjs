@@ -1,10 +1,10 @@
-import {SourceTemplateNode} from "@candlefw/wick";
+import {SourceContainerNode} from "@candlefw/wick";
 
 import whind from "@candlefw/whind";
 
 let Lexer = whind;
 
-SourceTemplateNode.prototype.buildExisting = function(element, source, presets, taps) {
+SourceContainerNode.prototype.buildExisting = function(element, source, presets, taps) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
@@ -43,4 +43,4 @@ SourceTemplateNode.prototype.buildExisting = function(element, source, presets, 
     return true;
 };
 
-export {SourceTemplateNode}
+export {SourceContainerNode}

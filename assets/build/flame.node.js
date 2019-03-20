@@ -1165,7 +1165,7 @@ class Lexer {
     /**
     Creates and error message with a diagrame illustrating the location of the error. 
     */
-    errorMessage(message = ""){
+    errorMessage(message = "") {
         const arrow = String.fromCharCode(0x2b89),
             trs = String.fromCharCode(0x2500),
             line = String.fromCharCode(0x2500),
@@ -1196,7 +1196,7 @@ ${is_iws}`;
      */
     throw (message, DEFER = false) {
         const error = new Error(this.errorMessage(message));
-        if(DEFER)
+        if (DEFER)
             return error;
         throw error;
     }
@@ -1271,101 +1271,133 @@ ${is_iws}`;
             return marker;
         }
 
-        for (;;) {
+        const USE_CUSTOM_SYMBOLS = !!this.symbol_map;
+        let NORMAL_PARSE = true;
 
-            base = off;
+        if (USE_CUSTOM_SYMBOLS) {
 
-            length = 1;
+            let code = str.charCodeAt(off);
+            let off2 = off;
+            let map = this.symbol_map,
+                m$$1;
+            let i$$1 = 0;
 
-            const code = str.charCodeAt(off);
+            while(code == 32 && IWS)
+                (code = str.charCodeAt(++off2), off++);
 
-            if (code < 128) {
+            while ((m$$1 = map.get(code))) {
+                map = m$$1;
+                off2 += 1;
+                code = str.charCodeAt(off2);
+            }
 
-                switch (jump_table[code]) {
-                    case 0: //NUMBER
-                        while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)])) ;
+            if (map.IS_SYM) {
+               NORMAL_PARSE = false;
+               base = off;
+               length = off2 - off;
+               char += length;
+            }
+        }
 
-                        if (str[off] == "e" || str[off] == "E") {
-                            off++;
-                            if (str[off] == "-") off++;
-                            marker.off = off;
-                            marker.tl = 0;
-                            marker.next();
-                            off = marker.off + marker.tl;
-                            //Add e to the number string
-                        }
+        if (NORMAL_PARSE) {
 
-                        type = number;
-                        length = off - base;
 
-                        break;
-                    case 1: //IDENTIFIER
-                        while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)]))) ;
-                        type = identifier;
-                        length = off - base;
-                        break;
-                    case 2: //QUOTED STRING
-                        if (this.PARSE_STRING) {
+            for (;;) {
+
+                base = off;
+
+                length = 1;
+
+                const code = str.charCodeAt(off);
+
+                if (code < 128) {
+
+                    switch (jump_table[code]) {
+                        case 0: //NUMBER
+                            while (++off < l$$1 && (12 & number_and_identifier_table[str.charCodeAt(off)]));
+
+                            if ((str[off] == "e" || str[off] == "E") && (12 & number_and_identifier_table[str.charCodeAt(off+1)])) {
+                                off++;
+                                if (str[off] == "-") off++;
+                                marker.off = off;
+                                marker.tl = 0;
+                                marker.next();
+                                off = marker.off + marker.tl;
+                                //Add e to the number string
+                            }
+
+                            type = number;
+                            length = off - base;
+
+                            break;
+                        case 1: //IDENTIFIER
+                            while (++off < l$$1 && ((10 & number_and_identifier_table[str.charCodeAt(off)])));
+                            type = identifier;
+                            length = off - base;
+                            break;
+                        case 2: //QUOTED STRING
+                            if (this.PARSE_STRING) {
+                                type = symbol;
+                            } else {
+                                while (++off < l$$1 && str.charCodeAt(off) !== code);
+                                type = string;
+                                length = off - base + 1;
+                            }
+                            break;
+                        case 3: //SPACE SET
+                            while (++off < l$$1 && str.charCodeAt(off) === SPACE);
+                            type = white_space;
+                            length = off - base;
+                            break;
+                        case 4: //TAB SET
+                            while (++off < l$$1 && str[off] === HORIZONTAL_TAB);
+                            type = white_space;
+                            length = off - base;
+                            break;
+                        case 5: //CARIAGE RETURN
+                            length = 2;
+                            //Intentional
+                        case 6: //LINEFEED
+                            type = new_line;
+                            char = 0;
+                            line++;
+                            off += length;
+                            break;
+                        case 7: //SYMBOL
                             type = symbol;
-                        } else {
-                            while (++off < l$$1 && str.charCodeAt(off) !== code) ;
-                            type = string;
-                            length = off - base + 1;
-                        }
-                        break;
-                    case 3: //SPACE SET
-                        while (++off < l$$1 && str.charCodeAt(off) === SPACE) ;
-                        type = white_space;
-                        length = off - base;
-                        break;
-                    case 4: //TAB SET
-                        while (++off < l$$1 && str[off] === HORIZONTAL_TAB) ;
-                        type = white_space;
-                        length = off - base;
-                        break;
-                    case 5: //CARIAGE RETURN
-                        length = 2;
-                        //Intentional
-                    case 6: //LINEFEED
-                        type = new_line;
-                        char = 0;
-                        line++;
-                        off += length;
-                        break;
-                    case 7: //SYMBOL
+                            break;
+                        case 8: //OPERATOR
+                            type = operator;
+                            break;
+                        case 9: //OPEN BRACKET
+                            type = open_bracket;
+                            break;
+                        case 10: //CLOSE BRACKET
+                            type = close_bracket;
+                            break;
+                        case 11: //Data Link Escape
+                            type = data_link;
+                            length = 4; //Stores two UTF16 values and a data link sentinel
+                            break;
+                    }
+                }
+
+                if (IWS && (type & white_space_new_line)) {
+                    if (off < l$$1) {
+                        char += length;
                         type = symbol;
-                        break;
-                    case 8: //OPERATOR
-                        type = operator;
-                        break;
-                    case 9: //OPEN BRACKET
-                        type = open_bracket;
-                        break;
-                    case 10: //CLOSE BRACKET
-                        type = close_bracket;
-                        break;
-                    case 11: //Data Link Escape
-                        type = data_link;
-                        length = 4; //Stores two UTF16 values and a data link sentinel
-                        break;
+                        continue;
+                    } else {
+                        //Trim white space from end of string
+                        base = l$$1 - length;
+                        marker.sl -= length;
+                        length = 0;
+                        char -= base - off;
+                    }
                 }
-            }
 
-            if (IWS && (type & white_space_new_line)) {
-                if (off < l$$1) {
-                    char += length;
-                    type = symbol;
-                    continue;
-                } else {
-                    //Trim white space from end of string
-                    base = l$$1 - length;
-                    marker.sl -= length;
-                    length = 0;
-                    char -= base - off;
-                }
+                break;
             }
-
-            break;
         }
 
         marker.type = type;
@@ -1540,6 +1572,25 @@ ${is_iws}`;
         return lex;
     }
 
+    /** Adds symbol to symbol_map. This allows custom symbols to be defined and tokenized by parser. **/
+    addSymbol(sym) {
+        if (!this.symbol_map)
+            this.symbol_map = new Map;
+
+
+        let map = this.symbol_map;
+
+        for (let i$$1 = 0; i$$1 < sym.length; i$$1++) {
+            let code = sym.charCodeAt(i$$1);
+            let m$$1 = map.get(code);
+            if (!m$$1){
+                m$$1 = map.set(code, new Map).get(code);
+            }
+            map = m$$1;
+        }
+        map.IS_SYM = true;
+    }
+
     /*** Getters and Setters ***/
     get string() {
         return this.str;
@@ -1626,7 +1677,6 @@ ${is_iws}`;
 
     set type(value) {
         //assuming power of 2 value.
-
         this.masked_values = (this.masked_values & ~TYPE_MASK) | ((getNumbrOfTrailingZeroBitsFromPowerOf2(value)) & TYPE_MASK);
     }
 
@@ -3968,6 +4018,87 @@ const LinkedList = {
     }
 };
 
+/**
+ * Holds a set of rendered CSS properties.
+ * @memberof module:wick~internals.css
+ * @alias CSSRule
+ */
+class CSSRule {
+    constructor(root) {
+        /**
+         * Collection of properties held by this rule.
+         * @public
+         */
+        this.props = {};
+        this.LOADED = false;
+        this.root = root;
+
+        //Reference Counting
+        this.refs = 0;
+
+        //Versioning
+        this.ver = 0;
+    }
+
+    incrementRef(){
+        this.refs++;
+    }
+
+    decrementRef(){
+        this.refs--;
+        if(this.refs <= 0){
+            //TODO: remove from rules entries.
+            debugger
+        }
+    }
+
+    addProperty(prop, rule) {
+        if (prop)
+            this.props[prop.name] = prop.value;
+    }
+
+
+
+    toString(off = 0, rule = "") {
+        let str = [],
+            offset = ("    ").repeat(off);
+
+        if (rule) {
+            if (this.props[rule]) {
+                if (Array.isArray(this.props[rule]))
+                    str.push(this.props[rule].join(" "));
+                else
+                    str.push(this.props[rule].toString());
+            }else
+                return "";
+        } else {
+            for (let a in this.props) {
+                if (this.props[a] !== null) {
+                    if (Array.isArray(this.props[a]))
+                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
+                    else
+                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
+                }
+            }
+        }
+
+        return str.join(""); //JSON.stringify(this.props).replace(/\"/g, "").replace(/\_/g, "-");
+    }
+
+    merge(rule) {
+        if (rule.props) {
+            for (let n in rule.props)
+                this.props[n] = rule.props[n];
+            this.LOADED = true;
+            this.ver++;
+        }
+    }
+
+    get _wick_type_() { return 0; }
+
+    set _wick_type_(v) {}
+}
+
 class Color extends Float64Array {
 
     constructor(r, g, b, a = 0) {
@@ -4090,10 +4221,17 @@ class Color extends Float64Array {
 */
 class CSS_Color extends Color {
 
+    /** UI FUNCTIONS **/
+
+    static list(){}
+
     static valueHandler(existing_value){
         let ele = document.createElement("input");
         ele.type = "color";
         ele.value = (existing_value) ? existing_value+ "" : "#000000";
+        ele.addEventListener("change", (e)=>{
+            ele.css_value = ele.value;
+        });
         return ele;
     }
 
@@ -4133,7 +4271,6 @@ class CSS_Color extends Color {
         Creates a new Color from a string or a Lexer.
     */
     static _fs_(l, v = false) {
-
         let c;
 
         if (typeof(l) == "string")
@@ -4143,57 +4280,102 @@ class CSS_Color extends Color {
 
         switch (l.ch) {
             case "#":
-                var value = l.next().tx;
-                let num = parseInt(value,16);
+                l.next();
+                let pk = l.copy();
+
+                let type = l.types;
+                pk.IWS = false;
+
+
+                while(!(pk.ty & (type.newline | type.ws)) && !pk.END && pk.ch !== ";"){
+                    pk.next();
+                }
+
+                var value = pk.slice(l);
+                l.sync(pk);
+                l.tl = 0;
+                l.next();
                 
-                out = { r: 0, g: 0, b: 0, a: 1 };
-                if(value.length == 3){
-                    out.r = (num >> 8) & 0xF;
-                    out.g = (num >> 4) & 0xF;
-                    out.b = (num) & 0xF;
-                }else{
-                    if(value.length == 6){
-                        out.r = (num >> 16) & 0xFF;
-                        out.g = (num >> 8) & 0xFF;
-                        out.b = (num) & 0xFF;
-                    }if(value.length == 8){
-                        out.r = (num >> 24) & 0xFF;
-                        out.g = (num >> 16) & 0xFF;
-                        out.b = (num >> 8) & 0xFF;
-                        out.a = ((num) & 0xFF);
+                let num = parseInt(value,16);
+
+                if(value.length == 3 || value.length == 4){
+                    
+                    if(value.length == 4){
+                        const a = (num >> 8) & 0xF;
+                        out.a = a | a << 4;
+                        num >>= 4;
                     }
+
+                    const r = (num >> 8) & 0xF;
+                    out.r = r | r << 4;
+                    
+                    const g = (num >> 4) & 0xF;
+                    out.g = g | g << 4;
+                    
+                    const b = (num) & 0xF;
+                    out.b = b | b << 4;
+
+                }else{
+
+                    if(value.length == 8){
+                        out.a = num & 0xFF;
+                        num >>= 8;
+                    }
+
+                    out.r = (num >> 16) & 0xFF;       
+                    out.g = (num >> 8) & 0xFF;
+                    out.b = (num) & 0xFF;
                 }
                 l.next();
                 break;
             case "r":
                 let tx = l.tx;
-                if (tx == "rgba") {
-                    out = { r: 0, g: 0, b: 0, a: 1 };
+
+                const RGB_TYPE = tx === "rgba"  ? 1 : tx === "rgb" ? 2 : 0;
+                
+                if(RGB_TYPE > 0){
+
                     l.next(); // (
+                    
                     out.r = parseInt(l.next().tx);
-                    l.next(); // ,
+                    
+                    l.next(); // , or  %
+
+                    if(l.ch == "%"){
+                        l.next(); out.r = out.r * 255 / 100;
+                    }
+                    
+                    
                     out.g = parseInt(l.next().tx);
-                    l.next(); // ,
+                    
+                    l.next(); // , or  %
+                   
+                    if(l.ch == "%"){
+                        l.next(); out.g = out.g * 255 / 100;
+                    }
+                    
+                    
                     out.b = parseInt(l.next().tx);
-                    l.next(); // ,
-                    out.a = parseFloat(l.next().tx);
-                    l.next().a(")");
+                    
+                    l.next(); // , or ) or %
+                    
+                    if(l.ch == "%")
+                        l.next(), out.b = out.b * 255 / 100;
+
+                    if(RGB_TYPE < 2){
+                        out.a = parseFloat(l.next().tx);
+
+                        l.next();
+                        
+                        if(l.ch == "%")
+                            l.next(), out.a = out.a * 255 / 100;
+                    }
+
+                    l.a(")");
                     c = new CSS_Color();
                     c.set(out);
                     return c;
-                } else if (tx == "rgb") {
-                    out = { r: 0, g: 0, b: 0, a: 1 };
-                    l.next(); // (
-                    out.r = parseInt(l.next().tx);
-                    l.next(); // ,
-                    out.g = parseInt(l.next().tx);
-                    l.next(); // ,
-                    out.b = parseInt(l.next().tx);
-                    l.next().a(")");
-                    c = new CSS_Color();
-                    c.set(out);
-                    return c;
-                } // intentional
+                }  // intentional
             default:
 
                 let string = l.tx;
@@ -4221,6 +4403,9 @@ class CSS_Color extends Color {
 
     toString(){
         return `#${("0"+this.r.toString(16)).slice(-2)}${("0"+this.g.toString(16)).slice(-2)}${("0"+this.b.toString(16)).slice(-2)}`
+    }
+    toRGBString(){
+        return `rgba(${this.r.toString()},${this.g.toString()},${this.b.toString()},${this.a.toString()})`   
     }
 } {
 
@@ -4382,7 +4567,11 @@ class CSS_Percentage extends Number {
     static buildInput(value){
         let ele = document.createElement("input");
         ele.type = "number";
-         input.value = parseFloat(value) || 0;
+        ele.addEventListener("change", (e)=>{
+            debugger
+            ele.css_value = ele.value + "%";
+        });
+        input.value = parseFloat(value) || 0;
         return ele;
     }
     
@@ -4457,12 +4646,17 @@ class CSS_Percentage extends Number {
     }
 }
 
+CSS_Percentage.label_name = "Percentage";
+
 class CSS_Length extends Number {
 
     static valueHandler(value){
         let ele = document.createElement("input");
         ele.type = "number";
         ele.value = (value) ? value + 0 : 0;
+        ele.addEventListener("change", (e)=>{
+            ele.css_value = ele.value + "px";
+        });
         return ele;
     }
 
@@ -4481,16 +4675,16 @@ class CSS_Length extends Number {
         let tx = l.tx,
             pky = l.pk.ty;
         if (l.ty == l.types.num || tx == "-" && pky == l.types.num) {
-            let mult = 1;
+            let sign = 1;
             if (l.ch == "-") {
-                mult = -1;
+                sign = -1;
                 tx = l.p.tx;
                 l.p.next();
             }
             if (l.p.ty == l.types.id) {
                 let id = l.sync().tx;
                 l.next();
-                return new CSS_Length(parseFloat(tx) * mult, id);
+                return new CSS_Length(parseFloat(tx) * sign, id);
             }
         }
         return null;
@@ -5251,7 +5445,7 @@ class CSS_URL extends URL {
                 v = l.tx.slice(1,-1);
                 l.next().a(")");
             } else {
-                let p = l.p;
+                const p = l.peek();
                 while (!p.END && p.next().tx !== ")") { /* NO OP */ }
                 v = p.slice(l);
                 l.sync().a(")");
@@ -5268,6 +5462,27 @@ class CSS_URL extends URL {
 }
 
 class CSS_String extends String {
+    
+    static list(){}
+
+    static valueHandler(existing_value){
+        let ele = document.createElement("input");
+        ele.type = "text";
+        ele.value = existing_value || "";
+        return ele;
+    }
+
+    static setInput(input, value){
+        input.type = "text";
+        input.value = value;
+    }
+
+    static buildInput(){
+        let ele = document.createElement("input");
+        ele.type = "text";
+        return ele;
+    }
+
     static parse(l, rule, r) {
         if (l.ty == l.types.str) {
             let tx = l.tx;
@@ -5275,6 +5490,12 @@ class CSS_String extends String {
             return new CSS_String(tx);
         }
         return null;
+    }
+
+    constructor(string){
+        if(string[0] == "\"" || string[0] == "\'" || string[0] == "\'")
+            string = string.slice(1,-1);
+        super(string);
     }
 }
 
@@ -5292,14 +5513,14 @@ class CSS_Id extends String {
 /* https://www.w3.org/TR/css-shapes-1/#typedef-basic-shape */
 class CSS_Shape extends Array {
     static parse(l, rule, r) {
-        if (l.tx == "inset" || l.tx == "circle" || l.tx == "ellipse" || l.tx == "polygon") {
+        if (l.tx == "inset" || l.tx == "circle" || l.tx == "ellipse" || l.tx == "polygon" || l.tx == "rect") {
             l.next().a("(");
             let v = "";
             if (l.ty == l.types.str) {
                 v = l.tx.slice(1,-1);
                 l.next().a(")");
             } else {
-                let p = l.p;
+                let p = l.pk;
                 while (!p.END && p.next().tx !== ")") { /* NO OP */ }
                 v = p.slice(l);
                 l.sync().a(")");
@@ -5311,11 +5532,41 @@ class CSS_Shape extends Array {
 }
 
 class CSS_Number extends Number {
+
+    static valueHandler(value){
+        let ele = document.createElement("input");
+        ele.type = "number";
+        ele.value = (value) ? value + 0 : 0;
+        ele.addEventListener("change", (e)=>{
+            ele.css_value = ele.value;
+        });
+        return ele;
+    }
+
+    static setInput(input, value){
+        input.type = "number";
+        input.value = value;
+    }
+
+    static buildInput(){
+        let ele = document.createElement("input");
+        ele.type = "number";
+        return ele;
+    }
+
     static parse(l, rule, r) {
-        let tx = l.tx;
+        
+        let sign = 1;
+
+        if(l.ch == "-" && l.pk.ty == l.types.num){
+        	l.sync();
+        	sign = -1;
+        }
+
         if(l.ty == l.types.num){
+        	let tx = l.tx;
             l.next();
-            return new CSS_Number(tx);
+            return new CSS_Number(sign*(new Number(tx)));
         }
         return null;
     }
@@ -6496,6 +6747,33 @@ class CSS_Path extends Array {
     }	
 }
 
+class CSS_FontName extends String {
+	static parse(l, rule, r) {
+
+		if(l.ty == l.types.str){
+			let tx = l.tx;
+            l.next();
+			return new CSS_String(tx);
+		}		
+
+		if(l.ty == l.types.id){
+
+			let pk = l.peek();
+
+			while(pk.type == l.types.id && !pk.END){
+				pk.next();
+			}
+
+			let str = pk.slice(l);
+			
+			l.sync();
+			return new CSS_String(str);
+		}
+
+        return null;
+    }
+}
+
 /**
  * CSS Type constructors
  * @alias module:wick~internals.css.types.
@@ -6503,39 +6781,40 @@ class CSS_Path extends Array {
  * https://www.w3.org/TR/CSS2/about.html#property-defs
  */
 const types = {
-    color: CSS_Color,
-    length: CSS_Length,
-    time: CSS_Length,
-    flex: CSS_Length,
-    angle: CSS_Length,
-    frequency: CSS_Length,
-    resolution: CSS_Length,
-    percentage: CSS_Percentage,
-    url: CSS_URL,
-    uri: CSS_URL,
-    number: CSS_Number,
-    id: CSS_Id,
-    string: CSS_String,
-    shape: CSS_Shape,
-    cubic_bezier: CSS_Bezier,
-    integer: CSS_Number,
-    gradient: CSS_Gradient,
-    transform2D : CSS_Transform2D,
-    path: CSS_Path,
+	color: CSS_Color,
+	length: CSS_Length,
+	time: CSS_Length,
+	flex: CSS_Length,
+	angle: CSS_Length,
+	frequency: CSS_Length,
+	resolution: CSS_Length,
+	percentage: CSS_Percentage,
+	url: CSS_URL,
+	uri: CSS_URL,
+	number: CSS_Number,
+	id: CSS_Id,
+	string: CSS_String,
+	shape: CSS_Shape,
+	cubic_bezier: CSS_Bezier,
+	integer: CSS_Number,
+	gradient: CSS_Gradient,
+	transform2D : CSS_Transform2D,
+	path: CSS_Path,
+	fontname: CSS_FontName,
 
-    /* Media parsers */
-    m_width: CSS_Media_handle("w", 0),
-    m_min_width: CSS_Media_handle("w", 1),
-    m_max_width: CSS_Media_handle("w", 2),
-    m_height: CSS_Media_handle("h", 0),
-    m_min_height: CSS_Media_handle("h", 1),
-    m_max_height: CSS_Media_handle("h", 2),
-    m_device_width: CSS_Media_handle("dw", 0),
-    m_min_device_width: CSS_Media_handle("dw", 1),
-    m_max_device_width: CSS_Media_handle("dw", 2),
-    m_device_height: CSS_Media_handle("dh", 0),
-    m_min_device_height: CSS_Media_handle("dh", 1),
-    m_max_device_height: CSS_Media_handle("dh", 2)
+	/* Media parsers */
+	m_width: CSS_Media_handle("w", 0),
+	m_min_width: CSS_Media_handle("w", 1),
+	m_max_width: CSS_Media_handle("w", 2),
+	m_height: CSS_Media_handle("h", 0),
+	m_min_height: CSS_Media_handle("h", 1),
+	m_max_height: CSS_Media_handle("h", 2),
+	m_device_width: CSS_Media_handle("dw", 0),
+	m_min_device_width: CSS_Media_handle("dw", 1),
+	m_max_device_width: CSS_Media_handle("dw", 2),
+	m_device_height: CSS_Media_handle("dh", 0),
+	m_min_device_height: CSS_Media_handle("dh", 1),
+	m_max_device_height: CSS_Media_handle("dh", 2)
 };
 
 /**
@@ -6544,293 +6823,406 @@ const types = {
  * @enum {string}
  */
 const property_definitions = {
-    //https://www.w3.org/TR/2018/REC-css-color-3-20180619//
-    
-    color: `<color>`,
 
-    opacity: `<alphavalue>|inherit`,
+	/* https://drafts.csswg.org/css-writing-modes-3/ */
+		direction:"ltr|rtl",
+		unicode_bidi:"normal|embed|isolate|bidi-override|isolate-override|plaintext",
+		writing_mode:"horizontal-tb|vertical-rl|vertical-lr",
+		text_orientation:"mixed|upright|sideways",
+		glyph_orientation_vertical:`auto|0deg|90deg|"0"|"90"`,
+		text_combine_upright:"none|all",
+
+	/* https://www.w3.org/TR/css-position-3 */ 
+		position: "static|relative|absolute|sticky|fixed",
+		top: `<length>|<percentage>|auto`,
+		left: `<length>|<percentage>|auto`,
+		bottom: `<length>|<percentage>|auto`,
+		right: `<length>|<percentage>|auto`,
+		offset_before: `<length>|<percentage>|auto`,
+		offset_after: `<length>|<percentage>|auto`,
+		offset_start: `<length>|<percentage>|auto`,
+		offset_end: `<length>|<percentage>|auto`,
+		z_index:"auto|<integer>",
+
+	/* https://www.w3.org/TR/css-display-3/ */
+		display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
+
+	/* https://www.w3.org/TR/css-box-3 */
+		margin: `[<length>|<percentage>|0|auto]{1,4}`,
+		margin_top: `<length>|<percentage>|0|auto`,
+		margin_right: `<length>|<percentage>|0|auto`,
+		margin_bottom: `<length>|<percentage>|0|auto`,
+		margin_left: `<length>|<percentage>|0|auto`,
+
+		margin_trim:"none|in-flow|all",
+
+		padding: `[<length>|<percentage>|0|auto]{1,4}`,
+		padding_top: `<length>|<percentage>|0|auto`,
+		padding_right: `<length>|<percentage>|0|auto`,
+		padding_bottom: `<length>|<percentage>|0|auto`,
+		padding_left: `<length>|<percentage>|0|auto`,
+
+	/* https://www.w3.org/TR/CSS2/visuren.html */
+		float: `left|right|none`,
+		clear: `left|right|both|none`,
+
+	/* https://drafts.csswg.org/css-sizing-3 todo:implement fit-content(%) function */
+		box_sizing: `content-box | border-box`,
+		width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+		height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+		min_width: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+		max_width: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+		min_height: `<length>|<percentage>|min-content|max-content|fit-content|auto`,
+		max_height: `<length>|<percentage>|min-content|max-content|fit-content|auto|none`,
+
+	/* https://www.w3.org/TR/2018/REC-css-color-3-20180619 */
+		color: `<color>`,
+		opacity: `<alphavalue>`,
+
+	/* https://www.w3.org/TR/css-backgrounds-3/ */
+		background_color: `<color>`,
+		background_image: `<bg_image>#`,
+		background_repeat: `<repeat_style>#`,
+		background_attachment: `scroll|fixed|local`,
+		background_position: `[<percentage>|<length>]{1,2}|[top|center|bottom]||[left|center|right]`,
+		background_clip: `<box>#`,
+		background_origin: `<box>#`,
+		background_size: `<bg_size>#`,
+		background: `[<bg_layer>#,]?<final_bg_layer>`,
+		border_color: `<color>{1,4}`,
+		border_top_color: `<color>`,
+		border_right_color: `<color>`,
+		border_bottom_color: `<color>`,
+		border_left_color: `<color>`,
+
+		border_top_width: `<line_width>`,
+		border_right_width: `<line_width>`,
+		border_bottom_width: `<line_width>`,
+		border_left_width: `<line_width>`,
+		border_width: `<line_width>{1,4}`,
+
+		border_style: `<line_style>{1,4}`,
+		border_top_style: `<line_style>`,
+		border_right_style: `<line_style>`,
+		border_bottom_style: `<line_style>`,
+		border_left_style: `<line_style>`,
+
+		border_top: `<line_width>||<line_style>||<color>`,
+		border_right: `<line_width>||<line_style>||<color>`,
+		border_bottom: `<line_width>||<line_style>||<color>`,
+		border_left: `<line_width>||<line_style>||<color>`,
+
+		border_radius: `<length_percentage>{1,4}[ / <length_percentage>{1,4}]?`,
+		border_top_left_radius: `<length_percentage>{1,2}`,
+		border_top_right_radius: `<length_percentage>{1,2}`,
+		border_bottom_right_radius: `<length_percentage>{1,2}`,
+		border_bottom_left_radius: `<length_percentage>{1,2}`,
+
+		border: `<line_width>||<line_style>||<color>`,
+
+		border_image: `<border_image_source>||<border_image_slice>[/<border_image_width>|/<border_image_width>?/<border_image_outset>]?||<border_image_repeat>`,
+		border_image_source: `none|<image>`,
+		border_image_slice: `[<number>|<percentage>]{1,4}&&fill?`,
+		border_image_width: `[<length_percentage>|<number>|auto]{1,4}`,
+		border_image_outset: `[<length>|<number>]{1,4}`,
+		border_image_repeat: `[stretch|repeat|round|space]{1,2}`,
+		box_shadow: `none|<shadow>#`,
+		line_height: `normal|<percentage>|<length>|<number>`,
+		overflow: 'visible|hidden|scroll|auto',
+
+	/* https://www.w3.org/TR/css-fonts-4 */
+		font_display: "auto|block|swap|fallback|optional",
+		font_family: `[[<generic_family>|<family_name>],]*[<generic_family>|<family_name>]`,
+		font_language_override:"normal|<string>",
+		font: `[[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>]|caption|icon|menu|message-box|small-caption|status-bar`,
+		font_max_size: `<absolute_size>|<relative_size>|<length>|<percentage>|infinity`,
+		font_min_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+		font_optical_sizing: `auto|none`,
+		font_pallette: `normal|light|dark|<identifier>`,
+		font_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
+		font_stretch:"<percentage>|normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded",
+		font_style: `normal|italic|oblique<angle>?`,
+		font_synthesis:"none|[weight||style]",
+		font_synthesis_small_caps:"auto|none",
+		font_synthesis_style:"auto|none",
+		font_synthesis_weight:"auto|none",
+		font_variant_alternates:"normal|[stylistic(<feature-value-name>)||historical-forms||styleset(<feature-value-name>#)||character-variant(<feature-value-name>#)||swash(<feature-value-name>)||ornaments(<feature-value-name>)||annotation(<feature-value-name>)]",
+		font_variant_emoji:"auto|text|emoji|unicode",
+		font_variation_settings:" normal|[<string><number>]#",
+		font_size_adjust: `<number>|none`,
+		
+		font_weight: `normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900`,
+
+	/* https://www.w3.org/TR/css-fonts-3/ */
+		font_kerning: ` auto | normal | none`,
+		font_variant: `normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values>||[small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps]||<numeric-figure-values>||<numeric-spacing-values>||<numeric-fraction-values>||ordinal||slashed-zero||<east-asian-variant-values>||<east-asian-width-values>||ruby||[sub|super]]`,
+		font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
+		font_variant_position:`normal|sub|super`,
+		font_variant_caps:`normal|small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps`,
+		font_variant_numeric: "normal | [ <numeric-figure-values> || <numeric-spacing-values> || <numeric-fraction-values> || ordinal || slashed-zero ]",
+		font_variant_east_asian:" normal | [ <east-asian-variant-values> || <east-asian-width-values> || ruby ]",
+
+	/* https://drafts.csswg.org/css-text-3 */
+		hanging_punctuation : "none|[first||[force-end|allow-end]||last]",
+		hyphens : "none|manual|auto",
+		letter_spacing: `normal|<length>`,
+		line_break : "auto|loose|normal|strict|anywhere",
+		overflow_wrap : "normal|break-word|anywhere",
+		tab_size : "<length>|<number>",
+		text_align : "start|end|left|right|center|justify|match-parent|justify-all",
+		text_align_all : "start|end|left|right|center|justify|match-parent",
+		text_align_last : "auto|start|end|left|right|center|justify|match-parent",
+		text_indent : "[[<length>|<percentage>]&&hanging?&&each-line?]",
+		text_justify : "auto|none|inter-word|inter-character",
+		text_transform : "none|[capitalize|uppercase|lowercase]||full-width||full-size-kana",
+		white_space : "normal|pre|nowrap|pre-wrap|break-spaces|pre-line",
+		word_break : " normal|keep-all|break-all|break-word",
+		word_spacing : "normal|<length>",
+		word_wrap : "  normal | break-word | anywhere",
+
+	/* https://drafts.csswg.org/css-text-decor-3 */
+		text_decoration: "<text-decoration-line>||<text-decoration-style>||<color>",
+		text_decoration_color:"<color>",
+		text_decoration_line:"none|[underline||overline||line-through||blink]",
+		text_decoration_style:"solid|double|dotted|dashed|wavy",
+		text_emphasis:"<text-emphasis-style>||<text-emphasis-color>",
+		text_emphasis_color:"<color>",
+		text_emphasis_position:"[over|under]&&[right|left]?",
+		text_emphasis_style:"none|[[filled|open]||[dot|circle|double-circle|triangle|sesame]]|<string>",
+		text_shadow:"none|[<color>?&&<length>{2,3}]#",
+		text_underline_position:"auto|[under||[left|right]]",
+
+	/* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
+		align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
+		align_items: `flex-start | flex-end | center | baseline | stretch`,
+		align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
+		flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
+		flex_basis:`content|<width>`,
+		flex_direction:`row | row-reverse | column | column-reverse`,
+		flex_flow:`<flex-direction>||<flex-wrap>`,
+		flex_grow:`<number>`,
+		flex_shrink:`<number>`,
+		flex_wrap:`nowrap|wrap|wrap-reverse`,
+		justify_content :"flex-start | flex-end | center | space-between | space-around",
+		order:`<integer>`,
+
+	/* https://drafts.csswg.org/css-transitions-1/ */
+		transition: `<single_transition>#`,
+		transition_delay: `<time>#`,
+		transition_duration: `<time>#`,
+		transition_property: `none|<single_transition_property>#`,
+		transition_timing_function: `<timing_function>#`,
+
+	/* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
+		animation: `<single_animation>#`,
+		animation_name: `[none|<keyframes_name>]#`,
+		animation_duration: `<time>#`,
+		animation_timing_function: `<timing_function>#`,
+		animation_iteration_count: `<single_animation_iteration_count>#`,
+		animation_direction: `<single_animation_direction>#`,
+		animation_play_state: `<single_animation_play_state>#`,
+		animation_delayed: `<time>#`,
+		animation_fill_mode: `<single_animation_fill_mode>#`,
+
+	/* https://svgwg.org/svg2-draft/interact.html#PointerEventsProperty */
+		pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|auto`,
+
+	/* https://drafts.csswg.org/css-ui-3 */
+		caret_color :"auto|<color>",
+		cursor:"[[<url> [<number><number>]?,]*[auto|default|none|context-menu|help|pointer|progress|wait|cell|crosshair|text|vertical-text|alias|copy|move|no-drop|not-allowed|grab|grabbing|e-resize|n-resize|ne-resize|nw-resize|s-resize|se-resize|sw-resize|w-resize|ew-resize|ns-resize|nesw-resize|nwse-resize|col-resize|row-resize|all-scroll|zoom-in|zoom-out]]",
+		outline:"[<outline-color>||<outline-style>||<outline-width>]",
+		outline_color:"<color>|invert",
+		outline_offset:"<length>",
+		outline_style:"auto|<border-style>",
+		outline_width:"<line-width>",
+		resize:"none|both|horizontal|vertical",
+		text_overflow:"clip|ellipsis",
+
+	/* https://drafts.csswg.org/css-content-3/ */
+		bookmark_label:"<content-list>",
+		bookmark_level:"none|<integer>",
+		bookmark_state:"open|closed",
+		content:"normal|none|[<content-replacement>|<content-list>][/<string>]?",
+		quotes:"none|[<string><string>]+",
+		string_set:"none|[<custom-ident><string>+]#",
+	
+	/*https://www.w3.org/TR/CSS22/tables.html*/
+		caption_side:"top|bottom",
+		table_layout:"auto|fixed",
+		border_collapse:"collapse|separate",
+		border_spacing:"<length><length>?",
+		empty_cells:"show|hide",
+
+	/* https://www.w3.org/TR/CSS2/page.html */
+		page_break_before:"auto|always|avoid|left|right",
+		page_break_after:"auto|always|avoid|left|right",
+		page_break_inside:"auto|avoid|left|right",
+		orphans:"<integer>",
+		widows:"<integer>",
+
+	/* https://drafts.csswg.org/css-lists-3 */
+		counter_increment:"[<custom-ident> <integer>?]+ | none",
+		counter_reset:"[<custom-ident> <integer>?]+|none",
+		counter_set:"[<custom-ident> <integer>?]+|none",
+		list_style:"<list-style-type>||<list-style-position>||<list-style-image>",
+		list_style_image:"<url>|none",
+		list_style_position:"inside|outside",
+		list_style_type:"<counter-style>|<string>|none",
+		marker_side:"list-item|list-container",
 
 
-    /*https://www.w3.org/TR/css-backgrounds-3/*/
-    /* Background */
-    background_color: `<color>`,
-    background_image: `<bg_image>#`,
-    background_repeat: `<repeat_style>#`,
-    background_attachment: `scroll|fixed|local`,
-    background_position: `[<percentage>|<length>]{1,2}|[top|center|bottom]||[left|center|right]`,
-    background_clip: `<box>#`,
-    background_origin: `<box>#`,
-    background_size: `<bg_size>#`,
-    background: `<bg_layer>#,<final_bg_layer>`,
+	vertical_align: `baseline|sub|super|top|text-top|middle|bottom|text-bottom|<percentage>|<length>`,
 
-    /* Font https://www.w3.org/TR/css-fonts-4*/
-    font_family: `[[<generic_family>|<family_name>],]*[<generic_family>|<family_name>]`,
-    font: `[<font_style>||<font_variant>||<font_weight>]?<font_size>[/<line_height>]?<font_family>`,
-    font_variant: `normal|small-caps`,
-    font_style: `normal | italic | oblique <angle>?`,
-    font_kerning: ` auto | normal | none`,
-    font_variant_ligatures:`normal|none|[<common-lig-values>||<discretionary-lig-values>||<historical-lig-values>||<contextual-alt-values> ]`,
-    font_variant_position:`normal|sub|super`,
-    font_variant_caps:`normal|small-caps|all-small-caps|petite-caps|all-petite-caps|unicase|titling-caps`,
-
-
-    /*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping `normal|italic|oblique`, */
-    font_size: `<absolute_size>|<relative_size>|<length>|<percentage>`,
-    absolute_size: `xx_small|x_small|small|medium|large|x_large|xx_large`,
-    relative_size: `larger|smaller`,
-    font_wight: `normal|bold|bolder|lighter|100|200|300|400|500|600|700|800|900`,
-
-    /* Text */
-    word_spacing: `normal|<length>`,
-    letter_spacing: `normal|<length>`,
-    text_decoration: `none|[underline||overline||line-through||blink]`,
-    text_transform: `capitalize|uppercase|lowercase|none`,
-    text_align: `left|right|center|justify`,
-    text_indent: `<length>|<percentage>`,
-
-
-    /* Border  https://www.w3.org/TR/css-backgrounds-3 */
-    border_color: `<color>{1,4}`,
-    border_top_color: `<color>`,
-    border_right_color: `<color>`,
-    border_bottom_color: `<color>`,
-    border_left_color: `<color>`,
-
-    border_width: `<line_width>{1,4}`,
-    border_top_width: `<line_width>`,
-    border_right_width: `<line_width>`,
-    border_bottom_width: `<line_width>`,
-    border_left_width: `<line_width>`,
-
-    border_style: `<line_style>{1,4}`,
-    border_top_style: `<line_style>`,
-    border_right_style: `<line_style>`,
-    border_bottom_style: `<line_style>`,
-    border_left_style: `<line_style>`,
-
-    border_top: `<line_width>||<line_style>||<color>`,
-    border_right: `<line_width>||<line_style>||<color>`,
-    border_bottom: `<line_width>||<line_style>||<color>`,
-    border_left: `<line_width>||<line_style>||<color>`,
-
-    border_radius: `<length_percentage>{1,4}[/<length_percentage>{1,4}]?`,
-    border_top_left_radius: `<length_percentage>{1,2}`,
-    border_top_right_radius: `<length_percentage>{1,2}`,
-    border_bottom_right_radius: `<length_percentage>{1,2}`,
-    border_bottom_left_radius: `<length_percentage>{1,2}`,
-
-    border_image: `<border_image_source>||<border_image_slice>[/<border_image_width>|/<border_image_width>?/<border_image_outset>]?||<border_image_repeat>`,
-    border_image_source: `none|<image>`,
-    border_image_slice: `[<number>|<percentage>]{1,4}&&fill?`,
-    border_image_width: `[<length_percentage>|<number>|auto]{1,4}`,
-    border_image_outset: `[<length>|<number>]{1,4}`,
-    border_image_repeat: `[stretch|repeat|round|space]{1,2}`,
-
-    box_shadow: `none|<shadow>#`,
-
-    border: `<line_width>||<line_style>||<color>`,
-
-    width: `<length>|<percentage>|auto|inherit`,
-    height: `<length>|<percentage>|auto|inherit`,
-    float: `left|right|none`,
-    clear: `left|right|both`,
-
-    /* Classification */
-
-    display: `[ <display_outside> || <display_inside> ] | <display_listitem> | <display_internal> | <display_box> | <display_legacy>`,
-    white_space: `normal|pre|nowrap`,
-    list_style_type: `disc|circle|square|decimal|decimal-leading-zero|lower-roman|upper-roman|lower-greek|lower-latin|upper-latin|armenian|georgian|lower-alpha|upper-alpha|none|inherit`,
-    list_style_image: `<url>|none`,
-    list_style_position: `inside|outside`,
-    list_style: `[disc|circle|square|decimal|lower-roman|upper-roman|lower-alpha|upper-alpha|none]||[inside|outside]||[<url>|none]`,
-    vertical_align: `baseline|sub|super|top|text-top|middle|bottom|text-bottom|<percentage>|<length>|inherit`,
-
-    /* Layout https://www.w3.org/TR/css-position-3 */ 
-    position: "static|relative|absolute|sticky|fixed",
-    top: `<length>|<percentage>|auto|inherit`,
-    left: `<length>|<percentage>|auto|inherit`,
-    bottom: `<length>|<percentage>|auto|inherit`,
-    right: `<length>|<percentage>|auto|inherit`,
-
-    
-    /* Box Model https://www.w3.org/TR/css-box-3 */
-    margin: `[<length>|<percentage>|0|auto]{1,4}`,
-    margin_top: `<length>|<percentage>|0|auto`,
-    margin_right: `<length>|<percentage>|0|auto`,
-    margin_bottom: `<length>|<percentage>|0|auto`,
-    margin_left: `<length>|<percentage>|0|auto`,
-
-    padding: `[<length>|<percentage>|0|auto]{1,4}`,
-    padding_top: `<length>|<percentage>|0|auto`,
-    padding_right: `<length>|<percentage>|0|auto`,
-    padding_bottom: `<length>|<percentage>|0|auto`,
-    padding_left: `<length>|<percentage>|0|auto`,
-
-    min_width: `<length>|<percentage>|inherit`,
-    max_width: `<length>|<percentage>|none|inherit`,
-    min_height: `<length>|<percentage>|inherit`,
-    max_height: `<length>|<percentage>|none|inherit`,
-    line_height: `normal|<number>|<length>|<percentage>|inherit`,
-    overflow: 'visible|hidden|scroll|auto|inherit',
-
-    /* Flex Box https://www.w3.org/TR/css-flexbox-1/ */
-    align_items: `flex-start | flex-end | center | baseline | stretch`,
-    align_self: `auto | flex-start | flex-end | center | baseline | stretch`,
-    align_content: `flex-start | flex-end | center | space-between | space-around | stretch`,
-    flex_direction:`row | row-reverse | column | column-reverse`,
-    flex_flow:`<flex-direction>||<flex-wrap>`,
-    flex_wrap:`nowrap|wrap|wrap-reverse`,
-    order:`<integer>`,
-    flex:`none|[<flex-grow> <flex-shrink>?||<flex-basis>]`,
-    flex_grow:`<number>`,
-    flex_shrink:`<number>`,
-    flex_basis:`content|<width>`,
-    width:`<length>|<percentage>|auto|inherit`,
-
-    box_sizing: `content-box | border-box`,
-
-    /* Visual Effects */
-    clip: '<shape>|auto|inherit',
-    visibility: `visible|hidden|collapse|inherit`,
-    content: `normal|none|[<string>|<uri>|<counter>|attr(<identifier>)|open-quote|close-quote|no-open-quote|no-close-quote]+|inherit`,
-    quotas: `[<string><string>]+|none|inherit`,
-    counter_reset: `[<identifier><integer>?]+|none|inherit`,
-    counter_increment: `[<identifier><integer>?]+|none|inherit`,
-
-    /* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
-    animation: `<single_animation>#`,
-
-    animation_name: `[none|<keyframes_name>]#`,
-    animation_duration: `<time>#`,
-    animation_timing_function: `<timing_function>#`,
-    animation_iteration_count: `<single_animation_iteration_count>#`,
-    animation_direction: `<single_animation_direction>#`,
-    animation_play_state: `<single_animation_play_state>#`,
-    animation_delayed: `<time>#`,
-    animation_fill_mode: `<single_animation_fill_mode>#`,
-
-    /* https://drafts.csswg.org/css-transitions-1/ */
-
-    transition: `<single_transition>#`,
-    transition_property: `none|<single_transition_property>#`,
-    transition_duration: `<time>#`,
-    transition_timing_function: `<timing_function>#`,
-    transition_delay: `<time>#`,
-
-    
-    /* https://www.w3.org/TR/SVG11/interact.html#PointerEventsProperty */
-    pointer_events : `visiblePainted|visibleFill|visibleStroke|visible|painted|fill|stroke|all|none|inherit|auto`,
+	/* Visual Effects */
+	clip: '<shape>|auto',
+	visibility: `visible|hidden|collapse`,
+	content: `normal|none|[<string>|<uri>|<counter>|attr(<identifier>)|open-quote|close-quote|no-open-quote|no-close-quote]+`,
+	quotas: `[<string><string>]+|none`,
+	counter_reset: `[<identifier><integer>?]+|none`,
+	counter_increment: `[<identifier><integer>?]+|none`,
 };
 
 /* Properties that are not directly accessible by CSS prop creator */
 
 const virtual_property_definitions = {
+    /* https://drafts.csswg.org/css-counter-styles-3 */
+        /*system:`cyclic|numeric|alphabetic|symbolic|additive|[fixed<integer>?]|[extends<counter-style-name>]`,
+        negative:`<symbol><symbol>?`,
+        prefix:`<symbol>`,
+        suffix:`<symbol>`,
+        range:`[[<integer>|infinite]{2}]#|auto`,
+        pad:`<integer>&&<symbol>`,
+        fallback:`<counter-style-name>`
+        symbols:`<symbol>+`,*/
 
+        counter_style:`<numeric_counter_style>|<alphabetic_counter_style>|<symbolic_counter_style>|<japanese_counter_style>|<korean_counter_style>|<chinese_counter_style>|ethiopic-numeric`,
+        numeric_counter_style:`decimal|decimal-leading-zero|arabic-indic|armenian|upper-armenian|lower-armenian|bengali|cambodian|khmer|cjk-decimal|devanagari|georgian|gujarati|gurmukhi|hebrew|kannada|lao|malayalam|mongolian|myanmar|oriya|persian|lower-roman|upper-roman|tamil|telugu|thai|tibetan`,
+        symbolic_counter_style:`disc|circle|square|disclosure-open|disclosure-closed`,
+        alphabetic_counter_style:`lower-alpha|lower-latin|upper-alpha|upper-latin|cjk-earthly-branch|cjk-heavenly-stem|lower-greek|hiragana|hiragana-iroha|katakana|katakana-iroha`,
+        japanese_counter_style:`japanese-informal|japanese-formal`,
+        korean_counter_style:`korean-hangul-formal|korean-hanja-informal|and korean-hanja-formal`,
+        chinese_counter_style:`simp-chinese-informal|simp-chinese-formal|trad-chinese-informal|and trad-chinese-formal`,
 
-    alphavalue: '<number>',
+	/* https://drafts.csswg.org/css-content-3/ */
+		content_list:"[<string>|contents|<image>|<quote>|<target>|<leader()>]+",
+		content_replacement:"<image>",
 
-    box: `border-box|padding-box|content-box`,
+	/* https://drafts.csswg.org/css-values-4 */
+		custom_ident:"<identifier>",
+		position:"[[left|center|right]||[top|center|bottom]|[left|center|right|<length-percentage>][top|center|bottom|<length-percentage>]?|[[left|right]<length-percentage>]&&[[top|bottom]<length-percentage>]]",
+	
+	/* https://drafts.csswg.org/css-lists-3 */
 
-    /*https://www.w3.org/TR/css-backgrounds-3/*/
+	east_asian_variant_values:"[jis78|jis83|jis90|jis04|simplified|traditional]",
 
-    bg_layer: `<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
-    final_bg_layer: `<background_color>||<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
-    bg_image: `<url>|<gradient>|none`,
-    repeat_style: `repeat-x|repeat-y|[repeat|space|round|no-repeat]{1,2}`,
-    background_attachment: `<attachment>#`,
-    bg_size: `<length_percentage>|auto]{1,2}|cover|contain`,
-    bg_position: `[[left|center|right|top|bottom|<length_percentage>]|[left|center|right|<length_percentage>][top|center|bottom|<length_percentage>]|[center|[left|right]<length_percentage>?]&&[center|[top|bottom]<length_percentage>?]]`,
-    attachment: `scroll|fixed|local`,
-    line_style: `none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset`,
-    line_width: `thin|medium|thick|<length>`,
-    shadow: `inset?&&<length>{2,4}&&<color>?`,
+	alphavalue: '<number>',
 
-    /* Font https://www.w3.org/TR/css-fonts-4/#family-name-value */
-    
-    family_name: `<id>||<string>`,
-    generic_family: `serif|sans-serif|cursive|fantasy|monospace`,
-    
-    /* Identifier https://drafts.csswg.org/css-values-4/ */
+	box: `border-box|padding-box|content-box`,
 
-    identifier: `<id>`,
-    custom_ident: `<id>`,
+	/*Font-Size: www.w3.org/TR/CSS2/fonts.html#propdef-font-size */
+	absolute_size: `xx-small|x-small|small|medium|large|x-large|xx-large`,
+	relative_size: `larger|smaller`,
 
-    /* https://drafts.csswg.org/css-timing-1/#typedef-timing-function */
+	/*https://www.w3.org/TR/css-backgrounds-3/*/
 
-    timing_function: `linear|<cubic_bezier_timing_function>|<step_timing_function>|<frames_timing_function>`,
-    cubic_bezier_timing_function: `<cubic_bezier>`,
-    step_timing_function: `step-start|step-end|'steps()'`,
-    frames_timing_function: `'frames()'`,
+	bg_layer: `<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
+	final_bg_layer: `<background_color>||<bg_image>||<bg_position>[/<bg_size>]?||<repeat_style>||<attachment>||<box>||<box>`,
+	bg_image: `<url>|<gradient>|none`,
+	repeat_style: `repeat-x|repeat-y|[repeat|space|round|no-repeat]{1,2}`,
+	background_attachment: `<attachment>#`,
+	bg_size: `<length_percentage>|auto]{1,2}|cover|contain`,
+	bg_position: `[[left|center|right|top|bottom|<length_percentage>]|[left|center|right|<length_percentage>][top|center|bottom|<length_percentage>]|[center|[left|right]<length_percentage>?]&&[center|[top|bottom]<length_percentage>?]]`,
+	attachment: `scroll|fixed|local`,
+	line_style: `none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset`,
+	line_width: `thin|medium|thick|<length>`,
+	shadow: `inset?&&<length>{2,4}&&<color>?`,
 
-    /* https://drafts.csswg.org/css-transitions-1/ */
+	/* Font https://www.w3.org/TR/css-fonts-4/#family-name-value */
+	
+	family_name: `<fontname>`,
+	generic_family: `serif|sans-serif|cursive|fantasy|monospace`,
+	
+	/* Identifier https://drafts.csswg.org/css-values-4/ */
 
-    single_animation_fill_mode: `none|forwards|backwards|both`,
-    single_animation_play_state: `running|paused`,
-    single_animation_direction: `normal|reverse|alternate|alternate-reverse`,
-    single_animation_iteration_count: `infinite|<number>`,
-    single_transition_property: `all|<custom_ident>`,
-    single_transition: `[none|<single_transition_property>]||<time>||<timing_function>||<time>`,
+	identifier: `<id>`,
+	custom_ident: `<id>`,
 
-    /* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
+	/* https://drafts.csswg.org/css-timing-1/#typedef-timing-function */
 
-    single_animation: `<time>||<timing_function>||<time>||<single_animation_iteration_count>||<single_animation_direction>||<single_animation_fill_mode>||<single_animation_play_state>||[none|<keyframes_name>]`,
-    keyframes_name: `<string>`,
+	timing_function: `linear|<cubic_bezier_timing_function>|<step_timing_function>|<frames_timing_function>`,
+	cubic_bezier_timing_function: `<cubic_bezier>`,
+	step_timing_function: `step-start|step-end|'steps()'`,
+	frames_timing_function: `'frames()'`,
 
-    /* CSS3 Stuff */
-    length_percentage: `<length>|<percentage>`,
-    frequency_percentage: `<frequency>|<percentage>`,
-    angle_percentage: `<angle>|<percentage>`,
-    time_percentage: `<time>|<percentage>`,
-    number_percentage: `<number>|<percentage>`,
+	/* https://drafts.csswg.org/css-transitions-1/ */
 
-    /*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping */
-    clip_path: `<clip_source>|[<basic_shape>||<geometry_box>]|none`,
-    clip_source: `<url>`,
-    shape_box: `<box>|margin-box`,
-    geometry_box: `<shape_box>|fill-box|stroke-box|view-box`,
-    basic_shape: `<CSS_Shape>`,
-    ratio: `<integer>/<integer>`,
+	single_animation_fill_mode: `none|forwards|backwards|both`,
+	single_animation_play_state: `running|paused`,
+	single_animation_direction: `normal|reverse|alternate|alternate-reverse`,
+	single_animation_iteration_count: `infinite|<number>`,
+	single_transition_property: `all|<custom_ident>`,
+	single_transition: `[none|<single_transition_property>]||<time>||<timing_function>||<time>`,
 
-    /* https://www.w3.org/TR/css-fonts-3/*/
-    common_lig_values        : `[ common-ligatures | no-common-ligatures ]`,
-    discretionary_lig_values : `[ discretionary-ligatures | no-discretionary-ligatures ]`,
-    historical_lig_values    : `[ historical-ligatures | no-historical-ligatures ]`,
-    contextual_alt_values    : `[ contextual | no-contextual ]`,
+	/* CSS3 Animation https://drafts.csswg.org/css-animations-1/ */
 
-    //Display
-    display_outside  : `block | inline | run-in`,
-    display_inside   : `flow | flow-root | table | flex | grid | ruby`,
-    display_listitem : `<display_outside>? && [ flow | flow-root ]? && list-item`,
-    display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
-    display_box      : `contents | none`,
-    display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
+	single_animation: `<time>||<timing_function>||<time>||<single_animation_iteration_count>||<single_animation_direction>||<single_animation_fill_mode>||<single_animation_play_state>||[none|<keyframes_name>]`,
+	keyframes_name: `<string>`,
+
+	/* CSS3 Stuff */
+	length_percentage: `<length>|<percentage>`,
+	frequency_percentage: `<frequency>|<percentage>`,
+	angle_percentage: `<angle>|<percentage>`,
+	time_percentage: `<time>|<percentage>`,
+	number_percentage: `<number>|<percentage>`,
+
+	/*CSS Clipping https://www.w3.org/TR/css-masking-1/#clipping */
+	clip_path: `<clip_source>|[<basic_shape>||<geometry_box>]|none`,
+	clip_source: `<url>`,
+	shape_box: `<box>|margin-box`,
+	geometry_box: `<shape_box>|fill-box|stroke-box|view-box`,
+	basic_shape: `<CSS_Shape>`,
+	ratio: `<integer>/<integer>`,
+
+	/* https://www.w3.org/TR/css-fonts-3/*/
+	common_lig_values        : `[ common-ligatures | no-common-ligatures ]`,
+	discretionary_lig_values : `[ discretionary-ligatures | no-discretionary-ligatures ]`,
+	historical_lig_values    : `[ historical-ligatures | no-historical-ligatures ]`,
+	contextual_alt_values    : `[ contextual | no-contextual ]`,
+
+	//Display
+	display_outside  : `block | inline | run-in`,
+	display_inside   : `flow | flow-root | table | flex | grid | ruby`,
+	display_listitem : `<display_outside>? && [ flow | flow-root ]? && list-item`,
+	display_internal : `table-row-group | table-header-group | table-footer-group | table-row | table-cell | table-column-group | table-column | table-caption | ruby-base | ruby-text | ruby-base-container | ruby-text-container`,
+	display_box      : `contents | none`,
+	display_legacy   : `inline-block | inline-table | inline-flex | inline-grid`,
 };
 
 const media_feature_definitions = {
-    width: "<m_width>",
-    min_width: "<m_max_width>",
-    max_width: "<m_min_width>",
-    height: "<m_height>",
-    min_height: "<m_min_height>",
-    max_height: "<m_max_height>",
-    orientation: "portrait  | landscape",
-    aspect_ratio: "<ratio>",
-    min_aspect_ratio: "<ratio>",
-    max_aspect_ratio: "<ratio>",
-    resolution: "<length>",
-    min_resolution: "<length>",
-    max_resolution: "<length>",
-    scan: "progressive|interlace",
-    grid: "",
-    monochrome: "",
-    min_monochrome: "<integer>",
-    max_monochrome: "<integer>",
-    color: "",
-    min_color: "<integer>",
-    max_color: "<integer>",
-    color_index: "",
-    min_color_index: "<integer>",
-    max_color_index: "<integer>",
+	width: "<m_width>",
+	min_width: "<m_max_width>",
+	max_width: "<m_min_width>",
+	height: "<m_height>",
+	min_height: "<m_min_height>",
+	max_height: "<m_max_height>",
+	orientation: "portrait  | landscape",
+	aspect_ratio: "<ratio>",
+	min_aspect_ratio: "<ratio>",
+	max_aspect_ratio: "<ratio>",
+	resolution: "<length>",
+	min_resolution: "<length>",
+	max_resolution: "<length>",
+	scan: "progressive|interlace",
+	grid: "",
+	monochrome: "",
+	min_monochrome: "<integer>",
+	max_monochrome: "<integer>",
+	color: "",
+	min_color: "<integer>",
+	max_color: "<integer>",
+	color_index: "",
+	min_color_index: "<integer>",
+	max_color_index: "<integer>",
 
 };
 
@@ -6893,91 +7285,71 @@ class CSSSelector {
         }
     }
 
+    removeRule(){
+        if(this.r)
+            this.r.decrementRef();
+
+        this.r = null;
+    }
+
+    addRule(rule = null){
+        
+        this.removeRule();
+
+        if(rule !== null)
+            rule.incrementRef();
+
+        this.r = rule;
+    }
+
 }
 
-/**
- * Holds a set of rendered CSS properties.
- * @memberof module:wick~internals.css
- * @alias CSSRule
- */
-class CSSRule {
-    constructor(root) {
-        /**
-         * Collection of properties held by this rule.
-         * @public
-         */
-        this.props = {};
-        this.LOADED = false;
-        this.root = root;
+var step = 0;
+
+function checkDefaults(lx) {
+    const tx = lx.tx;
+    /* https://drafts.csswg.org/css-cascade/#inherited-property */
+    switch (lx.tx) {
+        case "initial": //intentional
+        case "inherit": //intentional
+        case "unset": //intentional
+        case "revert": //intentional
+            if (!lx.pk.pk.END) // These values should be the only ones present. Failure otherwise.
+                return 0; // Default value present among other values. Invalid
+            return 1; // Default value present only. Valid
     }
-
-    addProperty(prop, rule) {
-        if (prop)
-            this.props[prop.name] = prop.value;
-    }
-
-
-
-    toString(off = 0, rule = "") {
-        let str = [],
-            offset = ("    ").repeat(off);
-
-        if (rule) {
-            if (this.props[rule]) {
-                if (Array.isArray(this.props[rule]))
-                    str.push(this.props[rule].join(" "));
-                else
-                    str.push(this.props[rule].toString());
-            }else
-                return "";
-        } else {
-            for (let a in this.props) {
-                if (this.props[a] !== null) {
-                    if (Array.isArray(this.props[a]))
-                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].join(" "), ";\n");
-                    else
-                        str.push(offset, a.replace(/\_/g, "-"), ":", this.props[a].toString(), ";\n");
-                }
-            }
-        }
-
-        return str.join(""); //JSON.stringify(this.props).replace(/\"/g, "").replace(/\_/g, "-");
-    }
-
-    merge(rule) {
-        if (rule.props) {
-            for (let n in rule.props)
-                this.props[n] = rule.props[n];
-            this.LOADED = true;
-        }
-    }
-
-    get _wick_type_() { return 0; }
-
-    set _wick_type_(v) {}
+    return 2; // Default value not present. Ignore
 }
 
-/**
- * wick internals.
- * @class      NR (name)
- */
-class NR { //Notation Rule
+class JUX { /* Juxtaposition */
 
     constructor() {
-
+        this.id = JUX.step++;
         this.r = [NaN, NaN];
         this.terms = [];
         this.prop = null;
         this.name = "";
         this.virtual = false;
+        this.REQUIRE_COMMA = false;
+    }
+    mergeValues(existing_v, new_v) {
+        if (existing_v)
+            if (existing_v.v) {
+                if (Array.isArray(existing_v.v))
+                    existing_v.v.push(new_v.v);
+                else {
+                    existing_v.v = [existing_v.v, new_v.v];
+                }
+            } else
+                existing_v.v = new_v.v;
     }
 
-    seal(){
+    seal() {
 
     }
 
-    sp(value, rule) { //Set Property
-        if (this.prop){
+    sp(value, rule) { /* Set Property */
+        if (this.prop) {
             if (value)
                 if (Array.isArray(value) && value.length === 1 && Array.isArray(value[0]))
                     rule[this.prop] = value[0];
@@ -6990,137 +7362,297 @@ class NR { //Notation Rule
         return !(isNaN(this.r[0]) && isNaN(this.r[1]));
     }
 
-    parse(lx, rule, out_val) {
+    parse(lx, rule, out_val, ROOT = true) {
+            
         if (typeof(lx) == "string")
             lx = whind$1(lx);
 
         let r = out_val || { v: null },
-            start = isNaN(this.r[0]) ? 1 : this.r[0],
-            end = isNaN(this.r[1]) ? 1 : this.r[1];
+            bool = false;
 
-        return this.___(lx, rule, out_val, r, start, end);
-    }
-
-    ___(lx, rule, out_val, r, start, end) {
-        let bool = true;
-        for (let j = 0; j < end && !lx.END; j++) {
-
-            for (let i = 0, l = this.terms.length; i < l; i++) {
-                bool = this.terms[i].parse(lx, rule, r);
-                if (!bool) break;
-            }
-
-            if (!bool) {
-
-                this.sp(r.v, rule);
-
-                if (j < start)
-                    return false;
-                else
+        if (ROOT) {
+            switch (checkDefaults(lx)) {
+                case 1:
+                    this.sp(lx.tx, rule);
                     return true;
-            }
-        }
-
-        this.sp(r.v, rule);
-
-        return true;
-    }
-}
-
-class AND extends NR {
-    ___(lx, rule, out_val, r, start, end) {
-
-        outer:
-            for (let j = 0; j < end && !lx.END; j++) {
-                for (let i = 0, l = this.terms.length; i < l; i++)
-                    if (!this.terms[i].parse(lx, rule, r)) return false;
-            }
-
-        this.sp(r.v, rule);
-
-        return true;
-    }
-}
-
-class OR extends NR {
-    ___(lx, rule, out_val, r, start, end) {
-        let bool = false;
-
-        for (let j = 0; j < end && !lx.END; j++) {
-            bool = false;
-
-            for (let i = 0, l = this.terms.length; i < l; i++)
-                if (this.terms[i].parse(lx, rule, r)) bool = true;
-
-            if (!bool && j < start) {
-                this.sp(r.v, rule);
-                return false;
-            }
-        }
-
-        this.sp(r.v, rule);
-
-        return true;
-    }
-}
-
-class ONE_OF extends NR {
-    ___(lx, rule, out_val, r, start, end) {
-        let bool = false;
-
-        for (let j = 0; j < end && !lx.END; j++) {
-            bool = false;
-
-            for (let i = 0, l = this.terms.length; i < l; i++) {
-                bool = this.terms[i].parse(lx, rule, r);
-                if (bool) break;
-            }
-
-            if (!bool)
-                if (j < start) {
-                    this.sp(r.v, rule);
+                case 0:
                     return false;
-                }
-        }
+            }
 
-        this.sp(r.v, rule);
+            bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+            //if (!lx.END)
+            //    return false;
+            //else
+                this.sp(r.v, rule);
+        } else
+            bool = this.innerParser(lx, rule, out_val, r, this.start, this.end);
+
+        return bool;
+    }
+
+    checkForComma(lx) {
+        if (this.REQUIRE_COMMA) {
+            if (lx.ch == ",")
+                lx.next();
+            else return false;
+        }
+        return true;
+    }
+
+    innerParser(lx, rule, out_val, r, start, end) {
+
+        let bool = false;
+
+        repeat:
+            for (let j = 0; j < end && !lx.END; j++) {
+                let copy = lx.copy();
+                let temp_r = { v: null };
+
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+
+                    let term = this.terms[i];
+
+                    if (!term.parse(copy, rule, temp_r, false)) {
+                        if (!term.OPTIONAL) {
+                            break repeat;
+                        }
+                    }
+                }
+
+                if (temp_r.v)
+                    this.mergeValues(r, temp_r);
+
+                lx.sync(copy);
+
+                bool = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+            }
+
+        if (bool)
+            //console.log("JUX", s, bool)
+            return bool;
+    }
+
+    get start() {
+        return isNaN(this.r[0]) ? 1 : this.r[0];
+    }
+    set start(e) {}
+
+    get end() {
+        return isNaN(this.r[1]) ? 1 : this.r[1];
+    }
+    set end(e) {}
+
+    get OPTIONAL() { return this.r[0] === 0 }
+    set OPTIONAL(a) {}
+}
+JUX.step = 0;
+class AND extends JUX {
+    innerParser(lx, rule, out_val, r, start, end) {
+
+        const
+            PROTO = new Array(this.terms.length),
+            l = this.terms.length;
+
+        let bool = false;
+
+        repeat:
+            for (let j = 0; j < end && !lx.END; j++) {
+
+                const
+                    HIT = PROTO.fill(0),
+                    copy = lx.copy(),
+                    temp_r = { v: null };
+
+                and:
+                    while (true) {
+                        let FAILED = false;
+
+
+
+                        for (let i = 0; i < l; i++) {
+
+                            if (HIT[i] === 2) continue;
+
+                            let term = this.terms[i];
+
+                            if (!term.parse(copy, rule, temp_r, false)) {
+                                if (term.OPTIONAL)
+                                    HIT[i] = 1;
+                            } else {
+                                HIT[i] = 2;
+                                continue and;
+                            }
+                        }
+
+                        if (HIT.reduce((a, v) => a * v, 1) === 0)
+                            break repeat;
+
+                        break
+                    }
+
+
+
+                lx.sync(copy);
+
+                if (temp_r.v)
+                    this.mergeValues(r, temp_r);
+
+                bool = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+            }
 
         return bool;
     }
 }
 
+class OR extends JUX {
+    innerParser(lx, rule, out_val, r, start, end) {
+
+        const
+            PROTO = new Array(this.terms.length),
+            l = this.terms.length;
+
+        let
+            bool = false,
+            NO_HIT = true;
+
+        repeat:
+            for (let j = 0; j < end && !lx.END; j++) {
+
+                const HIT = PROTO.fill(0);
+                let copy = lx.copy();
+                let temp_r = { v: null };
+
+                or:
+                    while (true) {
+                        let FAILED = false;
+                        for (let i = 0; i < l; i++) {
+
+                            if (HIT[i] === 2) continue;
+
+                            let term = this.terms[i];
+
+                            if (term.parse(copy, temp_r, r, false)) {
+                                NO_HIT = false;
+                                HIT[i] = 2;
+                                continue or;
+                            }
+                        }
+
+                        if (NO_HIT) break repeat;
+
+                        break;
+                    }
+
+                lx.sync(copy);
+
+                if (temp_r.v)
+                    this.mergeValues(r, temp_r);
+
+                bool = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+            }
+
+        return bool;
+    }
+}
+
+OR.step = 0;
+
+class ONE_OF extends JUX {
+    innerParser(lx, rule, out_val, r, start, end) {
+
+        let BOOL = false;
+
+        let j;
+        for (j = 0; j < end && !lx.END; j++) {
+            let bool = false;
+            let copy = lx.copy();
+            let temp_r = { v: null };
+
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                ////if (!this.terms[i]) console.log(this)
+                if (this.terms[i].parse(copy, rule, temp_r, false)) {
+                    bool = true;
+                    break;
+                }
+            }
+
+            if (!bool)
+                break;
+
+            lx.sync(copy);
+            
+            if (temp_r.v)
+                this.mergeValues(r, temp_r);
+
+            BOOL = true;
+
+            if (!this.checkForComma(lx))
+                break;
+        }
+
+        return BOOL;
+    }
+}
+
+ONE_OF.step = 0;
+
 class ValueTerm {
 
     constructor(value, getPropertyParser, definitions, productions) {
 
-        if(value instanceof NR)
+        if(value instanceof JUX)
             return value;
+        
 
         this.value = null;
 
         const IS_VIRTUAL = { is: false };
+        
+        if(typeof(value) == "string")
+            var u_value = value.replace(/\-/g,"_");
 
-        if (!(this.value = types[value]))
-            this.value = getPropertyParser(value, IS_VIRTUAL, definitions, productions);
+        if (!(this.value = types[u_value]))
+            this.value = getPropertyParser(u_value, IS_VIRTUAL, definitions, productions);
 
         this.prop = "";
 
         if (!this.value)
             return new LiteralTerm(value);
 
-        if(this.value instanceof NR){
+        if(this.value instanceof JUX){
             if (IS_VIRTUAL.is)
                 this.value.virtual = true;
             return this.value;
         }
-        //this.virtual = true;
+
     }
 
     seal(){}
 
-    parse(l, rule, r) {
+    parse(l, rule, r, ROOT = true) {
         if (typeof(l) == "string")
             l = whind$1(l);
+
+        if (ROOT) {
+
+            switch(checkDefaults(l)){
+                case 1:
+                rule[this.prop] = l.tx;
+                return true;
+                case 0:
+                return false;
+            }
+        }
 
         let rn = { v: null };
 
@@ -7143,7 +7675,7 @@ class ValueTerm {
                 } else
                     r.v = (this.virtual) ? [rn.v] : rn.v;
 
-            if (this.prop)
+            if (this.prop && !this.virtual)
                 rule[this.prop] = rn.v;
 
             return true;
@@ -7158,28 +7690,45 @@ class ValueTerm {
                 } else
                     r.v = v;
 
-            if (this.prop)
+            if (this.prop && !this.virtual && ROOT)
                 rule[this.prop] = v;
 
             return true;
         } else
             return false;
     }
+
+    get OPTIONAL (){ return false }
+    set OPTIONAL (a){}
 }
 
 class LiteralTerm {
 
-    constructor(value) {
+    constructor(value, type) {
+        
+        if(type == whind$1.types.string)
+            value = value.slice(1,-1);
+
         this.value = value;
         this.prop = null;
     }
 
     seal(){}
 
-    parse(l, rule, r) {
+    parse(l, rule, r, root = true) {
 
         if (typeof(l) == "string")
             l = whind$1(l);
+
+        if (root) {
+            switch(checkDefaults(l)){
+                case 1:
+                rule[this.prop] = l.tx;
+                return true;
+                case 0:
+                return false;
+            }
+        }
 
         let v = l.tx;
         if (v == this.value) {
@@ -7196,13 +7745,16 @@ class LiteralTerm {
                 } else
                     r.v = v;
 
-            if (this.prop)
+            if (this.prop  && !this.virtual && root)
                 rule[this.prop] = v;
 
             return true;
         }
         return false;
     }
+
+    get OPTIONAL (){ return false }
+    set OPTIONAL (a){}
 }
 
 class SymbolTerm extends LiteralTerm {
@@ -7219,8 +7771,9 @@ class SymbolTerm extends LiteralTerm {
     }
 }
 
+//import util from "util"
 const standard_productions = {
-    NR,
+    JUX,
     AND,
     OR,
     ONE_OF,
@@ -7234,8 +7787,9 @@ function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definition
 
     if (prop) {
 
-        if (typeof(prop) == "string")
+        if (typeof(prop) == "string") {
             prop = definitions[property_name] = CreatePropertyParser(prop, property_name, definitions, productions);
+        }
         prop.name = property_name;
         return prop;
     }
@@ -7249,8 +7803,9 @@ function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definition
 
         IS_VIRTUAL.is = true;
 
-        if (typeof(prop) == "string"){
+        if (typeof(prop) == "string") {
             prop = definitions.__virtual[property_name] = CreatePropertyParser(prop, "", definitions, productions);
+            prop.virtual = true;
             prop.name = property_name;
         }
 
@@ -7264,60 +7819,97 @@ function getPropertyParser(property_name, IS_VIRTUAL = { is: false }, definition
 function CreatePropertyParser(notation, name, definitions, productions) {
 
     const l = whind$1(notation);
-
     const important = { is: false };
 
     let n = d$1(l, definitions, productions);
+    
     n.seal();
 
-    //if (n instanceof productions.NR && n.terms.length == 1 && n.r[1] < 2)
+    //if (n instanceof productions.JUX && n.terms.length == 1 && n.r[1] < 2)
     //    n = n.terms[0];
 
     n.prop = name;
     n.IMP = important.is;
 
+    /*//******** DEV 
+    console.log("")
+    console.log("")
+    console.log(util.inspect(n, { showHidden: false, depth: null })) 
+    //********** END Dev*/
+
     return n;
 }
 
-function d$1(l, definitions, productions, super_term = false, group = false, need_group = false, and_group = false, important = null) {
-    let term, nt;
-    const { NR: NR$$1, AND: AND$$1, OR: OR$$1, ONE_OF: ONE_OF$$1, LiteralTerm: LiteralTerm$$1, ValueTerm: ValueTerm$$1, SymbolTerm: SymbolTerm$$1 } = productions;
+function d$1(l, definitions, productions, super_term = false, oneof_group = false, or_group = false, and_group = false, important = null) {
+    let term, nt, v;
+    const { JUX: JUX$$1, AND: AND$$1, OR: OR$$1, ONE_OF: ONE_OF$$1, LiteralTerm: LiteralTerm$$1, ValueTerm: ValueTerm$$1, SymbolTerm: SymbolTerm$$1 } = productions;
+
+    let GROUP_BREAK = false;
 
     while (!l.END) {
+
         switch (l.ch) {
             case "]":
-                if (term) return term;
-                else
-                    throw new Error("Expected to have term before \"]\"");
-            case "[":
-                if (term) return term;
-                term = d$1(l.next(), definitions, productions);
-                l.a("]");
+                return term;
                 break;
+            case "[":
+
+                v = d$1(l.next(), definitions, productions, true);
+                l.assert("]");
+                v = checkExtensions(l, v, productions);
+
+                if (term) {
+                    if (term instanceof JUX$$1 && term.isRepeating()) term = foldIntoProduction(productions, new JUX$$1, term);
+                    term = foldIntoProduction(productions, term, v);
+                } else
+                    term = v;
+                break;
+
+            case "<":
+
+                v = new ValueTerm$$1(l.next().tx, getPropertyParser, definitions, productions);
+                l.next().assert(">");
+
+                v = checkExtensions(l, v, productions);
+
+                if (term) {
+                    if (term instanceof JUX$$1 /*&& term.isRepeating()*/) term = foldIntoProduction(productions, new JUX$$1, term);
+                    term = foldIntoProduction(productions, term, v);
+                } else {
+                    term = v;
+                }
+                break;
+
             case "&":
+
                 if (l.pk.ch == "&") {
+
                     if (and_group)
                         return term;
 
                     nt = new AND$$1();
+
+                    if (!term) throw new Error("missing term!");
 
                     nt.terms.push(term);
 
                     l.sync().next();
 
                     while (!l.END) {
-                        nt.terms.push(d$1(l, definitions, productions, super_term, group, need_group, true, important));
+                        nt.terms.push(d$1(l, definitions, productions, super_term, oneof_group, or_group, true, important));
                         if (l.ch !== "&" || l.pk.ch !== "&") break;
                         l.a("&").a("&");
                     }
 
                     return nt;
                 }
+                break;
             case "|":
+
                 {
                     if (l.pk.ch == "|") {
 
-                        if (need_group)
+                        if (or_group || and_group)
                             return term;
 
                         nt = new OR$$1();
@@ -7327,7 +7919,7 @@ function d$1(l, definitions, productions, super_term = false, group = false, nee
                         l.sync().next();
 
                         while (!l.END) {
-                            nt.terms.push(d$1(l, definitions, productions, super_term, group, true, and_group, important));
+                            nt.terms.push(d$1(l, definitions, productions, super_term, oneof_group, true, and_group, important));
                             if (l.ch !== "|" || l.pk.ch !== "|") break;
                             l.a("|").a("|");
                         }
@@ -7335,9 +7927,9 @@ function d$1(l, definitions, productions, super_term = false, group = false, nee
                         return nt;
 
                     } else {
-                        if (group) {
+
+                        if (oneof_group || or_group || and_group)
                             return term;
-                        }
 
                         nt = new ONE_OF$$1();
 
@@ -7346,7 +7938,7 @@ function d$1(l, definitions, productions, super_term = false, group = false, nee
                         l.next();
 
                         while (!l.END) {
-                            nt.terms.push(d$1(l, definitions, productions, super_term, true, need_group, and_group, important));
+                            nt.terms.push(d$1(l, definitions, productions, super_term, true, or_group, and_group, important));
                             if (l.ch !== "|") break;
                             l.a("|");
                         }
@@ -7355,8 +7947,36 @@ function d$1(l, definitions, productions, super_term = false, group = false, nee
                     }
                 }
                 break;
+            default:
+
+                v = (l.ty == l.types.symbol) ? new SymbolTerm$$1(l.tx) : new LiteralTerm$$1(l.tx, l.ty);
+                l.next();
+                v = checkExtensions(l, v, productions);
+
+                if (term) {
+                    if (term instanceof JUX$$1 /*&& (term.isRepeating() || term instanceof ONE_OF)*/) term = foldIntoProduction(productions, new JUX$$1, term);
+                    term = foldIntoProduction(productions, term, v);
+                } else {
+                    term = v;
+                }
+        }
+    }
+
+    return term;
+}
+
+function checkExtensions(l, term, productions) {
+    outer:
+    while (true) {
+
+        switch (l.ch) {
+            case "!":
+                /* https://www.w3.org/TR/CSS21/cascade.html#important-rules */
+                term.IMPORTANT = true;
+                l.next();
+                continue outer;
             case "{":
-                term = _Jux_(productions, term);
+                term = foldIntoProduction(productions, term);
                 term.r[0] = parseInt(l.next().tx);
                 if (l.next().ch == ",") {
                     l.next();
@@ -7370,81 +7990,48 @@ function d$1(l, definitions, productions, super_term = false, group = false, nee
                 } else
                     term.r[1] = term.r[0];
                 l.a("}");
-                if (super_term) return term;
                 break;
             case "*":
-                term = _Jux_(productions, term);
+                term = foldIntoProduction(productions, term);
                 term.r[0] = 0;
                 term.r[1] = Infinity;
                 l.next();
-                if (super_term) return term;
                 break;
             case "+":
-                term = _Jux_(productions, term);
+                term = foldIntoProduction(productions, term);
                 term.r[0] = 1;
                 term.r[1] = Infinity;
                 l.next();
-                if (super_term) return term;
                 break;
             case "?":
-                term = _Jux_(productions, term);
+                term = foldIntoProduction(productions, term);
                 term.r[0] = 0;
                 term.r[1] = 1;
                 l.next();
-                if (super_term) return term;
                 break;
             case "#":
-                term = _Jux_(productions, term);
-                term.terms.push(new SymbolTerm$$1(","));
+                term = foldIntoProduction(productions, term);
+                term.terms.push(new SymbolTerm(","));
                 term.r[0] = 1;
                 term.r[1] = Infinity;
+                term.REQUIRE_COMMA = true;
                 l.next();
                 if (l.ch == "{") {
                     term.r[0] = parseInt(l.next().tx);
                     term.r[1] = parseInt(l.next().a(",").tx);
                     l.next().a("}");
                 }
-                if (super_term) return term;
                 break;
-            case "<":
-                let v;
-
-                if (term) {
-                    if (term instanceof NR$$1 && term.isRepeating()) term = _Jux_(productions, new NR$$1, term);
-                    let v = d$1(l, definitions, productions, true);
-                    term = _Jux_(productions, term, v);
-                } else {
-                    let v = new ValueTerm$$1(l.next().tx, getPropertyParser, definitions, productions);
-                    l.next().a(">");
-                    term = v;
-                }
-                break;
-            case "!":
-                /* https://www.w3.org/TR/CSS21/cascade.html#important-rules */
-
-                l.next().a("important");
-                important.is = true;
-                break;
-            default:
-                if (term) {
-                    if (term instanceof NR$$1 && term.isRepeating()) term = _Jux_(productions, new NR$$1, term);
-                    let v = d$1(l, definitions, productions, true);
-                    term = _Jux_(productions, term, v);
-                } else {
-                    let v = (l.ty == l.types.symbol) ? new SymbolTerm$$1(l.tx) : new LiteralTerm$$1(l.tx);
-                    l.next();
-                    term = v;
-                }
         }
+        break;
     }
-
     return term;
 }
 
-function _Jux_(productions, term, new_term = null) {
+function foldIntoProduction(productions, term, new_term = null) {
     if (term) {
-        if (!(term instanceof productions.NR)) {
-            let nr = new productions.NR();
+        if (!(term instanceof productions.JUX)) {
+            let nr = new productions.JUX();
             nr.terms.push(term);
             term = nr;
         }
@@ -7488,16 +8075,20 @@ class _mediaSelectorPart_ {
 }
 
 class CSSRuleBody {
+    
     constructor() {
+
+        // 
         this.media_selector = null;
-        /**
-         * All selectors indexed by their value
-         */
+        
+        // All selectors indexed by their value
         this._selectors_ = {};
-        /**
-         * All selectors in order of appearance
-         */
+
+        //All selectors in order of appearance
         this._sel_a_ = [];
+
+        //
+        this.rules = []; 
     }
 
     _applyProperties_(lexer, rule) {
@@ -7585,11 +8176,11 @@ class CSSRuleBody {
         return true;
     }
 
-    /**
-     * Retrieves the set of rules from all matching selectors for an element.
-     * @param      {HTMLElement}  element - An element to retrieve CSS rules.
-     * @public
-     */
+    
+    /* 
+        Retrieves the set of rules from all matching selectors for an element.
+            element HTMLElement - An DOM element that should be matched to applicable rules. 
+    */
     getApplicableRules(element, rule = new CSSRule(), win = window) {
 
         if (!this.matchMedia(win)) return;
@@ -7648,7 +8239,8 @@ class CSSRuleBody {
         //Catch any comments
         if (lexer.ch == "/") {
             lexer.comment(true);
-            return this.parseProperty(lexer, rule, definitions);
+            let bool = this.parseProperty(lexer, rule, definitions);
+            return 
         }
         lexer.next().a(":");
         //allow for short circuit < | > | =
@@ -7785,6 +8377,7 @@ class CSSRuleBody {
                     break;
             }
         }
+
         selector_array.unshift(sel);
         selectors_array.push(selector_array);
         selectors.push(lexer.s(start).trim().slice(0));
@@ -7803,8 +8396,9 @@ class CSSRuleBody {
         if (root && !this.par) root.push(this);
 
         return new Promise((res, rej) => {
-            let selectors = [],
-                l = 0;
+            
+            let selectors = [], l = 0;
+            
             while (!lexer.END) {
                 switch (lexer.ch) {
                     case "@":
@@ -7862,7 +8456,7 @@ class CSSRuleBody {
                                      * We use that promise to hook into the existing promise returned by CSSRoot#parse,
                                      * executing a new parse sequence on the fetched string data using the existing CSSRoot instance,
                                      * and then resume the current parse sequence.
-                                     * @todo Conform to CSS spec and only parse if @import is at the top of the CSS string.
+                                     * @todo Conform to CSS spec and only parse if @import is at the head of the CSS string.
                                      */
                                     return type.fetchText().then((str) =>
                                         //Successfully fetched content, proceed to parse in the current root.
@@ -7885,11 +8479,18 @@ class CSSRuleBody {
                         lexer.next();
                         return res(this);
                     case "{":
+                        //Check to see if a rule body for the selector exists already.
+                        let MERGED = false;
                         let rule = new CSSRule(this);
                         this._applyProperties_(lexer.next(), rule);
                         for (let i = -1, sel = null; sel = selectors[++i];)
-                            if (sel.r) sel.r.merge(rule);
-                            else sel.r = rule;
+                            if (sel.r) {sel.r.merge(rule); MERGED = true;}
+                            else sel.addRule(rule);
+
+                        if(!MERGED){
+                            this.rules.push(rule);
+                        }
+                            
                         selectors.length = l = 0;
                         continue;
                 }
@@ -7972,7 +8573,9 @@ class CSSRuleBody {
             if (!this._selectors_[selector.id]) {
                 this._selectors_[selector.id] = selector;
                 this._sel_a_.push(selector);
-                selector.r = new CSSRule(this);
+                const rule = new CSSRule(this);
+                selector.addRule(rule);
+                this.rules.push(rule);
             } else
                 selector = this._selectors_[selector.id];
 
@@ -7981,6 +8584,1385 @@ class CSSRuleBody {
 }
 
 LinkedList.mixinTree(CSSRuleBody);
+
+class Segment {
+    constructor(parent) {
+        this.parent = null;
+
+        this.css_val = "";
+
+        this.val = document.createElement("span");
+        this.val.classList.add("prop_value");
+
+        this.list = document.createElement("div");
+        this.list.classList.add("prop_list");
+        //this.list.style.display = "none"
+
+        this.ext = document.createElement("button");
+        this.ext.classList.add("prop_extender");
+        this.ext.style.display = "none";
+        this.ext.setAttribute("action","ext");
+
+        this.menu_icon = document.createElement("span");
+        this.menu_icon.classList.add("prop_list_icon");
+        //this.menu_icon.innerHTML = "+"
+        this.menu_icon.style.display = "none";
+        this.menu_icon.setAttribute("superset", false);
+        this.menu_icon.appendChild(this.list);
+
+        this.element = document.createElement("span");
+        this.element.classList.add("prop_segment");
+
+        this.element.appendChild(this.menu_icon);
+        this.element.appendChild(this.val);
+        this.element.appendChild(this.ext);
+
+        this.value_list = [];
+        this.subs = [];
+        this.old_subs = [];
+        this.sib = null;
+        this.value_set;
+        this.HAS_VALUE = false;
+        this.DEMOTED = false;
+
+        this.element.addEventListener("mouseover", e => {
+            //this.setList();
+        });
+    }
+
+    destroy() {
+        this.parent = null;
+        this.element = null;
+        this.val = null;
+        this.list = null;
+        this.ext = null;
+        this.menu_icon = null;
+        this.subs.forEach(e => e.destroy());
+        this.subs = null;
+    }
+
+    reset() {
+        this.list.innerHTML = "";
+        this.val.innerHTML = "";
+        //this.subs.forEach(e => e.destroy);
+        this.subs = [];
+        this.setElement = null;
+        this.changeEvent = null;
+    }
+
+    clearSegments(){
+        if(this.subs.length > 0){
+            this.val.innerHTML = "";
+            for(let i = 0; i < this.subs.length; i++){
+                let sub = this.subs[i];
+                sub.destroy();
+            }   
+            this.subs.length = 0;
+        }
+    }
+
+    replaceSub(old_sub, new_sub) {
+        for (let i = 0; i < this.subs.length; i++) {
+            if (this.subs[i] == old_sub) {
+                this.sub[i] = new_sub;
+                this.val.replaceChild(old_sub.element, new_sub.element);
+                return;
+            }
+        }
+    }
+
+    mount(element) {
+        element.appendChild(this.element);
+    }
+
+
+    addSub(seg) {
+        this.menu_icon.setAttribute("superset", true);
+        seg.parent = this;
+        this.subs.push(seg);
+        this.val.appendChild(seg.element);
+    }
+
+    removeSub(seg) {
+        if (seg.parent == this) {
+            for (let i = 0; i < this.subs.length; i++) {
+                if (this.subs[i] == seg) {
+                    this.val.removeChild(seg.element);
+                    seg.parent = null;
+                    break;
+                }
+            }
+        }
+        return seg;
+    }
+
+    setList() {
+        if(this.DEMOTED) debugger
+        if (this.prod && this.list.innerHTML == "") {
+            if (this.DEMOTED || !this.prod.buildList(this.list, this))
+                this.menu_icon.style.display = "none";
+            else
+                this.menu_icon.style.display = "inline-block";
+        }
+    }
+    change(e) {
+        if (this.changeEvent)
+            this.changeEvent(this.setElement, this, e);
+    }
+
+    setValueHandler(element, change_event_function) {
+        this.val.innerHTML = "";
+        this.val.appendChild(element);
+
+        if (change_event_function) {
+            this.setElement = element;
+            this.changeEvent = change_event_function;
+            this.setElement.onchange = this.change.bind(this);
+        }
+
+        this.HAS_VALUE = true;
+        //this.menu_icon.style.display = "none";
+        this.setList();
+    }
+
+    set value(v) {
+        this.val.innerHTML = v;
+        this.css_val = v;
+        this.HAS_VALUE = true;
+        this.setList();
+    }
+
+    get value_count() {
+        if (this.subs.length > 0)
+            return this.subs.length
+        return (this.HAS_VALUE) ? 1 : 0;
+    }
+
+    promote() {
+
+    }
+
+    demote() {
+        let seg = new Segment;
+        seg.prod = this.prod;
+        seg.css_val = this.css_val;
+
+        if (this.change_event_function) {
+            seg.changeEvent = this.changeEvent;
+            seg.setElement = this.setElement;
+            seg.setElement.onchange = seg.change.bind(seg);
+        }
+
+        let subs = this.subs;
+
+        if (subs.length > 0) {
+
+            for (let i = 0; i < this.subs.length; i++) 
+                seg.addSub(this.subs[i]);
+            
+        } else {
+
+
+            let children = this.val.childNodes;
+
+            if (children.length > 0) {
+                for (let i = 0, l = children.length; i < l; i++) {
+                    seg.val.appendChild(children[0]);
+                }
+            } else {
+                seg.val.innerHTML = this.val.innerHTML;
+            }
+        }
+
+
+        this.menu_icon.innerHTML = "";
+        this.menu_icon.style.display = "none";
+        this.menu_icon.setAttribute("superset", false);
+        this.list.innerHTML = "";
+
+        this.reset();
+
+        this.addSub(seg);
+        seg.setList();
+        
+        this.DEMOTED = true;
+    }
+
+    addRepeat(seg) {
+        if (!this.DEMOTED)
+            //Turn self into own sub seg
+            this.demote();
+        this.addSub(seg);
+        seg.setList();
+    }
+
+    repeat(prod = this.prod) {
+        
+        if (this.value_count <= this.end && this.prod.end > 1) {
+            this.ext.style.display = "inline-block";
+
+            let root_x = 0;
+            let width = 0;
+            let diff_width = 0;
+
+            const move = (e) => {
+
+                let diff = e.clientX - root_x;
+                let min_diff = diff + diff_width;   
+
+                let EXTENDABLE = this.value_count < this.end;
+                let RETRACTABLE = this.value_count > 1;
+
+                if(EXTENDABLE && RETRACTABLE)
+                    this.ext.setAttribute("action","both");
+                else if(EXTENDABLE)
+                    this.ext.setAttribute("action","ext");
+                else
+                    this.ext.setAttribute("action","ret");
+
+                if (diff > 15 && EXTENDABLE) {
+                    let bb = this.element;
+
+                    if (!this.DEMOTED) {
+                        //Turn self into own sub seg
+                        this.demote();
+                    }
+
+                    if (this.old_subs.length > 1) {
+                        this.addSub(this.old_subs.pop());
+                    } else {
+                        prod.default(this, true);
+                    }
+
+                    let w = this.element.clientWidth;
+                    diff_width = w - width;
+                    width = w;
+                    root_x += diff_width;
+
+                    return;
+                }
+
+                let last_sub = this.subs[this.subs.length - 1];
+
+                if (diff < -5 - last_sub.width && RETRACTABLE) {
+                    const sub = this.subs[this.subs.length - 1];
+                    this.old_subs.push(sub);
+                    this.removeSub(sub);
+                    this.subs.length = this.subs.length - 1;
+
+                    let w = this.element.clientWidth;
+                    diff_width = w - width;
+                    width = w;
+
+                    root_x += diff_width;
+                }
+            };
+
+            const up = (e) => {
+                window.removeEventListener("pointermove", move);
+                window.removeEventListener("pointerup", up);
+            };
+
+            this.ext.onpointerdown = e => {
+                width = this.element.clientWidth;
+                root_x = e.clientX;
+                window.addEventListener("pointermove", move);
+                window.addEventListener("pointerup", up);
+            };
+
+
+            /*
+            this.ext.onclick = e => {
+                if (this.subs.length == 0)
+                    //Turn self into own sub seg
+                    this.demote()
+
+                prod.default(this, true);
+
+                if (this.value_count >= this.end)
+                    this.ext.style.display = "none";
+            }
+            */
+        } else {
+            this.ext.style.display = "none";
+        }
+        this.setList();
+        this.update();
+    }
+
+    get width() {
+        return this.element.clientWidth;
+    }
+
+    update() {
+        if (this.parent)
+            this.parent.update(this);
+        else {
+            let val = this.getValue();
+        }
+    }
+
+    getValue() {
+        let val = "";
+
+        if (this.subs.length > 0)
+            for (let i = 0; i < this.subs.length; i++)
+                val += " " + this.subs[i].getValue();
+        else
+            val = this.css_val;
+        return val;
+    }
+
+    toString() {
+        return this.getValue();
+    }
+}
+
+class ValueTerm$1 extends ValueTerm {
+
+    default (seg, APPEND = false, value = null) {
+
+        let element = this.value.valueHandler(value);
+
+        if(!APPEND){  
+            if(value)
+                seg.css_val = value + "";
+                seg.setValueHandler(element, (ele, seg, event)=>{
+                    seg.css_val = element.css_value;
+                    seg.update();
+            });
+        }else{
+            let sub = new Segment();
+            
+            if(value)
+                sub.css_val = value + "";
+            
+            sub.setValueHandler(element, (ele, seg, event)=>{
+                seg.css_val = element.css_value;
+                seg.update();
+            });
+            //sub.prod = list;
+            seg.addSub(sub);
+        }
+    }
+
+    buildInput(rep = 1, value){
+        let seg = new Segment();
+        this.default(seg, false, value);
+        return seg;
+    }
+
+    parseInput(l, seg, APPEND = false) {
+        let val = this.value.parse(l);
+
+        if (val) {
+            this.default(seg, APPEND, val);
+            return true;
+        }
+
+        return val;
+    }
+
+    list(ele, slot) {
+        let element = document.createElement("div");
+        element.classList.add("option");
+        element.innerHTML = this.value.label_name || this.value.name;
+        ele.appendChild(element);
+
+        element.addEventListener("click", e => {
+            
+            slot.innerHTML = this.value;
+            if (slot) {
+                let element = this.value.valueHandler();
+                element.addEventListener("change", e => {
+
+                    let value = element.value;
+                    slot.css_val = value;
+                    slot.update();
+                });
+                slot.setValueHandler(element);
+            } else {
+                let sub = new Segment();
+                sub.setValueHandler(this.value);
+                seg.addSub(sub);
+            }
+        });
+
+        return 1;
+    }
+
+    setSegment(segment) {
+        segment.element.innerHTML = this.value.name;
+    }
+}
+
+class BlankTerm extends LiteralTerm {
+
+    default (seg, APPEND = false) {
+
+        if(!APPEND){
+            seg.value = "  ";
+        }else{
+            let sub = new Segment();
+            sub.value = "";
+            seg.addSub(sub);
+        }
+    }
+
+    list(ele, slot) {
+        let element = document.createElement("div");
+        element.innerHTML = this.value;
+        element.classList.add("option");
+//        ele.appendChild(element) 
+
+        return 1;
+    }
+
+    parseInput(seg, APPEND = false) {
+        this.default(seg, APPEND);
+        return false;
+    }
+}
+
+class LiteralTerm$1 extends LiteralTerm {
+
+	default (seg, APPEND = false) {
+        if(!APPEND){
+            seg.value = this.value;
+        }else{
+            let sub = new Segment();
+            sub.value = this.value;
+            seg.addSub(sub);
+        }
+    }
+
+    list(ele, slot) {
+        let element = document.createElement("div");
+        element.innerHTML = this.value;
+        element.classList.add("option");
+        ele.appendChild(element); 
+        element.addEventListener("click", e => {
+            slot.value = this.value + "";
+            slot.update();
+        });
+
+        return 1;
+    }
+
+    parseInput(l, seg, APPEND = false) {
+        if (typeof(l) == "string")
+            l = whind(l);
+
+        if (l.tx == this.value) {
+            l.next();
+            this.default(seg, APPEND);
+            return true;
+        }
+
+        return false;
+    }
+}
+
+class SymbolTerm$1 extends LiteralTerm$1 {
+    list() {return 0}
+
+    parseInput(l, seg, r) {
+        if (typeof(l) == "string")
+            l = whind(l);
+
+        if (l.tx == this.value) {
+            l.next();
+            let sub = new Segment();
+            sub.value = this.value + "";
+            seg.addSub(sub);
+            return true;
+        }
+
+        return false;
+    }
+}
+
+/**
+ * wick internals.
+ * @class      JUX (name)
+ */
+class JUX$1 extends JUX {
+    //Adds an entry in options list. 
+
+
+    createSegment() {
+        let segment = new Segment();
+        segment.start = this.start;
+        segment.end = this.end;
+        segment.prod = this;
+        return segment
+    }
+
+    insertBlank(seg){
+        let blank = new BlankTerm;
+        blank.parseInput(seg);
+    }
+
+    buildList(list, slot) {
+
+        if (!slot) {
+            let element = document.createElement("div");
+            element.classList.add("prop_slot");
+            slot = element;
+        }
+
+        if (!list) {
+            list = document.createElement("div");
+            list.classList.add("prop_slot");
+            slot.appendChild(list);
+        }
+        let count = 0;
+        //Build List
+        for (let i = 0, l = this.terms.length; i < l; i++) {
+            count += this.terms[i].list(list, slot);
+        }
+
+        return count > 1;
+    }
+
+    seal() {}
+
+    parseInput(lx, segment, list) {
+
+        if (typeof(lx) == "string")
+            lx = whind$1(lx);
+
+        return this.pi(lx, segment, list);
+    }
+
+    default (segment, EXTENDED = true) {
+        let seg = this.createSegment();
+
+        segment.addSub(seg);
+
+        for (let i = 0, l = this.terms.length; i < l; i++) {
+            this.terms[i].default(seg, l > 1);
+        }
+        seg.setList();
+
+        if (!EXTENDED) seg.repeat();
+    }
+
+    pi(lx, ele, lister = this, start = this.start, end = this.end) {
+        
+        let segment = this.createSegment();
+
+        let bool = false,
+            j = 0,
+            last_segment = null,
+            first;
+
+        repeat:
+            for (let j = 0; j < end && !lx.END; j++) {
+                const REPEAT = j > 0;
+
+                let copy = lx.copy();
+
+                let seg = (REPEAT) ? new Segment : segment;
+
+                seg.prod = this;
+
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+
+                    let term = this.terms[i];
+
+                    if (!term.parseInput(copy, seg, l > 1)) {
+                        if (!term.OPTIONAL) {
+                            break repeat;
+                        }
+                    }
+                }
+
+                lx.sync(copy);
+
+                bool = true;
+
+                if (!this.checkForComma(lx))
+                    break;
+
+                if (REPEAT)
+                    segment.addRepeat(seg);
+            }
+
+            this.capParse(segment, ele, bool);
+            
+            return bool;
+    }
+
+    capParse(segment, ele, bool){
+        if (bool) {
+            segment.repeat();
+            if (ele)
+                ele.addSub(segment);
+            this.last_segment = segment;
+        }else {
+            segment.destroy();
+            if(this.OPTIONAL){
+                if(ele){
+                    let segment = this.createSegment();
+                    let blank = new BlankTerm();
+                    blank.parseInput(segment);
+                    segment.prod = this;
+                    
+                    segment.repeat();
+                    ele.addSub(segment);
+                }
+            }
+        }
+    }
+
+    buildInput(repeat = 1, lex) {
+
+        this.last_segment = null;
+        let seg = new Segment;
+        seg.start = this.start;
+        seg.end = this.end;
+        seg.prod = this;
+        this.parseInput(lex, seg, this);
+        return this.last_segment;
+    }
+
+    list(){
+        
+    }
+}
+
+class AND$1 extends JUX$1 {
+
+    default (segment, EXTENDED = false) {
+        //let seg = this.createSegment();
+        //segment.addSub(seg);
+        for (let i = 0, l = this.terms.length; i < l; i++) {
+            this.terms[i].default(segment, i > 1);
+        }
+        //seg.repeat();
+    }
+
+    list(ele, slot) {
+
+        let name = (this.name) ? this.name.replace("\_\g", " ") : this.terms.reduce((r, t) => r += " | " + t.name, "");
+        let element = document.createElement("div");
+        element.classList.add("option");
+        element.innerHTML = name;
+        ele.appendChild(element);
+
+        element.addEventListener("click", e => {
+            
+            slot.innerHTML = this.value;
+            if (slot) {
+                slot.clearSegments();
+                this.default(slot);
+                slot.update();
+            } else {
+                let sub = new Segment();
+                sub.setValueHandler(this.value);
+                seg.addSub(sub);
+            }
+        });
+
+        return 1;
+    }
+
+    pi(lx, ele, lister = this, start = 1, end = 1) {
+
+        outer: for (let j = 0; j < end && !lx.END; j++) {
+            for (let i = 0, l = this.terms.length; i < l; i++)
+                if (!this.terms[i].parseInput(lx, ele)) return (start === 0) ? true : false
+        }
+
+        segment.repeat();
+
+        return true;
+    }
+}
+Object.assign(AND$1.prototype, AND.prototype);
+
+class OR$1 extends JUX$1 {
+
+    default (segment, EXTENDED = false) {
+        //let seg = this.createSegment();
+        //segment.addSub(seg);
+        for (let i = 0, l = this.terms.length; i < l; i++) {
+            this.terms[i].default(segment, l > 1);
+        }
+        //seg.repeat();
+    }
+
+    buildList(list, slot) {
+        return false;
+    }
+
+    list(ele, slot) {
+
+        let name = this.terms.reduce((r, t) => r += " | " + t.name, "");
+        let element = document.createElement("div");
+        element.classList.add("option");
+        element.innerHTML = name;
+        ele.appendChild(element);
+
+        element.addEventListener("click", e => {
+            
+            slot.innerHTML = this.value;
+            if (slot) {
+                slot.clearSegments();
+                this.default(slot);
+                slot.update();
+            } else {
+                let sub = new Segment();
+                sub.setValueHandler(this.value);
+                seg.addSub(sub);
+            }
+        });
+
+        return 1;
+    }
+
+    pi(lx, ele, lister = this, start = this.start, end = this.end) {
+        
+        let segment = ele; //this.createSegment()
+
+        let bool = false;
+
+        let j = 0;
+
+        let OVERALL_BOOL = false;
+
+        for (let j = 0; j < end && !lx.END; j++) {
+            const REPEAT = j > 0;
+
+            let seg = (REPEAT) ? new Segment : segment;
+
+
+            bool = false;
+
+            this.count = (this.count) ? this.count:this.count = 0;
+            
+            outer:
+            //User "factorial" expression to isolate used results in a continous match. 
+            while(true){
+                for (let i = 0, l = this.terms.length; i < l; i++) {
+                    //if(this.terms[i].count == this.count) continue
+
+                    if (this.terms[i].parseInput(lx, seg, true)) {
+                        this.terms[i].count = this.count;
+                        OVERALL_BOOL = true;
+                        bool = true;
+                        continue outer;
+                    }
+                }
+                break;
+            }
+
+            {
+                //Go through unmatched and make placeholders.
+            }
+
+            {
+                //Sort everything based on parse 
+            }
+
+            if (!bool && j < start) {
+                bool = false;
+            } else if (start === 0)
+                bool = true;
+                if (REPEAT)
+            segment.addRepeat(seg);
+        }
+
+        if (OVERALL_BOOL) {
+            segment.repeat();
+            //if (ele)
+            //    ele.addSub(segment);
+            this.last_segment = segment;
+        }
+
+
+        return (!bool && start === 0) ? true : bool;
+    }
+}
+
+Object.assign(OR$1.prototype, OR.prototype);
+
+class ONE_OF$1 extends JUX$1 {
+
+    default (segment, EXTENDED = false) {
+        let seg = this.createSegment();
+        this.terms[0].default(seg);
+        segment.addSub(seg);
+        seg.setList();
+        if (!EXTENDED) seg.repeat();
+    }
+
+    list(ele, slot) {
+        let name = (this.name) ? this.name.replace(/_/g, " ") : this.terms.reduce((r, t) => r += " | " + t.name, "");
+        let element = document.createElement("div");
+        element.classList.add("option");
+        element.innerHTML = name;
+        ele.appendChild(element);
+
+        element.addEventListener("click", e => {
+            //debugger
+            slot.innerHTML = this.value;
+            if (slot) {
+                slot.clearSegments();
+                this.default(slot);
+                slot.update();
+            } else {
+                let sub = new Segment();
+                sub.setValueHandler(this.value);
+                seg.addSub(sub);
+            }
+        });
+
+        return 1;
+    }
+
+    pi(lx, ele, lister = this, start = this.start, end = this.end) {
+        //List
+        let segment = this.createSegment();
+
+        //Add new
+        let bool = false;
+
+        let j = 0;
+
+        //Parse Input
+        for (; j < end && !lx.END; j++) {
+            const REPEAT = j > 0;
+
+            let seg = segment;
+            
+            if(REPEAT){
+                seg = new Segment;
+                seg.prod = this;
+            }
+
+            bool = false;
+
+            for (let i = 0, l = this.terms.length; i < l; i++) {
+                bool = this.terms[i].parseInput(lx, seg);
+                if (bool) break;
+            }
+
+            if (!bool) {
+                if (j < start) {
+                    bool = false;
+                    break;
+                }
+            }
+            if (REPEAT)
+                segment.addRepeat(seg);
+
+        }
+
+        this.capParse(segment, ele, bool);
+
+        return  bool;
+    }
+}
+
+Object.assign(ONE_OF$1.prototype, ONE_OF.prototype);
+
+var ui_productions = /*#__PURE__*/Object.freeze({
+    JUX: JUX$1,
+    AND: AND$1,
+    OR: OR$1,
+    ONE_OF: ONE_OF$1,
+    LiteralTerm: LiteralTerm$1,
+    ValueTerm: ValueTerm$1,
+    SymbolTerm: SymbolTerm$1
+});
+
+function dragstart(e){
+    event.dataTransfer.setData('text/plain',null);
+    UISelectorPart.dragee = this;
+}
+
+function dragover(e){
+    e.preventDefault();
+}
+
+class UISelectorPart{
+
+    constructor(name, index){
+        this.txt = name;
+        this.index = index;
+        this.element = document.createElement("span");
+        this.element.classList.add("selector");
+        this.element.innerHTML = this.txt;
+        this.element.setAttribute("draggable", true);
+        this.parent = null;
+        this.element.addEventListener("dragstart",dragstart.bind(this));
+    }
+
+    mount(element, parent){
+        this.parent = parent;
+        if (element instanceof HTMLElement)
+            element.appendChild(this.element);
+    }
+
+    unmount(){
+        this.parent = null;
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    compare(other_part){
+        return other_part.txt === this.txt
+    }
+
+    toString(){
+        return this.txt;
+    }
+
+}
+
+
+function drop(e){
+    if(UISelectorPart.dragee){
+        const part = UISelectorPart.dragee;
+        const parent = part.parent;
+
+        loop:
+        while(parent != this){
+
+            //Ignore if part is already present in the selector area
+            for(let i = 0; i < this.parts.length; i++)
+                if(this.parts[i].compare(part)) break loop;
+
+            part.unmount();
+            let d = parent.remove(part);
+            this.add(part, ...d);
+            part.mount(this.element, this);
+            break;
+        }
+    }
+    UISelectorPart.dragee = null;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    return false;
+}
+
+class UISelector {
+    constructor(selector) {
+        this.selector = selector;
+        this.parts = [];
+        
+        selector.v.forEach((e, i) => {
+            this.parts.push(new UISelectorPart(e, i));
+        });
+        
+        this.text = selector.v.join();
+    }
+
+    update() {
+        this.parent.update();
+    }
+
+    mount(parent) {
+        this.element = parent.selector_space;
+        this.element.ondrop = drop.bind(this);
+        this.element.ondragover = dragover;
+        
+        this.parent = parent;
+
+        this.parts.forEach(e=>e.mount(this.element, this));
+    }
+
+    unmount() {
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    remove(part){
+        let index = part.index;
+        this.parts.splice(index,1);
+        this.parts.forEach((e,i)=>e.index = i);
+        const a = this.selector.a.splice(index,1)[0];
+        const v = this.selector.v.splice(index,1)[0];
+        this.update();
+        return [a,v]
+    }
+
+    add(part, a, v){
+        this.parts.push(part);
+        this.selector.a.push(a);
+        this.selector.v.push(v);
+        this.parts.forEach((e,i)=>e.index = i);
+        this.update();
+    }
+
+    rebuild(selector){
+        this.parts.forEach(e=>e.unmount(false));
+        this.parts.length = 0;
+        selector.v.forEach((e,i) => {
+            this.parts.push(new UISelectorPart(e, i));
+        });
+        this.mount(this.parent);
+
+    }
+}
+
+function createCache(cacher){
+    let cache = null;
+    const destroy = cacher.prototype.destroy;
+    const init = cacher.prototype.init;
+
+    cacher.prototype.destroy = function(...args){
+
+        if(destroy)
+            destroy.call(this, ...args);
+
+        this.next_cached = cache;
+        cache = this;
+    };
+
+    return function(...args){
+            let r;
+        if(cache){
+            r = cache;
+            cache = cache.next_cached;
+            r.next_cached = null;
+            init.call(r,...args);
+        }else{
+            r = new cacher(...args);
+            r.next_cached = null;
+            r.CACHED = true;
+        }
+        return r;
+    };
+}
+
+const props = Object.assign({}, property_definitions);
+
+var dragee = null;
+
+function dragstart$1(e){
+    event.dataTransfer.setData('text/plain',null);
+    UIProp.dragee = this;
+}
+
+class UIProp {
+    constructor(type,  parent) {
+        // Predefine all members of this object.
+        this.hash = 0;
+        this.type = "";
+        this.parent = null;
+        this._value = null;
+        this.setupElement(type);
+        this.init(type, parent);
+    }
+
+    init(type,  parent){
+        this.type = type;
+        this.parent = parent;
+    }
+
+    destroy(){
+        this.hash = 0;
+        this.type = "";
+        this.parent = null;
+        this._value = null;
+        this.type = null;
+        this.parent = null;
+        this.unmount();
+    }
+
+    build(type, value){
+        this.element.innerHTML ="";
+        this.element.appendChild(this.label);
+        let pp = getPropertyParser(type, undefined, props, ui_productions);
+        this._value = pp.buildInput(1, whind$1(value));
+        this._value.parent = this;
+        this._value.mount(this.element);
+    }
+
+    update(value) {
+        this.parent.update(this.type, value.toString());
+    }
+
+    mount(element) {
+        if (element instanceof HTMLElement)
+            element.appendChild(this.element);
+    }
+
+    unmount() {
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    setupElement(type) {
+        this.element = document.createElement("div");
+        this.element.setAttribute("draggable", "true");
+        this.element.classList.add("prop");
+        this.element.addEventListener("dragstart", dragstart$1.bind(this));
+        this.label = document.createElement("span");
+        this.label.classList.add("prop_label");
+        this.label.innerHTML = `${type.replace(/[\-\_]/g, " ")}`;
+    }
+
+    get value(){
+        return this._value.toString();
+    }
+}
+
+UIProp = createCache(UIProp);
+
+var UIProp$1 = UIProp;
+
+const props$1 = Object.assign({}, property_definitions);
+class UIRuleSet {
+    constructor(rule_body, parent) {
+
+        this.parent = parent;
+        this.hash = 0;
+        this.rules = [];
+        this.selectors = null;
+
+        this.element = document.createElement("div");
+        this.element.classList.add("rule");
+        this.selector_space = document.createElement("div");
+        this.selector_space.classList.add("rule_selectors");
+        this.rule_space = document.createElement("div");
+        this.rule_space.classList.add("rule_body");
+
+        this.element.addEventListener("dragover", dragover$1);
+        this.element.addEventListener("drop", (e)=>{
+            
+            let prop = UIProp$1.dragee;
+            let parent = prop.parent;
+            let value = prop.value;
+            let type = prop.type;
+
+            if(parent === this)
+                return;
+
+            this.addProp(type, value);
+            parent.removeProp(type);
+
+            //move the dragee's data into this ruleset
+        });
+
+        this.element.appendChild(this.selector_space);
+        this.element.appendChild(this.rule_space);
+
+        this.build(rule_body);
+        this.mount(this.parent.element);
+
+        this.ver = rule_body;
+    }
+
+    addData(){
+
+    }
+
+    updateSelectors(obj){
+        if(obj.parts.length < 1){
+            //remove selector from the rule set.
+        }
+    }
+
+    addSelector(selector){
+
+        //Add to list of selectors and update UI
+        if(!this.selectors){
+
+            this.selectors = new UISelector(selector);
+
+            this.selectors.mount(this);
+        }else{
+            this.selectors.rebuild(selector);
+        }
+    }
+
+    mount(element) {
+        if (element instanceof HTMLElement)
+            element.appendChild(this.element);
+    }
+
+    unmount() {
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    build(rule_body = this.rule_body) {
+
+
+        this.rule_body = rule_body;
+
+        let i = -1;
+
+        for (let a in rule_body.props) {
+            let rule;
+            
+            //Reuse Existing Rule Bodies
+            if(++i < this.rules.length){
+                rule = this.rules[i];
+            }else{
+                rule = new UIProp$1(a,  this);
+                this.rules.push(rule);
+            }
+            rule.build(a, rule_body.toString(0, a));
+            rule.mount(this.rule_space);
+        }
+    }
+
+    rebuild(rule_body){
+        console.log(1);
+        if(true || this.ver !== rule_body.ver){
+            this.rule_space.innerHTML = "";
+            this.rules.length = 0;
+            this.build(rule_body);
+            this.ver = this.rule_body.ver;
+        }
+    }
+
+    update(type, value) {
+
+        if(type && value){
+
+            let lexer = whind$1(value);
+            
+            const IS_VIRTUAL = {
+                is: false
+            };
+            
+            const parser = getPropertyParser(type, IS_VIRTUAL, property_definitions);
+            const rule = this.rule_body;
+            if (parser && !IS_VIRTUAL.is) {
+                if (!rule.props) rule.props = {};
+                parser.parse(lexer, rule.props);
+            }
+        }
+
+        this.parent.update();
+    }
+
+    addProp(type, value){
+        this.update(type, value);
+        //Increment the version of the rule_body
+        this.rule_body.ver++;
+       
+        this.rebuild(this.rule_body);
+    }
+
+    removeProp(type){
+        const rule = this.rule_body;
+        if(rule.props[type]){
+            delete rule.props[type];
+
+
+            //Increment the version of the rule_body
+            this.rule_body.ver++;
+
+            this.parent.update();
+            this.rebuild(this.rule_body);
+        }
+    }
+
+    generateHash() {}
+}
+
+function dragover$1(e){
+    e.preventDefault();
+}
+
+//import { UIValue } from "./ui_value.mjs";
+
+const props$2 = Object.assign({}, property_definitions);
+
+class UIMaster {
+    constructor(css) {
+        css.addObserver(this);
+        this.css = css;
+        this.rule_sets = [];
+        this.selectors = [];
+        this.element = document.createElement("div");
+        this.element.classList.add("cfw_css");
+
+
+        this.rule_map = new Map();
+    }
+
+    // Builds out the UI elements from collection of rule bodies and associated selector groups. 
+    // css - A CandleFW_CSS object. 
+    // meta - internal 
+    build(css = this.css) {
+
+        //Extract rule bodies and set as keys for the rule_map. 
+        //Any existing mapped body that does not have a matching rule should be removed. 
+        
+        const rule_sets = css.children;
+
+        for(let i= 0; i < rule_sets.length; i++){
+            let rule_set = rule_sets[i];
+
+            for(let i = 0; i < rule_set.rules.length; i++){
+
+                let rule = rule_set.rules[i];
+
+                if(!this.rule_map.get(rule))
+                    this.rule_map.set(rule, new UIRuleSet(rule, this));
+                else {
+                    this.rule_map.get(rule).rebuild(rule);
+                }
+            }
+
+        
+            const selector_array = rule_set._sel_a_;
+
+            for(let i = 0; i < selector_array.length; i++){
+                let selector = selector_array[i];
+                let rule_ref = selector.r;
+
+                let rule_ui = this.rule_map.get(rule_ref);
+
+                rule_ui.addSelector(selector);
+            }
+        }
+
+
+        this.css = css;
+
+        let children = css.children;
+
+        this.rule_sets = [];
+        this.selectors = [];
+    }
+
+    updatedCSS(css) {
+        if(this.UPDATE_MATCHED) return void (this.UPDATE_MATCHED = false);      
+        //this.element.innerHTML = "";
+        this.build(css);
+        //this.render();
+    }
+
+    render() {
+        for (let i = 0; i < this.rule_sets.length; i++)
+            this.rule_sets.render(this.element);
+    }
+
+    mount(element) {
+        if (element instanceof HTMLElement)
+            element.appendChild(this.element);
+    }
+
+    unmount() {
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    update(){
+        this.UPDATE_MATCHED = true;
+    	this.css.updated();
+    }
+}
 
 /**
  * Container for all rules found in a CSS string or strings.
@@ -9277,7 +11259,7 @@ const _FrozenProperty_ = (object, name, value) => OB.defineProperty(object, name
  *
  * Depending on the platform, caller will either map to requestAnimationFrame or it will be a setTimout.
  */
- 
+    
 const caller = (typeof(window) == "object" && window.requestAnimationFrame) ? window.requestAnimationFrame : (f) => {
     setTimeout(f, 1);
 };
@@ -9303,7 +11285,16 @@ class Spark {
 
         this.queue_switch = 0;
 
-        this.callback = () => this.update();
+        this.callback = ()=>{};
+
+        if(typeof(window) !== "undefined"){
+            window.addEventListener("load",()=>{
+                this.callback = () => this.update();
+                caller(this.callback);
+            });
+        }else{
+            this.callback = () => this.update();
+        }
 
         this.frame_time = perf.now();
 
@@ -9334,9 +11325,11 @@ class Spark {
 
         this.frame_time = perf.now() | 0;
 
-        this.SCHEDULE_PENDING = true;
 
-        caller(this.callback);
+        if(!this.SCHEDULE_PENDING){
+            this.SCHEDULE_PENDING = true;
+            caller(this.callback);
+        }
     }
 
     removeFromQueue(object){
@@ -10343,13 +12336,13 @@ class MultiIndexedContainer extends ModelContainerBase {
 
         let out = false;
 
-        out = this.primary_index.__removeAll__(term, out_container);
+        out = this.primary_index.__removeAll__();
 
         for (let name in this.secondary_indexes) {
 
             let index = this.secondary_indexes[name];
 
-            if (index.__removeAll__(model))
+            if (index.__removeAll__())
                 out = true;
         }
 
@@ -11592,6 +13585,7 @@ class Store {
 
 //import { CustomComponent } from "../page/component"
 
+
 /**
  * There are a number of configurable options and global objects that can be passed to wick to be used throughout the PWA. The instances of the Presets class are objects that hosts all these global properties. 
  * 
@@ -11735,6 +13729,8 @@ class Presets {
                     this.schemas[cn] = c[cn];
 
         this.options.USE_SHADOW = (this.options.USE_SHADOW) ? (DOC.head.createShadowRoot || DOC.head.attachShadow) : false;
+
+        this.url = URL;
 
         Object.freeze(this.options);
         Object.freeze(this.custom_sources);
@@ -12092,7 +14088,6 @@ class SourceManager {
     }
 
     _removeFromDOM_() {
-
         if (this._APPEND_STATE_ == true) return;
 
         if (this.ele && this.ele.parentElement)
@@ -12560,12 +14555,14 @@ class HTMLNode {
             other_lex.IWS = true;
 
             if ((other_lex.sl - other_lex.off) < 2){
+                //No data
                 //TODO
-                throw new Error("Unexpected end of input");
+                //throw new Error("Unexpected end of input");
+            }else{
+                let text_node = this.processTextNodeHook(other_lex, false);
+                if (text_node) this.addChild(text_node);
             }
 
-            let text_node = this.processTextNodeHook(other_lex, false);
-            if (text_node) this.addChild(text_node);
         }
     }
 
@@ -12825,8 +14822,10 @@ class HTMLNode {
         }
 
         if (OPENED && start < lex.off) {
-            //Got here from a network import, need produce a text node;
-            this.createTextNode(lex, start);
+            if(lex.off - start > 0){
+                //Got here from a network import, need produce a text node;
+                this.createTextNode(lex, start);
+            }
         }
 
         return this;
@@ -12896,6 +14895,7 @@ class HTMLNode {
                 return this.parseRunner(lexer, true, IGNORE_TEXT_TILL_CLOSE_TAG, this, this.url);
             }).catch((e) => {
                 console.error(e);
+                return this;
             });
         }
         return null;
@@ -13030,6 +15030,12 @@ class Tap {
 
     load(data) {
         this.downS(data);
+
+        //Make sure export occures as soon as data is ready. 
+        const value = data[this.prop];
+
+        if((typeof(value) !== "undefined") && (this.modes & EXPORT))
+            this.source.up(this, data[this.prop]);
     }
 
     down(value, meta) {
@@ -13090,7 +15096,7 @@ class UpdateTap extends Tap {
 class Source extends View {
 
     /**
-     *   In the Wick dynamic template system, Sources serve as the primary access to Model data. They, along with {@link SourceTemplate}s, are the only types of objects the directly _bind_ to a Model. When a Model is updated, the Source will transmit the updated data to their descendants, which are comprised of {@link Tap}s and {@link SourceTemplate}s.
+     *   In the Wick dynamic template system, Sources serve as the primary access to Model data. They, along with {@link SourceContainer}s, are the only types of objects the directly _bind_ to a Model. When a Model is updated, the Source will transmit the updated data to their descendants, which are comprised of {@link Tap}s and {@link SourceContainer}s.
      *   A Source will also _bind_ to an HTML element. It has no methodes to update the element, but it's descendants, primarily instances of the {@link IO} class, can update attributes and values of then element and its sub-elements.
      *   @param {Source} parent - The parent {@link Source}, used internally to build a hierarchy of Sources.
      *   @param {Object} data - An object containing HTMLELement attribute values and any other values produced by the template parser.
@@ -13161,7 +15167,7 @@ class Source extends View {
 
         if (this.parent && this.parent.removeSource)
             this.parent.removeSource(this);
-        //this.finalizeTransitionOut();
+
         this.children.forEach((c) => c.destroy());
         this.children.length = 0;
         this.data = null;
@@ -13171,8 +15177,8 @@ class Source extends View {
 
         this.ele = null;
 
-        for (let i = 0, l = this.sources.length; i < l; i++)
-            this.sources[i].destroy();
+        while(this.sources[0])
+            this.sources[0].destroy();
 
 
         super.destroy();
@@ -13931,15 +15937,17 @@ class ScriptIO extends IOBase {
         this.function = binding.val;
         this._func_ = func.bind(source);
         this.source = source;
-        this._bound_emit_function_ = new Proxy(this._emit_.bind(this), { set: (obj, name, value) => { obj(name, value); } });
+
+        let func_bound = this.emit.bind(this);
+        func_bound.onTick = this.onTick.bind(this);
+
+        this._bound_emit_function_ = new Proxy(func_bound, { set: (obj, name, value) => { obj(name, value); } });
         this.meta = null;
         this.url = statics.url;
 
         this.offset = node.offset;
         this.char = node.char;
         this.line = node.line;
-
-
     }
 
     /**
@@ -13966,13 +15974,21 @@ class ScriptIO extends IOBase {
         }
     }
 
-    _emit_(name, value) {
+    emit(name, value) {
         if (
             typeof(name) !== "undefined" &&
             typeof(value) !== "undefined"
         ) {
             this.source.upImport(name, value, this.meta);
         }
+    }
+    // Same as emit, except the message is generated on the next global tick. Usefule for actions which required incremental updates to the ui.
+    // Value
+    onTick(name){
+        spark.queueUpdate({
+            _SCHD_:0, // Meta value for spark;
+            scheduledUpdate:(s,d)=>this.emit(name, {step:s,diff:d})
+        });
     }
 }
 
@@ -14958,6 +16974,8 @@ class RootNode extends HTMLNode {
             case "img":
             case "import":
             case "link":
+            case "f":
+            case "filter":
                 return true;
         }
 
@@ -16096,14 +18114,14 @@ const Transitioneer = (function() {
 })();
 
 /**
- * SourceTemplate provide the mechanisms for dealing with lists and sets of components. 
+ * SourceContainer provide the mechanisms for dealing with lists and sets of components. 
  *
  * @param      {Source}  parent   The Source parent object.
  * @param      {Object}  data     The data object hosting attribute properties from the HTML template. 
  * @param      {Object}  presets  The global presets object.
  * @param      {HTMLElement}  element  The element that the Source will _bind_ to. 
  */
-class SourceTemplate extends View {
+class SourceContainer extends View {
 
     constructor(parent, presets, element) {
 
@@ -16209,10 +18227,11 @@ class SourceTemplate extends View {
     }
 
     /**
-     * Scrub provides a mechanism to scroll through pages of a container that has been limited through the limit filter.
+     * Scrub provides a mechanism to scroll through components of a container that have been limited through the limit filter.
      * @param  {Number} scrub_amount [description]
      */
     scrub(scrub_amount, SCRUBBING = true) {
+
         this.SCRUBBING = true;
 
         if (this.AUTO_SCRUB && !SCRUBBING && scrub_amount != Infinity) {
@@ -16221,20 +18240,27 @@ class SourceTemplate extends View {
             this.old_scrub += scrub_amount;
             this.AUTO_SCRUB = false;
         }
-
         if (scrub_amount !== Infinity) {
+
             scrub_amount += this.sco;
 
             let s = scrub_amount - this.scrub_offset;
 
+            //Make Sure the the transition animation is completed before moving on to new animation sequences.
+
+
             if (s > 1) {
-                //Make Sure the the transition animation is completed before moving on to new animation sequences.
-                this.trs_up.play(1);
+                if (this.offset < this.max)
+                    this.trs_up.play(1);
+
                 this.scrub_offset++;
                 s = scrub_amount - this.scrub_offset;
                 this.render(null, this.activeSources, this.limit, this.offset + 1, true);
             } else if (s < -1) {
-                this.trs_dn.play(1);
+
+                if (this.offset >= 1)
+                    this.trs_dn.play(1);
+                
                 this.scrub_offset--;
                 s = scrub_amount - this.scrub_offset;
                 this.render(null, this.activeSources, this.limit, this.offset - 1, true);
@@ -16245,9 +18271,8 @@ class SourceTemplate extends View {
 
             if (s > 0) {
 
-                if (this.offset >= this.max) {
+                if (this.offset >= this.max)
                     if (s > 0) s = 0;
-                }
 
 
                 if (!this.dom_up_appended) {
@@ -16262,10 +18287,9 @@ class SourceTemplate extends View {
                 this.time = this.trs_up.play(s);
             } else {
 
-                if (this.offset < 1 && s < 0) {
-                    s = 0;
-                    this.scrub_v = 0;
-                }
+                if (this.offset < 1 && s < 0)
+                    s = 0, this.scrub_v = 0;
+
 
                 if (!this.dom_dn_appended) {
 
@@ -16460,6 +18484,8 @@ class SourceTemplate extends View {
                             as.transitionOut(trs_out, (direction) ? "trs_out_up" : "trs_out_dn");
                             break;
                         default:
+
+
                             as.transitionOut(trs_out);
                     }
                 } else {
@@ -16559,7 +18585,7 @@ class SourceTemplate extends View {
      * @protected
      */
     cull(new_items) {
-        
+
         if (!new_items) new_items = [];
         let transition = Transitioneer.createTransition();
         if (new_items.length == 0) {
@@ -16643,10 +18669,10 @@ class SourceTemplate extends View {
      */
     added(items, transition = Transitioneer.createTransition()) {
         for (let i = 0; i < items.length; i++) {
-            let mgr = this.package.mount(null, items[i], false);
-            mgr.sources.forEach((s) => {
-                s.parent = this.parent;
-            });
+            let mgr = this.package.mount(null, items[i], false, undefined, this.parent);
+            //mgr.sources.forEach((s) => {
+            //    s.parent = this.parent;
+            //});
             this.sources.push(mgr);
         }
         for (let i = 0; i < this.sources.length; i++) {
@@ -16879,7 +18905,8 @@ class PackageNode extends VoidNode$1 {
     }
 }
 
-class SourceTemplateNode$1 extends RootNode {
+class SourceContainerNode$1 extends RootNode {
+
     constructor(lex) {
         super();
         this.BUILD_LIST = [];
@@ -16905,7 +18932,7 @@ class SourceTemplateNode$1 extends RootNode {
                 source.badges[this._badge_name_] = ele;
 
 
-            let me = new SourceTemplate(source, presets, ele);
+            let me = new SourceContainer(source, presets, ele);
             
             me.package = this.package;
 
@@ -17020,7 +19047,7 @@ class SVGNode extends RootNode {
                     case "w-s":
                         return new SourceNode(); //This node is used to 
                     case "w-c":
-                        return new SourceTemplateNode(); //This node is used to 
+                        return new SourceContainerNode(); //This node is used to 
                 }
                 break;
             default:
@@ -17093,7 +19120,7 @@ function CreateHTMLNode(tag) {
                 case "w-s":
                     return new SourceNode$1(); //This node is used to 
                 case "w-c":
-                    return new SourceTemplateNode$1(); //This node is used to 
+                    return new SourceContainerNode$1(); //This node is used to 
             }
             break;
         default:
@@ -17147,14 +19174,17 @@ class Skeleton {
      * @param      {<type>}  primary_model    The model
      * @return     {<type>}  { description_of_the_return_value }
      */
-    flesh(element, primary_model = null) {
+    flesh(element, primary_model = null, parent = null) {
 
-        let Source = this.____copy____(element, null, primary_model);
+        const source = this.____copy____(element, null, primary_model);
 
-        if (Source)
-            Source.load(primary_model);
+        if (source){
+            if(parent)
+                source.parent = parent;
+            source.load(primary_model);
+        }
 
-        return Source;
+        return source;
     }
 
     /**
@@ -17243,7 +19273,7 @@ function parseText(lex, SourcePackage, presets, url, win) {
     if (!lex.END) {
 
         if (lex.pk.ty != lex.types.id)
-            throw new Error(`Expecting an Identifier after '<' character, ${lex.str}`);
+            lex.throw(`Expecting an Identifier after '<' character, ${lex.str}`);
 
         let node = CreateHTMLNode(lex.p.tx);
 
@@ -17469,7 +19499,7 @@ class SourcePackage {
      * @param  {boolean} USE_SHADOW_DOM  - If `true`, appends the component to the element's ShadowDOM.
      * @param  {Object}  manager         - A custom manager that stores built source components. If not defined then a SourceManager is created and returned.
      */
-    mount(element, model, USE_SHADOW_DOM = false, manager = new SourceManager(model, element)) {
+    mount(element, model, USE_SHADOW_DOM = false, manager = new SourceManager(model, element), parent = manager) {
 
         if (!this.READY)
             return this.pushPendingMount(element, model, USE_SHADOW_DOM, manager);
@@ -17480,6 +19510,7 @@ class SourcePackage {
             //Process
             console.warn("TODO - Package has errors, pop an error widget on this element!");
         }
+        
         let i = 0,
             l = 0;
 
@@ -17501,9 +19532,9 @@ class SourcePackage {
                 }
         }
 
+
         for (i = 0, l = this.skeletons.length; i < l; i++) {
-            let source = this.skeletons[i].flesh(element, model);
-            source.parent = manager;
+            let source = this.skeletons[i].flesh(element, model, parent);
             manager.sources.push(source);
         }
 
@@ -17529,18 +19560,18 @@ PackageNode.prototype.SourcePackage = SourcePackage;
 
 /** This is the entire object structure of Wick, minus the platform specific outputs found in /source/root/ */
 
-const model$1 = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
-model$1.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
-model$1.constr = SchemedModel;
-model$1.any = (data) => new Model(data);
-model$1.any.constr = Model;
-model$1.container = {
+const model = (data, schema) => new SchemedModel(data, undefined, undefined, schema);
+model.scheme = (schema, sm) => (sm = class extends SchemedModel {}, sm.schema = schema, sm);
+model.constr = SchemedModel;
+model.any = (data) => new Model(data);
+model.any.constr = Model;
+model.container = {
     multi: MultiIndexedContainer,
     array: ArrayModelContainer,
     btree: BTreeModelContainer,
     constr: ModelContainerBase
 };
-model$1.store = (data) => new Store(data);
+model.store = (data) => new Store(data);
 
 //Construct Schema Exports
 const scheme = Object.create(schemes);
@@ -17554,16 +19585,16 @@ scheme.constr.time = TimeSchemeConstructor;
 Object.freeze(scheme.constr);
 Object.freeze(scheme);
 Object.freeze(Presets);
-Object.freeze(model$1.container.constr);
-Object.freeze(model$1.container);
-Object.freeze(model$1.any);
-Object.freeze(model$1);
+Object.freeze(model.container.constr);
+Object.freeze(model.container);
+Object.freeze(model.any);
+Object.freeze(model);
 
 const core = {
     presets: a => new Presets(a),
     view: View,
     scheme: scheme,
-    model: model$1,
+    model: model,
     source: (...a) => new SourcePackage(...a)
 };
 
@@ -17576,7 +19607,7 @@ CompileSource.nodes = {
     text: RootText,
     source: SourceNode$1,
     package: PackageNode,
-    template: SourceTemplateNode$1,
+    template: SourceContainerNode$1,
     svg:SVGNode
 };
 
@@ -17597,7 +19628,7 @@ function compile(element, presets, RETURN_PROMISE){
 const wick$1 = {
 	source,
 	scheme,
-	model: model$1,
+	model,
 	core,
 	internals,
 	compile
@@ -17890,9 +19921,13 @@ class Component {
 Component.getComputedStyle = window.getComputedStyle.bind(window);
 
 class CSSComponent extends Component{
-	constructor(system){
-		super(system);
+	constructor(system, tree){
+		super(system, tree);
+		this.tree = tree;
+		this.ui = new UIMaster(this.tree);
+		this.element.appendChild(this.ui.element);
 		
+		/*
 		this.fw = new TextFramework();
 		this.io = new TextIO(this.element);
 		this.io.fw = this.fw;
@@ -17902,6 +19937,7 @@ class CSSComponent extends Component{
 				e.stopPropagation();
 			}
 		});
+		*/
 		
 		//this.element.addEventListener("pointerup", e => {this.element.focus(); this.io.onMouseUp(e)});
         //this.element.addEventListener("keypress", e => {debugger;this.io.onKeyPress(e)});
@@ -17911,8 +19947,8 @@ class CSSComponent extends Component{
 
 	destroy(){
 
-		if(this.tree)
-			this.tree.removeObserver(this);
+		//if(this.tree)
+		//	this.tree.removeObserver(this);
 
 		this.tree = null;
 
@@ -17934,20 +19970,20 @@ class CSSComponent extends Component{
     }
 
 	documentReady(data){
-		this.tree = this.doc.tree;
-		this.tree.addObserver(this);
+		//this.tree = this.doc.tree;
+		//this.tree.addObserver(this);
 		//this.tree.parse(whind(data, true));
 		//this.manager.updateStyle("zzz", data);
-		this.fw.insertText(this.tree +"");
-		this.fw.updateText(this.io);
-		this.io.render();
+		//this.fw.insertText(this.tree +"");
+		//this.fw.updateText(this.io);
+		//this.io.render();
 	}
 
 	updatedCSS(){
-		this.fw.clearContents();
-		this.fw.insertText(this.tree +"");
-		this.fw.updateText(this.io);
-		this.io.render();
+		//this.fw.clearContents();
+		//this.fw.insertText(this.tree +"");
+		//this.fw.updateText(this.io);
+		//this.io.render();
 		// /this.element.innerHTML = this.tree + "";
 		//this.element.innerHTML = this.tree + "";
 		//this.manager.updateStyle("zzz", this.tree + "");
@@ -18605,16 +20641,18 @@ function CREATE_COMPONENT(system, doc, px, py, type = "css") {
 
     switch (doc.type) {
         case "css":
-            comp = new CSSComponent(system);
+           comp = system.css.createComponent(doc);
             break;
         case "js":
             comp = new Component(system);
+             comp.load(doc);
             break;
         case "html":
             comp = new Component(system);
+             comp.load(doc);
     }
 
-    comp.load(doc);
+   
 
     const element = comp.element;
     document.querySelector("#main_view").appendChild(element);
@@ -20141,6 +22179,7 @@ class Handler {
 class Default extends Handler {
 
     constructor(system, component = "./assets/ui_components/controls/basic.html") {
+
         super(system, component);
 
         if (!Handler.default)
@@ -20387,7 +22426,6 @@ class ElementDraw extends Default {
     }
 }
 
-const mouse= require("./cpp/build/Release/addon");
 class BrowserEngine {
     constructor(ui) {
         this.ui = ui;
@@ -20395,20 +22433,14 @@ class BrowserEngine {
         this.x = 0;
         this.y = 0;
 
-       this.setEvents();
-       setInterval(()=>{
-            let pos = mouse.mouse_pos();
-            let x = (pos >> 16) &  0xFFFF;
-            let y = (pos) &  0xFFFF;
-            this.x = x;
-            this.y = y;
-            ui.handlePointerMoveEvent({}, this);
-       },5);
-    }
+        this.pointer = document.createElement("div");
+        this.pointer.classList.add("cursor_pointer");
 
-    setEvents(){
-        const ui = this.ui;
-         // **************** Eventing *****************
+        document.body.appendChild(this.pointer);
+
+        //document.body.requestPointerLock();
+
+        // **************** Eventing *****************
         //window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
@@ -20416,17 +22448,20 @@ class BrowserEngine {
 
         // // *********** Pointer *********************
         window.addEventListener("pointerdown", e => {
-            this.x = e.x;
-            this.y = e.y;
+            this.x = e.pageX;
+            this.y = e.pageY;
+
             e.stopPropagation();
             e.preventDefault();
+
             ui.handlePointerDownEvent(e, this, !!0);
         });
 
         window.addEventListener("pointermove", e => {
-            //this.x = e.x;
-            //this.y = e.y;
-            //ui.handlePointerMoveEvent({}, this)
+            this.x = e.pageX;
+            this.y = e.pageY;
+
+            ui.handlePointerMoveEvent({}, this);
         });
 
         window.addEventListener("pointerup", e => ui.handlePointerEndEvent(e));
@@ -20437,10 +22472,10 @@ class BrowserEngine {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
         });
-        document.body.addEventListener("dragstart", e => {});
 
         requestAnimationFrame(() => this.updatePointer());
 
+        document.body.addEventListener("dragstart", e => {});
     }
 
     destroy(){
@@ -20448,11 +22483,11 @@ class BrowserEngine {
     }
 
     updatePointer() {
-        requestAnimationFrame(() => this.updatePointer());
+        //requestAnimationFrame(() => this.updatePointer());
     }
 
     get point() {
-        return this;
+        return { x: this.x, y: this.y };
     }
 }
 
@@ -21136,10 +23171,11 @@ let CSS_Root_Constructor = CSSRootNode;
 
 class CSSManager {
 
-    constructor(docs) {
+    constructor(docs, system) {
         this.css_files = [];
         this.style_elements = {};
         this.docs = docs;
+        this.system = system;
     }
 
     /**
@@ -21326,12 +23362,17 @@ class CSSManager {
     }
 
     createComponent(doc) {
-        debugger
-        let css_file = new CSS_Root_Constructor();
-        let component = new CSSComponent(css_file, this);
-        doc.bind(component);
-        this.css_files.push(css_file);
-        return component;
+        
+        let tree = doc.tree;
+        
+        if(!tree){
+            doc.tree = new CSS_Root_Constructor();
+            doc.tree.addObserver(doc);
+            doc.bind({documentReady:(data)=>{doc.tree.parse(whind$1(data));return false}});
+            this.css_files.push(doc.tree);
+        }
+
+        return new CSSComponent(this.system, tree);
     }
 
     mergeRules(css) {
@@ -21708,7 +23749,7 @@ class CSSDocument extends Document {
     }
 
     fromString(string, ALLOW_SEAL = true) {
-    	
+
         this.data = string;
 
         if (this.tree) {
@@ -21961,6 +24002,7 @@ class DocumentManager {
      * Loads file into project
      */
     loadFile(file, NEW_FILE = false) {
+        console.log(file);
         switch (typeof(file)) {
 
             case "string": // Load from file system or DB
@@ -22498,7 +24540,7 @@ SourceNode$1.prototype.buildExisting = function(element, source$$1, presets, tap
 
 let Lexer$1 = whind$1;
 
-SourceTemplateNode$1.prototype.buildExisting = function(element, source$$1, presets, taps) {
+SourceContainerNode$1.prototype.buildExisting = function(element, source$$1, presets, taps) {
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes
@@ -23315,9 +25357,9 @@ class System {
     constructor() {
         this.TEST_MODE = TEST;
         this.docs = new DocumentManager(this);
-        this.css = new CSSManager(this.docs);
+        this.css = new CSSManager(this.docs, this);
         this.html = new HTMLManager(this.docs);
-        this.mjs = new JSManager(this.docs);
+        this.js = new JSManager(this.docs);
         this.presets = new Presets();
         this.actions = actions;
         this.history = new StateMachine(this);
@@ -23351,9 +25393,15 @@ const flame = {
 
         if (DEV && !TEST) {
             //Load in the development component.
-            let path$$1 = require("path").join(process.cwd(), "assets/components/test.html");
-            let doc = system.docs.get(system.docs.loadFile(path$$1));
+
+            let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
+            let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
+            let doc = system.docs.get(system.docs.loadFile(comp_path));
+            let css = system.docs.get(system.docs.loadFile(css_path));
+
             let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
+           // actions.CREATE_COMPONENT(system, css, 0, 200);
+            
             window.flame = flame;
 
             //Activate its CSS window.

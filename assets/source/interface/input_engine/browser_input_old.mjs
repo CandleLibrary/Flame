@@ -1,18 +1,27 @@
+
+const mouse= require("./cpp/build/Release/addon");
 export default class BrowserEngine {
     constructor(ui) {
+        
         this.ui = ui;
 
         this.x = 0;
         this.y = 0;
 
-        this.pointer = document.createElement("div");
-        this.pointer.classList.add("cursor_pointer");
+       this.setEvents();
+       setInterval(()=>{
+            let pos = mouse.mouse_pos();
+            let x = (pos >> 16) &  0xFFFF;
+            let y = (pos) &  0xFFFF;
+            this.x = x;
+            this.y = y;
+            ui.handlePointerMoveEvent({}, this);
+       },5);
+    }
 
-        document.body.appendChild(this.pointer);
-
-        //document.body.requestPointerLock();
-
-        // **************** Eventing *****************
+    setEvents(){
+        const ui = this.ui;
+         // **************** Eventing *****************
         //window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
@@ -20,20 +29,17 @@ export default class BrowserEngine {
 
         // // *********** Pointer *********************
         window.addEventListener("pointerdown", e => {
-            this.x = e.pageX;
-            this.y = e.pageY;
-
+            this.x = e.x;
+            this.y = e.y;
             e.stopPropagation();
             e.preventDefault();
-
             ui.handlePointerDownEvent(e, this, !!0);
         });
 
         window.addEventListener("pointermove", e => {
-            this.x = e.pageX;
-            this.y = e.pageY;
-
-            ui.handlePointerMoveEvent({}, this)
+            //this.x = e.x;
+            //this.y = e.y;
+            //ui.handlePointerMoveEvent({}, this)
         });
 
         window.addEventListener("pointerup", e => ui.handlePointerEndEvent(e));
@@ -44,10 +50,10 @@ export default class BrowserEngine {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
         });
+        document.body.addEventListener("dragstart", e => {});
 
         requestAnimationFrame(() => this.updatePointer());
 
-        document.body.addEventListener("dragstart", e => {});
     }
 
     destroy(){
@@ -55,10 +61,10 @@ export default class BrowserEngine {
     }
 
     updatePointer() {
-        //requestAnimationFrame(() => this.updatePointer());
+        requestAnimationFrame(() => this.updatePointer());
     }
 
     get point() {
-        return { x: this.x, y: this.y };
+        return this;
     }
 }

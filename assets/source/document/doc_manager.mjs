@@ -46,6 +46,7 @@ export class DocumentManager {
      * Loads file into project
      */
     loadFile(file, NEW_FILE = false) {
+        console.log(file)
         switch (typeof(file)) {
 
             case "string": // Load from file system or DB

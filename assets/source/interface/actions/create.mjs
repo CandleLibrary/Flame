@@ -91,16 +91,18 @@ export function CREATE_COMPONENT(system, doc, px, py, type = "css") {
 
     switch (doc.type) {
         case "css":
-            comp = new CSSComponent(system);
+           comp = system.css.createComponent(doc);
             break;
         case "js":
             comp = new Component(system);
+             comp.load(doc);
             break;
         case "html":
             comp = new Component(system);
+             comp.load(doc);
     }
 
-    comp.load(doc);
+   
 
     const element = comp.element;
     document.querySelector("#main_view").appendChild(element);

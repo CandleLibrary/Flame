@@ -30,9 +30,9 @@ function DATA(system, env) {
             this.timeout(2000);
             //system.project.properties.project.bundle_files = true;
 
-            system.project.save(path.resolve("test/temp.fpd"), ()=>{
+            system.project.save(path.resolve("assets/test/temp.fpd"), ()=>{
                 system.project.reset();
-                system.project.load(path.resolve("test/temp.fpd"), ()=>{
+                system.project.load(path.resolve("assets/test/temp.fpd"), ()=>{
                     fin();
                 });
             });

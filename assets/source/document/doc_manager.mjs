@@ -92,8 +92,10 @@ export class DocumentManager {
 
                         if (file.data)
                             doc.fromString(file.data);
-                        else
+                        else{
+                            if(file.path[0] !== "%")
                             doc.load();
+                        }
                     }
                     return id;
                 }

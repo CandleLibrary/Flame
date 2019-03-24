@@ -7238,27 +7238,25 @@ ${is_iws}`;
      */
     class CSSSelector {
 
-        constructor(selectors /* string */ , selectors_arrays /* array */ ) {
+        constructor(value = "", value_array = []) {
 
             /**
              * The raw selector string value
              * @package
              */
-
-            this.v = selectors;
+            this.v = value;
 
             /**
              * Array of separated selector strings in reverse order.
              * @package
              */
+            this.a = value_array;
 
-            this.a = selectors_arrays;
-
-            /**
-             * The CSSRule.
-             * @package
-             */
+            // CSS Rulesets the selector is member of .
             this.r = null;
+
+            // CSS root the selector is a child of. 
+            this.root = null;
         }
 
         get id() {
@@ -8501,6 +8499,7 @@ ${is_iws}`;
                     let selector = this.parseSelector(lexer, this);
 
                     if (selector) {
+                        selector.root = this;
                         if (!this._selectors_[selector.id]) {
                             l = selectors.push(selector);
                             this._selectors_[selector.id] = selector;
@@ -9877,10 +9876,6 @@ ${is_iws}`;
         e.preventDefault();
     }
 
-    //import { UIValue } from "./ui_value.mjs";
-
-    const props$2 = Object.assign({}, property_definitions);
-
     class UIMaster {
         constructor(css) {
             css.addObserver(this);
@@ -9889,6 +9884,7 @@ ${is_iws}`;
             this.selectors = [];
             this.element = document.createElement("div");
             this.element.classList.add("cfw_css");
+            this.update_mod = 0;
 
 
             this.rule_map = new Map();
@@ -9898,6 +9894,7 @@ ${is_iws}`;
         // css - A CandleFW_CSS object. 
         // meta - internal 
         build(css = this.css) {
+            if(this.update_mod++%3 !== 0) return;
 
             //Extract rule bodies and set as keys for the rule_map. 
             //Any existing mapped body that does not have a matching rule should be removed. 
@@ -19762,6 +19759,7 @@ ${is_iws}`;
         }
 
         load(document) {
+            console.log(document.data);
             this.name.innerHTML = document.name;
             this.doc_name = document.name;
             this.doc_path = document.path;
@@ -19795,6 +19793,7 @@ ${is_iws}`;
                     });
 
                 if (this.IFRAME_LOADED) {
+
                     this.manager = pkg.mount(this.content, null, true, this);
                     this.sources[0].window = this.window;
                     this.rebuild();
@@ -19807,7 +19806,7 @@ ${is_iws}`;
                     });
             }
 
-            return false;
+            return true;
         }
 
         upImport() {
@@ -19832,7 +19831,14 @@ ${is_iws}`;
         }
 
         query(query) {
+            const sr = this.frame.shadowRoot;
+            if(sr)
+                return sr.querySelector(query);
             return this.frame.querySelector(query);
+        }
+
+        get body(){
+            return this.frame.shadowRoot;
         }
 
         get window() {
@@ -21454,10 +21460,6 @@ ${is_iws}`;
 
         get content(){
             return this.frame;
-        }
-
-        query(query){
-        	return this.frame.querySelector(query);
         }
     }
 
@@ -23110,6 +23112,7 @@ ${is_iws}`;
     const path$1 = require("path");
     //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
     proto$1.processTextNodeHook = function(lex) {
+
         //Feed the lexer to a new CSS Builder
         this.css = this.getCSS();
         lex.IWS = true;
@@ -23672,10 +23675,13 @@ ${is_iws}`;
         }
 
         alertObservers() {
-            if (this.observers)
-                for (let i = 0; i < this.observers.length; i++)
-                    if (this.observers[i].documentReady(this.data) === false)
+            if (this.observers){
+                for (let i = 0; i < this.observers.length; i++){
+                    if (this.observers[i].documentReady(this.data) === false){
                         this.observers.splice(i--, 1);
+                    }
+                }
+            }
         }
 
         get type() {
@@ -23714,7 +23720,7 @@ ${is_iws}`;
 
             (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
                 this.LOADED = true;
-               
+                
                 //TODO - Determine the cause of undefined assigned to pkg
                 if (!pkg) { debugger; return }
 
@@ -24052,8 +24058,10 @@ ${is_iws}`;
 
                             if (file.data)
                                 doc.fromString(file.data);
-                            else
+                            else{
+                                if(file.path[0] !== "%")
                                 doc.load();
+                            }
                         }
                         return id;
                     }
@@ -24291,7 +24299,7 @@ ${is_iws}`;
 
 
     RootNode.prototype.buildExisting = function(element, source$$1, presets, taps, parent_element, win = window, css = this.css) {
-        
+
         if (true || this.CHANGED !== 0) {
 
             if(element)
@@ -25401,7 +25409,7 @@ ${is_iws}`;
                 let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
                 let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
                 let doc = system.docs.get(system.docs.loadFile(comp_path));
-                let css = system.docs.get(system.docs.loadFile(css_path));
+                //let css = system.docs.get(system.docs.loadFile(css_path));
 
                 let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
                // actions.CREATE_COMPONENT(system, css, 0, 200);
@@ -25413,12 +25421,13 @@ ${is_iws}`;
                     ()=>{
                 actions.CREATE_COMPONENT(system, comp, 0, 200);
                         
+
                     },200);
 
             } else if (TEST) {
                 //Load in HTML test runner
                 const test_iframe = document.createElement("iframe");
-                test_iframe.src = "../../test/chromium/test.html";
+                test_iframe.src = "test/chromium/test.html";
 
                 test_iframe.width = "100%";
                 test_iframe.height = "100%";

@@ -6,8 +6,10 @@ export class CSSComponent extends Component{
 		this.tree = tree;
 		this.doc = null;
 		this.element = document.createElement("div");
-
+		this.selectors
 		this.tree.addObserver(this);
+		this.rule_sets = [];
+		this.selectors = [];
 	}
 
 	destroy(){
@@ -15,7 +17,6 @@ export class CSSComponent extends Component{
 	}
 
 	documentReady(data){
-		debugger
 		this.tree.parse(whind(data, true));
 		this.manager.updateStyle("zzz", data);
 		this.element.innerHTML = this.tree + "";

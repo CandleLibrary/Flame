@@ -80,7 +80,7 @@ RootNode.prototype.extract = function() {
 
 
 RootNode.prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window, css = this.css) {
-    
+
     if (true || this.CHANGED !== 0) {
 
         if(element)

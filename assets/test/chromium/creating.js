@@ -52,15 +52,15 @@ function CREATION(system, env) {
             let elementA = compa.query("span");
             let elementB = compb.query("div");
 
-            compa.window.document.body.children[0].children.should.have.lengthOf(9)
-            compb.window.document.body.children[0].children.should.have.lengthOf(9)
+            compa.body.children[0].children.should.have.lengthOf(9)
+            compb.body.children[0].children.should.have.lengthOf(9)
 
             const element = system.actions.TRANSFER_ELEMENT(system, compb, elementB, elementA, 50, 50);
 
             await env.tO(5);
 
-            compa.window.document.body.children[0].children.should.have.lengthOf(8);
-            compb.window.document.body.children[0].children.should.have.lengthOf(10);
+            compa.body.children[0].children.should.have.lengthOf(8);
+            compb.body.children[0].children.should.have.lengthOf(10);
 
             const style = system.ui.master_component.window.getComputedStyle(element);
             const rules = css.mergeRules(css.aquireCSS(system.ui.master_component, element));
@@ -80,15 +80,15 @@ function CREATION(system, env) {
             let elementA = compa.query("span");
             let elementB = compb.query("div");
 
-            compa.window.document.body.children[0].children.should.have.lengthOf(9)
-            compb.window.document.body.children[0].children.should.have.lengthOf(9)
+            compa.body.children[0].children.should.have.lengthOf(9)
+            compb.body.children[0].children.should.have.lengthOf(9)
 
             const element = system.actions.TRANSFER_ELEMENT(system, compb, elementB, elementA, 50, 50, true);
 
             await env.tO(5);
 
-            compa.window.document.body.children[0].children.should.have.lengthOf(9);
-            compb.window.document.body.children[0].children.should.have.lengthOf(10);
+            compa.body.children[0].children.should.have.lengthOf(9);
+            compb.body.children[0].children.should.have.lengthOf(10);
 
             const style = system.ui.master_component.window.getComputedStyle(element);
             const rules = css.mergeRules(css.aquireCSS(system.ui.master_component, element));

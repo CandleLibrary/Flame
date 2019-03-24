@@ -122,6 +122,7 @@ export class Component {
     }
 
     load(document) {
+        console.log(document.data)
         this.name.innerHTML = document.name;
         this.doc_name = document.name;
         this.doc_path = document.path;
@@ -155,6 +156,7 @@ export class Component {
                 });
 
             if (this.IFRAME_LOADED) {
+
                 this.manager = pkg.mount(this.content, null, true, this);
                 this.sources[0].window = this.window;
                 this.rebuild();
@@ -167,7 +169,7 @@ export class Component {
                 });
         }
 
-        return false;
+        return true;
     }
 
     upImport() {
@@ -192,7 +194,14 @@ export class Component {
     }
 
     query(query) {
+        const sr = this.frame.shadowRoot
+        if(sr)
+            return sr.querySelector(query);
         return this.frame.querySelector(query);
+    }
+
+    get body(){
+        return this.frame.shadowRoot;
     }
 
     get window() {

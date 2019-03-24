@@ -19,7 +19,7 @@ function HISTORY(system, env) {
 
         afterEach(() => system.project.reset());
 
-        it("Basic history commands UNDO and REDO", function() {
+        it("Basic history commands UNDO and REDO", async function() {
 
             system.actions.MOVE(system, component, element, 10, 10, false);
             system.actions.COMPLETE(system, element);
@@ -38,22 +38,22 @@ function HISTORY(system, env) {
 
             system.actions.UNDO(system);
 
-            return env.tO(100).then(() => {
-                    style.left.should.equal("10px");
-                    style.top.should.equal("10px");
-                    system.actions.REDO(system);
-                })
-                .then(env.tO)
-                .then(() => {
-                    style.left.should.equal("30px");
-                    style.top.should.equal("30px");
-                    system.actions.UNDO(system);
-                })
-                .then(env.tO)
-                .then(() => {
-                    style.left.should.equal("10px");
-                    style.top.should.equal("10px");
-                });
+            await env.tO(100)
+
+            style.left.should.equal("10px");
+            style.top.should.equal("10px");
+            system.actions.REDO(system);
+
+            await env.tO(200)
+
+            style.left.should.equal("30px");
+            style.top.should.equal("30px");
+            system.actions.UNDO(system);
+
+            await env.tO(200)
+
+            style.left.should.equal("10px");
+            style.top.should.equal("10px");
         });
     });
 }

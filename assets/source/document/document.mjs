@@ -104,10 +104,13 @@ export class Document {
     }
 
     alertObservers() {
-        if (this.observers)
-            for (let i = 0; i < this.observers.length; i++)
-                if (this.observers[i].documentReady(this.data) === false)
+        if (this.observers){
+            for (let i = 0; i < this.observers.length; i++){
+                if (this.observers[i].documentReady(this.data) === false){
                     this.observers.splice(i--, 1);
+                }
+            }
+        }
     }
 
     get type() {

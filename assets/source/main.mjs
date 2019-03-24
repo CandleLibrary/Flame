@@ -85,7 +85,7 @@ const flame = {
             let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
             let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
             let doc = system.docs.get(system.docs.loadFile(comp_path));
-            let css = system.docs.get(system.docs.loadFile(css_path));
+            //let css = system.docs.get(system.docs.loadFile(css_path));
 
             let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
            // actions.CREATE_COMPONENT(system, css, 0, 200);
@@ -97,12 +97,13 @@ const flame = {
                 ()=>{
             actions.CREATE_COMPONENT(system, comp, 0, 200);
                     
+
                 },200)
 
         } else if (TEST) {
             //Load in HTML test runner
             const test_iframe = document.createElement("iframe");
-            test_iframe.src = "../../test/chromium/test.html";
+            test_iframe.src = "test/chromium/test.html";
 
             test_iframe.width = "100%";
             test_iframe.height = "100%";

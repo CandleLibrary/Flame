@@ -40,8 +40,4 @@ export class MasterComponent extends Component {
     get content(){
         return this.frame;
     }
-
-    query(query){
-    	return this.frame.querySelector(query);
-    }
 }

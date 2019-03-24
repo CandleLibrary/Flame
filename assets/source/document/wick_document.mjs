@@ -12,7 +12,7 @@ export class WickDocument extends Document {
 
         (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
             this.LOADED = true;
-           
+            
             //TODO - Determine the cause of undefined assigned to pkg
             if (!pkg) { debugger; return }
 

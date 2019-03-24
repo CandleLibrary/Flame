@@ -2,9 +2,9 @@
 <html>
 
 <head>
-    <link href="../../node_modules/mocha/mocha.css" rel="stylesheet" />
-    <script type="text/javascript" src="../../node_modules/chai/chai.js"></script>
-    <script type="text/javascript" src="../../node_modules/mocha/mocha.js"></script>
+    <link href="../../../node_modules/mocha/mocha.css" rel="stylesheet" />
+    <script type="text/javascript" src="../../../node_modules/chai/chai.js"></script>
+    <script type="text/javascript" src="../../../node_modules/mocha/mocha.js"></script>
     <script type="text/javascript" src="./data.js"></script>
     <script type="text/javascript" src="./save.js"></script>
     <script type="text/javascript" src="./move.js"></script>
@@ -30,6 +30,7 @@
         }
 
         function loadComponent(uri) {
+            
             const doc = loadDoc(uri);
             return new Promise(res => {
                 doc.bind({
@@ -48,8 +49,8 @@
 
         const env = {
             tO : (interval = 50) => new Promise(res => setTimeout(res, interval)),
-            loadTestComponentA: () => loadComponent(path.resolve("test/component/test_compA.html")),
-            loadTestComponentB: () => loadComponent(path.resolve("test/component/test_compB.html"))
+            loadTestComponentA: () => loadComponent(path.resolve("assets/test/component/test_compA.html")),
+            loadTestComponentB: () => loadComponent(path.resolve("assets/test/component/test_compB.html"))
         };
 
         /** Loading Test Modules **/

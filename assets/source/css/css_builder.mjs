@@ -1,6 +1,6 @@
 
 import {UIMaster} from "@candlefw/css"
-import {UIRuleSet} from "@candlefw/css"
+//import {UIRuleSet} from "@candlefw/css"
 import whind from "@candlefw/whind";
 
 export default class CSSContainer extends UIMaster{

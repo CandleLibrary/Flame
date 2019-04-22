@@ -65,7 +65,7 @@ export class IframeComponent extends Component{
         const backer = document.createElement("div");
         this.style_frame.appendChild(backer);
         backer.classList.add("flame_component_background");
-        this.frame.src = "component_frame.html";
+        //this.frame.src = "component_frame.html";
         this.frame.setAttribute("frameBorder", "0");
         this.frame.setAttribute("seamless", "");
         this.frame.style.position = "fixed";
@@ -138,14 +138,20 @@ export class IframeComponent extends Component{
         //url.path = url.path[0] == "/" ? url.path.slice(1) : url.path;
         //url.data
         //url.path = "/iframe/" + url.path;
+        debugger
+        this.frame.contentWindow.postMessage("test")
+        this.frame.setAttribute("CLIENT_MODE_TEST", true)
+        this.frame.setAttribute("name", "flame_frame")
+        this.frame.src = url + "";
+        this.frame.setAttribute("name", "flame_frame")
+        this.frame.contentWindow.CLIENT_MODE = true;
+        this.frame.contentWindow.document.CLIENT_MODE = true;
 
-        this.frame.contentDocument.cookie = "flame=on";
-        this.frame.src = url.toString();
-        this.frame.contentDocument.cookie = "flame=on";
+
         //this.frame.contentWindow.history.replaceState({}, "Flame Dev Env", url.toString());
         console.log(this.frame.src)
         this.frame.onload = (e) => {
-            //debugger
+            debugger
         };
         //document.bind(this);
     }

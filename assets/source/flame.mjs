@@ -65,7 +65,11 @@ class System {
 const flame = {
     system : null,
 
-    initDevEnvironment:()=>{
+    initOverlayDevEnvironamen:()=>{
+
+    },
+
+    initDedicatedDevEnvironment:()=>{
         //Load page from query into iframe element
 
         const system = new System();
@@ -74,14 +78,30 @@ const flame = {
 
         StyleNode.prototype.flame_system = system;
 
-        //connect to the ui_group element
-        const ui_group = document.querySelector("#ui_group");
-        const view_group = document.querySelector("#main_view");
+        //Clear contents of body and insert flame elements
+        document.body.innerHTML = "";
 
-        if (!ui_group)
-            throw new Error("`ui_group` element not found in document! Aborting startup.");
+        //Main View Area 
+        let va = document.createElement("div");
+        va.id = "main_view";
+      //  va.classList.add("");
 
-        system.ui = new UI_Manager(ui_group, view_group, system);
+        //UI Group
+        let ug = document.createElement("div");
+        ug.id = "main_view";
+       // ug.classList.add("");
+
+
+        document.body.appendChild(va)
+        document.body.appendChild(ug)
+
+        //const ui_group = document.querySelector("#ui_group");
+        //const view_group = document.querySelector("#main_view");
+
+        //if (!ui_group)
+        //    throw new Error("`ui_group` element not found in document! Aborting startup.");
+
+        system.ui = new UI_Manager(ug, va, system);
     },
 
     /*
@@ -94,11 +114,14 @@ const flame = {
         - If `true`, then the size of the component is set to the same size as the screen, the view is focused on the component
           and the flame environment will be hidden and locked from interaction until the unlock command is given. 
     */
-    async loadFinalizedView(url, x = 0, y = 0,  FOCUS = false, SOLE_FOCUS = false){
+    async loadIFrameComponent(url, x = 0, y = 0,  FOCUS = false, SOLE_FOCUS = false){
+        if(!(url instanceof URL))
+            return console.error("Expecting instance of CFW URL");
+
         const system = flame.system;
 
         //const doc = system.docs.get(system.docs.loadFile(url));
-        const comp = await actions.CREATE_VIEW_COMPONENT(system, {url:new URL(url)}, x, y);
+        const comp = await actions.CREATE_VIEW_COMPONENT(system, {url}, x, y);
 
         if(FOCUS && !SOLE_FOCUS)
             system.ui.focus(comp);

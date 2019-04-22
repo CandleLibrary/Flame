@@ -1,22 +1,21 @@
 
-import UIMaster from "@candlefw/css"
+import {UIMaster} from "@candlefw/css"
+import {UIRuleSet} from "@candlefw/css"
 import whind from "@candlefw/whind";
-
-const props = Object.assign({}, property_definitions);
 
 export default class CSSContainer extends UIMaster{
 
-    constructor(css) {
-    	super(css);
-        css.addObserver(this);
+    constructor() {
+    	super({addObserver:()=>{}});
+        //css.addObserver(this);
 
         this.roots = new Map();
         this.selectors = new Set();
         this.rules = new Map();
 
-        this.css = css;
+
         this.rule_sets = [];
-        this.selectors = [];
+        //this.selectors = [];
         this.element = document.createElement("div");
         this.element.classList.add("cfw_css");
         this.update_mod = 0;
@@ -36,8 +35,8 @@ export default class CSSContainer extends UIMaster{
     	if(root_val)
     		this.roots.set(selector.root, root_val + 1);
     	else{
-    		selector.root.addObserver(this);
-    		this.roots.set(selector.root, 1);
+    		selector.root.par.addObserver(this);
+    		this.roots.set(selector.root.par, 1);
     	}
 
     	//Add the selector's rule to the list of rules
@@ -75,55 +74,14 @@ export default class CSSContainer extends UIMaster{
     // Builds out the UI elements from collection of rule bodies and associated selector groups. 
     // css - A CandleFW_CSS object. 
     // meta - internal 
-    build(css = this.css) {
-    	return;
-        if(this.update_mod++%3 !== 0) return;
-
-        //Extract rule bodies and set as keys for the rule_map. 
-        //Any existing mapped body that does not have a matching rule should be removed. 
-        
-        const rule_sets = css.children;
-
-        for(let i= 0; i < rule_sets.length; i++){
-            let rule_set = rule_sets[i];
-
-            for(let i = 0; i < rule_set.rules.length; i++){
-
-                let rule = rule_set.rules[i];
-
-                if(!this.rule_map.get(rule))
-                    this.rule_map.set(rule, new UIRuleSet(rule, this));
-                else {
-                    this.rule_map.get(rule).rebuild(rule);
-                }
-            }
-
-        
-            const selector_array = rule_set._sel_a_;
-
-            for(let i = 0; i < selector_array.length; i++){
-                let selector = selector_array[i];
-                let rule_ref = selector.r;
-
-                let rule_ui = this.rule_map.get(rule_ref);
-
-                rule_ui.addSelector(selector);
-            }
-        }
-
-
-        this.css = css;
-
-        let children = css.children;
-
-        this.rule_sets = [];
-        this.selectors = [];
+    build() {
+        this.rules.forEach((e,b,v)=>e.rebuild(b))
     }
 
-    updatedCSS(css) {
+    updatedCSS(rule) {
         if(this.UPDATE_MATCHED) return void (this.UPDATE_MATCHED = false);      
         //this.element.innerHTML = "";
-        this.build(css);
+        this.build();
         //this.render();
     }
 
@@ -142,8 +100,9 @@ export default class CSSContainer extends UIMaster{
             this.element.parentElement.removeChild(this.element);
     }
 
-    update(){
+    update(rule){
         this.UPDATE_MATCHED = true;
-    	this.css.updated();
+        rule.rule_body.root.par.updated();
+    	//this.css.updated();
     }
 }

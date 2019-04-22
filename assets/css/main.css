@@ -108,6 +108,7 @@ button{
     overflow: hidden;
     border-radius: 2px;
     background-color: white;
+    border: 2px solid black;
 }
 .flame_component_background {
     top:-1px;

@@ -1,21 +1,22 @@
-const paper = require("paper");
-const Point = paper.Point;
-const Size = paper.Size;
-const Path = paper.Path;
+//const paper = require("paper");
+//const Point = paper.Point;
+//const Size = paper.Size;
+//const Path = paper.Path;
 
 /**
  * @brief Provides interface tools for manipulating SVG elements
  */
 export class SVGManager {
     constructor(system) {
+        return
         this.system = system;
 
         this.target = null;
 
         this.canvas = document.createElement("canvas");
         this.canvas.style.position = "absolute";
-        paper.setup(this.canvas);
-        this.proj = paper.project;
+        //paper.setup(this.canvas);
+        //this.proj = paper.project;
         let point = new Point(0, 0);
 
         this.selection = null;

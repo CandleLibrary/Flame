@@ -5,7 +5,7 @@ import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";
 import { LineMachine } from "./system/line_machine";
 import { SVGManager } from "./system/svg_manager";
-import path from "path";
+import { DNDHandler } from "./dnd/drag_and_drop_handler.mjs";
 
 import Handler from "./input_handler/handler.mjs";
 import Default from "./input_handler/default.mjs";
@@ -35,10 +35,7 @@ export class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui = this;
 
-        //Initialize Input Handlers
-        new Default(system);
-        this.d = Default;
-        this.e = new ElementDraw(system);
+        
 
         this.system = system;
         this.element = UIHTMLElement;
@@ -47,6 +44,12 @@ export class UI_Manager {
         this.origin_y = 0;
         this.transform = new(css.types.transform2D)();
         this.last_action = Date.now();
+
+        //Initialize Input Handlers
+        this.dnd = new DNDHandler(system);
+        new Default(system);
+        this.d = Default;
+        this.e = new ElementDraw(system);
 
         this.active_handler = Handler.default;
         this.cur_x = 0;
@@ -233,6 +236,10 @@ export class UI_Manager {
     handlePointerEndEvent(event) {
         this.active_handler = this.active_handler.input("end", event, this, this.target);
         event.preventDefault();
+    }
+
+    handleGenericDrop(obj, x, y){
+        this.active_handler = this.active_handler.input("generic_drop", obj, this, this.target);
     }
 
     handleDocumentDrop(e) {

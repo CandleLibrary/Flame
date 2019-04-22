@@ -3,13 +3,14 @@ import { actions } from "../actions/action";
 
 export default class Default extends Handler {
 
-    constructor(system, component = "./assets/ui_components/controls/basic.html") {
+    constructor(system, component = "/flame/ui_components/controls/basic.html") {
 
         super(system, component);
 
         if (!Handler.default)
             Handler.default = this;
 
+        this.dnd = system.ui.dnd;
         this.origin_x = 0;
         this.origin_y = 0;
         this.excess_x = 0;
@@ -21,6 +22,11 @@ export default class Default extends Handler {
     start(event, ui, data) {
         const x = data.x,
             y = data.y;
+
+        if (this.dnd.ACTIVE) {
+            this.dnd.start(event, data);
+            return this.constructor.default
+        }
 
         if (event.button == 1) {
 
@@ -39,6 +45,7 @@ export default class Default extends Handler {
 
         this.origin_x = (x / ui.transform.scale);
         this.origin_y = (y / ui.transform.scale);
+
         this.ACTIVE_POINTER_INPUT = true;
 
         if (event.target !== document.body)
@@ -52,6 +59,11 @@ export default class Default extends Handler {
     }
 
     move(event, ui, data) {
+
+        if (this.dnd.ACTIVE) {
+            this.dnd.move(event, data);
+            return this.constructor.default
+        }
 
         if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
 
@@ -92,7 +104,7 @@ export default class Default extends Handler {
             this.origin_x -= (MX) ? dx : xx;
             this.origin_y -= (MY) ? dy : yy;
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
-            if (ui.target.action) {
+            if (ui.target.action && ui.target.component) {
                 let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
 
                 if (out) {
@@ -104,12 +116,18 @@ export default class Default extends Handler {
             }
 
         }
-    ui.render();
+        ui.render();
 
         return this.constructor.default;
     }
 
     end(event, ui, data) {
+        if (this.dnd.ACTIVE) {
+            this.dnd.end(event, data);
+            return this.constructor.default
+        }
+
+
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
@@ -127,7 +145,16 @@ export default class Default extends Handler {
         return this.constructor.default;
     }
 
-    drop(event, ui) {
+    drop(data, ui, drop_data){
+
+        switch(drop_data.type){
+            case "css_selector":
+               let comp = actions.CREATE_COMPONENT(ui.system, drop_data, data.x, data.y);
+            break;
+        }
+    }
+
+    docDrop(event, ui) {
         Array.prototype.forEach.call(event.dataTransfer.files,
             f => ui.mountDocument(
                 f,
@@ -138,11 +165,11 @@ export default class Default extends Handler {
         return this.constructor.default;
     }
 
-    key(){
+    key() {
 
     }
 
-    char(){
+    char() {
 
     }
 

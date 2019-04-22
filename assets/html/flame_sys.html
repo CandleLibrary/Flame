@@ -1,0 +1,34 @@
+<html>
+	<head>
+		<!-- install the session cookie -->
+		<script>document.cookie = "flaming=on"</script>
+		<script src="/cfw/radiate"></script>
+		<link href="/cfw/css/main.css" rel="stylesheet" type="text/css">
+		<link href="/cfw/css/css.ui.css" rel="stylesheet" type="text/css">
+	</head>
+	<body>
+		<!-- This element contains all user made component elements. -->
+		<div id="main_view" style="transform:translateZ(0);">
+			
+		</div>
+
+		<!-- This element contains all system UI elements. The user will interact with everything through this tree.-->
+		<div id="ui_group">
+			
+		</div>
+		<script type="module">
+			"use strict";
+			flame.initDevEnvironment();
+
+			//Load information from redirected page and change the document url back to the original form
+			const url = new flame.URL();
+			const data = url.getData().d;
+
+			if(data){
+				const new_url = new flame.URL(data);
+				//history.replaceState({}, "Flame Dev Env", data);
+				flame.loadFinalizedView(data, true, true);
+			}
+		</script>
+	</body>
+</html>

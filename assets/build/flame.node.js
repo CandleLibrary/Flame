@@ -2,8 +2,8 @@
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var path = _interopDefault(require('path'));
 var fs = _interopDefault(require('fs'));
+var path = _interopDefault(require('path'));
 
 //Main dna for containing line tokens
 class Container_Cell {
@@ -6135,6 +6135,10 @@ class CSS_Bezier extends CBezier {
 
 		return out;
 	}
+
+	toString(){
+		 return `cubic-bezier(${this[2]},${this[3]},${this[4]},${this[5]})`;
+	}
 }
 
 class Stop{
@@ -6246,8 +6250,6 @@ function CSS_Media_handle(type, prefix) {
     };
 }
 
-//import whind from "@candlefw/whind";
-
 function getValue(lex, attribute) {
     let v = lex.tx,
         mult = 1;
@@ -6285,7 +6287,11 @@ function getValue(lex, attribute) {
 }
 
 function ParseString(string, transform) {
-    //var lex = whind(string);
+    let lex = null;
+    lex = string;
+
+    if(typeof(string) == "string")
+        lex = whind$1(string);
     
     while (!lex.END) {
         let tx = lex.tx;
@@ -6407,7 +6413,7 @@ class CSS_Transform2D extends Float64Array {
         super(5);
         this.sx = 1;
         this.sy = 1;
-        if (px) {
+        if (px !== undefined) {
             if (px instanceof CSS_Transform2D) {
                 this[0] = px[0];
                 this[1] = px[1];
@@ -8700,7 +8706,7 @@ class Segment {
     }
 
     setList() {
-        if(this.DEMOTED) debugger
+        //if(this.DEMOTED) debugger
         if (this.prod && this.list.innerHTML == "") {
             if (this.DEMOTED || !this.prod.buildList(this.list, this))
                 this.menu_icon.style.display = "none";
@@ -9845,7 +9851,7 @@ class UIRuleSet {
             }
         }
 
-        this.parent.update();
+        this.parent.update(this);
     }
 
     addProp(type, value){
@@ -11018,6 +11024,7 @@ const types$3 = CSSParser.types;
  */
 function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) {
+        if(!component) debugger;
         component.x += dx;
         component.y += dy;
     } else {
@@ -14007,8 +14014,8 @@ class View{
      */
 	destroy(){
 
-		if(this .model)
-			this .model.removeView(this);
+		if(this.model && this.model.removeView)
+			this.model.removeView(this);
 	
 		this .model = undefined;
 		this.nx = undefined;
@@ -17432,6 +17439,7 @@ const CSS_Percentage$1 = CSSParser.types.percentage;
 const CSS_Color$1 = CSSParser.types.color;
 const CSS_Transform2D$1 = CSSParser.types.transform2D;
 const CSS_Path$1 = CSSParser.types.path;
+const CSS_Bezier$1 = CSSParser.types.cubic_bezier;
 
 const Animation = (function anim() {
     var USE_TRANSFORM = false;
@@ -17449,18 +17457,16 @@ const Animation = (function anim() {
         return JS_OBJECT;
     }
 
-    const Linear = { getYatX: x => x };
+    const Linear = { getYatX: x => x, toString:()=>"linear" };
 
-    /**
-     * Class to linearly interpolate number.
-     */
+    
+    // Class to linearly interpolate number.
     class lerpNumber extends Number { lerp(to, t) { return this + (to - this) * t; } copy(val) { return new lerpNumber(val); } }
 
-    /**
-     * Store animation data for a single property on a single object. 
-     * @class      AnimProp (name)
-     */
+    
+    // Store animation data for a single property on a single object. Hosts methods that can create CSS based interpolation and regular JS property animations. 
     class AnimProp {
+        
         constructor(keys, obj, prop_name, type) {
 
             this.duration = 0;
@@ -17546,11 +17552,11 @@ const Animation = (function anim() {
             return own_key.val;
         }
 
-        run(obj, prop_name, time, type) {
+        getValueAtTime(time = 0) {
             let val_start = this.current_val,
                 val_end = this.current_val,
-                key, val_out = val_start,
-                in_range = time < this.duration;
+                key, val_out = val_start;
+
 
             for (let i = 0; i < this.keys.length; i++) {
                 key = this.keys[i];
@@ -17577,9 +17583,13 @@ const Animation = (function anim() {
                 }
             }
 
-            this.setProp(obj, prop_name, val_out, type);
+            return val_out;
+        }
 
-            return in_range;
+        run(obj, prop_name, time, type) {
+            const val_out = this.getValueAtTime(time);
+            this.setProp(obj, prop_name, val_out, type);
+            return time < this.duration;
         }
 
         setProp(obj, prop_name, value, type) {
@@ -17589,7 +17599,17 @@ const Animation = (function anim() {
             } else
                 obj[prop_name] = value;
         }
+
+        unsetProp(obj, prop_name) {
+            this.setProp(obj, prop_name, "", CSS_STYLE);
+        }
+
+        toCSSString(time = 0, prop_name = "") {
+            const value = this.getValueAtTime(time);
+            return `${prop_name}:${value.toString()}`;
+        }
     }
+
 
     /**
      * Stores animation data for a group of properties. Defines delay and repeat.
@@ -17599,9 +17619,11 @@ const Animation = (function anim() {
         constructor(obj, props) {
             this.duration = 0;
             this.time = 0;
-            this.type = setType(obj);
             this.obj = null;
+            this.type = setType(obj);
             this.DESTROYED = false;
+            this.FINISHED = false;
+            this.CSS_ANIMATING = false;
             this.events = {};
 
             switch (this.type) {
@@ -17643,6 +17665,10 @@ const Animation = (function anim() {
             }
         }
 
+        unsetProps(props) {
+            for (let name in this.props)
+                this.props[name].unsetProp(this.obj, name);
+        }
 
         /**
          * Sets the properties.
@@ -17685,7 +17711,6 @@ const Animation = (function anim() {
         }
 
         scheduledUpdate(a, t) {
-
             if (this.run(this.time += t))
                 spark.queueUpdate(this);
             else
@@ -17724,6 +17749,59 @@ const Animation = (function anim() {
             if (events)
                 events.forEach(e => e(this));
         }
+
+        toCSSString(keyfram_id) {
+
+            const easing = "linear";
+
+            const strings = [`.${keyfram_id}{animation:${keyfram_id} ${this.duration}ms ${Animation.easing.ease_out.toString()}}`, `@keyframes ${keyfram_id}{`];
+
+            // TODO: Use some function to determine the number of steps that should be taken
+            // This should reflect the different keyframe variations that can occure between
+            // properties.
+            // For now, just us an arbitrary number
+
+            const len = 2;
+            const len_m_1 = len - 1;
+            for (let i = 0; i < len; i++) {
+
+                strings.push(`${Math.round((i/len_m_1)*100)}%{`);
+
+                for (let name in this.props)
+                    strings.push(this.props[name].toCSSString((i / len_m_1) * this.duration, name.replace(/([A-Z])/g, (match, p1)=>"-"+match.toLowerCase())) + ";");
+
+                strings.push("}");
+            }
+
+            strings.push("}");
+
+            return strings.join("\n");
+        }
+
+        beginCSSAnimation() {
+            if (!this.CSS_ANIMATING) {
+
+                const anim_class = "class" + ((Math.random() * 10000) | 0);
+                this.CSS_ANIMATING = anim_class;
+
+                this.obj.classList.add(anim_class);
+                let style = document.createElement("style");
+                style.innerHTML = this.toCSSString(anim_class);
+                document.head.appendChild(style);
+                this.style = style;
+
+                setTimeout(this.endCSSAnimation.bind(this), this.duration);
+            }
+        }
+
+        endCSSAnimation() {
+            if (this.CSS_ANIMATING) {
+                this.obj.classList.remove(this.CSS_ANIMATING);
+                this.CSS_ANIMATING = "";
+                this.style.parentElement.removeChild(this.style);
+                this.style = null;
+            }
+        }
     }
 
     class AnimGroup {
@@ -17756,7 +17834,7 @@ const Animation = (function anim() {
         }
 
         scheduledUpdate(a, t) {
-        	this.time += t;
+            this.time += t;
             if (this.run(this.time))
                 spark.queueUpdate(this);
         }
@@ -17808,62 +17886,126 @@ const Animation = (function anim() {
         },
 
         set USE_TRANSFORM(v) { USE_TRANSFORM = !!v; },
-        
+
         get USE_TRANSFORM() { return USE_TRANSFORM; },
-        
-        easing: {
-            linear: Linear,
-            ease: new CBezier(0.25, 0.1, 0.25, 1),
-            ease_in: new CBezier(0.42, 0, 1, 1),
-            ease_out: new CBezier(0.2, 0.8, 0.3, 0.99),
-            ease_in_out: new CBezier(0.42, 0, 0.58, 1),
-            overshoot: new CBezier(0.2, 1.5, 0.2, 0.8)
-        }
+        linear: Linear,
+        ease: new CSS_Bezier$1(0.25, 0.1, 0.25, 1),
+        ease_in: new CSS_Bezier$1(0.42, 0, 1, 1),
+        ease_out: new CSS_Bezier$1(0.2, 0.8, 0.3, 0.99),
+        ease_in_out: new CSS_Bezier$1(0.42, 0, 0.58, 1),
+        overshoot: new CSS_Bezier$1(0.2, 1.5, 0.2, 0.8),
+        custom: (x1,y1,x2,y2) => new CSS_Bezier$1(x1,y1,x2,y2)
     };
 })();
 
-function setTo(to, seq, duration, easing){
+const CSS_Transform2D$2 = CSSParser.types.transform2D;
 
-    let cs = window.getComputedStyle(to, null);
-    
-    var rect = to.getBoundingClientRect();
+function setToWithTransform(box_a, box_b, seq){
+    const start_width_as_percentage = box_a.width / box_b.width;
+    const start_height_as_percentage = box_a.height / box_b.height;
+    const pos_x_diff = -(box_b.x - box_a.x);
+    const pos_y_diff = -(box_b.y - box_a.y);
+
+    let ATransform = new CSS_Transform2D$2(pos_x_diff, pos_y_diff, start_width_as_percentage, start_height_as_percentage, 0);
+    let BTransform = new CSS_Transform2D$2(0, 0, 1, 1, 0);
+
+    seq.props.transform.keys[0].val = ATransform;
+    seq.props.transform.keys[1].val = BTransform;
+}
+
+function setTo(to, seq, duration, easing, from){
+
+    const cs = window.getComputedStyle(to, null);
+    const rect = to.getBoundingClientRect();
+    const from_rect = from.getBoundingClientRect();
+
     let to_width = cs.getPropertyValue("width");
     let to_height = cs.getPropertyValue("height");
     let margin_left = parseFloat(cs.getPropertyValue("margin-left"));
     let to_bgc = cs.getPropertyValue("background-color");
+    let to_c = cs.getPropertyValue("color");
+    const pos = cs.getPropertyValue("position");
 
-    let left = seq.props.left, offl = to.offsetLeft - margin_left;
-    let left_diff = (left.keys[0].val) - (rect.left);
+    /* USING TRANSFORM */
 
-    left.keys[0].val = new left.type(offl + left_diff, "px");
-    left.keys[1].val = new left.type(offl,"px");
+    //Use width and height a per
 
-    left.keys[1].dur = duration;
-    left.keys[1].len = duration;
-    left.keys[1].ease = easing;
-    left.duration = duration;
+    if(false){
+        setToWithTransform(from_rect, rect, seq);
+        //left.keys[0].val = new left.type(start_left, "px");
+        //left.keys[1].val = new left.type(final_left,"px");
+        seq.props.transform.keys[1].dur = duration;
+        seq.props.transform.keys[1].len = duration;
+        seq.props.transform.keys[1].ease = easing;
+        seq.props.transform.duration = duration;
+    }else{
+        ////////////////////// LEFT ////////////////////// 
 
-    let top = seq.props.top;
-    let top_diff = top.keys[0].val - rect.top;
-    top.keys[0].val = new top.type(to.offsetTop + top_diff, "px");
-    top.keys[1].val = new top.type(to.offsetTop ,"px");
-    top.keys[1].dur = duration;
-    top.keys[1].len = duration;
-    top.keys[1].ease = easing;
-    top.duration = duration;
+        const left = seq.props.left;
+        let start_left = 0, final_left = 0, abs_diff = 0;
 
+        abs_diff = (left.keys[0].val - rect.left);
 
-    seq.props.width.keys[0].val = new seq.props.width.type(to_width);
-    seq.props.width.keys[0].dur = duration;
-    seq.props.width.keys[0].len = duration;
-    seq.props.width.keys[0].ease = easing;
-    seq.props.width.duration = duration;
+        if(pos== "relative"){
+            //get existing offset 
+            const left = parseFloat(cs.getPropertyValue("left")) || 0;
 
-    seq.props.height.keys[0].val = new seq.props.height.type(to_height);
-    seq.props.height.keys[0].dur = duration;
-    seq.props.height.keys[0].len = duration; 
-    seq.props.height.keys[0].ease = easing; 
-    seq.props.height.duration = duration;
+            start_left = abs_diff +left;
+            final_left = left;
+        }else{
+            start_left = to.offsetLeft + abs_diff;
+            final_left = to.offsetLeft;
+        }
+
+        left.keys[0].val = new left.type(start_left, "px");
+        left.keys[1].val = new left.type(final_left,"px");
+        left.keys[1].dur = duration;
+        left.keys[1].len = duration;
+        left.keys[1].ease = easing;
+        left.duration = duration;
+
+        ////////////////////// TOP ////////////////////// 
+        const top = seq.props.top;
+        let start_top = 0, final_top = 0;
+
+        abs_diff = (top.keys[0].val - rect.top);
+
+        if(pos== "relative"){
+             const top = parseFloat(cs.getPropertyValue("top")) || 0;
+            start_top = abs_diff + top;
+            final_top = top;
+        }else{
+            start_top = to.offsetTop + abs_diff;
+            final_top = to.offsetTop;
+        }
+
+        top.keys[0].val = new top.type(start_top, "px");
+        top.keys[1].val = new top.type(final_top,"px");
+        top.keys[1].dur = duration;
+        top.keys[1].len = duration;
+        top.keys[1].ease = easing;
+        top.duration = duration;
+
+        ////////////////////// WIDTH ////////////////////// 
+
+        seq.props.width.keys[0].val = new seq.props.width.type(to_width);
+        seq.props.width.keys[0].dur = duration;
+        seq.props.width.keys[0].len = duration;
+        seq.props.width.keys[0].ease = easing;
+        seq.props.width.duration = duration;
+
+        ////////////////////// HEIGHT ////////////////////// 
+
+        seq.props.height.keys[0].val = new seq.props.height.type(to_height);
+        seq.props.height.keys[0].dur = duration;
+        seq.props.height.keys[0].len = duration; 
+        seq.props.height.keys[0].ease = easing; 
+        seq.props.height.duration = duration;
+
+    }
+        to.style.transformOrigin = "top left";
+
+    ////////////////////// BG COLOR ////////////////////// 
 
     seq.props.backgroundColor.keys[0].val = new seq.props.backgroundColor.type(to_bgc);
     seq.props.backgroundColor.keys[0].dur = duration; 
@@ -17871,10 +18013,20 @@ function setTo(to, seq, duration, easing){
     seq.props.backgroundColor.keys[0].ease = easing; 
     seq.props.backgroundColor.duration = duration;
 
+    ////////////////////// COLOR ////////////////////// 
+
+    seq.props.color.keys[0].val = new seq.props.color.type(to_c);
+    seq.props.color.keys[0].dur = duration; 
+    seq.props.color.keys[0].len = duration; 
+    seq.props.color.keys[0].ease = easing; 
+    seq.props.color.duration = duration;
+
     seq.obj = to;
 
+
+
     seq.addEventListener("stopped", ()=>{
-        debugger
+        seq.unsetProps();
     });
 }
 
@@ -17882,16 +18034,18 @@ function setTo(to, seq, duration, easing){
     Transform one element from another back to itself
     @alias module:wick~internals.TransformTo
 */
-function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER) {
+function TransformTo(element_from, element_to, duration = 500, easing = Animation.easing.linear, HIDE_OTHER = false) {
     let rect = element_from.getBoundingClientRect();
     let cs = window.getComputedStyle(element_from, null);
     let margin_left = parseFloat(cs.getPropertyValue("margin"));
 
     let seq = Animation.createSequence({
         obj: element_from,
+        // /transform: [{value:"translate(0,0)"},{value:"translate(0,0)"}],
         width: { value: "0px"},
         height: { value: "0px"},
         backgroundColor: { value: "rgb(1,1,1)"},
+        color: { value: "rgb(1,1,1)"},
         left: [{value:rect.left+"px"},{ value: "0px"}],
         top: [{value:rect.top+"px"},{ value: "0px"}]
     });
@@ -17899,15 +18053,16 @@ function TransformTo(element_from, element_to, duration = 500, easing = Animatio
     if (!element_to) {
 
         let a = (seq) => (element_to, duration = 500, easing = Animation.easing.linear,  HIDE_OTHER = false) => {
-            setTo(element_to, seq, duration, easing);
+            setTo(element_to, seq, duration, easing, element_from);
             seq.duration = duration;
+        console.log(seq.toCSSString("MumboJumbo"));
             return seq;
         };
 
         return a(seq);
     }
 
-    setTo(element_to, duration, easing);
+    setTo(element_to, duration, easing, element_from);
     seq.duration = duration;
     return seq;
 }
@@ -17922,12 +18077,10 @@ const Transitioneer = (function() {
         let seq;
 
         if (typeof(anim_data_or_duration) == "object") {
-            if (anim_data_or_duration.match) {
-                if (this.TT[anim_data_or_duration.match]) {
-                    let duration = anim_data_or_duration.duration;
-                    let easing = anim_data_or_duration.easing;
-                    seq = this.TT[anim_data_or_duration.match](anim_data_or_duration.obj, duration, easing);
-                }
+            if (anim_data_or_duration.match && this.TT[anim_data_or_duration.match]) {
+                let duration = anim_data_or_duration.duration;
+                let easing = anim_data_or_duration.easing;
+                seq = this.TT[anim_data_or_duration.match](anim_data_or_duration.obj, duration, easing);
             } else
                 seq = Animation.createSequence(anim_data_or_duration);
 
@@ -18042,13 +18195,18 @@ const Transitioneer = (function() {
 
         start(time = 0, speed = 1, reverse = false) {
 
+            for (let i = 0; i < this.in_seq.length; i++) {
+                let seq = this.in_seq[i];
+                seq.beginCSSAnimation();
+            }
+
             this.time = time;
             this.speed = Math.abs(speed);
             this.reverse = reverse;
 
             if (this.reverse)
                 this.speed = -this.speed;
-
+            return
             return new Promise((res, rej) => {
                 if (this.duration > 0)
                     this.scheduledUpdate(0, 0);
@@ -18067,19 +18225,26 @@ const Transitioneer = (function() {
 
         stop() {
             this.PLAY = false;
+            //There may be a need to kill any existing CSS based animations
         }
 
         step(t) {
             for (let i = 0; i < this.out_seq.length; i++) {
                 let seq = this.out_seq[i];
-                seq.run(t);
+                if(!seq.run(t) && !seq.FINISHED){
+                    seq.issueEvent("stopped");
+                    seq.FINISHED = true;
+                }
             }
 
             t = Math.max(t - this.in_delay, 0);
 
             for (let i = 0; i < this.in_seq.length; i++) {
                 let seq = this.in_seq[i];
-                seq.run(t);
+                if(!seq.run(t) && !seq.FINISHED){
+                    seq.issueEvent("stopped");
+                    seq.FINISHED = true;
+                }
             }
 
         }
@@ -19931,12 +20096,117 @@ class Component {
 
 Component.getComputedStyle = window.getComputedStyle.bind(window);
 
+class CSSContainer extends UIMaster{
+
+    constructor() {
+    	super({addObserver:()=>{}});
+        //css.addObserver(this);
+
+        this.roots = new Map();
+        this.selectors = new Set();
+        this.rules = new Map();
+
+
+        this.rule_sets = [];
+        //this.selectors = [];
+        this.element = document.createElement("div");
+        this.element.classList.add("cfw_css");
+        this.update_mod = 0;
+        this.rule_map = new Map();
+    }
+
+    /** Add selector to list, merge with any known selector or rule. Extracts CSS Sheet data **/
+    addSelector(selector){
+    	//No matching selector. Add to list. 
+
+    	if(!this.selectors.has(selector))
+    		this.selectors.add(selector);
+
+    	//Add the CSS root to the list of roots.
+    	const root_val = this.roots.get(selector.root);
+    	
+    	if(root_val)
+    		this.roots.set(selector.root, root_val + 1);
+    	else{
+    		selector.root.par.addObserver(this);
+    		this.roots.set(selector.root.par, 1);
+    	}
+
+    	//Add the selector's rule to the list of rules
+    	let rule = this.rules.get(selector.r);
+
+		if(!rule){
+			rule = new UIRuleSet(selector.r, this);
+    		this.rules.set(selector.r, rule);
+		}
+    	
+    	rule.addSelector(selector);
+    }
+
+    /** Remove selector from list. Unlink any css file that is associated with the selector **/
+    removeSelector(selector){
+    	//Make sure the selector is a member of this rule set.
+    	if(this.selectors.has(selector)){
+    		
+    		let rule = this.rules.get(select.r);
+    		
+    		rule.removeSelector(selector);
+
+    		let root_val = this.roots.get(selector.root);
+
+    		if(root_val > 1)
+    			this.roots.set(selector.root, root_val - 1);
+    		else{
+    			selector.roots.removeObserver(this);
+    			this.roots.remove(selector.root);
+    		}
+    	}
+    }
+
+
+    // Builds out the UI elements from collection of rule bodies and associated selector groups. 
+    // css - A CandleFW_CSS object. 
+    // meta - internal 
+    build() {
+        this.rules.forEach((e,b,v)=>e.rebuild(b));
+    }
+
+    updatedCSS(rule) {
+        if(this.UPDATE_MATCHED) return void (this.UPDATE_MATCHED = false);      
+        //this.element.innerHTML = "";
+        this.build();
+        //this.render();
+    }
+
+    render() {
+        for (let i = 0; i < this.rule_sets.length; i++)
+            this.rule_sets.render(this.element);
+    }
+
+    mount(element) {
+        if (element instanceof HTMLElement)
+            element.appendChild(this.element);
+    }
+
+    unmount() {
+        if (this.element.parentElement)
+            this.element.parentElement.removeChild(this.element);
+    }
+
+    update(rule){
+        this.UPDATE_MATCHED = true;
+        rule.rule_body.root.par.updated();
+    	//this.css.updated();
+    }
+}
+
 class CSSComponent extends Component{
-	constructor(system, tree){
-		super(system, tree);
-		this.tree = tree;
-		this.ui = new UIMaster(this.tree);
-		this.element.appendChild(this.ui.element);
+	constructor(system){
+		
+		super(system);
+		this.container = new CSSContainer();
+		this.element.appendChild(this.container.element);
+		
 		
 		/*
 		this.fw = new TextFramework();
@@ -20568,6 +20838,294 @@ function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
     element.wick_node.prepRebuild();
 }
 
+const fr = new FileReader();
+/**
+    Represents actions to save a file to disk. 
+**/
+class $FileReader {
+
+    constructor(file_path) {
+        this.handle = -1;
+        this.stream = -1;
+        this.offset = 0;
+        this.file_path = file_path;
+
+        try {
+            this.handle = fs.openSync(file_path, "r");
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async string(encoding = "utf8") {
+        if (this.ready) {
+            return new Promise((res, rej) => {
+                fs.readFile(this.handle, encoding, (err, string) => {
+                    if (err)
+                        return rej(err);
+                    res(string);
+                });
+            });
+        } else
+            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+
+    }
+
+    async readB(array_constructor = ArrayBuffer, byte_length = 0, off = this.offset, MOVE_OFFSET = true) {
+        if (this.ready && byte_length > 0) {
+            return new Promise((res, rej) => {
+                let buffer = new Uint8Array(byte_length);
+
+                fs.read(this.handle, buffer, 0, byte_length, off, (err, read) => {
+
+                    if (err) return rej(err);
+
+                    if (MOVE_OFFSET) this.offset = off + read;
+
+                    if (array_constructor === ArrayBuffer)
+                        res(buffer.buffer);
+                    else if (array_constructor == Uint8Array)
+                        res(buffer);
+                    else if (array_constructor == Blob)
+                        res(new Blob([buffer.buffer]));
+                    else
+                        res(new array_constructor(buffer.buffer));
+
+                });
+            })
+        } else
+            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+    }
+
+    async readS(byte_length = 0, off = this.offset, encoding = "utf8", MOVE_OFFSET = true) {
+        if (this.ready && byte_length > 0) {
+            let buffer = await this.readB(Blob, byte_length, off, MOVE_OFFSET);
+            let fr = new FileReader();
+            return new Promise(res => {
+                fr.onload = () => {
+                    res(fr.result);
+                };
+                fr.readAsText(buffer, encoding);
+            });
+        } else
+            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
+    }
+
+    scanTo(byte_offset) {
+        if (!this.ready) return;
+        this.offset = byte_offset;
+    }
+
+    close() {
+        if (this.ready) {
+            try {
+                fs.closeSync(this.handle);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+
+    get ready() { return this.handle !== -1; }
+}
+
+/**
+	Represents actions to save a file to disk. 
+**/
+class FileBuilder {
+
+    constructor(file_path) {
+        this.handle = -1;
+        this.stream = -1;
+        this.offset = 0;
+
+        try {
+            this.handle = fs.openSync(file_path, "w+");
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async writeWord(offset, word){
+    	return await this.writeB(new Uint32Array([word]), offset, false);
+    }
+
+    writeB(buffer, off = this.offset, MOVE_OFFSET = true){
+    	if(this.ready){
+	    	return new Promise((res, rej)=>{
+	    		fs.write(this.handle, buffer, 0, buffer.byteLength, off, (err, written)=>{
+	    			if(err) return rej(err);
+	    				
+	    			if(MOVE_OFFSET)this.offset = off+written;
+
+	    			res(off+written);
+	    		});
+	    	}).catch(e=>console.error(e));
+    	}
+    }
+
+    writeS(string, off = this.offset, MOVE_OFFSET = true){
+    	if(this.ready){
+	    	return new Promise((res, rej)=>{
+	    		fs.write(this.handle, string, off, "utf8", (err, written)=>{
+	    			if(err) return rej(err);
+	    				
+	    			if(MOVE_OFFSET)this.offset = off+written;
+
+	    			res(off+written);
+	    		});
+	    	}).catch(e=>console.error(e));
+    	}
+    }
+
+    scanTo(byte_offset) {
+        if (!this.ready) return;
+    }
+
+    close() {
+        if (this.ready) {
+        	try{
+        		fs.closeSync(this.handle);
+        	}catch(e){
+        		console.error(e);
+        	}
+        }
+    }
+
+    get ready() { return this.handle !== -1; }
+}
+
+class Document {
+
+    constructor(file_name, path$$1, system, IS_NEW_FILE, manager) {
+        this.path = path$$1;
+        this.name = file_name;
+        this.data = null;
+        this.old_data = "";
+        this.LOADED = (IS_NEW_FILE) ? true : false;
+        this.UPDATED = true;
+        this.SAVING = false;
+        this.INITIAL_HISTORY = false;
+        this.observers = [];
+        this.system = system;
+        this.manager = manager;
+        this.ps = false;
+    }
+
+    destroy() {
+        this.observers = null;
+    }
+
+    seal(differ) {
+
+        if (this.PENDING_SAVE) {
+
+            this.PENDING_SAVE = false;
+
+            let new_data = this + "";
+
+            let diff = differ.createDiff(this.old_data, new_data);
+
+            this.old_data = new_data;
+
+            return (diff) ? {
+                id: this.id,
+                diff
+            } : null;
+        }
+
+        return null;
+    }
+
+    async load() {
+        if (!this.LOADED) {
+            let fr = new $FileReader(this.path + "/" + this.name);
+
+            try {
+                let data = await fr.string();
+                this.LOADED = true;
+                this.fromString(data);
+            } catch (e) {
+                console.error(e);
+            }
+
+            return this.data;
+        }
+    }
+
+    async save(file_builder) {
+
+        if (!file_builder) {
+            if (this.SAVING) return;
+
+            this.SAVING = true;
+
+            let fb = new FileBuilder(this.id);
+            let string = this.toString();
+            let d = await fb.writeS(string);
+
+            if (d == 0)
+                console.warn(`Saved zero sized file ${this.id}`);
+
+            fb.close();
+
+            this.SAVING = false;
+
+        } else {
+            return file_builder.write(this.toString());
+        }
+    }
+
+    toString() {
+        return "[Document]";
+    }
+
+    bind(object) {
+        if (this.LOADED && object.documentReady(this.data) === false) return;
+        this.observers.push(object);
+    }
+
+    async alert() {
+        return new Promise(res => {
+            this.bind({ documentReady: () => res() });
+        })
+    }
+
+    alertObservers() {
+        if (this.observers){
+            for (let i = 0; i < this.observers.length; i++){
+                if (this.observers[i].documentReady(this.data) === false){
+                    this.observers.splice(i--, 1);
+                }
+            }
+        }
+    }
+
+    get type() {
+        return "";
+    }
+
+    get id() {
+        return `${this.path}/${this.name}`;
+    }
+
+    set PENDING_SAVE(v) {
+        if (v) {
+            this.manager.addPending(this);
+            this.ps = true;
+        } else {
+            this.manager.removePending(this);
+            this.ps = false;
+        }
+    }
+
+    get PENDING_SAVE() {
+        return this.ps;
+    }
+}
+
+LinkedList.mixinTree(Document);
+
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
 
@@ -20626,51 +21184,37 @@ function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px 
     return { element, node };
 }
 
-function CREATE_COMPONENT(system, doc, px, py, type = "css") {
-    //if(!(doc instanceof Document))
-    //    throw new Error("Action CREATE_COMPONENT cannot continue: doc is not an instance of Document.");
-
-    if (doc instanceof Component) {
-        switch (type) {
-            case "css":
-
-                let out = [];
-                //Pull out css information;
-                for (let i = 0; i < doc.local_css.length; i++) {
-
-                    const css = doc.local_css[i];
-                    const out_doc = (css.doc) ? css.doc : system.docs.createInternalCSSDoc(doc, css);
-
-                    out.push(CREATE_COMPONENT(system, out_doc, px+(i*-400), py, "css"));
-                }
-
-                return out;
-        }
-    }
-
+function CREATE_COMPONENT(system, doc, px, py) {
     let comp = null;
 
-    switch (doc.type) {
-        case "css":
-           comp = system.css.createComponent(doc);
-            break;
-        case "js":
-            comp = new Component(system);
-             comp.load(doc);
-            break;
-        case "html":
-            comp = new Component(system);
-             comp.load(doc);
+    if (doc instanceof Document) {
+
+        switch (doc.type) {
+            case "css":
+                comp = system.css.createComponent(doc);
+                break;
+            case "js":
+                comp = new Component(system);
+                comp.load(doc);
+                break;
+            case "html":
+                comp = new Component(system);
+                comp.load(doc);
+        }
+
+
+
+        
+
+        
+    }else{
+        comp = new CSSComponent(system);
+        comp.container.addSelector(doc.selector);
     }
-
-   
-
-    const element = comp.element;
-    document.querySelector("#main_view").appendChild(element);
+    document.querySelector("#main_view").appendChild(comp.element);
 
     comp.x = px;
     comp.y = py;
-
     return comp;
 }
 
@@ -22126,6 +22670,65 @@ class SVGManager {
     }
 }
 
+class DNDHandler{
+	constructor(system){
+		this.system = system;
+		this.icon = document.createElement("div");
+		this.icon.style.position = "absolute";
+		this.icon.style.width = "20px";
+		this.icon.style.height = "20px";
+
+		system.ui.element.appendChild(this.icon);
+
+		this.drop_obj = null;
+		this.ACTIVE = false;
+		this.x = 0;
+		this.y = 0;
+	}
+
+	setIcon(icon){
+		this.icon.innerHTML = "null";
+		//this.icon.appendChild(icon);
+	}
+
+	startDrag(obj, icon, event){
+		this.ACTIVE = true;
+
+		if(event){
+			event.preventDefault();
+			event.stopPropagation();
+		}
+
+		this.drop_obj = obj;
+		this.setIcon(icon);
+	}
+
+	start(event, data){
+		let {x,y} = data;
+		this.x = x;
+		this.y = y;
+	}
+
+	move(event, data){
+		let {x,y} = data;
+		this.icon.style.left = x;
+		this.icon.style.top = y;
+		this.x = x;
+		this.y = y;
+	}
+
+	end(event){
+		this.ACTIVE = false;
+		const obj = this.drop_obj;
+		this.drop_obj = null;
+		const x = this.system.ui.transform.getLocalX(this.x);
+		const y = this.system.ui.transform.getLocalY(this.y);
+		this.system.ui.active_handler.input("generic_drop", {x, y}, this.system.ui, obj);
+	}
+
+
+}
+
 class Handler {
     constructor(system, component_path) {
         this.package = null;
@@ -22156,6 +22759,8 @@ class Handler {
             case "move":
                 return this.move(event, ui_manager, target);
             case "drop":
+                return this.docDrop(event, ui_manager, target);
+            case "generic_drop":
                 return this.drop(event, ui_manager, target);
             case "scroll":
                 return this.scroll(event, ui_manager, target);
@@ -22174,6 +22779,9 @@ class Handler {
     move() { console.warn("No function has been defined for this action: move"); return this; }
 
     //Document drop
+    docDrop() { console.warn("No function has been defined for this action: drop"); return this; }
+
+    //Generic drop operation
     drop() { console.warn("No function has been defined for this action: drop"); return this; }
 
     //Wheel Scroll
@@ -22192,6 +22800,7 @@ class Default extends Handler {
         if (!Handler.default)
             Handler.default = this;
 
+        this.dnd = system.ui.dnd;
         this.origin_x = 0;
         this.origin_y = 0;
         this.excess_x = 0;
@@ -22203,6 +22812,11 @@ class Default extends Handler {
     start(event, ui, data) {
         const x = data.x,
             y = data.y;
+
+        if (this.dnd.ACTIVE) {
+            this.dnd.start(event, data);
+            return this.constructor.default
+        }
 
         if (event.button == 1) {
 
@@ -22221,6 +22835,7 @@ class Default extends Handler {
 
         this.origin_x = (x / ui.transform.scale);
         this.origin_y = (y / ui.transform.scale);
+
         this.ACTIVE_POINTER_INPUT = true;
 
         if (event.target !== document.body)
@@ -22234,6 +22849,11 @@ class Default extends Handler {
     }
 
     move(event, ui, data) {
+
+        if (this.dnd.ACTIVE) {
+            this.dnd.move(event, data);
+            return this.constructor.default
+        }
 
         if (!this.ACTIVE_POINTER_INPUT) return this.constructor.default;
 
@@ -22274,7 +22894,7 @@ class Default extends Handler {
             this.origin_x -= (MX) ? dx : xx;
             this.origin_y -= (MY) ? dy : yy;
             //if(ui.target.box.l == ui.target.box.r && Math.abs(diffx) > 1 && Math.abs(dx) < 0.0001) debugger
-            if (ui.target.action) {
+            if (ui.target.action && ui.target.component) {
                 let out = ui.target.action(ui.system, ui.target.component, ui.target.element, -dx, -dy, ui.target.IS_COMPONENT);
 
                 if (out) {
@@ -22286,12 +22906,18 @@ class Default extends Handler {
             }
 
         }
-    ui.render();
+        ui.render();
 
         return this.constructor.default;
     }
 
     end(event, ui, data) {
+        if (this.dnd.ACTIVE) {
+            this.dnd.end(event, data);
+            return this.constructor.default
+        }
+
+
         this.UI_MOVE = false;
         this.ACTIVE_POINTER_INPUT = false;
 
@@ -22309,7 +22935,16 @@ class Default extends Handler {
         return this.constructor.default;
     }
 
-    drop(event, ui) {
+    drop(data, ui, drop_data){
+
+        switch(drop_data.type){
+            case "css_selector":
+               let comp = actions.CREATE_COMPONENT(ui.system, drop_data, data.x, data.y);
+            break;
+        }
+    }
+
+    docDrop(event, ui) {
         Array.prototype.forEach.call(event.dataTransfer.files,
             f => ui.mountDocument(
                 f,
@@ -22320,11 +22955,11 @@ class Default extends Handler {
         return this.constructor.default;
     }
 
-    key(){
+    key() {
 
     }
 
-    char(){
+    char() {
 
     }
 
@@ -22827,10 +23462,7 @@ class UI_Manager {
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui = this;
 
-        //Initialize Input Handlers
-        new Default(system);
-        this.d = Default;
-        this.e = new ElementDraw(system);
+        
 
         this.system = system;
         this.element = UIHTMLElement;
@@ -22839,6 +23471,12 @@ class UI_Manager {
         this.origin_y = 0;
         this.transform = new(CSSParser.types.transform2D)();
         this.last_action = Date.now();
+
+        //Initialize Input Handlers
+        this.dnd = new DNDHandler(system);
+        new Default(system);
+        this.d = Default;
+        this.e = new ElementDraw(system);
 
         this.active_handler = Handler.default;
         this.cur_x = 0;
@@ -23027,6 +23665,10 @@ class UI_Manager {
         event.preventDefault();
     }
 
+    handleGenericDrop(obj, x, y){
+        this.active_handler = this.active_handler.input("generic_drop", obj, this, this.target);
+    }
+
     handleDocumentDrop(e) {
         this.active_handler = this.active_handler.input("drop", event, this, this.target);
         e.preventDefault();
@@ -23186,12 +23828,22 @@ class CSSManager {
         this.system = system;
     }
 
-    /**
-     * Returns an array of CSS rules that match against the element
-     * @param  {[type]} element   [description]
-     * @param  {[type]} component [description]
-     * @return {[type]}           [description]
-     */
+    // Returns a list of all selectors that match against the givin compoonent and element
+    getApplicableSelectors(component, element){
+        let css = component.local_css;
+        let selectors = [];
+        for(let i = 0, l = css.length;i<l;i++){
+            let sel = css[i].getApplicableSelectors(element);
+            let v;
+            while (v = sel.next().value)
+                selectors.push(v);
+        }
+        return selectors;
+    }
+
+
+    
+    // Returns an array of CSS rules that match against the element
     aquireCSS(component, element) {
         if (!component)
             return [];
@@ -23421,294 +24073,6 @@ CSSRule.prototype.merge = function(rule) {
  */
 
  class HTMLManager {}
-
-const fr = new FileReader();
-/**
-    Represents actions to save a file to disk. 
-**/
-class $FileReader {
-
-    constructor(file_path) {
-        this.handle = -1;
-        this.stream = -1;
-        this.offset = 0;
-        this.file_path = file_path;
-
-        try {
-            this.handle = fs.openSync(file_path, "r");
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    async string(encoding = "utf8") {
-        if (this.ready) {
-            return new Promise((res, rej) => {
-                fs.readFile(this.handle, encoding, (err, string) => {
-                    if (err)
-                        return rej(err);
-                    res(string);
-                });
-            });
-        } else
-            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
-
-    }
-
-    async readB(array_constructor = ArrayBuffer, byte_length = 0, off = this.offset, MOVE_OFFSET = true) {
-        if (this.ready && byte_length > 0) {
-            return new Promise((res, rej) => {
-                let buffer = new Uint8Array(byte_length);
-
-                fs.read(this.handle, buffer, 0, byte_length, off, (err, read) => {
-
-                    if (err) return rej(err);
-
-                    if (MOVE_OFFSET) this.offset = off + read;
-
-                    if (array_constructor === ArrayBuffer)
-                        res(buffer.buffer);
-                    else if (array_constructor == Uint8Array)
-                        res(buffer);
-                    else if (array_constructor == Blob)
-                        res(new Blob([buffer.buffer]));
-                    else
-                        res(new array_constructor(buffer.buffer));
-
-                });
-            })
-        } else
-            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
-    }
-
-    async readS(byte_length = 0, off = this.offset, encoding = "utf8", MOVE_OFFSET = true) {
-        if (this.ready && byte_length > 0) {
-            let buffer = await this.readB(Blob, byte_length, off, MOVE_OFFSET);
-            let fr = new FileReader();
-            return new Promise(res => {
-                fr.onload = () => {
-                    res(fr.result);
-                };
-                fr.readAsText(buffer, encoding);
-            });
-        } else
-            throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
-    }
-
-    scanTo(byte_offset) {
-        if (!this.ready) return;
-        this.offset = byte_offset;
-    }
-
-    close() {
-        if (this.ready) {
-            try {
-                fs.closeSync(this.handle);
-            } catch (e) {
-                console.error(e);
-            }
-        }
-    }
-
-    get ready() { return this.handle !== -1; }
-}
-
-/**
-	Represents actions to save a file to disk. 
-**/
-class FileBuilder {
-
-    constructor(file_path) {
-        this.handle = -1;
-        this.stream = -1;
-        this.offset = 0;
-
-        try {
-            this.handle = fs.openSync(file_path, "w+");
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    async writeWord(offset, word){
-    	return await this.writeB(new Uint32Array([word]), offset, false);
-    }
-
-    writeB(buffer, off = this.offset, MOVE_OFFSET = true){
-    	if(this.ready){
-	    	return new Promise((res, rej)=>{
-	    		fs.write(this.handle, buffer, 0, buffer.byteLength, off, (err, written)=>{
-	    			if(err) return rej(err);
-	    				
-	    			if(MOVE_OFFSET)this.offset = off+written;
-
-	    			res(off+written);
-	    		});
-	    	}).catch(e=>console.error(e));
-    	}
-    }
-
-    writeS(string, off = this.offset, MOVE_OFFSET = true){
-    	if(this.ready){
-	    	return new Promise((res, rej)=>{
-	    		fs.write(this.handle, string, off, "utf8", (err, written)=>{
-	    			if(err) return rej(err);
-	    				
-	    			if(MOVE_OFFSET)this.offset = off+written;
-
-	    			res(off+written);
-	    		});
-	    	}).catch(e=>console.error(e));
-    	}
-    }
-
-    scanTo(byte_offset) {
-        if (!this.ready) return;
-    }
-
-    close() {
-        if (this.ready) {
-        	try{
-        		fs.closeSync(this.handle);
-        	}catch(e){
-        		console.error(e);
-        	}
-        }
-    }
-
-    get ready() { return this.handle !== -1; }
-}
-
-class Document {
-
-    constructor(file_name, path$$1, system, IS_NEW_FILE, manager) {
-        this.path = path$$1;
-        this.name = file_name;
-        this.data = null;
-        this.old_data = "";
-        this.LOADED = (IS_NEW_FILE) ? true : false;
-        this.UPDATED = true;
-        this.SAVING = false;
-        this.INITIAL_HISTORY = false;
-        this.observers = [];
-        this.system = system;
-        this.manager = manager;
-        this.ps = false;
-    }
-
-    destroy() {
-        this.observers = null;
-    }
-
-    seal(differ) {
-
-        if (this.PENDING_SAVE) {
-
-            this.PENDING_SAVE = false;
-
-            let new_data = this + "";
-
-            let diff = differ.createDiff(this.old_data, new_data);
-
-            this.old_data = new_data;
-
-            return (diff) ? {
-                id: this.id,
-                diff
-            } : null;
-        }
-
-        return null;
-    }
-
-    async load() {
-        if (!this.LOADED) {
-            let fr = new $FileReader(this.path + "/" + this.name);
-
-            try {
-                let data = await fr.string();
-                this.LOADED = true;
-                this.fromString(data);
-            } catch (e) {
-                console.error(e);
-            }
-
-            return this.data;
-        }
-    }
-
-    async save(file_builder) {
-
-        if (!file_builder) {
-            if (this.SAVING) return;
-
-            this.SAVING = true;
-
-            let fb = new FileBuilder(this.id);
-            let string = this.toString();
-            let d = await fb.writeS(string);
-
-            if (d == 0)
-                console.warn(`Saved zero sized file ${this.id}`);
-
-            fb.close();
-
-            this.SAVING = false;
-
-        } else {
-            return file_builder.write(this.toString());
-        }
-    }
-
-    toString() {
-        return "[Document]";
-    }
-
-    bind(object) {
-        if (this.LOADED && object.documentReady(this.data) === false) return;
-        this.observers.push(object);
-    }
-
-    async alert() {
-        return new Promise(res => {
-            this.bind({ documentReady: () => res() });
-        })
-    }
-
-    alertObservers() {
-        if (this.observers){
-            for (let i = 0; i < this.observers.length; i++){
-                if (this.observers[i].documentReady(this.data) === false){
-                    this.observers.splice(i--, 1);
-                }
-            }
-        }
-    }
-
-    get type() {
-        return "";
-    }
-
-    get id() {
-        return `${this.path}/${this.name}`;
-    }
-
-    set PENDING_SAVE(v) {
-        if (v) {
-            this.manager.addPending(this);
-            this.ps = true;
-        } else {
-            this.manager.removePending(this);
-            this.ps = false;
-        }
-    }
-
-    get PENDING_SAVE() {
-        return this.ps;
-    }
-}
-
-LinkedList.mixinTree(Document);
 
 class WickDocument extends Document {
 
@@ -25416,14 +25780,6 @@ const flame = {
            // actions.CREATE_COMPONENT(system, css, 0, 200);
             
             window.flame = flame;
-
-            //Activate its CSS window.
-            setTimeout(
-                ()=>{
-            actions.CREATE_COMPONENT(system, comp, 0, 200);
-                    
-
-                },200);
 
         } else if (TEST) {
             //Load in HTML test runner

@@ -2,21 +2,14 @@
   "name": "@galactrax/flame",
   "version": "0.0.6",
   "description": "A browser tech web editing app based on wick and electron",
-  "main": "main.js",
+  "main": "main.mjs",
+  "bin": {
+    "flame": "main.mjs"
+  },
   "scripts": {
-    "start": "electron .",
-    "start.win.release": "set \"FLAME_TEST=\" && set \"FLAME_DEV=\" && electron .",
-    "start.win.dev": "set \"FLAME_TEST=\" && set \"FLAME_DEV=true\" && electron .",
-    "start.win.dev.watch": "set \"FLAME_TEST=\" && set \"FLAME_DEV=true\" && set \"FLAME_WATCH=true\" && electron .",
-    "start.win.test": "set \"FLAME_TEST=true\" && set \"FLAME_DEV=\" && electron .",
-    "start.unix.release": "FLAME_TEST=false FLAME_DEV=false electron .",
-    "start.unix.dev": "FLAME_TEST=false FLAME_DEV=true electron .",
-    "start.unix.dev.watch": "FLAME_TEST=false FLAME_DEV=true FLAME_WATCH=true electron .",
-    "start.unix.test": "FLAME_TEST=true electron .",
+    "start": "node --experimental-modules ./main.mjs",
     "build": "rollup --config ./assets/build/config/config.js",
-    "build.watch": "rollup --watch --config ./assets/build/config/config.js",
-    "prepare": "rollup --config ./assets/build/config/config.js",
-    "test": "mocha"
+    "build.watch": "rollup --watch --config ./assets/build/config/config.js"
   },
   "repository": {
     "type": "git",
@@ -29,13 +22,14 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
+    "@candlefw/radiate": "latest",
+    "@candlefw/lantern": "latest",
     "@candlefw/charcoal": "latest",
     "@candlefw/css": "latest",
     "@candlefw/glow": "latest",
     "@candlefw/ll": "latest",
     "@candlefw/whind": "latest",
     "@candlefw/wick": "latest",
-    "electron": "^4.0.4",
     "paper": "^0.12.0"
   },
   "devDependencies": {
@@ -43,8 +37,7 @@
     "mocha": "^5.2.0",
     "rollup": "^0.68.1",
     "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "spectron": "^5.0.0"
+    "rollup-plugin-node-resolve": "^4.0.0"
   },
   "eslintConfig": {
     "parserOptions": {

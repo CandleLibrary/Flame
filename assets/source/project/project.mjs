@@ -1,7 +1,4 @@
 import { Presets } from "@candlefw/wick";
-
-import path from "path";
-import fs from "fs";
 import { FlameScheme } from "./scheme";
 
 //Text Editing
@@ -79,7 +76,8 @@ export class Project {
     }
 
     scheduledUpdate(frame_time, time_since_last){
-        this.save(path.resolve(this.preferences.proj_data_directory, this.preferences.name + ".fpd"));   
+        debugger
+        //this.save(this.preferences.proj_data_directory, this.preferences.name + ".fpd");   
         this.scheduleAutoSave();
     }
 
@@ -97,7 +95,7 @@ export class Project {
         if(this.system.TEST_MODE) 
             return;
         
-
+        /*
         fs.readdir(dir, (e, d) => {
             if (e)
                 return console.error(`Could not load UI components: ${e}`);
@@ -108,6 +106,7 @@ export class Project {
                 }
             });
         });
+        */
     }
 
     setDefaults() {
@@ -119,7 +118,7 @@ export class Project {
         this.components.move_type = "relative";
         this.components.KEEP_UNIQUE = true;
 
-        this.loadUIComponents(path.join(process.cwd(), "./assets/ui_components"));
+        //this.loadUIComponents(path.join(process.cwd(), "./assets/ui_components"));
     }
 
     get meta(){

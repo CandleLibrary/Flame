@@ -5,9 +5,10 @@ import {
 import {
     CSSDocument
 } from "./css_document";
-import path from "path";
+//import path from "path";
 import { DocumentDifferentiator } from "./differ";
 import master_component_string from "./master_component_string.mjs";
+import URL from "@candlefw/url";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -21,9 +22,18 @@ export class DocumentManager {
 
         this.pending = null;
         this.updated = false;
+
+        const fetch  = document.fetch;
+
+        document.fetch = async (...args)=>{
+            console.log(args);
+            return fetch(...args);
+        };
+
         /**
          * Global `fetch` polyfill - basic support
          */
+         /*
         global.fetch = (url) => new Promise((res) => {
             let p = url;
             if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
@@ -41,12 +51,13 @@ export class DocumentManager {
                 });
             }
         });
+        */
     }
     /*
      * Loads file into project
      */
     loadFile(file, NEW_FILE = false) {
-        console.log(file)
+
         switch (typeof(file)) {
 
             case "string": // Load from file system or DB
@@ -57,25 +68,36 @@ export class DocumentManager {
                         canvas.fromString(master_component_string);
                         this.docs.set(canvas.id, canvas);
                         return canvas.id;
+                }
+                
+                const url = new URL(file);
+
+                file = {
+                    path: url.dir,
+                    name: url.file
                 };
 
-                var p = path.parse(file);
-                file = {
-                    path: p.dir,
-                    name: p.base
-                };
                 //Intentional fall through. 
-            case "object": // Loandead data 
+            case "object": //
                 if (file.name && file.path) {
                     const name = file.name;
+                    
                     let path = file.path;
+                    
                     let type = "";
+                    
                     if (file.type) type = file.type; //.split("/")[1].toLowerCase();
+                    
                     else type = name.split(".").pop().toLowerCase();
+                    
                     if (path.includes(name)) path = path.replace(name, "");
+                    
                     if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
+                    
                     path = path.replace(/\\/g, "/");
+                    
                     const id = `${path}/${name}`;
+                    
                     if (!this.docs.get(id)) {
                         let doc;
                         switch (type) {
@@ -236,7 +258,7 @@ export class DocumentManager {
         if(css.doc)
             return css.doc;
 
-        let css_name = `css${i}`
+        let css_name = `css${i}`;
         let css_path = `${component.doc_path}/${component.doc_name}#`;
         let css_doc = new CSSDocument(css_name, css_path, this.system, true, this);
         css_doc.tree = css;

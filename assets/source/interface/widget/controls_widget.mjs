@@ -1,7 +1,6 @@
 import { actions } from "../actions/action.mjs";
 import ElementBox from "./element_box.mjs";
 
-import path from "path";
 
 function getTransformed(trs) {
     if (this.ON_MAIN)
@@ -235,7 +234,7 @@ export class ControlWidget extends ElementBox {
 }
 
 ControlWidget.loadComponent = async function(component_path) {
-    component_path = path.resolve(process.cwd(), "./assets/ui_components/controls", component_path)
+    //component_path = path.resolve(process.cwd(), "./assets/ui_components/controls", component_path)
     const system = ControlWidget.system;
     let doc = system.docs.get(system.docs.loadFile(component_path));
     if (doc) {

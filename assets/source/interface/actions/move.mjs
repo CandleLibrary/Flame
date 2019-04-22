@@ -17,6 +17,7 @@ const types = css.types;
  */
 export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
     if (IS_COMPONENT) {
+        if(!component) debugger;
         component.x += dx;
         component.y += dy;
     } else {

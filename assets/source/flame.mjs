@@ -37,9 +37,11 @@ import { actions } from "./interface/actions/action.mjs";
 //Presets
 import { Presets } from "@candlefw/wick";
 
-const env = require('electron').remote.process.env;
-const DEV = (env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
-const TEST = (env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
+//URL 
+import { URL } from "@candlefw/url";
+
+const DEV = false; //(env.FLAME_DEV) ? !!env.FLAME_DEV.includes("true") : false;
+const TEST = false;//(env.FLAME_TEST) ? !!env.FLAME_TEST.includes("true") : false;
 
 class System {
     constructor() {
@@ -61,12 +63,14 @@ class System {
  * @return Object
  */
 const flame = {
-    init: () => {
+    system : null,
 
-        //Get testing and development flags. 
-        if (TEST) require("chai").should();
+    initDevEnvironment:()=>{
+        //Load page from query into iframe element
 
         const system = new System();
+
+        flame.system = system;
 
         StyleNode.prototype.flame_system = system;
 
@@ -78,58 +82,37 @@ const flame = {
             throw new Error("`ui_group` element not found in document! Aborting startup.");
 
         system.ui = new UI_Manager(ui_group, view_group, system);
+    },
 
-        if (DEV && !TEST) {
-            //Load in the development component.
+    /*
+        Loads a finalized resource (full webpage) into an iframe component. 
+        args: 
+        - Location of HTML file
+        - Horizontal position of component 
+        - Vertical position of component
+        - If `true`, then the view is centered on this component.
+        - If `true`, then the size of the component is set to the same size as the screen, the view is focused on the component
+          and the flame environment will be hidden and locked from interaction until the unlock command is given. 
+    */
+    async loadFinalizedView(url, x = 0, y = 0,  FOCUS = false, SOLE_FOCUS = false){
+        const system = flame.system;
 
-            let comp_path = require("path").join(process.cwd(), "assets/components/test.html");
-            let css_path = require("path").join(process.cwd(), "assets/components/css/test.css");
-            let doc = system.docs.get(system.docs.loadFile(comp_path));
-            //let css = system.docs.get(system.docs.loadFile(css_path));
+        //const doc = system.docs.get(system.docs.loadFile(url));
+        const comp = await actions.CREATE_VIEW_COMPONENT(system, {url:new URL(url)}, x, y);
 
-            let comp = actions.CREATE_COMPONENT(system, doc, 200, 200);
-           // actions.CREATE_COMPONENT(system, css, 0, 200);
-            
-            window.flame = flame;
+        if(FOCUS && !SOLE_FOCUS)
+            system.ui.focus(comp);
+        if(SOLE_FOCUS)  
+            system.ui.solo(comp);
+    },
 
-            //Activate its CSS window.
-            setTimeout(
-                ()=>{
-            actions.CREATE_COMPONENT(system, comp, 0, 200);
-                    
+    loadComponent(url, x = 0, y = 0, FOCUS = false){
 
-                },200)
+    },
 
-        } else if (TEST) {
-            //Load in HTML test runner
-            const test_iframe = document.createElement("iframe");
-            test_iframe.src = "test/chromium/test.html";
+    // Unlocks the dev environment for use. 
+    unlock(){
 
-            test_iframe.width = "100%";
-            test_iframe.height = "100%";
-
-            test_iframe.style.position = "absolute";
-            test_iframe.style.left = 0;
-            test_iframe.style.top = 0;
-            test_iframe.style.zIndex = 100000; // Keep on top
-            test_iframe.style.backgroundColor = "rgba(255,255,255,0.90)"
-            test_iframe.style.border = "solid 1px black";
-            test_iframe.style.borderRadius = "5px";
-
-            document.body.appendChild(test_iframe);
-
-            test_iframe.onload = (e) => {
-                test_iframe.contentWindow.require = require;
-                test_iframe.contentWindow.fs = require("fs");
-                test_iframe.contentWindow.path = require("path");
-                test_iframe.contentWindow.run(system, require("chai"));
-            };
-        }
-
-        //Connect to server or local file system and load projects
-        //Check to see if there recently worked on project to open. 
-        //Load Poject.
-        //If user preference allows, open the Splash screen modal. 
     },
 
     //Initialize a text editor on element
@@ -146,7 +129,9 @@ const flame = {
         element.addEventListener("wheel", e => io.onMouseWheel(e));
 
         return { fw, io };
-    }
+    },
+
+    URL : URL
 };
 
 export default flame;

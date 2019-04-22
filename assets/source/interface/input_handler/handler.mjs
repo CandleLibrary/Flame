@@ -1,10 +1,10 @@
-import path from "path";
+//import path from "path";
 export default class Handler {
     constructor(system, component_path) {
         this.package = null;
 
         if(component_path){
-            component_path = path.resolve(process.cwd(), component_path)
+            //component_path = path.resolve(process.cwd(), component_path)
             const doc = system.docs.get(system.docs.loadFile(component_path));
 
             if (doc) 
@@ -29,6 +29,8 @@ export default class Handler {
             case "move":
                 return this.move(event, ui_manager, target);
             case "drop":
+                return this.docDrop(event, ui_manager, target);
+            case "generic_drop":
                 return this.drop(event, ui_manager, target);
             case "scroll":
                 return this.scroll(event, ui_manager, target);
@@ -47,6 +49,9 @@ export default class Handler {
     move() { console.warn("No function has been defined for this action: move"); return this; }
 
     //Document drop
+    docDrop() { console.warn("No function has been defined for this action: drop"); return this; }
+
+    //Generic drop operation
     drop() { console.warn("No function has been defined for this action: drop"); return this; }
 
     //Wheel Scroll

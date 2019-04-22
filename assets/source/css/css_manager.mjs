@@ -24,12 +24,22 @@ export class CSSManager {
         this.system = system;
     }
 
-    /**
-     * Returns an array of CSS rules that match against the element
-     * @param  {[type]} element   [description]
-     * @param  {[type]} component [description]
-     * @return {[type]}           [description]
-     */
+    // Returns a list of all selectors that match against the givin compoonent and element
+    getApplicableSelectors(component, element){
+        let css = component.local_css;
+        let selectors = [];
+        for(let i = 0, l = css.length;i<l;i++){
+            let sel = css[i].getApplicableSelectors(element);
+            let v
+            while (v = sel.next().value)
+                selectors.push(v);
+        }
+        return selectors;
+    }
+
+
+    
+    // Returns an array of CSS rules that match against the element
     aquireCSS(component, element) {
         if (!component)
             return [];

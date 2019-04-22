@@ -1,5 +1,5 @@
-import fs from "fs";
-const fr = new FileReader();
+import URL from "@candlefw/url";
+//const fr = new FileReader();
 /**
     Represents actions to save a file to disk. 
 **/
@@ -10,9 +10,12 @@ class $FileReader {
         this.stream = -1;
         this.offset = 0;
         this.file_path = file_path;
+        this.url = new URL(file_path);
 
         try {
-            this.handle = fs.openSync(file_path, "r");
+            //read data from the file server
+
+
         } catch (e) {
             console.error(e);
         }
@@ -21,11 +24,13 @@ class $FileReader {
     async string(encoding = "utf8") {
         if (this.ready) {
             return new Promise((res, rej) => {
+                /*
                 fs.readFile(this.handle, encoding, (err, string) => {
                     if (err)
                         return rej(err);
                     res(string);
                 });
+                */
             });
         } else
             throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
@@ -34,9 +39,15 @@ class $FileReader {
 
     async readB(array_constructor = ArrayBuffer, byte_length = 0, off = this.offset, MOVE_OFFSET = true) {
         if (this.ready && byte_length > 0) {
+
+            let data = await this.url.fetchText();
+            debugger
+
+
             return new Promise((res, rej) => {
                 let buffer = new Uint8Array(byte_length);
 
+                /*
                 fs.read(this.handle, buffer, 0, byte_length, off, (err, read) => {
 
                     if (err) return rej(err);
@@ -53,6 +64,7 @@ class $FileReader {
                         res(new array_constructor(buffer.buffer));
 
                 });
+                */
             })
         } else
             throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
@@ -60,14 +72,14 @@ class $FileReader {
 
     async readS(byte_length = 0, off = this.offset, encoding = "utf8", MOVE_OFFSET = true) {
         if (this.ready && byte_length > 0) {
-            let buffer = await this.readB(Blob, byte_length, off, MOVE_OFFSET);
-            let fr = new FileReader();
-            return new Promise(res => {
-                fr.onload = () => {
-                    res(fr.result)
-                };
-                fr.readAsText(buffer, encoding);
-            });
+            let data = "";
+            try{
+                data = await this.url.fetchText();
+            }catch(e){
+                console.error(e);
+            }
+            debugger
+            return data;
         } else
             throw new Error(`Invalid file handle to resource ${this.file_path}; FileReader is not ready to be used`);
     }
@@ -80,7 +92,8 @@ class $FileReader {
     close() {
         if (this.ready) {
             try {
-                fs.closeSync(this.handle);
+                debugger
+                //fs.closeSync(this.handle);
             } catch (e) {
                 console.error(e);
             }

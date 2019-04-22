@@ -1,9 +1,8 @@
-import fs from "fs";
-
-import { actions } from "../interface/actions/action";
+//import { actions } from "../interface/actions/action";
 
 import { FileReader } from "../project/file_reader";
 import { FileBuilder } from "../project/file_builder";
+import URL from "@candlefw/url";
 
 import ll from "@candlefw/ll";
 
@@ -22,6 +21,7 @@ export class Document {
         this.system = system;
         this.manager = manager;
         this.ps = false;
+        this.url = new URL(`${path}/${file_name}`);
     }
 
     destroy() {
@@ -51,10 +51,9 @@ export class Document {
 
     async load() {
         if (!this.LOADED) {
-            let fr = new FileReader(this.path + "/" + this.name);
-
             try {
-                let data = await fr.string();
+                
+                let data = await this.url.fetchText();
                 this.LOADED = true;
                 this.fromString(data);
             } catch (e) {
@@ -66,11 +65,11 @@ export class Document {
     }
 
     async save(file_builder) {
-
+        return;
         if (!file_builder) {
             if (this.SAVING) return;
 
-            this.SAVING = true;
+            this.SAVING = true; 
 
             let fb = new FileBuilder(this.id);
             let string = this.toString();

@@ -3,7 +3,7 @@ import {StyleNode} from "@candlefw/wick";
 let proto = StyleNode.prototype;
 proto.cssInject = proto._processTextNodeHook_;
 
-const path = require("path");
+//const path = require("path");
 //Hooking into the style systems allows us to track modifications in the DOM and update the appropriate CSS values and documents. 
 proto.processTextNodeHook = function(lex) {
 
@@ -18,6 +18,7 @@ proto.processTextNodeHook = function(lex) {
     let IS_DOCUMENT = !!this.url;
 
     if (this.url) {
+        debugger
         URL = this.url.path;
         if (!path.isAbsolute(URL))
             URL = path.resolve(process.cwd(), (URL[0] == ".") ? URL + "" : "." + URL);

@@ -1,4 +1,4 @@
-import fs from "fs";
+const fs = {};
 
 /**
 	Represents actions to save a file to disk. 

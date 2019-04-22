@@ -1,14 +1,15 @@
 import {Component} from "./component.mjs"
 import whind from "@candlefw/whind";
 import {TextIO, TextFramework} from "@candlefw/charcoal"
-import {UIMaster} from "@candlefw/css";
+import CSSContainer from "../css/css_builder.mjs";
 
 export class CSSComponent extends Component{
-	constructor(system, tree){
-		super(system, tree);
-		this.tree = tree;
-		this.ui = new UIMaster(this.tree);
-		this.element.appendChild(this.ui.element);
+	constructor(system){
+		
+		super(system);
+		this.container = new CSSContainer();
+		this.element.appendChild(this.container.element);
+		
 		
 		/*
 		this.fw = new TextFramework();

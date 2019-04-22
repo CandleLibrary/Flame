@@ -1,11 +1,13 @@
 import { RootNode } from "@candlefw/wick";
 import { Component } from "../../component/component.mjs";
+import { IframeComponent } from "../../component/iframe_component.mjs";
 import { CSSComponent } from "../../component/css_component.mjs";
 import { MOVE } from "./move.mjs";
 import { SETLEFT, SETTOP } from "./position.mjs";
 import { SETWIDTH, SETHEIGHT } from "./dimensions.mjs";
 import { TOPOSITIONABSOLUTE } from "./convert.mjs";
 import { prepRebuild } from "./common.mjs";
+import { Document } from "../../document/document.mjs";
 
 const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
 
@@ -65,51 +67,46 @@ export function CREATE_ELEMENT(system, component, parent_element, tag_name = "di
     return { element, node };
 }
 
-export function CREATE_COMPONENT(system, doc, px, py, type = "css") {
-    //if(!(doc instanceof Document))
-    //    throw new Error("Action CREATE_COMPONENT cannot continue: doc is not an instance of Document.");
-
-    if (doc instanceof Component) {
-        switch (type) {
-            case "css":
-
-                let out = [];
-                //Pull out css information;
-                for (let i = 0; i < doc.local_css.length; i++) {
-
-                    const css = doc.local_css[i];
-                    const out_doc = (css.doc) ? css.doc : system.docs.createInternalCSSDoc(doc, css);
-
-                    out.push(CREATE_COMPONENT(system, out_doc, px+(i*-400), py, "css"));
-                }
-
-                return out;
-        }
-    }
-
-    let comp = null;
-
-    switch (doc.type) {
-        case "css":
-           comp = system.css.createComponent(doc);
-            break;
-        case "js":
-            comp = new Component(system);
-             comp.load(doc);
-            break;
-        case "html":
-            comp = new Component(system);
-             comp.load(doc);
-    }
-
-   
-
-    const element = comp.element;
-    document.querySelector("#main_view").appendChild(element);
-
+export function CREATE_VIEW_COMPONENT(system, doc, px, py){
+    //Create an iFrame page_view component
+    const comp = new IframeComponent(system);
+    
     comp.x = px;
     comp.y = py;
 
+    document.querySelector("#main_view").appendChild(comp.element);
+
+    comp.load(doc);
+
+    return comp;
+}
+
+export function CREATE_COMPONENT(system, doc, px, py) {
+    let comp = null;
+
+    if (doc instanceof Document) {
+
+        switch (doc.type) {
+            case "css":
+                comp = system.css.createComponent(doc);
+                break;
+            case "js":
+                comp = new Component(system);
+                comp.load(doc);
+                break;
+            case "html":
+                comp = new Component(system);
+                comp.load(doc);
+        }
+    }else{
+        comp = new CSSComponent(system);
+        comp.container.addSelector(doc.selector);
+    }
+    
+    document.querySelector("#main_view").appendChild(comp.element);
+
+    comp.x = px;
+    comp.y = py;
     return comp;
 }
 

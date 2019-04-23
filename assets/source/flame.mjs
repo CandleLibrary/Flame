@@ -92,8 +92,8 @@ const flame = {
        // ug.classList.add("");
 
 
-        document.body.appendChild(va)
-        document.body.appendChild(ug)
+        document.body.appendChild(va);
+        document.body.appendChild(ug);
 
         //const ui_group = document.querySelector("#ui_group");
         //const view_group = document.querySelector("#main_view");
@@ -127,6 +127,14 @@ const flame = {
             system.ui.focus(comp);
         if(SOLE_FOCUS)  
             system.ui.solo(comp);
+    },
+
+    // Register a SourcePackage with the Flame internal component registry. 
+    registerPackage(pkg){
+        //flame.system.registry.push(pkg);
+        console.log("SYS", flame.system);
+        //pkg.flame_comp = null;
+        debugger
     },
 
     loadComponent(url, x = 0, y = 0, FOCUS = false){

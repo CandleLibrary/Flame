@@ -26,10 +26,13 @@ window.flame = flame;
  let CLIENT_MODE = false;
 
  function FlamingRadiation(presets){
- 	console.log(window)
+
  	if(window.frameElement && window.frameElement.name == "flame_frame"){
- 		debugger
- 		return radiate(presets)
+
+ 		//Assign the parent documents flame object to the iFrame's contentWindow object. 
+ 		window.flame = window.parent.flame;
+ 		window.CLIENT_MODE = true;
+ 		return radiate(presets);
  	}
  	else {
  		//Load Curent Location into new iFrame component.
@@ -38,9 +41,5 @@ window.flame = flame;
 		flame.loadIFrameComponent(url, true, true);
  	}
  }
-
- window.addEventListener("message",(msg)=>{
- 	CLIENT_MODE = true
- }, false)
 
 export default FlamingRadiation;

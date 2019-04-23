@@ -138,7 +138,6 @@ export class IframeComponent extends Component{
         //url.path = url.path[0] == "/" ? url.path.slice(1) : url.path;
         //url.data
         //url.path = "/iframe/" + url.path;
-        debugger
         this.frame.contentWindow.postMessage("test")
         this.frame.setAttribute("CLIENT_MODE_TEST", true)
         this.frame.setAttribute("name", "flame_frame")

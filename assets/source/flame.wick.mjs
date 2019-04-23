@@ -8,6 +8,7 @@ wick.flame = flame;
 
 const constr = BasePackage.prototype.complete;
 
+//This should only happen on outside Wick components. 
 BasePackage.prototype.complete = function(){
 	constr.call(this);
 	//Register with flame

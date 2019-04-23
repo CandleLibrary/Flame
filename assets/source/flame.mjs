@@ -54,6 +54,8 @@ class System {
         this.actions = actions;
         this.history = new StateMachine(this);
         this.project = new Project(this);
+        //Container of all SourcePackages that have been created by Wick, Radiate, or Flame
+        this.packages = [];
     }
 }
 
@@ -65,7 +67,7 @@ class System {
 const flame = {
     system : null,
 
-    initOverlayDevEnvironamen:()=>{
+    initOverlayDevEnvironment:()=>{
 
     },
 
@@ -88,12 +90,26 @@ const flame = {
 
         //UI Group
         let ug = document.createElement("div");
-        ug.id = "main_view";
+        ug.id = "ui_group";
        // ug.classList.add("");
 
 
         document.body.appendChild(va);
         document.body.appendChild(ug);
+
+        //Add CSS link
+        const main_css = document.createElement("link")
+        main_css.setAttribute("rel", "stylesheet")
+        main_css.setAttribute("type", "text/css")
+        main_css.setAttribute("href", "/flame/css/main.css")
+
+         const css_ui = document.createElement("link")
+        css_ui.setAttribute("rel", "stylesheet")
+        css_ui.setAttribute("type", "text/css")
+        css_ui.setAttribute("href", "/flame/css/css.ui.css")
+
+        document.head.appendChild(css_ui);
+        document.head.appendChild(main_css);
 
         //const ui_group = document.querySelector("#ui_group");
         //const view_group = document.querySelector("#main_view");
@@ -126,15 +142,24 @@ const flame = {
         if(FOCUS && !SOLE_FOCUS)
             system.ui.focus(comp);
         if(SOLE_FOCUS)  
-            system.ui.solo(comp);
+            flame.lock(comp);
     },
 
     // Register a SourcePackage with the Flame internal component registry. 
-    registerPackage(pkg){
-        //flame.system.registry.push(pkg);
-        console.log("SYS", flame.system);
-        //pkg.flame_comp = null;
-        debugger
+    registerPackage(pkg){ // TODO Should be registerComponent to differentiate from packages and components. 
+        const system = flame.system;
+
+
+        //TODO use filtering to handle duplicate packages
+        flame.system.packages.push(pkg);
+
+        //For each package not currently tracked, create a doc handler.
+        
+        const url = pkg.skeletons[0].tree.url.toString(); // All instances of Wick/Radiate should make sure that a url is attached to a component.
+                                                          // In the case of files that contain multiple components, it may be necessary to track 
+                                                          // individual components in "master" doc objects, that have the logic to update portions of 
+                                                          // documents that are relevant to an individual components changes. 
+        const doc_id = system.docs.loadFile(url);
     },
 
     loadComponent(url, x = 0, y = 0, FOCUS = false){
@@ -145,6 +170,9 @@ const flame = {
     unlock(){
 
     },
+
+    //Locks the dev environment to a single component, which is made to track the window size. 
+    lock(){},
 
     //Initialize a text editor on element
     initEditor(element) {

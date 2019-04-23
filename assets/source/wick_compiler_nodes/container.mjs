@@ -5,6 +5,7 @@ import whind from "@candlefw/whind";
 let Lexer = whind;
 
 SourceContainerNode.prototype.buildExisting = function(element, source, presets, taps) {
+    debugger
     if (true || this.CHANGED !== 0) {
         //IO CHANGE 
         //Attributes

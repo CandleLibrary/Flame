@@ -149,9 +149,6 @@ export class IframeComponent extends Component{
 
         //this.frame.contentWindow.history.replaceState({}, "Flame Dev Env", url.toString());
         console.log(this.frame.src)
-        this.frame.onload = (e) => {
-            debugger
-        };
         //document.bind(this);
     }
 

@@ -17,7 +17,6 @@ console.log(RootNode)
 RootNode.prototype.ReparseConstructor = RootNode;
 
 RootNode.prototype.createElement = function(presets, source) {
-    debugger
     const element = document.createElement(this.tag);
     element.wick_source = source;
     element.wick_node = this;

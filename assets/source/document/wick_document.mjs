@@ -11,11 +11,12 @@ export class WickDocument extends Document {
     fromString(string, ALLOW_SEAL = true) {
 
         (new SourcePackage(string, this.system.project.presets, true, this.path + "/" + this.name)).then((pkg) => {
-            this.LOADED = true;
-            
+
             //TODO - Determine the cause of undefined assigned to pkg
             if (!pkg) { debugger; return }
 
+            this.LOADED = true;
+            
             if (this.data)
                 this.data.skeletons[0].tree.removeObserver(this);
 

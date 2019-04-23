@@ -9,6 +9,7 @@ import ll from "@candlefw/ll";
 export class Document {
 
     constructor(file_name, path, system, IS_NEW_FILE, manager) {
+        console.log(file_name, path)
         this.path = path;
         this.name = file_name;
         this.data = null;
@@ -51,13 +52,17 @@ export class Document {
 
     async load() {
         if (!this.LOADED) {
-            try {
-                
-                let data = await this.url.fetchText();
+            if(this.path[0] == "~"){ 
+            // This is a generated document
                 this.LOADED = true;
-                this.fromString(data);
-            } catch (e) {
-                console.error(e);
+            }else{
+                try {
+                    let data = await this.url.fetchText();
+                    this.LOADED = true;
+                    this.fromString(data);
+                } catch (e) {
+                    console.error(e);
+                }
             }
 
             return this.data;

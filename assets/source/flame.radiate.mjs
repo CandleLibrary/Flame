@@ -32,7 +32,20 @@ window.flame = flame;
  		//Assign the parent documents flame object to the iFrame's contentWindow object. 
  		window.flame = window.parent.flame;
  		window.CLIENT_MODE = true;
- 		return radiate(presets);
+ 		const ret=  radiate(presets);
+
+ 		setTimeout(()=>{
+ 			
+ 			const flame = window.flame;
+ 			const system = flame.system;
+
+ 			const doc = system.docs.get("/components/test.html");
+
+ 			system.actions.CREATE_COMPONENT(system, doc, 200, 200);
+ 			
+ 		},1000)
+
+ 		return ret;
  	}
  	else {
  		//Load Curent Location into new iFrame component.

@@ -1,11 +1,20 @@
 /**
- * This module is responsible for storing, updating, and caching compents. 
+ * This module is responsible for storing, updating, and caching a wick component. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  * Any associated stylesheets are managed through this componnent. 
  */
-export class Component {
+export default class Component {
 
-    constructor(system) {
+    constructor(scope_or_component, env) {
+        var component = scope_or_component;
+        
+        //If the scope_or_component value is Wick scope, then it will 
+        //have a presets object, which is not present on a Wick Component object.
+        if(scope_or_component.presets){
+            component = scope_or_component.ast
+        }
+
+
         //frame for fancy styling
         this.style_frame = document.createElement("div");
         this.style_frame.classList.add("flame_component");
@@ -42,7 +51,7 @@ export class Component {
         //The source component manager that handles the instantiation and runtime of Wick components. 
         this.manager = null;
 
-        this.system = system;
+       //this.system = system;
 
         this.action = null;
 
@@ -51,8 +60,9 @@ export class Component {
 
         this.style_frame.appendChild(frame);
 
-        this.width = this.system.project.defaults.component.width;
-        this.height = this.system.project.defaults.component.height;
+        //this.width = this.system.project.defaults.component.width;
+        //this.height = this.system.project.defaults.component.height;
+        
     }
 
     createFrameElement() {
@@ -99,7 +109,7 @@ export class Component {
     */
 
     mountListeners() {
-        this.system.ui.integrateComponentElement(this.frame, this);
+        //this.system.ui.integrateComponentElement(this.frame, this);
     }
 
     addStyle(tree, INLINE) {

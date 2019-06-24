@@ -22,7 +22,6 @@ async function loadData() {
         name: "CFW Flame Assets",
         keys: { ext: lantern.ext.any | lantern.ext.all, dir: "/flame/*" },
         respond: async (tools) => {
-            console.log("ASSSSSSSSSSSSSSSSSSSSSSSSSSS")
             console.warn(tools.dir, tools.filename)
             tools.setMIMEBasedOnExt();
             return tools.sendString(await fsp.readFile(path.join(flame_root,"assets", ...tools.dir.split("/").slice(2), tools.filename)), "utf8");

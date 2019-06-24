@@ -1,5 +1,5 @@
 {
-  "name": "@galactrax/flame",
+  "name": "@candlefw/flame",
   "version": "0.0.6",
   "description": "A browser tech web editing app based on wick and electron",
   "main": "main.mjs",
@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node --experimental-modules ./main.mjs",
-    "build": "rollup --config ./assets/build/config/config.js",
-    "build.watch": "rollup --watch --config ./assets/build/config/config.js"
+    "build": "rollup --config ./build/config/config.js",
+    "build.watch": "rollup --watch --config ./build/config/config.js"
   },
   "repository": {
     "type": "git",
@@ -33,9 +33,10 @@
     "paper": "^0.12.0"
   },
   "devDependencies": {
+    "@candlefw/hydrocarbon": "latest",
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
-    "rollup": "^0.68.1",
+    "rollup": "^1.16.2",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0"
   },

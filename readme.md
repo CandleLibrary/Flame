@@ -1,17 +1,37 @@
-version 0.1.0
-
+<sub>version 0.1.0-a</sub>
 
 # Flame
 
-## Component editor based on CandleFW library. 
+## THE WEB TECHNOLOGY EDITOR
 
-### Environment
+CandleFW flame is the lynchpin system that combines all of CandleFW libraries into a single, comprehensive website editing package.
 
-The environment variable `FLAME_DEV` can be set to true to open a development project when the electron app is run.
+Features
 
-The environment variable `FLAME_TEST` can be set to true to start test mode when the electron app is run. 
+- Integration with **wick** & **radiate** to provide on-demand editing capabilities for web components. 
 
-WIP...
+-  - CSS - HTML - JS editing with a WYSIWYG in-browser editor. 
+
+-  - Customized Animation sequencer using **glow**. 
+
+- Integration with **lantern** allows file saving, asset history, 
 
 
-d1
+USAGE
+
+Flame can be integrated with any existing **Radiate** or **Wick** project by passing the ``wick`` / ``radiate`` object to the ``flame`` function. 
+
+
+```javascript
+
+wick(`<div> MY radiate object </div>`)
+
+flame(wick, options); // now we have a flaming wick!
+
+```
+
+```javascript
+
+flame(radiate(), options); // now we are radiating flames!
+
+```

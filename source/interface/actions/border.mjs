@@ -1,11 +1,7 @@
-import { CSSParser } from "@candlefw/css";
+import { types } from "@candlefw/css";
 import { setNumericValue, getRatio, setValue, getFirstPositionedAncestor, prepRebuild } from "./common";
 import { SETDELTAWIDTH, SETDELTAHEIGHT } from "./dimensions";
 import { CacheFactory } from "./cache";
-
-
-
-let types = CSSParser.types;
 
 function resetBorder(system, component, element) {
     return

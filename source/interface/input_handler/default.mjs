@@ -10,7 +10,7 @@ export default class Default extends Handler {
         if (!Handler.default)
             Handler.default = this;
 
-        this.dnd = system.ui.dnd;
+        this.dnd = system.ui.manager.dnd;
         this.origin_x = 0;
         this.origin_y = 0;
         this.excess_x = 0;
@@ -25,7 +25,7 @@ export default class Default extends Handler {
 
         if (this.dnd.ACTIVE) {
             this.dnd.start(event, data);
-            return this.constructor.default
+            return this.constructor.default;
         }
 
         if (event.button == 1) {

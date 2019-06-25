@@ -8,7 +8,7 @@ export default [{
         name: "flame",
         file: "./build/flame.js",
         format: "iife",
-      sourcemap: true,
+        sourcemap: "inline",
         exports:"default"
     }],
     plugins: [commonjs({ include: ['./node_modules/*.*'] }), resolve()]

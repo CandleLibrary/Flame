@@ -1,4 +1,6 @@
 import wick_component_integration from "./integration/component.prototype.integration.mjs";
+import wick_element_integration from "./integration/element.integration.mjs";
+import radiate_integrate from "./integration/radiate.integration.mjs";
 import build_editor_environment from "./interface/editor.environment.mjs";
 import flame_environment from "./interface/environment.mjs";
 
@@ -39,8 +41,10 @@ function initializeRadiate(radiate, options){
 
 	const env = flame_environment(options);
 
-	build_editor_environment(HIDDEN, env);
+	build_editor_environment(env, document.body, HIDDEN);
 	wick_component_integration(radiate.wick, env);
+	wick_element_integration(radiate.wick, env);
+	radiate_integrate(radiate, env);
 }
 
 function initializeLantern(lantern){

@@ -1,15 +1,12 @@
-//import { actions } from "../interface/actions/action";
-
 import { FileReader } from "../project/file_reader";
 import { FileBuilder } from "../project/file_builder";
-import URL from "@candlefw/url";
 
+import URL from "@candlefw/url";
 import ll from "@candlefw/ll";
 
 export class Document {
 
-    constructor(file_name, path, system, IS_NEW_FILE, manager) {
-        console.log(file_name, path)
+    constructor(file_name, path, env, IS_NEW_FILE, manager) {
         this.path = path;
         this.name = file_name;
         this.data = null;
@@ -19,7 +16,7 @@ export class Document {
         this.SAVING = false;
         this.INITIAL_HISTORY = false;
         this.observers = [];
-        this.system = system;
+        this.env = env;
         this.manager = manager;
         this.ps = false;
         this.url = new URL(`${path}/${file_name}`);

@@ -30,10 +30,10 @@ var DD_Candidate = false;
  * 
  * @param  [HTMLElement] Element to map UI components to.
  */
-export class UI_Manager {
+export default class UI_Manager {
 
     constructor(UIHTMLElement, ViewElement, system) {
-        system.ui = this;
+        system.ui.manager = this;
 
         
 
@@ -96,6 +96,8 @@ export class UI_Manager {
     }
 
     createMaster() {
+
+        return
         const doc_id = this.system.docs.loadFile("~edit-canvas");
         const doc = this.system.docs.get(doc_id);
 

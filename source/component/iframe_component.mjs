@@ -1,4 +1,4 @@
-import {Component} from "./component.mjs";
+import Component from "./component.mjs";
 import URL from "@candlefw/url";
 /**
  * This module is responsible for storing, updating, and caching compents. 

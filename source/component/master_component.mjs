@@ -1,4 +1,4 @@
-import {Component} from "./component.mjs";
+import Component from "./component.mjs";
 
 /**
  * This module handles the master component, wich stores alements that are not members of other components. 

@@ -7,6 +7,9 @@ export default async function(integrating_wick, flame_environment){
 
 	const comp = await integrating_wick("<a></a>");
 
+	
+
+
 	const component_prototype = comp.constructor.prototype;
 
 	const mount_function = component_prototype.nonAsyncMount;

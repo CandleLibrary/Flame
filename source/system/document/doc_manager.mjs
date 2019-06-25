@@ -1,21 +1,24 @@
 import whind from "@candlefw/whind";
+import URL from "@candlefw/url";
+
 import {
     WickDocument
 } from "./wick_document";
+
 import {
     CSSDocument
 } from "./css_document";
+
 //import path from "path";
 import { DocumentDifferentiator } from "./differ";
 import master_component_string from "./master_component_string.mjs";
-import URL from "@candlefw/url";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
-export class DocumentManager {
-    constructor(system) {
+export default class DocumentManager {
+    constructor(env) {
         this.docs = new Map();
-        this.system = system;
+        this.env = env;
         this.differ = new DocumentDifferentiator();
         this.diffs = [];
         this.diff_step = 0;
@@ -60,11 +63,11 @@ export class DocumentManager {
 
         switch (typeof(file)) {
 
-            case "string": // Load from file system or DB
+            case "string": // Load from file env or DB
                 
                 switch (file) {
                     case "~edit-canvas": //Load new internal document ~edit-canvas
-                        const canvas = new WickDocument("edit-canvas", "%internal", this.system, false, this);
+                        const canvas = new WickDocument("edit-canvas", "%internal", this.env, false, this);
                         canvas.fromString(master_component_string);
                         this.docs.set(canvas.id, canvas);
                         return canvas.id;
@@ -103,11 +106,11 @@ export class DocumentManager {
                         switch (type) {
                             case "html":
                             case "text/html":
-                                doc = new WickDocument(name, path, this.system, NEW_FILE, this);
+                                doc = new WickDocument(name, path, this.env, NEW_FILE, this);
                                 break;
                             case "css":
                             default:
-                                doc = new CSSDocument(name, path, this.system, NEW_FILE, this);
+                                doc = new CSSDocument(name, path, this.env, NEW_FILE, this);
                         }
                         this.docs.set(id, doc);
 
@@ -148,7 +151,7 @@ export class DocumentManager {
             }
 
             if (diffs.length > 0)
-                this.system.history.addAction({ type: "doc", diffs });
+                this.env.history.addAction({ type: "doc", diffs });
         }
     }
 
@@ -260,7 +263,7 @@ export class DocumentManager {
 
         let css_name = `css${i}`;
         let css_path = `${component.doc_path}/${component.doc_name}#`;
-        let css_doc = new CSSDocument(css_name, css_path, this.system, true, this);
+        let css_doc = new CSSDocument(css_name, css_path, this.env, true, this);
         css_doc.tree = css;
         css.doc = css_doc;
         
@@ -271,3 +274,6 @@ export class DocumentManager {
         return css_doc;
     }
 }
+
+
+export { DocumentManager };

@@ -5,15 +5,12 @@
  */
 export default class Component {
 
-    constructor(scope_or_component, env) {
-        var component = scope_or_component;
-        
-        //If the scope_or_component value is Wick scope, then it will 
-        //have a presets object, which is not present on a Wick Component object.
-        if(scope_or_component.presets){
-            component = scope_or_component.ast
-        }
+    constructor(env) {
 
+        this.env = env;
+        this.scope = null;
+        this.ast = null;
+        this.data = null;
 
         //frame for fancy styling
         this.style_frame = document.createElement("div");
@@ -22,8 +19,6 @@ export default class Component {
 
         this.dimensions = document.createElement("div");
         this.dimensions.classList.add("flame_component_dimensions");
-
-
 
         //Label
         this.name = document.createElement("div");
@@ -51,139 +46,71 @@ export default class Component {
         //The source component manager that handles the instantiation and runtime of Wick components. 
         this.manager = null;
 
-       //this.system = system;
+        //this.system = system;
 
         this.action = null;
 
         const frame = this.createFrameElement();
+
         frame.component = this;
 
         this.style_frame.appendChild(frame);
-
-        //this.width = this.system.project.defaults.component.width;
-        //this.height = this.system.project.defaults.component.height;
-        
-    }
-
-    createFrameElement() {
-
-        this.frame = document.createElement("div");
-        this.frame.classList.add("flame_component")
-
-        const backer = document.createElement("div");
-        this.style_frame.appendChild(backer);
-        backer.classList.add("flame_component_background");
-        // this.frame.src = "component_frame.html";
-        //this.frame.setAttribute("frameBorder", "0");
-        this.frame.style.position = "fixed";
-
-
-        this.mountListeners();
-        this.IFRAME_LOADED = true;
-
-        return this.frame;
-    }
-    /*
-    createFrameElement() {
-
-        this.frame = document.createElement("iframe");
-        this.frame.src = "component_frame.html";
-
-        const backer = document.createElement("div");
-        this.style_frame.appendChild(backer);
-        backer.classList.add("flame_component_background");
-
-
-        this.IFRAME_LOADED = false;
-
-        this.frame.onload = (e) => {
-
-            this.mountListeners();
-            //e.target.contentDocument.body.appendChild(this.data);
-            //e.target.contentWindow.wick = wick;
-            this.IFRAME_LOADED = true;
-        };
-
-        return this.frame;
-    }
-    */
-
-    mountListeners() {
-        //this.system.ui.integrateComponentElement(this.frame, this);
-    }
-
-    addStyle(tree, INLINE) {
-        if (!INLINE) {
-            const style = new StyleNode();
-            style.tag = "style";
-            this.sources[0].ast.addChild(style);
-            style.css = tree;
-            tree.addObserver(style);
-            this.local_css.splice(this.css_split, 0, tree);
-            this.css_split++;
-        } else {
-            //insert the style into the root of the tree;
-            this.local_css.push(style);
-        }
     }
 
     destroy() {
         this.element = null;
     }
 
+
     load(document) {
-        console.log(document.data)
-        this.name.innerHTML = document.name;
-        this.doc_name = document.name;
-        this.doc_path = document.path;
-        document.bind(this);
-    }
 
-    documentReady(pkg) {
+        debugger
+        this.ast = document.data;
+        /*
+        const css = pkg.skeletons[0].tree.css;
 
-        if (this.manager) {
-            //Already have source, just need to rebuild with new tree. 
-            const tree = pkg.skeletons[0].tree,
-                css = tree.css;
-
-            this.sources[0].ast = tree;
-
-            if (css)
-                css.forEach(css => {
-                    this.local_css.push(css);
-                });
-
-            this.local_css = [];
-
-            this.rebuild();
-        } else {
-
-            const css = pkg.skeletons[0].tree.css;
-
-            if (css)
-                css.forEach(css => {
-                    this.local_css.push(css);
-                });
-
-            if (this.IFRAME_LOADED) {
-
-                this.manager = pkg.mount(this.content, null, true, this);
-                this.sources[0].window = this.window;
-                this.rebuild();
-
-            } else
-                this.frame.addEventListener("load", () => {
-                    this.manager = pkg.mount(this.content, null, false, this);
-                    this.sources[0].window = this.window;
-                    this.rebuild();
-                });
-        }
+        if (css)
+            css.forEach(css => {
+                this.local_css.push(css);
+            });
+        */
+        this.scope = this.ast.mount(this.content);
+        this.scope.window = this.window;
+        this.rebuild();
 
         return true;
     }
 
-    upImport() {
-        /* Empty Function  */
+    createFrameElement() {
+
+        this.frame = document.createElement("div");
+        this.frame.classList.add("flame_component");
+
+        const backer = document.createElement("div");
+        this.style_frame.appendChild(backer);
+        backer.classList.add("flame_component_background");
+        this.frame.style.position = "fixed";
+
+
+        //this.mountListeners();
+
+        return this.frame;
+    }
+
+    addStyle(tree, INLINE) {
+        if (!INLINE) {
+            return;
+            //const style = new StyleNode();
+            //style.tag = "style";
+            //this.scope.ast.addChild(style);
+            //style.css = tree;
+            //tree.addObserver(style);
+            //this.local_css.splice(this.css_split, 0, tree);
+            //this.css_split++;
+        } else {
+            //insert the style into the root of the tree;
+            this.local_css.push(style);
+        }
     }
 
     /**
@@ -199,40 +126,35 @@ export default class Component {
     }
 
     rebuild() {
-        if (this.sources)
-            this.sources[0].rebuild();
+        if (this.scope)
+            this.scope.rebuild();
     }
 
     query(query) {
-        const sr = this.frame.shadowRoot
-        if(sr)
+        const sr = this.frame.shadowRoot;
+        if (sr)
             return sr.querySelector(query);
         return this.frame.querySelector(query);
     }
 
-    get body(){
+    get body() {
         return this.frame.shadowRoot;
     }
 
     get window() {
         return this;
-        return new Proxy(this,{get:(obj, prop)=>{
-            return obj[prop]
-        }});
-        return window;
-        return this.frame;
     }
 
-    get getComputedStyle(){
-        return Component.getComputedStyle;
+    get getComputedStyle() {
+        return (Component.getComputedStyle || (Component.getComputedStyle = window.getComputedStyle.bind(window)));
     }
 
-    get innerWidth(){
+    get innerWidth() {
         return this.width;
 
     }
 
-    get innerHeight(){
+    get innerHeight() {
         return this.height;
     }
 
@@ -284,7 +206,7 @@ export default class Component {
         return this.frame;
     }
 
-    get type(){
+    get type() {
         return "wick";
     }
 
@@ -300,5 +222,3 @@ export default class Component {
         };
     }
 }
-
-Component.getComputedStyle = window.getComputedStyle.bind(window);

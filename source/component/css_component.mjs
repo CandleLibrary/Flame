@@ -1,7 +1,8 @@
-import {Component} from "./component.mjs"
 import whind from "@candlefw/whind";
-import {TextIO, TextFramework} from "@candlefw/charcoal"
-import CSSContainer from "../css/css_builder.mjs";
+import {TextIO, TextFramework} from "@candlefw/charcoal";
+
+import Component from "./component.mjs";
+import CSSContainer from "../system/css/css_builder.mjs";
 
 export class CSSComponent extends Component{
 	constructor(system){

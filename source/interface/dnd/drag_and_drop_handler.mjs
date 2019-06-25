@@ -1,12 +1,12 @@
 export class DNDHandler{
-	constructor(system){
-		this.system = system
+	constructor(env){
+		this.env = env
 		this.icon = document.createElement("div");
 		this.icon.style.position = "absolute";
 		this.icon.style.width = "20px";
 		this.icon.style.height = "20px";
 
-		system.ui.element.appendChild(this.icon);
+		env.ui.manager.element.appendChild(this.icon);
 
 		this.drop_obj = null;
 		this.ACTIVE = false;
@@ -28,7 +28,7 @@ export class DNDHandler{
 		}
 
 		this.drop_obj = obj;
-		this.setIcon(icon)
+		this.setIcon(icon);
 	}
 
 	start(event, data){
@@ -49,9 +49,9 @@ export class DNDHandler{
 		this.ACTIVE = false;
 		const obj = this.drop_obj;
 		this.drop_obj = null;
-		const x = this.system.ui.transform.getLocalX(this.x);
-		const y = this.system.ui.transform.getLocalY(this.y);
-		this.system.ui.active_handler.input("generic_drop", {x, y}, this.system.ui, obj)
+		const x = this.env.ui.transform.getLocalX(this.x);
+		const y = this.env.ui.transform.getLocalY(this.y);
+		this.env.ui.managerenv.ui.active_handler.input("generic_drop", {x, y}, this.env.ui.manager, obj);
 	}
 
 

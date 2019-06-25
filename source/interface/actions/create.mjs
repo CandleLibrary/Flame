@@ -1,16 +1,13 @@
-import { RootNode } from "@candlefw/wick";
-import { Component } from "../../component/component.mjs";
-import { IframeComponent } from "../../component/iframe_component.mjs";
-import { CSSComponent } from "../../component/css_component.mjs";
 import { MOVE } from "./move.mjs";
 import { SETLEFT, SETTOP } from "./position.mjs";
 import { SETWIDTH, SETHEIGHT } from "./dimensions.mjs";
 import { TOPOSITIONABSOLUTE } from "./convert.mjs";
 import { prepRebuild } from "./common.mjs";
-import { Document } from "../../document/document.mjs";
 
-const createHTMLNodeHook = RootNode.prototype.createHTMLNodeHook;
-
+import Component from "../../component/component.mjs";
+import { IframeComponent } from "../../component/iframe_component.mjs";
+import { CSSComponent } from "../../component/css_component.mjs";
+import { Document } from "../../system/document/document.mjs";
 
 export function TRANSFER_ELEMENT(system, target_component, target_element, child_element, px, py, COPY = false, LINKED = false) {
     let new_element = null,
@@ -46,8 +43,8 @@ export function TRANSFER_ELEMENT(system, target_component, target_element, child
 export function CREATE_ELEMENT(system, component, parent_element, tag_name = "div", px = 0, py = 0, w = 50, h = 50) {
     if (typeof(tag_name) !== "string" || tag_name == "")
         throw new Error(`Invalid argument for \`tag_name\`:${tag_name} in call to CREATE_ELEMENT.`);
-
-    let node = createHTMLNodeHook(tag_name);
+    return null;
+    let node = system.wick("");
     node.tag = tag_name;
 
     parent_element.wick_node.addChild(node);
@@ -85,7 +82,6 @@ export function CREATE_COMPONENT(system, doc, px, py) {
     let comp = null;
 
     if (doc instanceof Document) {
-
         switch (doc.type) {
             case "css":
                 comp = system.css.createComponent(doc);
@@ -103,10 +99,11 @@ export function CREATE_COMPONENT(system, doc, px, py) {
         comp.container.addSelector(doc.selector);
     }
     
-    document.querySelector("#main_view").appendChild(comp.element);
+    system.ui.wys_view.appendChild(comp.element);
 
     comp.x = px;
     comp.y = py;
+    
     return comp;
 }
 

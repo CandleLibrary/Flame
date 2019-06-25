@@ -32,6 +32,8 @@ function initializeWick(wick, options){
 
 	const env = flame_environment(options);
 
+	env.wick = wick;
+
 	build_editor_environment(env, document.body, HIDDEN);
 	wick_component_integration(wick, env);
 }
@@ -40,6 +42,9 @@ function initializeRadiate(radiate, options){
 	const HIDDEN = true;
 
 	const env = flame_environment(options);
+
+	env.wick = radiate.wick;
+	env.radiate = radiate;
 
 	build_editor_environment(env, document.body, HIDDEN);
 	wick_component_integration(radiate.wick, env);

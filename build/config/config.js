@@ -1,5 +1,6 @@
 import commonjs from 'rollup-plugin-commonjs';
 import resolve from 'rollup-plugin-node-resolve';
+import {string} from 'rollup-plugin-string';
 
 export default [{
     input: "./source/flame.mjs",
@@ -9,7 +10,11 @@ export default [{
         file: "./build/flame.js",
         format: "iife",
         sourcemap: "inline",
-        exports:"default"
+        exports: "default"
     }],
-    plugins: [commonjs({ include: ['./node_modules/*.*'] }), resolve()]
+    plugins: [
+        string({ include: "**/*.html" }),
+        commonjs({ include: ['./node_modules/*.*'] }),
+        resolve()
+    ]
 }];

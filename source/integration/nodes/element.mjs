@@ -49,11 +49,11 @@ export default function(prototype, env) {
 
     prototype.reparse = function(text) {
 
-        const Root = new this.ReparseConstructor();
+        const element = new this.ReparseConstructor();
 
-        Root.parent = this.parent;
+        element.parent = this.parent;
 
-        const promise = Root.parentse(whind(text), false, false, this.parent);
+        const promise = element.parentse(whind(text), false, false, this.parent);
 
         promise.then(node => {
             node.parent = null;
@@ -92,21 +92,21 @@ export default function(prototype, env) {
     };
 
 
-    prototype.buildExisting = function(element, source, presets, taps, parent_element, win = window, css = this.css) {
+    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css) {
 
         if (true || this.CHANGED !== 0) {
 
             if (element)
                 element.style.cssText = "";
 
-            this.linkCSS(css, win);
+            //this.linkCSS(css, win);
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
 
                 let span = document.createElement("span");
 
-                this._build_(span, source, presets, [], taps, {});
+                this.mount(element, scope, presets, slots, pinned);
 
                 let ele = span.firstChild;
 
@@ -138,6 +138,12 @@ export default function(prototype, env) {
                 //rebuild children
 
                 const children = (element) ? element.childNodes : [];
+                
+                for (let i = 0; i < this.children.length; i++) {
+                    const node = this.children[i];
+                    node.buildExisting(own_element, scope, presets, slots, pinned);
+                }
+
 
                 for (let i = 0, node = this.fch; node; node = this.getNextChild(node))
                     if (node.buildExisting(children[i], source, presets, taps, element, win)) i++;

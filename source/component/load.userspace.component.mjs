@@ -1,5 +1,5 @@
 import { CREATE_COMPONENT } from "../interface/actions/create.mjs";
-;
+
 
 export default function (scope, env){
 

@@ -3,7 +3,7 @@ import { actions } from "../actions/action";
 
 export default class Default extends Handler {
 
-    constructor(system, component = "/flame/ui_components/controls/basic.html") {
+    constructor(system, component = "/@ui/basic.html") {
 
         super(system, component);
 

@@ -9,6 +9,20 @@ import {
     CSSDocument
 } from "./css_document";
 
+//data
+import basic from "./data/basic.html";
+import border from "./data/border.html";
+import element_draw from "./data/element_draw.html";
+import selector_list from "./data/selector_list.html";
+
+const internal = {
+    basic,
+    border,
+    element_draw,
+    selector_list
+};
+
+
 //import path from "path";
 import { DocumentDifferentiator } from "./differ";
 import master_component_string from "./master_component_string.mjs";
@@ -23,37 +37,20 @@ export default class DocumentManager {
         this.diffs = [];
         this.diff_step = 0;
 
+        this.data=
+        {
+            ui : internal   
+        };
+
         this.pending = null;
         this.updated = false;
+        /*
+        const fetch = document.fetch;
 
-        const fetch  = document.fetch;
-
-        document.fetch = async (...args)=>{
+        document.fetch = async (...args) => {
             console.log(args);
             return fetch(...args);
         };
-
-        /**
-         * Global `fetch` polyfill - basic support
-         */
-         /*
-        global.fetch = (url) => new Promise((res) => {
-            let p = url;
-            if (!path.isAbsolute(p)) p = path.resolve(process.cwd(), (url[0] == ".") ? url + "" : "." + url);
-            const doc_id = this.loadFile({
-                path: path.dirname(p),
-                name: path.basename(p),
-                type: "text/css",
-            });
-            if (doc_id) {
-                this.get(doc_id).bind({
-                    documentReady: (data) => res({
-                        status: 200,
-                        text: () => new Promise((res) => res(data))
-                    })
-                });
-            }
-        });
         */
     }
     /*
@@ -64,7 +61,7 @@ export default class DocumentManager {
         switch (typeof(file)) {
 
             case "string": // Load from file env or DB
-                
+
                 switch (file) {
                     case "~edit-canvas": //Load new internal document ~edit-canvas
                         const canvas = new WickDocument("edit-canvas", "%internal", this.env, false, this);
@@ -72,7 +69,7 @@ export default class DocumentManager {
                         this.docs.set(canvas.id, canvas);
                         return canvas.id;
                 }
-                
+
                 const url = new URL(file);
 
                 file = {
@@ -84,23 +81,23 @@ export default class DocumentManager {
             case "object": //
                 if (file.name && file.path) {
                     const name = file.name;
-                    
+
                     let path = file.path;
-                    
+
                     let type = "";
-                    
+
                     if (file.type) type = file.type; //.split("/")[1].toLowerCase();
-                    
+
                     else type = name.split(".").pop().toLowerCase();
-                    
+
                     if (path.includes(name)) path = path.replace(name, "");
-                    
+
                     if (path[path.length - 1] == "/" || path[path.length - 1] == "\\") path = path.slice(0, -1);
-                    
+
                     path = path.replace(/\\/g, "/");
-                    
+
                     const id = `${path}/${name}`;
-                    
+
                     if (!this.docs.get(id)) {
                         let doc;
                         switch (type) {
@@ -117,9 +114,9 @@ export default class DocumentManager {
 
                         if (file.data)
                             doc.fromString(file.data);
-                        else{
-                            if(file.path[0] !== "%")
-                            doc.load();
+                        else {
+                            if (file.path[0] !== "%")
+                                doc.load();
                         }
                     }
                     return id;
@@ -255,10 +252,10 @@ export default class DocumentManager {
         }
     }
 
-    createInternalCSSDoc(component, css){
-        const i = Math.round(Math.random()*100000);
+    createInternalCSSDoc(component, css) {
+        const i = Math.round(Math.random() * 100000);
 
-        if(css.doc)
+        if (css.doc)
             return css.doc;
 
         let css_name = `css${i}`;
@@ -266,7 +263,7 @@ export default class DocumentManager {
         let css_doc = new CSSDocument(css_name, css_path, this.env, true, this);
         css_doc.tree = css;
         css.doc = css_doc;
-        
+
         css.addObserver(css_doc);
 
         this.docs.set(`${css_path}${css_name}`, css_doc);

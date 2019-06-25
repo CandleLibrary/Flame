@@ -27,8 +27,8 @@ export default async function(integrating_wick, flame_environment){
 			open_environment(comp, flame_environment);
 		});
 
-		element.appendChild(flame_tag)
+		element.appendChild(flame_tag);
 
 		return comp;
-	}	
+	};
 }

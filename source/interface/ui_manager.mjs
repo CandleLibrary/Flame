@@ -16,7 +16,7 @@ import BrowserEngine from "./input_engine/browser_input.mjs";
 
 /*** END HOST UTILITIES ---***/
 
-//OTHER imports
+//OTHER import
 import { ControlsManager } from "./controls_manager";
 
 /** GLOBAL EVENTS FILLS **/

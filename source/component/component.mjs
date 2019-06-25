@@ -63,8 +63,7 @@ export default class Component {
 
 
     load(document) {
-
-        debugger
+        
         this.ast = document.data;
         /*
         const css = pkg.skeletons[0].tree.css;

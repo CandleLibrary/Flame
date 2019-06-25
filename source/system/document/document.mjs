@@ -49,16 +49,28 @@ export class Document {
 
     async load() {
         if (!this.LOADED) {
-            if(this.path[0] == "~"){ 
-            // This is a generated document
+            if (this.path[0] == "~") {
+                // This is a generated document
                 this.LOADED = true;
-            }else{
-                try {
-                    let data = await this.url.fetchText();
+            } else {
+                if (this.url.path[1] == "@") {
+                    const file = this.url.filename;
+                    const dir = this.path.split("/").pop().slice(1);
+
+                    const data = this.manager.data[dir][file];
+                    
                     this.LOADED = true;
-                    this.fromString(data);
-                } catch (e) {
-                    console.error(e);
+                    this.fromString(data, this.manager.env);
+
+                } else {
+
+                    try {
+                        let data = await this.url.fetchText();
+                        this.LOADED = true;
+                        this.fromString(data, this.manager.env);
+                    } catch (e) {
+                        console.error(e);
+                    }
                 }
             }
 
@@ -71,7 +83,7 @@ export class Document {
         if (!file_builder) {
             if (this.SAVING) return;
 
-            this.SAVING = true; 
+            this.SAVING = true;
 
             let fb = new FileBuilder(this.id);
             let string = this.toString();
@@ -105,9 +117,9 @@ export class Document {
     }
 
     alertObservers() {
-        if (this.observers){
-            for (let i = 0; i < this.observers.length; i++){
-                if (this.observers[i].documentReady(this.data) === false){
+        if (this.observers) {
+            for (let i = 0; i < this.observers.length; i++) {
+                if (this.observers[i].documentReady(this.data) === false) {
                     this.observers.splice(i--, 1);
                 }
             }

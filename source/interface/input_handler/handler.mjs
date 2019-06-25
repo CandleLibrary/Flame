@@ -4,10 +4,10 @@ export default class Handler {
         this.package = null;
 
         if(component_path){
-            //const doc = env.data.docs.get(env.data.docs.loadFile(component_path));
-//
-//            //if (doc) 
-            //    doc.bind(this);
+            const doc = env.data.docs.get(env.data.docs.loadFile(component_path));
+
+            if (doc) 
+                doc.bind(this);
         }
     }
 

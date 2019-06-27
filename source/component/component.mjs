@@ -43,7 +43,7 @@ export default class Component {
         //The file name of the component. 
         this.file_name = "";
 
-        //The source component manager that handles the instantiation and runtime of Wick components. 
+        //The source component manager that handles the instantiati on and runtime of Wick components. 
         this.manager = null;
 
         //this.system = system;
@@ -61,19 +61,28 @@ export default class Component {
         this.element = null;
     }
 
-
     load(document) {
-        
-        this.ast = document.data;
-        /*
-        const css = pkg.skeletons[0].tree.css;
+        this.name.innerHTML = document.name;
+        this.doc_name = document.name;
+        this.doc_path = document.path;
+        document.bind(this);
+    }
 
-        if (css)
-            css.forEach(css => {
-                this.local_css.push(css);
-            });
-        */
-        this.scope = this.ast.mount(this.content);
+    documentReady(ast) {
+
+        if (this.ast) {
+            //Already have source, just need to rebuild with new tree. 
+            this.scope.ast = ast;
+            this.rebuild();
+        } else {
+            this.ast = ast;
+            this.scope = this.ast.mount();
+            this.ast.setScope(this.scope);
+            this.content.attachShadow({ mode: 'open' }).appendChild(this.scope.ele );
+            this.scope.load();
+            this.scope.css.forEach(css=>this.local_css.push(css));
+        }
+
         this.scope.window = this.window;
         this.rebuild();
 
@@ -88,13 +97,19 @@ export default class Component {
         const backer = document.createElement("div");
         this.style_frame.appendChild(backer);
         backer.classList.add("flame_component_background");
+
         this.frame.style.position = "fixed";
 
 
-        //this.mountListeners();
+        this.mountListeners();
 
         return this.frame;
     }
+
+    mountListeners() {
+        this.env.ui.manager.integrateComponentElement(this.frame, this);
+    }
+
 
     addStyle(tree, INLINE) {
         if (!INLINE) {
@@ -219,5 +234,14 @@ export default class Component {
             name: this.doc_name,
             type: "html"
         };
+    }
+
+    mount(element) {
+        if (this.element.parentNode != element){
+            element.appendChild(this.element);
+            let rect = this.scope.ele.getBoundingClientRect();
+            this.width = rect.width;
+            this.height = rect.height;
+        }
     }
 }

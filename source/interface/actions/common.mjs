@@ -4,21 +4,21 @@ let types = css.types;
 import { CacheFactory } from "./cache";
 
 function getContentBox(ele, win = window, system) {
-    let scale = system.ui.transform.scale;
+    const
+        scale = system.ui.manager.transform.scale,
 
-    let rect = ele.getBoundingClientRect();
-    let par_prop = win.getComputedStyle(ele);
+        rect = ele.getBoundingClientRect(),
+        par_prop = win.getComputedStyle(ele),
 
-    let border_l = parseFloat(par_prop.getPropertyValue("border-left"));
-    let border_r = parseFloat(par_prop.getPropertyValue("border-right"));
-    let border_t = parseFloat(par_prop.getPropertyValue("border-top"));
-    let border_b = parseFloat(par_prop.getPropertyValue("border-bottom"));
+        border_l = parseFloat(par_prop.getPropertyValue("border-left")),
+        border_r = parseFloat(par_prop.getPropertyValue("border-right")),
+        border_t = parseFloat(par_prop.getPropertyValue("border-top")),
+        border_b = parseFloat(par_prop.getPropertyValue("border-bottom")),
 
-    let top = rect.top / scale + border_t;
-    let left = rect.left / scale + border_l;
-    let width = rect.width / scale - border_l - border_r;
-    let height = rect.height / scale - border_t - border_b;
-
+        top = rect.top / scale + border_t,
+        left = rect.left / scale + border_l,
+        width = rect.width / scale - border_l - border_r,
+        height = rect.height / scale - border_t - border_b;
     return { top, left, width, height };
 }
 
@@ -76,21 +76,21 @@ export function setNumericValue(propname, system, component, element, value, rel
     let excess = 0;
 
     if (!prop) {
-        if (cache.unique.r.props[propname]) {
-            props = cache.unique.r.props;
+        if (cache.unique.props[propname]) {
+            props = cache.unique.props;
             prop = props[propname];
         }
         if (!KEEP_UNIQUE) {
             let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
-            props = cache.unique.r.props;
+            props = cache.unique.props;
             prop = props[propname];
         } else {
             let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.unique.addProp(`${css_name}:${value}`);
-            props = cache.unique.r.props;
+            props = cache.unique.props;
             prop = props[propname];
         }
     }
@@ -102,8 +102,8 @@ export function setNumericValue(propname, system, component, element, value, rel
 
     if (prop == "auto") {
         //convert to numerical form;
-        props[propname] = new types.length(value, "px");
-    } else if (prop instanceof types.percentage) {
+        props[propname].val[0] = new types.length(value, "px");
+    } else if (prop.value instanceof types.percentage) {
         //get the nearest positioned ancestor
 
         let denominator = 0,
@@ -136,15 +136,15 @@ export function setNumericValue(propname, system, component, element, value, rel
 
         let np = value / denominator;
 
-        props[propname] = prop.copy(np * 100);
+        props[propname].val[0] = prop.copy(np * 100);
     } else {
-        if (prop.copy)
-            props[propname] = prop.copy(value);
+        if (prop.value.copy)
+            props[propname].val[0] = prop.value.copy(value);
         else {
             if (value !== 0)
-                props[propname] = new types.length(value, "px");
+                props[propname].val[0] = new types.length(value, "px");
             else
-                props[propname] = 0;
+                props[propname].val[0] = 0;
         }
     }
 
@@ -161,7 +161,9 @@ setNumericValue.width = 5;
 
 
 export function getRatio(system, component, element, funct, original_value, delta_value, delta_measure, ALLOW_NEGATIVE = false, NO_ADJUST = false) {
-    let excess = 0, ratio = 0, scale = system.ui.transform.scale;
+    let excess = 0,
+        ratio = 0,
+        scale = system.ui.manager.transform.scale;
 
     let begin_x = element.getBoundingClientRect()[delta_measure] / scale;
 
@@ -175,12 +177,12 @@ export function getRatio(system, component, element, funct, original_value, delt
     funct(system, component, element, original_value + delta_value);
 
     let end_x = element.getBoundingClientRect()[delta_measure] / scale;
-    
+
     let diff_x = end_x - begin_x;
 
 
     if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
- 
+
         ratio = (diff_x / delta_value);
         let diff = delta_value / ratio;
         if (diff !== 0 && !NO_ADJUST) {

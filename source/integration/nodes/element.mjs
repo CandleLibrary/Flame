@@ -22,12 +22,18 @@ export default function(prototype, env) {
             this.nxt = nxt;
         }
     }
-
+    
     let id = 0;
 
     prototype.constructor.id = 0;
 
     prototype.ReparseConstructor = prototype.constructor;
+
+    const  loadAndParseUrl = prototype.loadAndParseUrl;
+
+    prototype.loadAndParseUrl = async function(e){
+        return loadAndParseUrl.call(this, e);
+    };
 
     prototype.createElement = function(presets, source) {
         const element = document.createElement(this.tag);
@@ -37,14 +43,14 @@ export default function(prototype, env) {
         return element;
     };
 
-    prototype.setSource = function(source) {
+    prototype.setScope = function(scope) {
 
-        if (!this.observing_sources)
-            this.observing_sources = [];
+        if (!this.observing_scopes)
+            this.observing_scopes = [];
 
-        this.observing_sources.push(source);
+        this.observing_scopes.push(scope);
 
-        source.ast = this;
+        scope.ast = this;
     };
 
     prototype.reparse = function(text) {
@@ -53,30 +59,29 @@ export default function(prototype, env) {
 
         element.parent = this.parent;
 
-        const promise = element.parentse(whind(text), false, false, this.parent);
+        return env.wick(text).pending.then(comp => {
+            const ast = comp.ast;
 
-        promise.then(node => {
-            node.parent = null;
+            ast.parent = null;
 
             if (this.parent)
-                this.parent.replace(this, node);
-            node.BUILT = true;
-            node.prepRebuild(false, true);
-            node.rebuild();
-        });
+                this.parent.replace(this, ast);
 
-        return promise;
+            ast.BUILT = true;
+            ast.prepRebuild(false, true);
+            ast.rebuild();
+        });
     };
 
     // Rebuild all sources relying on this node
     prototype.rebuild = function(win = window) {
 
 
-        if (this.observing_sources) {
+        if (this.observing_scopes) {
 
-            for (let i = 0; i < this.observing_sources.length; i++) {
+            for (let i = 0; i < this.observing_scopes.length; i++) {
                 try {
-                    this.observing_sources[i].rebuild(this.observing_sources[i].window);
+                    this.observing_scopes[i].rebuild(this.observing_scopes[i].window);
                 } catch (e) {
                     console.error(e);
                 }
@@ -106,19 +111,18 @@ export default function(prototype, env) {
 
                 let span = document.createElement("span");
 
-                this.mount(element, scope, presets, slots, pinned);
+                this.mount(span, scope, presets, slots, pinned);
 
                 let ele = span.firstChild;
 
                 if (this.CHANGED & 8) {
                     if (element) {
-                        element.parententElement.insertBefore(ele, element);
+                        element.parentElement.insertBefore(ele, element);
                     } else
                         parent_element.appendChild(ele);
                     return true;
                 } else {
-
-                    element.parententElement.replaceChild(ele, element);
+                    element.parentElement.replaceChild(ele, element);
                     return true;
                 }
 
@@ -127,13 +131,6 @@ export default function(prototype, env) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source, presets, taps);
 
-            if (true || this.CHANGED & 1) {
-                //redo IOs that have changed (TODO)
-                for (let i = 0, l = this.bindings.length; i < l; i++) {
-                    this.bindings[i].binding._bind_(source, [], taps, element, this.bindings[i].name);
-                }
-            }
-
             if (true || this.CHANGED & 2) {
                 //rebuild children
 
@@ -141,12 +138,8 @@ export default function(prototype, env) {
                 
                 for (let i = 0; i < this.children.length; i++) {
                     const node = this.children[i];
-                    node.buildExisting(own_element, scope, presets, slots, pinned);
+                    node.buildExisting(element, scope, presets, slots, pinned, win, css);
                 }
-
-
-                for (let i = 0, node = this.fch; node; node = this.getNextChild(node))
-                    if (node.buildExisting(children[i], source, presets, taps, element, win)) i++;
             }
         }
 

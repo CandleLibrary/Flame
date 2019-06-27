@@ -60,7 +60,7 @@ export class Document {
                     const data = this.manager.data[dir][file];
                     
                     this.LOADED = true;
-                    this.fromString(data, this.manager.env);
+                    this.fromString(data, this.manager.env, false);
 
                 } else {
 

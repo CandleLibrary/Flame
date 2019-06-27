@@ -1,6 +1,6 @@
 //import wick from "@candlefw/wick";
 
-import Component from "./component";
+import { Component } from "./component";
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
@@ -54,11 +54,11 @@ class UIComponent extends Component {
 
     mountListeners() {
         this.style_frame.addEventListener("mousedown", e => {
-            this.system.ui.manager.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
-            this.system.ui.manager.handlePointerDownEvent(e, e.pageX, e.pageY);
+            this.system.ui.ui_target = { element: null, component: this, action: this.system.actions.MOVE_PANEL };
+            this.system.ui.handlePointerDownEvent(e, e.pageX, e.pageY);
         });
-        this.frame.addEventListener("mousemove", e => this.system.ui.manager.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
-        this.frame.addEventListener("mouseup", e => this.system.ui.manager.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mousemove", e => this.system.ui.handlePointerMoveEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
+        this.frame.addEventListener("mouseup", e => this.system.ui.handlePointerEndEvent(e, e.pageX + this.x + 3, e.pageY + this.y + 3));
     }
 
     documentReady(pkg) {
@@ -74,7 +74,7 @@ class UIComponent extends Component {
         if (src.statics.menu) {
             switch (src.statics.menu) {
                 case "main":
-                    this.system.ui.manager.addToMenu("main", this.name, this.mgr.sources[0].badges.icon, this);
+                    this.system.ui.addToMenu("main", this.name, this.mgr.sources[0].badges.icon, this);
                     break;
             }
         }
@@ -89,7 +89,7 @@ class UIComponent extends Component {
         this.mgr.upImport = (prop_name, data, meta) => {
             switch (prop_name) {
                 case "load":
-                    this.system.ui.manager.mountComponent(this);
+                    this.system.ui.mountComponent(this);
                     break;
                 case "width":
                     this.width = data;
@@ -112,8 +112,9 @@ class UIComponent extends Component {
     }
 
     mount(element) {
-        if (this.element.parentNode != element)
+        if (this.element.parentNode != element){
             element.appendChild(this.element);
+        }
     }
 
     unmount() {}

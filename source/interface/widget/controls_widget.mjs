@@ -39,10 +39,10 @@ export class ControlWidget extends ElementBox {
                 this.target.action = actions.MOVE;
                 this.ui.setWidgetTarget(this.target);
                 this.ui.handlePointerDownEvent({ button: 0 });
-            })
+            });
         }
 
-        widget.ui = system.ui;
+        widget.ui = system.ui.manager;
 
 
         widget.border_ele = null;
@@ -90,8 +90,8 @@ export class ControlWidget extends ElementBox {
 
         if (this.component_element.parentElement) {
             this.component_element.parentElement.removeChild(this.component_element);
-            if (this.sources[0])
-                this.sources[0].destroy;
+            if (this.scope)
+                this.scope.destroy;
             this.sources = [];
         }
 
@@ -139,18 +139,18 @@ export class ControlWidget extends ElementBox {
         ctx.strokeStyle = "rgb(0,0,0)";
         ctx.lineWidth = (1 / scale) * 0.95;
 
-        this.component_element.style.left = `${transform.px + this.x * scale}px`
+        this.component_element.style.left = `${transform.px + this.x * scale}px`;
         this.component_element.style.top = `${transform.py + this.y * scale}px`;
         this.component_element.style.width = `${(this.w + this.margin_l + this.margin_r + this.border_l + this.border_r + this.padding_l + this.padding_r)*scale}px`;
         this.component_element.style.height = `${(this.h + this.margin_t + this.margin_b + this.border_t + this.border_b + this.padding_t + this.padding_b)*scale}px`;
 
-        this.component_element.style.backgroundColor = "rgba(255,255,0,0.6)"
+        this.component_element.style.backgroundColor = "rgba(255,255,0,0.6)";
 
         if (!IS_COMPONENT)
             this.setExtendedElements(scale);
 
         //Update Wick Controls
-        this.sources[0].update(this);
+        this.scope.update(this);
     }
 
     setExtendedElements(scale = this.scale) {
@@ -176,8 +176,8 @@ export class ControlWidget extends ElementBox {
         }
     }
 
-    loadComponent(pkg) {
-        if (pkg) {
+    loadComponent(ast) {
+        if (ast) {
             if (this.sources.length > 0) {
                 this.sources.forEach(e => e.destroy());
                 this.sources.length = 0;
@@ -186,21 +186,23 @@ export class ControlWidget extends ElementBox {
 
             this.component_element.innerHTML = "";
 
-            this.controller = pkg.mount(this.component_element, this, false, this);
+            this.scope = ast.mount(this.component_element);
+            this.scope.load(this);
+            this.scope.parent = this;
 
-            let src = this.sources[0]
+            let scope = this.scope
 
-            this.content_ele = (src.badges.content) ? src.badges.content : null;
-            this.margin_ele = (src.badges.margin) ? src.badges.margin : null;
-            this.border_order_ele = (src.badges.border) ? src.badges.border : null;
-            this.padding_ele = (src.badges.padding) ? src.badges.padding : null;
+            //this.content_ele = (scope.badges.content) ? scope.badges.content : null;
+            //this.margin_ele = (scope.badges.margin) ? scope.badges.margin : null;
+            //this.border_order_ele = (scope.badges.border) ? scope.badges.border : null;
+            //this.padding_ele = (scope.badges.padding) ? scope.badges.padding : null;
 
             this.setExtendedElements();
         }
     }
 
     async upImport(key, value) {
-
+        
         switch (key) {
             case "move_action":
                 this.ui.setWidgetTarget(this);
@@ -231,6 +233,10 @@ export class ControlWidget extends ElementBox {
         this.IS_ON_MASTER = true //IS_ON_MASTER;
         this.setDimensions();
     }
+
+    loadAcknowledged() {
+
+    }
 }
 
 ControlWidget.loadComponent = async function(component_path) {
@@ -242,6 +248,6 @@ ControlWidget.loadComponent = async function(component_path) {
         return doc.data;
     }
     return null;
-}
+};
 ControlWidget.system = null;
 ControlWidget.cache = null;

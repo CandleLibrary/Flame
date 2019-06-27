@@ -1,14 +1,11 @@
-import Component from "./component.mjs";
-import URL from "@candlefw/url";
 /**
  * This module is responsible for storing, updating, and caching compents. 
  * In terms of Flame, the component is a synonym to an artboard, and is the primary container used to hold user created content. A Component reprsents a single file containing code, markup, and css necessary to present a visual artifact on the screen. It may contain definitions for sources or taps, and must be allowed to pull and push data from other components and handle integration with other components to create a fully realized UI.
  * Any associated stylesheets are managed through this componnent. 
  */
-export class IframeComponent extends Component{
+export class Component {
 
     constructor(system) {
-        super(system);
         //frame for fancy styling
         this.style_frame = document.createElement("div");
         this.style_frame.classList.add("flame_component");
@@ -16,6 +13,8 @@ export class IframeComponent extends Component{
 
         this.dimensions = document.createElement("div");
         this.dimensions.classList.add("flame_component_dimensions");
+
+
 
         //Label
         this.name = document.createElement("div");
@@ -58,30 +57,19 @@ export class IframeComponent extends Component{
 
     createFrameElement() {
 
-        this.frame = document.createElement("iframe");
-        this.frame.classList.add("flame_component");
-        this.frame.setAttribute("sandbox", "allow-scripts allow-same-origin");
+        this.frame = document.createElement("div");
+        this.frame.classList.add("flame_component")
 
         const backer = document.createElement("div");
         this.style_frame.appendChild(backer);
         backer.classList.add("flame_component_background");
-        //this.frame.src = "component_frame.html";
-        this.frame.setAttribute("frameBorder", "0");
-        this.frame.setAttribute("seamless", "");
+        // this.frame.src = "component_frame.html";
+        //this.frame.setAttribute("frameBorder", "0");
         this.frame.style.position = "fixed";
 
 
         this.mountListeners();
-        this.IFRAME_LOADED = false;
-
-        this.frame.onload = (e) => {
-
-            this.mountListeners();
-            //e.target.contentDocument.body.appendChild(this.data);
-            //e.target.contentWindow.wick = wick;
-            this.IFRAME_LOADED = true;
-        };
-
+        this.IFRAME_LOADED = true;
 
         return this.frame;
     }
@@ -111,7 +99,7 @@ export class IframeComponent extends Component{
     */
 
     mountListeners() {
-        this.system.ui.manager.integrateComponentElement(this.frame, this);
+        this.system.ui.integrateComponentElement(this.frame, this);
     }
 
     addStyle(tree, INLINE) {
@@ -134,26 +122,52 @@ export class IframeComponent extends Component{
     }
 
     load(document) {
-        let url = document.url
-        //url.path = url.path[0] == "/" ? url.path.slice(1) : url.path;
-        //url.data
-        //url.path = "/iframe/" + url.path;
-        this.frame.contentWindow.postMessage("test")
-        this.frame.setAttribute("CLIENT_MODE_TEST", true)
-        this.frame.setAttribute("name", "flame_frame")
-        this.frame.src = url + "";
-        this.frame.setAttribute("name", "flame_frame")
-        this.frame.contentWindow.CLIENT_MODE = true;
-        this.frame.contentWindow.document.CLIENT_MODE = true;
-
-
-        //this.frame.contentWindow.history.replaceState({}, "Flame Dev Env", url.toString());
-        console.log(this.frame.src)
-        //document.bind(this);
+        console.log(document.data)
+        this.name.innerHTML = document.name;
+        this.doc_name = document.name;
+        this.doc_path = document.path;
+        document.bind(this);
     }
 
     documentReady(pkg) {
-        
+
+        if (this.manager) {
+            //Already have source, just need to rebuild with new tree. 
+            const tree = pkg.skeletons[0].tree,
+                css = tree.css;
+
+            this.sources[0].ast = tree;
+
+            if (css)
+                css.forEach(css => {
+                    this.local_css.push(css);
+                });
+
+            this.local_css = [];
+
+            this.rebuild();
+        } else {
+
+            const css = pkg.skeletons[0].tree.css;
+
+            if (css)
+                css.forEach(css => {
+                    this.local_css.push(css);
+                });
+
+            if (this.IFRAME_LOADED) {
+
+                this.manager = pkg.mount(this.content, null, true, this);
+                this.sources[0].window = this.window;
+                this.rebuild();
+
+            } else
+                this.frame.addEventListener("load", () => {
+                    this.manager = pkg.mount(this.content, null, false, this);
+                    this.sources[0].window = this.window;
+                    this.rebuild();
+                });
+        }
 
         return true;
     }
@@ -180,22 +194,27 @@ export class IframeComponent extends Component{
     }
 
     query(query) {
-        const sr = this.frame.shadowRoot;
+        const sr = this.frame.shadowRoot
         if(sr)
             return sr.querySelector(query);
         return this.frame.querySelector(query);
     }
 
     get body(){
-        return this.frame.window.document.body;
+        return this.frame.shadowRoot;
     }
 
     get window() {
-        return this.frame.window;
+        return this;
+        return new Proxy(this,{get:(obj, prop)=>{
+            return obj[prop]
+        }});
+        return window;
+        return this.frame;
     }
 
     get getComputedStyle(){
-        return this.frame.window.document.getComputedStyle;
+        return Component.getComputedStyle;
     }
 
     get innerWidth(){

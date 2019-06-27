@@ -1,8 +1,10 @@
-import { Presets } from "@candlefw/wick";
-import { FlameScheme } from "./scheme";
+
+import { TextFramework, TextIO } from "@candlefw/charcoal";
+import spark from "@candlefw/spark";
+
+import flame_scheme from "./scheme";
 
 //Text Editing
-import { TextFramework, TextIO } from "@candlefw/charcoal";
 
 import { ColorFramework } from "../color/color_framework";
 
@@ -12,7 +14,6 @@ import { FileReader } from "./file_reader.mjs";
 /**
     Spark is used to issue timed callback for scheduled auto saving.
 */
-import spark from "@candlefw/spark";
 
 /**
  * @brief Stores data for the current project. Handles the global saving and importation of data. 
@@ -20,7 +21,7 @@ import spark from "@candlefw/spark";
  * It also provides the hosting of the presets object for wick components, and the interface components for user tools. 
  * The flame_data model stored is the main linking object for handling UI updates from actions performed through UI components.  
  */
-export class Project {
+export default class Project {
 
     constructor(system) {
 
@@ -28,27 +29,27 @@ export class Project {
         this.flame_data = null;
         this.presets = null;
 
-        this.setPresets();
+        this.setPresets(system);
         this.setDefaults();
     }
 
     /**
      * @brief Applies system defaults.
      */
-    setPresets(){
+    setPresets(env){
 
         const system = this.system;
 
-        this.flame_data = new FlameScheme();
+        this.flame_data = flame_scheme(env);
         
-        this.presets = new Presets({
+        this.presets = system.wick.presets({
             models: {
                 flame: this.flame_data,
                 settings: this.flame_data.settings,
             },
             custom: {
                 actions: system.actions,
-                ui: system.ui,
+                ui: system.ui.manager,
                 classes: {
                     textio: TextIO,
                     textfw: TextFramework,
@@ -70,7 +71,7 @@ export class Project {
     reset() {
         this.setPresets();
         this.setDefaults();
-        this.system.ui.reset();
+        this.system.ui.manager.reset();
         this.system.docs.reset();
         this.system.history.reset();
     }
@@ -102,7 +103,7 @@ export class Project {
 
             d.forEach((fn) => {
                 if (path.extname(fn) == ".html") {
-                    this.system.ui.addComponent(([dir, fn]).join("/"));
+                    this.system.ui.manager.addComponent(([dir, fn]).join("/"));
                 }
             });
         });
@@ -170,7 +171,7 @@ export class Project {
             const data = await file_reader.readS(stamp.doc_size);
             this.system.docs.load(data);
         }
-        this.system.ui.load(ui);
+        this.system.ui.manager.load(ui);
 
         const project_data = await file_reader.readS(stamp.project_size);
 
@@ -240,7 +241,7 @@ export class Project {
     **/
     async saveUI(file_builder) {
         const off = file_builder.offset;
-        return await this.system.ui.save(file_builder) - off;
+        return await this.system.ui.manager.save(file_builder) - off;
     }
 
     async saveCheckpoint(file_builder) {

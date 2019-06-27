@@ -6,6 +6,6 @@ export function COMPLETE(system, element) {
 	if(element)
 		CacheFactory.clear(element);
 
-	system.docs.seal();
-	system.history.seal();
+	system.data.docs.seal();
+	//system.history.seal();
 }

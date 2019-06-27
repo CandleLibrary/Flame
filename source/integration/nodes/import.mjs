@@ -20,8 +20,8 @@ export default function(prototype, env) {
     };
 
     prototype.buildExisting = function(element, source, presets, taps, win = window, css) {
-
-        if (true && this.CHANGED !== 0) {
+        return true
+        if (true || this.CHANGED !== 0) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
@@ -40,13 +40,19 @@ export default function(prototype, env) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source, presets, taps);
 
+            if (true || this.CHANGED & 1) {
+                //redo IOs that have changed (TODO)
+                for (let i = 0, l = this.bindings.length; i < l; i++) {
+                    this.bindings[i].binding._bind_(source, [], taps, element, this.bindings[i].name);
+                }
+            }
+
             if (true || this.CHANGED & 2) {
                 //rebuild children
-                let child_elements = element.childNodes;
-
-                for (let i = 0; i < this.children.length; i++) {
-                    const node = this.children[i];
-                    if (node.buildExisting(child_elements[i], source, presets, taps, element, win, this.css)) i++;
+                let children = element.childNodes;
+                for (let i = 0, node = this.fch; node; node = this.getNextChild(node)) {
+                    let child = children[i];
+                    if (node.buildExisting(child, source, presets, taps, element, win, this.css)) i++;
                 }
             }
         }

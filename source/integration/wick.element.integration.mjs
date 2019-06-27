@@ -3,35 +3,32 @@ import open_environment from "../interface/open.environment.mjs";
 /*
 	Integrates Flame systems into Wick's component.prototype 
 */
-export default async function(integrating_wick, flame_environment){
+export default async function(integrating_wick, flame_environment) {
 
-	const comp = await integrating_wick("<a></a>");
+    const comp = await integrating_wick("<a></a>");
 
-	
+    const component_prototype = comp.constructor.prototype;
 
+    const mount_function = component_prototype.nonAsyncMount;
 
-	const component_prototype = comp.constructor.prototype;
+    component_prototype.nonAsyncMount = function(...args) {
 
-	const mount_function = component_prototype.nonAsyncMount;
+        const comp = mount_function.call(this, ...args);
 
-	component_prototype.nonAsyncMount = function(...args){
-		
-		const comp = mount_function.call(this, ...args);
+        const element = comp.ele;
 
-		const element = comp.ele;
+        const flame_tag = document.createElement("div");
 
-		const flame_tag = document.createElement("div");
+        flame_tag.style.width = "8px";
+        flame_tag.style.height = "8px";
+        flame_tag.style.backgroundColor = "rgb(210,170,60)";
 
-		flame_tag.style.width = "8px";
-		flame_tag.style.height = "8px";
-		flame_tag.style.backgroundColor = "rgb(210,170,60)";
+        flame_tag.addEventListener("click", () => {
+            open_environment(comp, flame_environment);
+        });
 
-		flame_tag.addEventListener("click", ()=>{
-			open_environment(comp, flame_environment);
-		});
+        element.appendChild(flame_tag);
 
-		element.appendChild(flame_tag)
-
-		return comp;
-	}	
+        return comp;
+    };
 }

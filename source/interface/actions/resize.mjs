@@ -20,6 +20,7 @@ export function SCALETL(system, component, element, dx, dy, IS_COMPONENT) {
 }
 
 export function SCALEBL(system, component, element, dx, dy, IS_COMPONENT) {
+
     let cache = CacheFactory(system, component, element);
     let css = cache.rules;
     resizeLeft(element, css, dx, cache);

@@ -16,6 +16,8 @@ const types = css.types;
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
 export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
+
+  
     if (IS_COMPONENT) {
         if(!component) debugger;
         component.x += dx;
@@ -26,7 +28,7 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
         let cache = CacheFactory(system, component, element);
 
         let css = cache.rules;
-
+        
         if (css.props.position && css.props.position !== "static") {
             switch (cache.move_hori_type) {
                 case "left right margin":
@@ -56,7 +58,7 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
             }
         }
                 
-        prepRebuild(element, LINKED)
+        prepRebuild(element, LINKED);
     }
 }
 

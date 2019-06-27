@@ -14,6 +14,7 @@ import basic from "./data/basic.html";
 import border from "./data/border.html";
 import element_draw from "./data/element_draw.html";
 import selector_list from "./data/selector_list.html";
+import master_component_string from "./data/master_component.html";
 
 const internal = {
     basic,
@@ -25,7 +26,6 @@ const internal = {
 
 //import path from "path";
 import { DocumentDifferentiator } from "./differ";
-import master_component_string from "./master_component_string.mjs";
 /**
  * The Document Manager handles text file operations and text file updating. 
  */
@@ -65,7 +65,7 @@ export default class DocumentManager {
                 switch (file) {
                     case "~edit-canvas": //Load new internal document ~edit-canvas
                         const canvas = new WickDocument("edit-canvas", "%internal", this.env, false, this);
-                        canvas.fromString(master_component_string);
+                        canvas.fromString(master_component_string, this.env, false);
                         this.docs.set(canvas.id, canvas);
                         return canvas.id;
                 }

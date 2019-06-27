@@ -215,21 +215,21 @@ export default class ElementBox {
             r: h.r,
             t: v.t,
             b: v.b
-        }
+        };
     }
 
     get Content_H() {
         return {
             l: this.ContentX,
             r: this.ContentX + this.ContentWidth
-        }
+        };
     }
 
     get Content_V() {
         return {
             t: this.ContentY,
             b: this.ContentY + this.ContentHeight
-        }
+        };
     }
 
     get ContentBox() {
@@ -240,7 +240,7 @@ export default class ElementBox {
             r: h.r,
             t: v.t,
             b: v.b
-        }
+        };
     }
 
     getBox(box_type = ElementBox.types.margin, edge_type = ElementBox.types.edge.all, transform = null) {

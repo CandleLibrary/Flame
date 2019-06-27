@@ -1,4 +1,6 @@
 import DocumentManager from "../system/document/doc_manager.mjs";
+import Poject from "../system/project/project.mjs";
+import css_Manager from "../system/css/css_manager.mjs";
 
 /** Creates and returns an environment  **/
 export default function (options, wick = null, radiate = null) {
@@ -20,13 +22,18 @@ export default function (options, wick = null, radiate = null) {
 			docs : null,
 		},
 
+		project : null,
+
+		css : null,
+
 		wick,
 
 		radiate
 	};
 
-
+	env.css = css_Manager(env);
 	env.data.docs = new DocumentManager(env);
+	env.project = new Poject(env);
 
 
 	return env;

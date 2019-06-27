@@ -41,7 +41,7 @@ export class ControlWidget extends ElementBox {
             })
         }
 
-        widget.ui = system.ui;
+        widget.ui = system.ui.manager;
 
 
         widget.border_ele = null;

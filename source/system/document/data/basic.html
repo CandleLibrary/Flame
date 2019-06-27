@@ -1,6 +1,4 @@
-<link url="./selector_list.html">
-
-<w-s export="move_action set_control"  onpointerdown="((grab)())" style="width:100%;height:100%" element="div" >
+<scope export="move_action set_control"   style="width:100%;height:100%" element="div" >
 	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
 	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
 	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
@@ -15,7 +13,7 @@
 	<div class="test" badge="margin">
 	</div>
 
-	<div class="test" badge="content">
+	<div class="test" badge="content" onpointerdown="((grab)())">
 	</div>
 
 
@@ -34,49 +32,51 @@
 	<script on=((show_css_selector_list))>
 		const system = presets.custom.system;
 		//build list of selector elements to present.
-		let selectors = system.css.getApplicableSelectors(model.component, model.element);
+		let selectors = system.css.getApplicableSelectors(this.model.component, this.model.element);
 		console.log(selectors)
 		emit.selectors = selectors.map(s=>({name:s.v.join(" "),sel:s}))
 		console.log({selectors:selectors.map(s=>({name:s.v.join(" ")}))})
 	</script>
 
 	<script on=((grab))>
-		model.action = model.actions.MOVE;
-		model.edgeType = 0;
-		emit.move_action = event;
+		console.log("grab")
+		this.model.action = this.model.actions.MOVE;
+		this.model.edgeType = 0;
+		move_action = event;
 		return false;
 	</script>
 
 	<script on=((tl_grab))>
-		model.action = model.actions.RESIZETL;
-		model.edgeType = 5;
-		emit.move_action = event;
+		console.log("tl_grab")
+		this.model.action = this.model.actions.RESIZETL;
+		this.model.edgeType = 5;
+		move_action = event;
 		return true;
 	</script>
 
 	<script on=((tr_grab))>
-		model.action = model.actions.RESIZETR;
-		model.edgeType = 6;
-		emit.move_action = event;
+		this.model.action = this.model.actions.RESIZETR;
+		this.model.edgeType = 6;
+		move_action = event;
 		return true;
 	</script>
 
 	<script on=((bl_grab))>
-		model.action = model.actions.RESIZEBL;
-		model.edgeType = 9;
-		emit.move_action = event;
+		this.model.action = this.model.actions.RESIZEBL;
+		this.model.edgeType = 9;
+		move_action = event;
 		return true;
 	</script>
 
 	<script on=((br_grab))>
-		model.action = model.actions.RESIZEBR;
-		model.edgeType = 10;
-		emit.move_action = event;
+		this.model.action = this.model.actions.RESIZEBR;
+		this.model.edgeType = 10;
+		move_action = event;
 		return true;
 	</script>
 
 	<style>
-		
+
 		.test{
 			position: absolute;
 			pointer-events: none;
@@ -154,6 +154,6 @@
 			color:white;
 		}
 	</style>
-</w-s>
+</scope>
 
 

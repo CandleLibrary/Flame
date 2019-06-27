@@ -38,18 +38,18 @@ function initializeWick(wick, options){
 	wick_component_integration(wick, env);
 }
 
-function initializeRadiate(radiate, options){
+async function initializeRadiate(radiate, options){
 	const HIDDEN = true;
 
-	const env = flame_environment(options);
+	const env = flame_environment(options, radiate.wick, radiate);
 
-	env.wick = radiate.wick;
-	env.radiate = radiate;
+	wick_component_integration(radiate.wick, env);
+	
+	await wick_element_integration(radiate.wick, env);
+	
+	radiate_integrate(radiate, env);
 
 	build_editor_environment(env, document.body, HIDDEN);
-	wick_component_integration(radiate.wick, env);
-	wick_element_integration(radiate.wick, env);
-	radiate_integrate(radiate, env);
 }
 
 function initializeLantern(lantern){

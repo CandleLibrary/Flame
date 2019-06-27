@@ -96,10 +96,8 @@ export default class UI_Manager {
     }
 
     createMaster() {
-
-        return
-        const doc_id = this.system.docs.loadFile("~edit-canvas");
-        const doc = this.system.docs.get(doc_id);
+        const doc_id = this.system.data.docs.loadFile("~edit-canvas");
+        const doc = this.system.data.docs.get(doc_id);
 
         this.master_component = new MasterComponent(this.system);
         this.master_component.x = 0;
@@ -108,7 +106,7 @@ export default class UI_Manager {
         if (doc)
             this.master_component.load(doc);
 
-        document.querySelector("#main_view").appendChild(this.master_component.element);
+        this.system.ui.main_view.appendChild(this.master_component.element);
     }
 
     reset() {
@@ -202,6 +200,8 @@ export default class UI_Manager {
     }
 
     handlePointerDownEvent(e, point = this.engine.point, FROM_MAIN = false) {
+
+
         let component = null,
             element = null;
 

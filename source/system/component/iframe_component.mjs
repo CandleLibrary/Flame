@@ -1,4 +1,4 @@
-import Component from "./component.mjs";
+import {Component} from "./component.mjs";
 import URL from "@candlefw/url";
 /**
  * This module is responsible for storing, updating, and caching compents. 
@@ -111,7 +111,7 @@ export class IframeComponent extends Component{
     */
 
     mountListeners() {
-        this.system.ui.manager.integrateComponentElement(this.frame, this);
+        this.system.ui.integrateComponentElement(this.frame, this);
     }
 
     addStyle(tree, INLINE) {

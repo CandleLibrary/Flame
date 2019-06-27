@@ -187,7 +187,7 @@ export function RESIZEL(system, component, element, dx, dy, IS_COMPONENT) {
 
     prepRebuild(element, false);
 
-    return { excess_x }
+    return { excess_x };
 }
 
 export function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
@@ -210,10 +210,11 @@ export function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
 
     prepRebuild(element, false);
 
-    return { excess_x }
+    return { excess_x };
 }
 
 export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
+    
     if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
     let cache = CacheFactory(system, component, element),
         excess_y = 0;
@@ -221,7 +222,7 @@ export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
         case "top bottom":
             excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
         case "top":
-            let origin = element.getBoundingClientRect().top / system.ui.transform.scale;
+            let origin = element.getBoundingClientRect().top / system.ui.manager.transform.scale;
             let out = SETDELTAHEIGHT(system, component, element, -dy, -1, true);
             excess_y = out.excess_y;
             SETDELTATOP(system, component, element, dy+out.excess_y, 1/(out.ratio || 1), true);
@@ -233,7 +234,7 @@ export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
 
     prepRebuild(element, false);
 
-    return { excess_y }
+    return { excess_y };
 }
 
 export function RESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
@@ -305,6 +306,7 @@ export function RESIZETR(system, component, element, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZEBL(system, component, element, dx, dy, IS_COMPONENT) {
+
     let { excess_x } = RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
     let { excess_y } = RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
     if (!IS_COMPONENT)

@@ -99,7 +99,8 @@ export function CREATE_COMPONENT(system, doc, px, py) {
         comp.container.addSelector(doc.selector);
     }
     
-    system.ui.wys_view.appendChild(comp.element);
+    comp.mount(system.ui.wys_view);
+    //system.ui.wys_view.appendChild(comp.element);
 
     comp.x = px;
     comp.y = py;
@@ -115,7 +116,7 @@ export function REMOVE_COMPONENT(system, component) {
     if (component.target.parentElement)
         component.target.parentElement.removeChild(component.target);
 
-    system.ui.removeComponent(component);
+    system.ui.manager.removeComponent(component);
 }
 
 export function CREATE_CSS_DOC(system, doc, event) {

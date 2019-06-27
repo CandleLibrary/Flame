@@ -5,7 +5,7 @@ import { actions } from "../actions/action";
 export default class ElementDraw extends Default {
 
     constructor(system) {
-        super(system, "/flame/ui_components/controls/element_draw.html");
+        super(system, "/@ui/element_draw.html");
         this.root_x = 0;
         this.root_y = 0;
 

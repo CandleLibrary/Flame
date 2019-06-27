@@ -1,21 +1,21 @@
-import Component from "./component.mjs";
+import {Component} from "./component.mjs";
 
 /**
  * This module handles the master component, wich stores alements that are not members of other components. 
  */
 export class MasterComponent extends Component {
-    constructor(env) {
-        super(env);
+    constructor(system){
+        super(system);
         this.width = 1;
         this.height = 1;
         this.IS_MASTER = true;
     }
 
-    createFrameElement() {
+    createFrameElement(){
 
         this.frame = document.createElement("div");
         this.frame.id = "master_component";
-        // this.frame.src = "component_frame.html";
+       // this.frame.src = "component_frame.html";
         //this.frame.setAttribute("frameBorder", "0");
         this.frame.style.position = "fixed";
 
@@ -26,18 +26,18 @@ export class MasterComponent extends Component {
     }
 
     mountListeners() {
-        this.env.ui.manager.integrateComponentElement(this.frame, this);
+        this.system.ui.integrateComponentElement(this.frame, this);
     }
 
-    get window() {
-        return window;
+    get window(){
+    	return window;
     }
 
-    get sourceElement() {
-        return this.sources[0].ele;
+    get sourceElement(){
+    	return this.sources[0].ele;
     }
 
-    get content() {
+    get content(){
         return this.frame;
     }
 }

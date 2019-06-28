@@ -9,11 +9,7 @@ export class WickDocument extends Document {
     async fromString(string, env, ALLOW_SEAL = true) {
         //*
 
-        const component = (env.wick(string, env.wick.presets({
-            custom : {
-                system:env
-            }
-        })));
+        const component = (env.wick(string, env.presets));
 
         await component.pending;
 

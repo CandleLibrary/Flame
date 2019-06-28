@@ -1,4 +1,7 @@
 <scope export="move_action set_control"   style="width:100%;height:100%" element="div" >
+
+	<div class="center-grab" onpointerdown="((grab)())"></div>
+
 	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
 	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
 	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
@@ -13,7 +16,7 @@
 	<div class="test" badge="margin">
 	</div>
 
-	<div class="test" badge="content" onpointerdown="((grab)())">
+	<div class="test" badge="content" >
 	</div>
 
 
@@ -30,12 +33,10 @@
 	<button onpointerdown="((show_css_selector_list)())">css selectors</button>
 
 	<script on=((show_css_selector_list))>
-		const system = presets.custom.system;
 		//build list of selector elements to present.
-		let selectors = system.css.getApplicableSelectors(this.model.component, this.model.element);
-		console.log(selectors)
-		emit.selectors = selectors.map(s=>({name:s.v.join(" "),sel:s}))
-		console.log({selectors:selectors.map(s=>({name:s.v.join(" ")}))})
+		let selectors = css.getApplicableSelectors(this.model.component, this.model.element);
+		console.log(selectors);
+		emit.selectors = selectors.map(s=>({name:s.vals.join(" "),sel:s}));
 	</script>
 
 	<script on=((grab))>
@@ -76,6 +77,14 @@
 	</script>
 
 	<style>
+		.center-grab{
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top:0;
+			left:0;
+			z-index: 0
+		}
 
 		.test{
 			position: absolute;
@@ -83,11 +92,12 @@
 		}
 
 		.move_handle{
-			width: 16px;
-			height: 16px;
-			background-color: red;
+			width: 14px;
+			height: 14px;
+			border: 2px solid black;
+			background-color: rgba(0,0,0,0);
   			pointer-events: auto;
-  			border-radius: 8px;
+  			border-radius: 1px;
 			position: absolute;
 		}
 

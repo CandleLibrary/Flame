@@ -1,4 +1,4 @@
-import css from "@candlefw/css";
+import * as css from "@candlefw/css";
 import {stylerule} from "@candlefw/css";
 import whind from "@candlefw/whind";
 
@@ -179,7 +179,7 @@ export default function(env) {
         }
 
         addFile(css_text, scope, file_id) {
-            const css_file = css(css_text);
+            const css_file = css.parse(css_text);
             this.css_file.push(css_text);
             css_file.file_id = file_id;
         }

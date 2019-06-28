@@ -1,5 +1,5 @@
 //*********** Actions ******************
-import css from "@candlefw/css";
+import * as css from "@candlefw/css"
 import { actions } from "./actions/action";
 import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";

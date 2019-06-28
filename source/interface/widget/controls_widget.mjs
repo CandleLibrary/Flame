@@ -242,7 +242,7 @@ export class ControlWidget extends ElementBox {
 ControlWidget.loadComponent = async function(component_path) {
     //component_path = path.resolve(process.cwd(), "./assets/ui_components/controls", component_path)
     const system = ControlWidget.system;
-    let doc = system.docs.get(system.docs.loadFile(component_path));
+    let doc = system.data.doc.get(system.docs.loadFile(component_path));
     if (doc) {
         await doc.alert();
         return doc.data;

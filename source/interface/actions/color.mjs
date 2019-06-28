@@ -1,4 +1,4 @@
-import css from "@candlefw/css";
+import * as css from "@candlefw/css"
 
 let types = css.types;
 

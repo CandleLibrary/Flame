@@ -11,7 +11,7 @@ import {
     SETDELTAHEIGHT
 } from "./dimensions";
 
-import css from "@candlefw/css";
+import * as css from "@candlefw/css";
 
 const types = css.types;
 

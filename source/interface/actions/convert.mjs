@@ -4,7 +4,7 @@ CLEARMARGINLEFT,
 CLEARLEFT,
 CLEARTOP
 } from "./clear";
-import css from "@candlefw/css";
+import * as css from "@candlefw/css"
 import {
     CacheFactory
 } from "./cache";

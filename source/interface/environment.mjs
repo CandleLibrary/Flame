@@ -28,12 +28,22 @@ export default function (options, wick = null, radiate = null) {
 
 		wick,
 
-		radiate
+		radiate,
+
+		presets: null
 	};
 
 	env.css = css_Manager(env);
 	env.data.docs = new DocumentManager(env);
 	env.project = new Poject(env);
+	env.presets = wick.presets({
+		custom : {
+			env,
+			css:env.css,
+			docs:env.docs,
+			project:env.project
+		}
+	});
 
 
 	return env;

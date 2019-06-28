@@ -1,6 +1,5 @@
 export default class BrowserEngine {
-    constructor(ui) {
-        this.ui = ui;
+    constructor(env) {
 
         this.x = 0;
         this.y = 0;
@@ -16,7 +15,7 @@ export default class BrowserEngine {
         //window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
-        window.addEventListener("wheel", e => ui.handleScroll(e, e.pageX, e.pageY));
+        window.addEventListener("wheel", e => env.ui.input.handleScroll(e, e.pageX, e.pageY));
 
         // // *********** Pointer *********************
         window.addEventListener("pointerdown", e => {
@@ -26,20 +25,20 @@ export default class BrowserEngine {
             //e.stopPropagation();
             //e.preventDefault();
 
-            ui.handlePointerDownEvent(e, this, !!0);
+            env.ui.input.handlePointerDownEvent(e, this, !!0);
         });
 
         window.addEventListener("pointermove", e => {
             this.x = e.pageX;
             this.y = e.pageY;
 
-            ui.handlePointerMoveEvent({}, this)
+            env.ui.input.handlePointerMoveEvent({}, this)
         });
 
-        window.addEventListener("pointerup", e => ui.handlePointerEndEvent(e));
+        window.addEventListener("pointerup", e => env.ui.input.handlePointerEndEvent(e));
 
         // // *********** Drag 'n Drop *********************
-        document.body.addEventListener("drop", e => ui.handleDocumentDrop(e));
+        document.body.addEventListener("drop", e => env.ui.input.handleDocumentDrop(e));
         document.body.addEventListener("dragover", e => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";

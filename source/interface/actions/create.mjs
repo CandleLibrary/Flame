@@ -98,8 +98,9 @@ export function CREATE_COMPONENT(system, doc, px, py) {
         comp = new CSSComponent(system);
         comp.container.addSelector(doc.selector);
     }
-    
-    comp.mount(system.ui.wys_view);
+    debugger
+    system.ui.setState(undefined, system.ui.comp.addComponent(comp));
+    //comp.mount(system.ui.wys_view);
     //system.ui.wys_view.appendChild(comp.element);
 
     comp.x = px;

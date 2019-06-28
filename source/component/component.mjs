@@ -101,7 +101,7 @@ export default class Component {
         this.frame.style.position = "fixed";
 
 
-        this.mountListeners();
+        //this.mountListeners();
 
         return this.frame;
     }

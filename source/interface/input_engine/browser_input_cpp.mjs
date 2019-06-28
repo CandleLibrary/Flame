@@ -1,13 +1,14 @@
 const mouse= require("./cpp/build/Release/addon");
 export default class BrowserEngine {
-    constructor(ui) {
+    constructor(env) {
 
-        this.ui = ui;
+        this.ui = env;
 
         this.x = 0;
         this.y = 0;
 
        this.setEvents();
+       
        setInterval(()=>{
             let pos = mouse.mouse_pos();
             let x = (pos >> 16) &  0xFFFF;
@@ -19,12 +20,12 @@ export default class BrowserEngine {
     }
 
     setEvents(){
-        const ui = this.ui;
+        const ui = this.env;
          // **************** Eventing *****************
         //window.addEventListener("resize", e => this.controls.resize(this.transform));
 
         // // *********** Mouse *********************
-        window.addEventListener("wheel", e => ui.handleScroll(e, e.pageX, e.pageY));
+        window.addEventListener("wheel", e => ui.input.handleScroll(e, e.pageX, e.pageY));
 
         // // *********** Pointer *********************
         window.addEventListener("pointerdown", e => {
@@ -41,10 +42,10 @@ export default class BrowserEngine {
             //ui.handlePointerMoveEvent({}, this)
         });
 
-        window.addEventListener("pointerup", e => ui.handlePointerEndEvent(e));
+        window.addEventListener("pointerup", e => ui.input.handlePointerEndEvent(e));
 
         // // *********** Drag 'n Drop *********************
-        document.body.addEventListener("drop", e => ui.handleDocumentDrop(e));
+        document.body.addEventListener("drop", e => ui.input.handleDocumentDrop(e));
         document.body.addEventListener("dragover", e => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";

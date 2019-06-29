@@ -6,7 +6,7 @@ import { CacheFactory } from "./cache";
 
 function getContentBox(ele, win = window, system) {
     const
-        scale = system.ui.manager.transform.scale,
+        scale = system.ui.interface.transform.scale,
 
         rect = ele.getBoundingClientRect(),
         par_prop = win.getComputedStyle(ele),
@@ -164,7 +164,7 @@ setNumericValue.width = 5;
 export function getRatio(system, component, element, funct, original_value, delta_value, delta_measure, ALLOW_NEGATIVE = false, NO_ADJUST = false) {
     let excess = 0,
         ratio = 0,
-        scale = system.ui.manager.transform.scale;
+        scale = system.ui.interface.transform.scale;
 
     let begin_x = element.getBoundingClientRect()[delta_measure] / scale;
 

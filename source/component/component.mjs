@@ -12,25 +12,10 @@ export default class Component {
         this.ast = null;
         this.data = null;
 
-        //frame for fancy styling
-        this.style_frame = document.createElement("div");
-        this.style_frame.classList.add("flame_component");
-        this.style_frame.classList.add("style_frame");
-
-        this.dimensions = document.createElement("div");
-        this.dimensions.classList.add("flame_component_dimensions");
-
-        //Label
-        this.name = document.createElement("div");
-        this.name.innerHTML = "unnamed";
-        this.name.classList.add("flame_component_name");
-
-        //HTML Data
-        this.data = document.createElement("div");
-
-        this.style_frame.appendChild(this.dimensions);
-        this.style_frame.appendChild(this.name);
-
+        this.frame = document.createElement("div");
+        this.frame.classList.add("flame_component");
+        this.frame.style.position = "fixed";
+        this.frame.component = this;
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;
 
@@ -50,21 +35,19 @@ export default class Component {
 
         this.action = null;
 
-        const frame = this.createFrameElement();
-
-        frame.component = this;
-
-        this.style_frame.appendChild(frame);
+        this.width = 0;
+        this.height = 0;
     }
 
     destroy() {
-        this.element = null;
+        if (this.frame.parentElement)
+            this.frame.parentElement.removeChild(this.frame);
+        this.frame = null;
+        this.scope = null;
+        this.data = null;
     }
 
     load(document) {
-        this.name.innerHTML = document.name;
-        this.doc_name = document.name;
-        this.doc_path = document.path;
         document.bind(this);
     }
 
@@ -78,32 +61,16 @@ export default class Component {
             this.ast = ast;
             this.scope = this.ast.mount();
             this.ast.setScope(this.scope);
-            this.content.attachShadow({ mode: 'open' }).appendChild(this.scope.ele );
+            this.frame.attachShadow({ mode: 'open' }).appendChild(this.scope.ele);
+            
             this.scope.load();
-            this.scope.css.forEach(css=>this.local_css.push(css));
+            this.scope.css.forEach(css => this.local_css.push(css));
         }
 
         this.scope.window = this.window;
         this.rebuild();
 
         return true;
-    }
-
-    createFrameElement() {
-
-        this.frame = document.createElement("div");
-        this.frame.classList.add("flame_component");
-
-        const backer = document.createElement("div");
-        this.style_frame.appendChild(backer);
-        backer.classList.add("flame_component_background");
-
-        this.frame.style.position = "fixed";
-
-
-        //this.mountListeners();
-
-        return this.frame;
     }
 
     mountListeners() {
@@ -173,51 +140,36 @@ export default class Component {
     }
 
     set x(x) {
-        this.element.style.left = x + "px";
+        this.frame.style.left = x + "px";
+    }
+
+    get x() {
+        return parseFloat(this.frame.style.left);
     }
 
     set y(y) {
-        this.element.style.top = y + "px";
+        this.frame.style.top = y + "px";
+    }
+
+    get y() {
+        return parseFloat(this.frame.style.top);
     }
 
     set width(w) {
         this.frame.style.width = w + "px";
-        this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
         this.rebuild();
-    }
-
-    set height(h) {
-        this.frame.style.height = h + "px";
-        this.dimensions.innerHTML = `${Math.round(this.width)}px ${Math.round(this.height)}px`;
-        this.rebuild();
-    }
-
-    get x() {
-        return parseFloat(this.element.style.left);
-    }
-
-    get y() {
-        return parseFloat(this.element.style.top);
     }
 
     get width() {
         return parseFloat(this.frame.style.width);
     }
 
+    set height(h) {
+        this.frame.style.height = h + "px";
+        this.rebuild();
+    }
     get height() {
         return parseFloat(this.frame.style.height);
-    }
-
-    get target() {
-        return this.element;
-    }
-
-    get element() {
-        return this.frame;
-    }
-
-    get content() {
-        return this.frame;
     }
 
     get type() {
@@ -237,11 +189,15 @@ export default class Component {
     }
 
     mount(element) {
-        if (this.element.parentNode != element){
-            element.appendChild(this.element);
-            let rect = this.scope.ele.getBoundingClientRect();
-            this.width = rect.width;
-            this.height = rect.height;
+        if (this.frame.parentNode != element) {
+            element.appendChild(this.frame);
+
+            if(this.width == 0 || this.height == 0){
+                const rect = this.scope.ele.getBoundingClientRect();
+
+                this.width = rect.width || rect.height || 100;
+                this.height = rect.height ||rect.width || 220;
+            }
         }
     }
 }

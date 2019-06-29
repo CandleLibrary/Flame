@@ -58,7 +58,7 @@ export class ControlsManager {
     }
 
     pointerDown(e, x, y, transform, IS_ON_MASTER = false) {
-        return false
+        return false;
     }
 
     resize(transform) {

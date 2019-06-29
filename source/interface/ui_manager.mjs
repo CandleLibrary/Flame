@@ -1,5 +1,5 @@
 //*********** Actions ******************
-import * as css from "@candlefw/css"
+import * as css from "@candlefw/css";
 import { actions } from "./actions/action";
 import { UIComponent } from "../component/ui_component";
 import { MasterComponent } from "../component/master_component";
@@ -7,18 +7,12 @@ import { LineMachine } from "./system/line_machine";
 import { SVGManager } from "./system/svg_manager";
 import { DNDHandler } from "./dnd/drag_and_drop_handler.mjs";
 
-
+import Handler from "./input_handler/handler.mjs";
 import Default from "./input_handler/default.mjs";
 import ElementDraw from "./input_handler/element_draw.mjs";
 
 import BrowserEngine from "./input_engine/browser_input.mjs";
 
-//Elements
-
-// Menu - Activate givin a specific condition. Can be activated by anything
-// Toolbars - Active depending on state
-// Control Overlays - Active depending on state
-    // Active component, Environment
 
 /*** END HOST UTILITIES ---***/
 
@@ -30,25 +24,13 @@ import { ControlsManager } from "./controls_manager";
 
 var DD_Candidate = false;
 
-import input_state from "./input_state.mjs";
-
-
-//
-function component_state(view, component){
-    const components = [];
-    return {};
-}
-
-
-
-export default ui_manager;
 
 /**
  * @brief Handles user input and rendering of UI elements
  * 
  * @param  [HTMLElement] Element to map UI components to.
  */
-class UI_Manager {
+export default class UI_Manager {
 
     constructor(UIHTMLElement, ViewElement, system) {
         system.ui.manager = this;
@@ -167,7 +149,6 @@ class UI_Manager {
     }
 
     addToMenu(menu_name, item_name, icon_element, menu) {
-        debugger
         if (menu_name == "main") {
             const element = icon_element.cloneNode(true);
             element.style.display = "";
@@ -214,7 +195,73 @@ class UI_Manager {
 
     /****************** Event responders **************************/
 
-  
+    handlePointerMoveEvent(e, point) {
+        this.active_handler.input("move", {}, this, point);
+    }
+
+    handlePointerDownEvent(e, point = this.engine.point, FROM_MAIN = false) {
+
+
+        let component = null,
+            element = null;
+
+        this.active_handler = this.e;
+
+        this.last_action = Date.now();
+
+        //document.body.requestPointerLock();
+        //let point = getCursorPos(this) // { x:this.px, y:this.py };
+        this.active_handler = this.active_handler.input("start", e, this, { x: point.x, y: point.y, FROM_MAIN });
+
+        if (point) {
+
+            let element = document.elementFromPoint(point.x, point.y);
+            if (element) {
+
+                if (element.component) {
+                    component = element.component;
+                    if (component.type == "css") {
+                        element = component.element;
+                    } else {
+                        element = element.shadowRoot.elementFromPoint(point.x, point.y);
+                    }
+                    this.controls.setTarget(component, element, component == this.master_component, false, this.system);
+                        this.setTarget(e, component);
+                        this.render();
+                }
+            }
+        }
+
+        return false;
+    }
+
+    handlePointerEndEvent(event) {
+        this.active_handler = this.active_handler.input("end", event, this, this.target);
+        event.preventDefault();
+    }
+
+    handleGenericDrop(obj, x, y){
+        this.active_handler = this.active_handler.input("generic_drop", obj, this, this.target);
+    }
+
+    handleDocumentDrop(e) {
+        this.active_handler = this.active_handler.input("drop", event, this, this.target);
+        e.preventDefault();
+    }
+
+    handleContextMenu(e, component = null) {
+        this.active_handler = this.active_handler.input("context", e, this, { component });
+        e.preventDefault();
+    }
+
+    handleScroll(e, x, y) {
+        this.active_handler = this.active_handler.input("scroll", e, this, { x, y });
+        e.preventDefault();
+    }
+
+    handleKeyUp(e){
+        this.active_handler = this.active_handler.input("key", e, this, this.target);
+    }
 
     /******** FILE HANDLING ************/
 

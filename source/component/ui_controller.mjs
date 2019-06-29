@@ -8,11 +8,9 @@ import Component from "./component";
  */
 export default class ui_controller extends Component {
 
-    constructor(env, type, component_path) {
+    constructor(env, component_path) {
 
         super(env);
-
-        this.ty = type;
 
         if(component_path){
             const doc = env.data.docs.get(env.data.docs.loadFile(component_path));
@@ -20,41 +18,14 @@ export default class ui_controller extends Component {
             if (doc) 
                 doc.bind(this);
         }
-
-        this.frame.onload = (e) => {
-
-            //this.mountListeners();
-
-            let children = Array.prototype.slice.apply(this.data.children);
-
-            for (let i = 0; i < children.length; i++) {
-                e.target.contentDocument.body.appendChild(children[i]);
-            }
-
-            //e.target.contentWindow.wick = wick;
-
-            
-
-            this.local_css.forEach((css) => {
-                let style = document.createElement("style");
-                style.innerText = css + "";
-                this.frame.contentDocument.head.appendChild(style);
-            });
-
-            this.frame.onload = null;
-        };
-
-        //frame for fancy styling
-        this.frame.classList.add("flame_ui_component");
+        
+        this.frame.classList.add("ui");
 
         this.pkg = null;
 
         this.name = component_path;
 
         this.env = env;
-
-        this.width = 300;
-        this.height = 500;
         this.x = 0;
         this.y = 0;
 
@@ -72,11 +43,16 @@ export default class ui_controller extends Component {
     }
 
     mount(element) {
-        debugger
-        if (this.element.parentNode != element)
-            element.appendChild(this.element);
+        if (this.frame.parentNode != element)
+            element.appendChild(this.frame);
+    }
+
+    get type(){
+        return "toolbar";
     }
 
     unmount() {}
 
 }
+
+

@@ -1,21 +1,7 @@
 //import path from "path";
 export default class Handler {
-    constructor(env, component_path) {
-        this.package = null;
 
-        if(component_path){
-            const doc = env.data.docs.get(env.data.docs.loadFile(component_path));
-
-            if (doc) 
-                doc.bind(this);
-        }
-    }
-
-    documentReady(pkg){
-        this.package = pkg;
-    }
-
-    input(type, event, ui_manager, target) {
+    handle(type, event, ui_manager, target) {
         switch (type) {
             case "key":
                 return this.char(event, ui_manager, target);
@@ -39,23 +25,53 @@ export default class Handler {
     }
 
     //Pointer end
-    end() { console.warn("No function has been defined for this action: end"); return this; }
+    end() { return Handler.default }
 
     //Pointer start
-    start() { console.warn("No function has been defined for this action: start"); return this; }
+    start(event, env, point) {
+        //
+        
+        let component = null;
+
+        if (point) {
+
+            let element = document.elementFromPoint(point.x, point.y);
+
+            if (element) {
+
+                if (element.component) {
+
+                    component = element.component;
+
+
+                    if (component.type == "css") {
+                        element = component.element;
+                    } else {
+                        element = element.shadowRoot.elementFromPoint(point.x, point.y);
+                    }
+
+                    env.ui.setState(undefined, env.ui.comp.setActive({component,element}));
+                }
+            }
+        }
+
+        return Handler.default;
+    }
 
     //Pointer move
-    move() { console.warn("No function has been defined for this action: move"); return this; }
+    move() { return Handler.default }
 
     //Document drop
-    docDrop() { console.warn("No function has been defined for this action: drop"); return this; }
+    docDrop() { return Handler.default }
 
     //Generic drop operation
-    drop() { console.warn("No function has been defined for this action: drop"); return this; }
+    drop() { return Handler.default }
 
     //Wheel Scroll
-    scroll() { console.warn("No function has been defined for this action: scroll"); return this; }
+    scroll() { return Handler.default }
 
     //Context Menu
-    context() { console.warn("No function has been defined for this action: context"); return this; }
+    context() { return Handler.default }
 }
+
+Handler.default = null;

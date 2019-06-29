@@ -1,0 +1,230 @@
+<html>
+	<head>
+		<script src="../build/flame.node.js"></script>
+		<style>
+		
+			#editor{
+				font-size: 12px;
+				position: absolute;
+				height: 500px;
+				width: 500px;
+				top:160px;
+				overflow: hidden;
+			}
+			.text_edit {
+				top: 0;
+			    right: 0;
+			    bottom: 0;
+			    left: 0;
+			    background-color: rgba(255,0,0,1);
+			    border:none;
+			    font-size:12px;
+			    /* Lazily forcing consistent spacing by disabling kerning and ligatures. */
+			    font-variant-ligatures: none;
+			    font-kerning: none;
+			}
+
+			.text_edit .small_scale_pre {
+				display: inline;
+			    position: absolute;
+			    margin: 0;
+			    border:0;
+			    padding: 0;
+			    font-family: unset;
+			    font-size: 100%;
+			}
+
+			.txt_cursor {
+				position: absolute;
+				width:2px;
+				height:12px;
+				background-color:black;
+			}
+			#text_container{
+				position: relative;
+				font-size: 12px;
+			}
+		</style>
+		
+	</head>
+	<body>
+		<div id="editor" tabindex=1 ></div>
+		<script>
+var data = 
+`import { Token_Container } from "./token_container";
+import { TEXT_TOKEN } from "./token";
+import { TEXT_CURSOR } from "./cursor";
+
+export class TextFramework {
+    constructor() {
+
+        this.token_container = new Token_Container();
+        this.length = 0;
+        this.char_width = 24;
+        this.max_length = 0;
+        this.scroll_top = 0;
+        this.max_line_width = 0;
+        this.del_code = 8; // should be 127 or 8
+        this.del_char = String.fromCharCode(this.del_code);
+        this.new_line_code = 10; // should be 10
+        this.new_line = String.fromCharCode(this.new_line_code);
+        this.linked_line_code = 13; // should be 13
+        this.linked_line = String.fromCharCode(this.linked_line_code);
+        this.curs_code = 33; // should be 31
+        this.curs_char = String.fromCharCode(this.curs_code);
+
+        //Fixed character width for scaling
+        this.width = 0;
+        this.height = 0;
+
+        this.last_keycode = 0;
+        this.cursors = [new TEXT_CURSOR(this)];
+
+        this.aquireCursor();
+    }
+
+    unload() {
+        this.clearCursors();
+        //this.parent_element.removeChild(this.DOM);
+        this.token_container = null;
+        this.DOM = null;
+        this.parent_element = null;
+        this.cursors = null;
+    }
+
+    get HAS_SELECTION() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            if (this.cursors[i].HAS_SELECTION) return true;
+        }
+        return false;
+    }
+
+    * getLines(pixel_start, pixel_end, limit_start, limit_end) {
+
+        if (this.token_container.length > 0) {
+
+            var line = this.token_container.getLineAtPixelOffset(pixel_start | 0);
+
+            // Offset to prevent y jitter as lines are added and removed.
+            let offset = line.pixel_offset - pixel_start;
+
+            var t = offset;
+
+            yield offset; 
+
+            while (line) {
+
+                yield line;
+
+                t += line.pixel_height;
+
+                if (t >= pixel_end) break;
+
+                line = line.nxt;
+            }
+        }
+    }
+
+    renderView(view) {
+        if (!view) return;
+
+        if (view !== this.cached_view) {
+            //rebuild line;
+        }
+        let gen = this.getLines(view.getTop(), view.getHeight());
+        let offset = gen.next().value;
+
+        view.renderLines(gen, offset);
+
+        for (var i = 0; i < this.cursors.length; i++) {
+            let cur = this.cursors[i];
+            if(cur.IN_USE){
+                console.log(cur.x, cur.y, this.cursors);
+                view.renderCursor(cur, this, offset);
+            }
+        }
+    }
+
+    updateText(index = 0) {
+        var loop_check = 0;
+
+        this.releaseAllCursors();
+
+        var token = this.token_container.getIndexedLine(index);
+
+        while (token = token.parse()) {
+            if (loop_check++ > 1000000) {
+                break;
+            }
+        }
+
+        this.cursors[0].IN_USE = true;
+    }
+
+    toString() {
+        var i = 0,
+            text = "";
+        var token = this.token_container.getIndexedLine(0);
+        while (token) {
+            text += this.new_line + token.cache;
+            token = token.nxt;
+        }
+        return text;
+    }
+
+    setIndexes() {
+        return;
+    }
+
+    //************************
+    //POOLS
+    releaseAllCursors() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            var temp = this.cursors[i];
+            temp.IN_USE = false;
+        }
+    }
+
+    clearCursors() {
+        for (var i = 0; i < this.cursors.length; i++) {
+            this.cursors[i].IN_USE = false;
+        }
+    }
+
+    moveCursorsByX(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectChar(change);
+        } else {
+            for (var i = 0; i < this.cursors.length; i++)
+                if (this.cursors[i].IN_USE) this.cursors[i].moveChar(change);
+        }
+
+        this.checkForCursorOverlap();
+    }
+
+    moveCursorsByY(change, SELECT) {
+        if (SELECT) {
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveSelectLine(change);
+            }
+        } else {
+
+            for (var i = 0; i < this.cursors.length; i++) {
+                if (this.cursors[i].IN_USE) this.cursors[i].moveLine(change);
+            }
+        }
+        this.checkForCursorOverlap();
+    }
+`;
+			let {fw, io} = flame.initEditor(document.getElementById("editor"));
+
+			setTimeout(()=>{
+				console.log("apple")
+			fw.insertText(data);
+			fw.updateText(io);
+			io.render();
+			},1)
+		</script>
+	</body>
+</html>

@@ -222,7 +222,7 @@ export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
         case "top bottom":
             excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
         case "top":
-            let origin = element.getBoundingClientRect().top / system.ui.manager.transform.scale;
+            let origin = element.getBoundingClientRect().top / system.ui.interface.transform.scale;
             let out = SETDELTAHEIGHT(system, component, element, -dy, -1, true);
             excess_y = out.excess_y;
             SETDELTATOP(system, component, element, dy+out.excess_y, 1/(out.ratio || 1), true);
@@ -297,6 +297,7 @@ export function RESIZETL(system, component, element, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZETR(system, component, element, dx, dy, IS_COMPONENT) {
+    console.log(IS_COMPONENT)
     let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
     let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
     if (!IS_COMPONENT)

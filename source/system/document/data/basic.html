@@ -1,22 +1,19 @@
 <scope export="move_action set_control"   style="width:100%;height:100%" element="div" >
 
-	<div class="center-grab" onpointerdown="((grab)())"></div>
-
-	<button id="tl" class="move_handle" onpointerdown=((tl_grab)())></button>
-	<button id="tr" class="move_handle" onpointerdown=((tr_grab)())></button>
-	<button id="bl" class="move_handle" onpointerdown=((bl_grab)())></button>
-	<button id="br" class="move_handle" onpointerdown=((br_grab)())></button>
+	<div id="tl" class="move_handle" onpointerdown=((tl_grab)())></div>
+	<div id="tr" class="move_handle" onpointerdown=((tr_grab)())></div>
+	<div id="bl" class="move_handle" onpointerdown=((bl_grab)())></div>
+	<div id="br" class="move_handle" onpointerdown=((br_grab)())></div>
 
 	<selectorlist></selectorlist>
 
-	<div class="test" badge="padding">
-
+	<div class="test" pin="padding">
 	</div>
 
-	<div class="test" badge="margin">
+	<div class="test" pin="margin">
 	</div>
 
-	<div class="test" badge="content" >
+	<div class="test" pin="content" >
 	</div>
 
 
@@ -27,11 +24,11 @@
 	<div class="centerer">
 		<span class="top_position">top:((post.toString().slice(0,8)))px</span>
 	</div>
-	<span class="center_position">((w.toString().slice(0,8)))px ✗ ((h.toString().slice(0,8)))px</span>
 
-	<button onpointerdown="((set_control)('./border.html'))">test</button>
-	<button onpointerdown="((show_css_selector_list)())">css selectors</button>
+	<span class="center_position">((w.toString().slice(0,8)))px x ((h.toString().slice(0,8)))px</span>
 
+
+		<div class="center-grab" onpointerdown="((grab)())"></div>
 	<script on=((show_css_selector_list))>
 		//build list of selector elements to present.
 		let selectors = css.getApplicableSelectors(this.model.component, this.model.element);
@@ -77,6 +74,7 @@
 	</script>
 
 	<style>
+
 		.center-grab{
 			width: 100%;
 			height: 100%;
@@ -92,34 +90,35 @@
 		}
 
 		.move_handle{
-			width: 14px;
-			height: 14px;
-			border: 2px solid black;
-			background-color: rgba(0,0,0,0);
+			width: 8px;
+			height: 8px;
+			border: 1px solid black;
+			background-color: white;
   			pointer-events: auto;
   			border-radius: 1px;
 			position: absolute;
+			z-index: 1000;
 		}
 
 		#tl{
-			top:-8px;
-			left:-8px;
+			top:-4px;
+			left:-4px;
 		}
 
 		#tr{
-			top:-8px;
-			right:-8px;
+			top:-4px;
+			right:-4px;
 		}
 
 		#bl{
-			bottom:-8px;
-			left:-8px;
+			bottom:-4px;
+			left:-4px;
 		}
 		
 
 		#br{
-			bottom:-8px;
-			right:-8px;
+			bottom:-4px;
+			right:-4px;
 		}
 
 		.centerer{

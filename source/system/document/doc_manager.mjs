@@ -10,13 +10,19 @@ import {
 } from "./css_document";
 
 //data
+//Toolbars
+import general_toolbar from "./data/general_toolbar.html";
+
+//Overlays
 import basic from "./data/basic.html";
+
 import border from "./data/border.html";
 import element_draw from "./data/element_draw.html";
 import selector_list from "./data/selector_list.html";
 import master_component_string from "./data/master_component.html";
 
 const internal = {
+    general_toolbar,
     basic,
     border,
     element_draw,

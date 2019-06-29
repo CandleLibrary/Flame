@@ -1,0 +1,36 @@
+<scope class="main" export="move_action set_control"   style="width:100%;height:100%" element="div" >
+	
+	top: ((widget.top))
+	top: ((widget.left))
+	width: ((widget.width))
+	height: ((widget.Height))
+
+
+	((css_selectors))<br/>
+	((css_out))<br/>
+
+	<script on=((widget))>
+		const component = env.ui.comp.active.component;
+		const element = env.ui.comp.active.element;
+
+
+		if(component.local_css){
+			const cs = component.local_css[0];
+			css_selectors = [...cs.getApplicableSelectors(element)].join(" ");
+			css_out = cs.getApplicableRules(element) + "";
+		}
+	</script>
+
+	<style>
+		.main{
+			position: relative;
+			top:0;
+			left:0;
+			background-color: white;
+			width:160px;
+			min-height: 300px;
+		}
+	</style>
+</scope>
+
+

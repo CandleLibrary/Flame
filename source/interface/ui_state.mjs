@@ -1,19 +1,19 @@
 import * as css from "@candlefw/css";
-
+import Element_box from "./widget/element_box.mjs";
 //Responsible for registering controllers and handling UI state
 export default function ui_state(env, ui_element, view_element, controllers = [], previous) {
 
-    var overlay, comps, input;
+    var overlay, comps, widget = null;
 
     const transform = new(css.types.transform2D)(previous ? previous.transform : undefined);
 
     const raf = requestAnimationFrame;
 
     function adjustInterface() {
-        view_element.style.transform = transform;
-
-        if (overlay)
-            overlay.render(transform);
+        env.ui.comp_view.style.transform = transform;
+        out.updateOverlay();
+        //if (overlay)
+        //    overlay.render(transform);
     }
 
     const public_transform = new Proxy(transform, {
@@ -24,9 +24,9 @@ export default function ui_state(env, ui_element, view_element, controllers = []
         }
     });
 
-    view_element.style.transform = transform;
+    env.ui.comp_view.style.transform = transform;
 
-    return {
+    const out = {
 
         addController(controller) {
             return ui_state(env, ui_element, view_element, [controller, ...controllers], this);
@@ -36,7 +36,7 @@ export default function ui_state(env, ui_element, view_element, controllers = []
 
         },
 
-        active(comp) {
+        activate(comp) {
 
             if (env.ui.interface !== this) {
                 ui_element.innerHTML = "";
@@ -51,6 +51,13 @@ export default function ui_state(env, ui_element, view_element, controllers = []
             }
 
             if (comp.active) {
+                if(!widget)
+                    widget = new Element_box(comp.active.element);
+                else 
+                    widget.element = comp.active.element;
+
+                widget.update();
+
                 for (const controller of controllers) {
                     if (controller.type == "overlay") {
                         overlay = controller;
@@ -59,15 +66,38 @@ export default function ui_state(env, ui_element, view_element, controllers = []
 
                 if(overlay)
                     overlay.mount(ui_element, comp.active);
+
+                for(const controller of controllers)
+                    controller.update(env);
             }
         },
 
-        update(){
+        updateOverlay(){
+            if(widget)
+                widget.update();
+
             if(overlay)
-                overlay.update();
+                overlay.update(env);
         },
+
+        update(){
+
+            if(widget)
+                widget.update();
+
+            for(const controller of controllers)
+                controller.update(env);
+            
+        },
+
+        get widget(){
+            return widget;
+        },
+
         get transform() {
             return public_transform;
         }
     };
+
+    return out;
 }

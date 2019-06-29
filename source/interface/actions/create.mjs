@@ -96,6 +96,7 @@ export function CREATE_COMPONENT(env, doc, px, py) {
         comp = new CSSComponent(env);
         comp.container.addSelector(doc.selector);
     }
+    
     env.ui.setState(undefined, env.ui.comp.addComponent(comp));
     //comp.mount(env.ui.wys_view);
     //env.ui.wys_view.appendChild(comp.element);

@@ -13,9 +13,10 @@ function getOffsetPos(element) {
 }
 
 export default class ElementBox {
-    constructor() {
+
+    constructor(element) {
         //Caching the global transform object for reuse.
-        this.element = null;
+        this.element = element;
 
         this.margin_l = 0;
         this.margin_r = 0;
@@ -36,25 +37,27 @@ export default class ElementBox {
         this.y = 0;
         this.w = 0;
         this.h = 0;
+
+        this.real_pos_x = 0;
+        this.real_pos_y = 0;
     }
 
-    destroy() {
-        this.element = null;
-    }
-
-    setDimensions(element = this.element) {
+    update(element = this.element) {
 
         this.element = element;
 
-        const par_prop = window.getComputedStyle(this.element);
-        const rect = getOffsetPos(this.element);
+        const par_prop = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect(element);
+        const localpos = getOffsetPos(this.element);
 
-        this.x = rect.x;
-        this.y = rect.y;
+        this.real_pos_x = rect.x-1;
+        this.real_pos_y = rect.y-1;
+        
+        this.x = localpos.x;
+        this.y = localpos.y;
 
         this.w = parseFloat(par_prop.width);
         this.h = parseFloat(par_prop.height);
-
         //margin
         this.margin_l = parseFloat(par_prop.marginLeft) || 0;
         this.margin_r = parseFloat(par_prop.marginRight) || 0;
@@ -77,6 +80,15 @@ export default class ElementBox {
         this.posr = parseFloat(par_prop.right) || 0;
         this.post = parseFloat(par_prop.top) || 0;
         this.posb = parseFloat(par_prop.bottom) || 0;
+    }
+
+
+    get width() {
+        return this.w;
+    }
+
+    get Height() {
+        return this.h;
     }
 
     get MarginX() {
@@ -147,7 +159,7 @@ export default class ElementBox {
         return {
             l: this.MarginX,
             r: this.MarginX + this.MarginWidth
-        }
+        };
     }
 
     get Margin_V() {
@@ -275,7 +287,8 @@ export default class ElementBox {
         }
 
         if (transform) {
-            const px = transform.px,
+            const 
+                px = transform.px,
                 py = transform.py,
                 s = transform.scale;
 
@@ -306,4 +319,4 @@ ElementBox.types = Object.freeze({
         top: 4,
         bottom: 8,
     })
-})
+});

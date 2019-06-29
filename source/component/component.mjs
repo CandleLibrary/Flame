@@ -61,8 +61,9 @@ export default class Component {
             this.ast = ast;
             this.scope = this.ast.mount();
             this.ast.setScope(this.scope);
-            this.frame.attachShadow({ mode: 'open' }).appendChild(this.scope.ele);
-            
+            let shadow = this.frame.attachShadow({ mode: 'open' });
+            shadow.appendChild(this.scope.ele);
+            shadow.component = this;
             this.scope.load();
             this.scope.css.forEach(css => this.local_css.push(css));
         }

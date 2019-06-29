@@ -71,7 +71,7 @@ export default class Default extends Handler {
         const x = data.x || env.ui.input_engine.x,
             y = data.y || env.ui.input_engine.y;
 
-        if (this.target_action && ui.active) {
+        if (this.target_action && env.ui.comp.active) {
 
             const diffx = this.origin_x - (x / ui.transform.scale) + this.excess_x;
             const diffy = this.origin_y - (y / ui.transform.scale) + this.excess_y;
@@ -123,7 +123,7 @@ export default class Default extends Handler {
         this.excess_y = 0;
         this.target_action = null;
 
-        return this.constructor.default;
+        return super.end(event, env, data);
     }
 
     drop(data, ui, drop_data) {

@@ -1,5 +1,5 @@
 import * as css from "@candlefw/css";
-import {stylerule} from "@candlefw/css";
+import { stylerule } from "@candlefw/css";
 import whind from "@candlefw/whind";
 
 const CSS_Rule_Constructor = CSSRule;
@@ -38,10 +38,10 @@ export default function(env) {
                 css = component.local_css,
                 selectors = [];
 
-            for (let i = 0, l = css.length; i < l; i++) 
-                for(const sel of css[i].getApplicableSelectors(element))
+            for (let i = 0, l = css.length; i < l; i++)
+                for (const sel of css[i].getApplicableSelectors(element))
                     selectors.push(sel);
-            
+
             return selectors;
         }
 
@@ -49,7 +49,7 @@ export default function(env) {
 
         // Returns an array of CSS rules that match against the element
         aquireCSS(component, element) {
-            return this.getApplicableSelectors(component, element).map(sel=>sel.parent);
+            return this.getApplicableSelectors(component, element).map(sel => sel.parent);
         }
 
         createStyleDocument(name) {
@@ -130,49 +130,45 @@ export default function(env) {
             }
 
             if (!selector) {
-                debugger
                 //Create new CSS document and create identifier for this document best matching the element. 
                 //Add new class to element if there is none present. 
 
                 //The last selector in the component CSS has the highest default precedent.
-                let tree = css_docs[css_docs.length - 1];
+                const tree = css_docs[css_docs.length - 1],
+                    node = IS_WICK_NODE ? element : element.wick_node,
+                    class_name = "n" + ((Math.random() * 10000000) | 0) + "";
 
                 if (css_docs.length == 0) {
-                    tree = new css.stylesheet();
 
-                    let ast = component.sources[0].ast;
-                    let style = new StyleNode();
+                    const sheet = css.parse(`.${class_name}{empty:null}`);
+                    const stylerule = sheet.ruleset.rules[0];
+                    stylerule.properties.delete("top");
 
-                    style.tag = "style";
+                    const style = new env.wick_nodes.style;
+                    node.children.push(style);
+                    style.data = sheet;
+                    node.css_files.push(sheet);
+                    component.local_css.push(sheet);
+                    return stylerule;
+                } else {
 
-                    ast.css = (ast.css) ? ast.css : [];
-                    ast.addChild(style);
-                    ast.css.push(tree);
+                    //create new css document. it should be located at the same location as the component. Or at a temp location
+                    const
+                        a = node.attribs,
+                        nclass = ((a.has("class")) ? null : (a.set("class", { name: "class", value: "" })), a.get("class"));
 
-                    style.css = tree;
-                    tree.addObserver(style);
+                    nclass.value += ` ${class_name}`;
 
-                    this.css_files.push(tree);
-                    component.local_css.push(tree);
+                    if (!IS_WICK_NODE)
+                        element.classList.add(class_name);
+
+                    const sheet = css.parse(`.${class_name}{top:null}`);
+                    const stylerule = sheet.ruleset.rules[0];
+                    tree.ruleset.rules.push(stylerule);
+                    stylerule.parent = tree.ruleset;
+                    stylerule.properties.delete("top");
+                    return stylerule;
                 }
-
-                //create new css document. it should be located at the same location as the component. Or at a temp location
-                const node = IS_WICK_NODE ? element : element.wick_node,
-                    class_name = "n" + ((Math.random() * 10000000) | 0) + "",
-                    classes = node.getAttrib("class");
-
-                if (classes) {
-                    if (typeof(classes.value) == "string")
-                        classes.value += ` ${class_name}`;
-                    else
-                        classes.value.txt += ` ${class_name}`;
-                } else
-                    node.attributes.push(node.processAttributeHook("class", whind(class_name)));
-
-                if (!IS_WICK_NODE)
-                    element.classList.add(class_name);
-
-                selector = tree.fch.createSelector(`.${class_name}`);
             }
 
             return selector.parent;

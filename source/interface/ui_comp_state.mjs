@@ -1,7 +1,12 @@
-// Tracks components position, marks active components
 
+
+// Tracks components position, marks active components
 export default function ui_comp_state(env, components = [], active = null) {
+    
+    var widget = null;
+
     return {
+
         addComponent(component) {
             for (let i = 0; i < components.length; i++) {
                 if (components[i] == component) {

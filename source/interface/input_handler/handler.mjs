@@ -1,4 +1,3 @@
-//import path from "path";
 export default class Handler {
 
     handle(type, event, ui_manager, target) {
@@ -25,19 +24,56 @@ export default class Handler {
     }
 
     //Pointer end
-    end() { return Handler.default }
+    end(event, env, data) {
 
-    //Pointer start
-    start(event, env, point) {
-        //
-        
-        let component = null;
+        if (data && event.button == 0 && data.time_since_last_click < 100) {
 
-        if (point) {
+           let component = null;
 
-            let element = document.elementFromPoint(point.x, point.y);
+            env.ui.ui_view.style.pointerEvents = "none";
+
+            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
 
             if (element) {
+                while (element && !element.component) {
+                    element = element.parentNode;
+                }
+
+                if (element && element.component) {
+
+                    component = element.component;
+
+
+                    if (component.type == "css") {
+                        element = component.element;
+                    } else {
+                        element = element.shadowRoot.elementFromPoint(data.x, data.y);
+                    }
+
+                    data.time_since_last_click = Infinity;
+
+                    env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
+                }
+            }
+
+            env.ui.ui_view.style.pointerEvents = "";
+        }
+
+        return Handler.default;
+    }
+
+    //Pointer start
+    start(event, env, data) {
+
+        if (false && data && !env.ui.interface.active && event.button == 0) {
+            let component = null;
+
+            let element = document.elementFromPoint(data.x, data.y);
+
+            if (element) {
+                while (!element.component) {
+                    element = element.parentNode;
+                }
 
                 if (element.component) {
 
@@ -47,10 +83,12 @@ export default class Handler {
                     if (component.type == "css") {
                         element = component.element;
                     } else {
-                        element = element.shadowRoot.elementFromPoint(point.x, point.y);
+                        element = element.shadowRoot.elementFromPoint(data.x, data.y);
                     }
 
-                    env.ui.setState(undefined, env.ui.comp.setActive({component,element}));
+                    data.time_since_last_click = Infinity;
+                    
+                    env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
                 }
             }
         }

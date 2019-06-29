@@ -1,4 +1,5 @@
 import UI_overlay_controller from "../component/ui_overlay_controller.mjs";
+import UI_toolbar_controller from "../component/ui_toolbar_controller.mjs";
 import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
@@ -23,12 +24,13 @@ export default function(env, html_element, INITIALIZED_HIDDEN = true) {
 
     env.ui.setState = function(interfc = env.ui.interface, comp = env.ui.comp) {
         env.ui.comp = comp;
-        interfc.active(comp);
+        interfc.activate(comp);
     };
 
     env.ui.setState(
-        ui_state(env, env.ui.ui_view, env.ui.comp_view)
+        ui_state(env, env.ui.ui_view, env.ui.comp_view.attachShadow({ mode: 'open' }))
         .addController(new UI_overlay_controller(env, "/@ui/basic.html"))
+        .addController(new UI_toolbar_controller(env, "/@ui/general_toolbar.html"))
         ,comp_state(env)
     );
 
@@ -51,8 +53,8 @@ function setupMainView(view, INITIALIZED_HIDDEN) {
 function setupUIView(view) {
     //view.style.backgroundColor = "rgba(255,0,0,0.1)";
     view.style.position = "fixed";
-    //view.style.width = "100vw";
-    //view.style.height = "100vh";
+    view.style.width = 0;
+    view.style.height =0;
     view.style.top = 0;
     view.style.left = 0;
 }

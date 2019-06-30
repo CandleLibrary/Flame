@@ -9,15 +9,26 @@
 	((css_selectors))<br/>
 	((css_out))<br/>
 
+	<span pin=css></span>
+
 	<script on=((widget))>
 		const component = env.ui.comp.active.component;
 		const element = env.ui.comp.active.element;
 
 
-		if(component.local_css){
+		if(component.local_css && component.local_css[0]){
+			
 			const cs = component.local_css[0];
-			css_selectors = [...cs.getApplicableSelectors(element)].join(" ");
-			css_out = cs.getApplicableRules(element) + "";
+			
+			const stylesheet = css.parse("a{top:null}");
+			
+			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
+
+			const ui = css.ui(stylesheet);
+				
+			css$.innerHTML = "";
+
+			ui.mount(css$);
 		}
 	</script>
 

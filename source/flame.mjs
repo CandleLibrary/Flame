@@ -35,6 +35,7 @@ function initializeWick(wick, options){
 	env.wick = wick;
 
 	build_editor_environment(env, document.body, HIDDEN);
+	
 	wick_component_integration(wick, env);
 }
 

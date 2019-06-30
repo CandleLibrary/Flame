@@ -138,35 +138,28 @@ export default function(env) {
                     node = IS_WICK_NODE ? element : element.wick_node,
                     class_name = "n" + ((Math.random() * 10000000) | 0) + "";
 
+                const
+                    a = node.attribs,
+                    nclass = ((a.has("class")) ? null : (a.set("class", { name: "class", value: "" })), a.get("class"));
+
+                nclass.value += ` ${class_name}`;
+
+                if (!IS_WICK_NODE)
+                    element.classList.add(class_name);
+
+                const sheet = css.parse(`.${class_name}{top:0}`);
+                const stylerule = sheet.ruleset.rules[0];
+                
+                stylerule.properties.delete("top");
+
                 if (css_docs.length == 0) {
-
-                    const sheet = css.parse(`.${class_name}{empty:null}`);
-                    const stylerule = sheet.ruleset.rules[0];
-                    stylerule.properties.delete("top");
-
-                    const style = new env.wick_nodes.style;
-                    node.children.push(style);
-                    style.data = sheet;
-                    node.css_files.push(sheet);
+                    //create new css document. it should be located at the same location as the component. Or at a temp location
                     component.local_css.push(sheet);
+                    component.scope.css.push(sheet);
                     return stylerule;
                 } else {
-
-                    //create new css document. it should be located at the same location as the component. Or at a temp location
-                    const
-                        a = node.attribs,
-                        nclass = ((a.has("class")) ? null : (a.set("class", { name: "class", value: "" })), a.get("class"));
-
-                    nclass.value += ` ${class_name}`;
-
-                    if (!IS_WICK_NODE)
-                        element.classList.add(class_name);
-
-                    const sheet = css.parse(`.${class_name}{top:null}`);
-                    const stylerule = sheet.ruleset.rules[0];
                     tree.ruleset.rules.push(stylerule);
                     stylerule.parent = tree.ruleset;
-                    stylerule.properties.delete("top");
                     return stylerule;
                 }
             }

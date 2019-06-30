@@ -1,15 +1,15 @@
 let cache_de_cache = null;
 
 function getApplicableRules(system, component, element) {
-    return system.css.aquireCSS(component, element);
+    return system.css.manager.aquireCSS(component, element);
 }
 
 export function getUniqueRule(system, component, element) {
-    return system.css.getUnique(component, element);
+    return system.css.manager.getUnique(component, element);
 }
 
 function mergeRules(system, css) {
-    return system.css.mergeRules(css);
+    return system.css.manager.mergeRules(css);
 }
 
 class ComputedStyle{

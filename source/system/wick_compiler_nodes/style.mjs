@@ -27,7 +27,7 @@ proto.processTextNodeHook = function(lex) {
     this.css.parse(lex).catch((e) => {
         throw e;
     }).then((css) => {
-        this.css = this.flame_system.css.addTree(css, IS_DOCUMENT, URL);
+        this.css = this.flame_system.css.manager.addTree(css, IS_DOCUMENT, URL);
     });
 
     this.css.addObserver(this);

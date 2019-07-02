@@ -6,7 +6,7 @@
 	height: ((widget.Height))
 
 
-	((css_selectors))<br/>
+	(( css_selectors ))<br/>
 	((css_out))<br/>
 
 	<span pin=css></span>
@@ -25,10 +25,12 @@
 			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
 
 			const ui = css.ui(stylesheet);
-				
-			css$.innerHTML = "";
 
-			ui.mount(css$);
+			let ele = document.createElement("div");
+
+			ui.mount(ele);
+
+			css_out = ele;
 		}
 	</script>
 

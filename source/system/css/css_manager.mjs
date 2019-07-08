@@ -216,7 +216,7 @@ export default function(env) {
 
         mergeRules(css_rules) {
             const rule = new stylerule();
-            for (let i = 0; i < css.length; i++)
+            for (let i = 0; i < css_rules.length; i++)
                 rule.merge(css_rules[i]);
             return rule;
         }

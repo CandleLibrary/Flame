@@ -17,7 +17,7 @@ export default async function(integrating_wick, env) {
         $style = integrating_wick("<style></style>"),
         $svg = integrating_wick("<svg/>"),
         $container = integrating_wick("<container/>"),
-        $import = integrating_wick("<import/>"),
+        $import = integrating_wick("<link/>"),
         $pre = integrating_wick("<pre/>"),
         $element = integrating_wick("<div>test</div>"),
         $script = integrating_wick("<script></script>"),

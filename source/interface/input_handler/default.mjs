@@ -35,6 +35,7 @@ export default class Default extends Handler {
         else
             this.target_action = data.action;
 
+
         const x = data.x || env.ui.input_engine.x,
             y = data.y || env.ui.input_engine.y;
 

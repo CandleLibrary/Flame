@@ -290,6 +290,7 @@ export function SUBRESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
 export function RESIZETL(system, component, element, dx, dy, IS_COMPONENT) {
     let { excess_x } = RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
     let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
+
     if (!IS_COMPONENT)
         prepRebuild(element, false);
 
@@ -297,7 +298,7 @@ export function RESIZETL(system, component, element, dx, dy, IS_COMPONENT) {
 }
 
 export function RESIZETR(system, component, element, dx, dy, IS_COMPONENT) {
-    console.log(IS_COMPONENT)
+
     let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
     let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
     if (!IS_COMPONENT)

@@ -8,8 +8,8 @@ export function getUniqueRule(system, component, element) {
     return system.css.manager.getUnique(component, element);
 }
 
-function mergeRules(system, css) {
-    return system.css.manager.mergeRules(css);
+function mergeRules(system, ...rules) {
+    return system.css.manager.mergeRules(rules);
 }
 
 class ComputedStyle{
@@ -37,6 +37,8 @@ class ComputedStyle{
         return this._computed.getPropertyValue(value);
     }
 }
+
+/* Cache collects info about the CSS state of an element and provides methodes to create new properties. */
 
 class Cache {
 
@@ -235,7 +237,7 @@ class Cache {
 
         this.unique = unique_rule;
         css_r = getApplicableRules(system, component, element);
-        this.rules = mergeRules(system, css_r);
+        this.rules = mergeRules(system,css_r);
         this.cssflagsA = v;
         this.original_rules =css_r;
         //calculate horizontal and vertical rations. also width and height ratios.  
@@ -248,6 +250,10 @@ class Cache {
             return "absolute";
         return "auto";
 
+    }
+
+    setCSSProp(string){
+        this.rules.merge(this.unique.addProp(string));
     }
 }
 

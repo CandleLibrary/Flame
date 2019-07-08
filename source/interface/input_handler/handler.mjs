@@ -25,7 +25,7 @@ export default class Handler {
 
     //Pointer end
     end(event, env, data) {
-
+        return Handler.default;
         if (data && event.button == 0 && data.time_since_last_click < 100) {
 
            let component = null;
@@ -65,10 +65,14 @@ export default class Handler {
     //Pointer start
     start(event, env, data) {
 
-        if (false && data && !env.ui.interface.active && event.button == 0) {
+        console.log(event)
+
+        if (data && !env.ui.interface.active && event.button == 0) {
             let component = null;
 
-            let element = document.elementFromPoint(data.x, data.y);
+            env.ui.ui_view.style.display = "none";
+
+            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
 
             if (element) {
                 while (!element.component) {
@@ -91,6 +95,8 @@ export default class Handler {
                     env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
                 }
             }
+
+            env.ui.ui_view.style.display = "";
         }
 
         return Handler.default;

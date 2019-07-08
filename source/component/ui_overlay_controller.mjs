@@ -88,7 +88,6 @@ export default class ui_overlay_controller extends ui_controller {
     }
 
     async upImport(key, value) {
-
         switch (key) {
             case "move_action":
                 this.env.ui.input.handle("start", { button: 0 }, this.env, {action:this.action});

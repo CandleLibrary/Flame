@@ -28,8 +28,13 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
         let cache = CacheFactory(system, component, element);
 
         let css = cache.rules;
+
+        if (!css.props.position && css.props.position !== "static"){
+            //debugger
+            cache.setCSSProp("position:relative")
+        }
         
-        if (css.props.position && css.props.position !== "static") {
+         
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
@@ -56,7 +61,6 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
                     cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC);
                     break;
             }
-        }
                 
         prepRebuild(element, LINKED);
     }

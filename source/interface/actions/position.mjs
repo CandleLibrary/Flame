@@ -24,7 +24,7 @@ export function SETLEFT(system, component, element, x, LINKED = false) {
         excess = 0;
         
     if (x.type) {
-        cache.rules.props.left = x;
+        cache.rules.props.left.val[0] = x;
     } else {
         if (cache.cssflagsA & 1)
             excess = setNumericValue("left", system, component, element, x, setNumericValue.parent_width, true);
@@ -56,7 +56,7 @@ export function SETTOP(system, component, element, y, LINKED = false) {
         excess = 0;
 
     if (y.type) {
-        cache.rules.props.top = y;
+        cache.rules.props.top.val[0] = y;
     } else {
         if (cache.cssflagsA & 1)
             excess = setNumericValue("top", system, component, element, y, setNumericValue.parent_height, true);

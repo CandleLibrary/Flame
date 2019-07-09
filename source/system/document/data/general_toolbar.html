@@ -5,9 +5,11 @@
 	width: ((widget.width))
 	height: ((widget.Height))
 
-
 	(( css_selectors ))<br/>
-	((css_out))<br/>
+	
+	<div class="cfw_css">
+		((css_out))<br/>
+	</div>
 
 	<span pin=css></span>
 
@@ -15,16 +17,17 @@
 		const component = env.ui.comp.active.component;
 		const element = env.ui.comp.active.element;
 
-
 		if(component.local_css && component.local_css[0]){
-			
+			console.log(1)
 			const cs = component.local_css[0];
-			
+
 			const stylesheet = css.parse("a{top:null}");
 			
 			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
 
 			const ui = css.ui(stylesheet);
+
+			ui.update();
 
 			let ele = document.createElement("div");
 

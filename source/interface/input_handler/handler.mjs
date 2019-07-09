@@ -25,7 +25,7 @@ export default class Handler {
 
     //Pointer end
     end(event, env, data) {
-        return Handler.default;
+       // return Handler.default;
         if (data && event.button == 0 && data.time_since_last_click < 100) {
 
            let component = null;
@@ -64,9 +64,7 @@ export default class Handler {
 
     //Pointer start
     start(event, env, data) {
-
-        console.log(event)
-
+        console.log(!env.ui.interface.active, env.ui.interface.active)
         if (data && !env.ui.interface.active && event.button == 0) {
             let component = null;
 

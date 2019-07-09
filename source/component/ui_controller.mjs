@@ -32,6 +32,29 @@ export default class ui_controller extends Component {
         this.LOADED = false;
     }
 
+    documentReady(ast) {
+
+        if (this.ast) {
+            //Already have source, just need to rebuild with new tree. 
+            this.scope.ast = ast;
+            this.rebuild();
+        } else {
+            this.ast = ast;
+            this.scope = this.ast.mount();
+            this.ast.setScope(this.scope);
+            //let shadow = this.frame.attachShadow({ mode: 'open' });
+            this.frame.appendChild(this.scope.ele);
+            this.frame.component = this;
+            this.scope.load();
+            this.scope.css.forEach(css => this.local_css.push(css));
+        }
+
+        this.scope.window = this.window;
+        this.rebuild();
+
+        return true;
+    }
+
     set(data) {
         this.mgr.update({
             target: data

@@ -1,0 +1,138 @@
+		.cfw_css input[type=color]{
+			border:0;
+			padding:0;
+			margin:0;
+			width: 20px;
+			height: 20px;
+			display: inline-block;
+			border-radius: 5px;
+			outline-style: none;
+		}
+
+		.cfw_css {
+			font-size: 12px;
+			color:white;
+			position: absolute;
+		}
+
+		.cfw_css .rule {
+			background-color: rgb(230,230,230);
+			border-radius: 5px;
+		}
+
+		.cfw_css .rule_selectors {
+			padding: 1px;
+			border-radius: 5px;
+		}
+
+		.cfw_css .rule_selectors .selector {
+			color: white;
+			text-align: center;
+			display: inline-block;
+			margin: 2px;
+			padding: 1px 5px;
+			border: 2px solid rgb(120,120,120);
+			border-radius: 20px;
+			background-color: rgb(120,120,120);
+		}
+
+		.cfw_css .rule_body {
+			position: relative;
+			margin-left: 5px;
+			min-height: 20px;
+			color: rgb(80,80,80);
+		}
+
+		.cfw_css .rule_body .prop {
+			width: fit-content;
+			position: relative;
+			padding: 2px 6px;
+			margin: 2px 0 2px 100px;
+			border: 2px solid rgb(230,230,230);
+			border-radius: 20px;
+			background-color: rgb(230,230,230);
+			font-weight: 700;
+		}
+
+		.cfw_css .rule_body .prop_label{
+			position: absolute;
+			text-align: right;
+			width: 100px;
+			left:-100px;
+		}
+
+
+		.cfw_css .rule_body .prop_slot{
+			background-color:gray;
+		}
+
+		.cfw_css .rule_body .prop_slot{
+			background-color:rgba(0,255,0,0.01);
+		}
+
+		.cfw_css .rule_body .prop_list {
+			font-weight: normal;
+			color: black;
+			position: absolute;
+			top: 15px;
+			display: none;
+			background-color: white;
+			padding: 4px;
+			box-shadow: 2px 2px 8px rgb(200,200,200);
+			border-radius: 3px;
+			z-index: 20;
+		}
+
+		.cfw_css .rule_body .prop_list .option:hover{
+			background-color:red;
+			color: white;
+			cursor: pointer;
+		}
+
+		.cfw_css .rule_body .prop_list_icon{
+			text-anchor: middle;
+			display: inline-block;
+			width: 15px;
+			border-radius: 5px;
+			background-color: rgba(0,0,0,0.1);
+			color: rgba(0,0,0,0.1);
+			font-weight: 800;
+			text-align: center;
+			margin-right: 3px;
+		}
+
+		.cfw_css .rule_body .prop_list_icon[superset=true]{
+			background-color: rgba(0,255,150,0.1);
+		}
+
+		.cfw_css .rule_body .prop_list_icon:hover {
+			cursor: pointer;
+		}
+
+		.cfw_css .rule_body .prop_list_icon:hover>.prop_list{
+			display: block;
+		}
+
+		.cfw_css .rule_body .prop_list_icon>.prop_list{
+			display: none;
+		}
+
+		.cfw_css .rule_body .prop_segment{
+			font-weight: normal;;
+			position: relative;
+			display: inline-block;
+			top:0;
+			left:0;
+			padding: 0 4px;
+			background-color:rgba(0,255,0,0.01);
+		}
+
+		/* Icon/UI Handle to allow the user to copy the curreent property value. */
+
+		.cfw_css .rule_body .prop_extender{
+			display: inline-block;
+			width: 15px;
+			height: 15px;
+			border-radius: 5px;
+			outline-style: none;
+		}

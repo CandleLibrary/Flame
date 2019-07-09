@@ -1,5 +1,5 @@
 @import url("./ui_components/main.css");
-
+@import url("./css.ui.css");
 body {
     position: absolute;
     width: 100vw;

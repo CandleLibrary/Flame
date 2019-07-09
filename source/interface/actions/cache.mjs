@@ -253,7 +253,7 @@ class Cache {
     }
 
     setCSSProp(string){
-        this.rules.merge(this.unique.addProp(string));
+        this.rules.merge((this.unique.addProp(string), this.unique));
     }
 }
 

@@ -201,7 +201,7 @@ export function setValue(system, component, element, value_name, value) {
     let props = cache.rules.props;
 
     if (props[value_name]) {
-        props[value_name] = value;
+        props[value_name].val[0] = value;
     } else {
         cache.unique.addProp(`${value_name.replace(/\_/g,"-")}:${value}`);
     }

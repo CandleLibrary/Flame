@@ -15,6 +15,7 @@ export default function(env) {
     };
 
     const ele = env.ui.main_view;
+    const elecomp = env.ui.comp_view;
 
 // ********************** Miscellaneous ******************************************************************
 
@@ -35,7 +36,7 @@ export default function(env) {
 
 // ********************** Pointer ******************************************************************
 
-    ele.addEventListener("pointerdown", e => {
+    elecomp.addEventListener("pointerdown", e => {
 
         e.stopPropagation();
         e.preventDefault();
@@ -49,6 +50,23 @@ export default function(env) {
         old_click_time = performance.now();
 
         ui.input = ui.input.handle("start", e, env, data);
+    });
+
+
+    ele.addEventListener("pointerdown", e => {
+
+        data.dx = 0;
+        data.dy = 0;
+        data.x = e.x;
+        data.y = e.y;
+
+        data.time_since_last_click = -1;
+        old_click_time = performance.now();
+
+        if(e.button == 1)
+            ui.input = ui.input.handle("start", e, env, data);
+        //else 
+            //ui.input.handle("end", e, env, data);
     });
 
     ele.addEventListener("pointerup", e => {

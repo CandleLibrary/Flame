@@ -51,10 +51,10 @@ function setToAbsolute(cache, KEEP_UNIQUE){
     const css = cache.rules;
     if (KEEP_UNIQUE) {
         if (cache.unique.r.props.position) css.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
+        else cache.setCSSProp("position:absolute");
     } else {
         if (css.props.position) css.props.position = "absolute";
-        else cache.unique.addProp("position:absolute");
+        else cache.setCSSProp("position:absolute");
     }
 }
 
@@ -62,10 +62,10 @@ function setToRelative(cache, KEEP_UNIQUE){
     const css = cache.rules;
     if (KEEP_UNIQUE) {
         if (cache.unique.r.props.position) css.props.position = "relative";
-        else cache.unique.addProp("position:relative");
+        else cache.setCSSProp("position:relative");
     } else {
         if (css.props.position) css.props.position = "relative";
-        else cache.unique.addProp("position:relative");
+        else cache.setCSSProp("position:relative");
     }
 }
 
@@ -231,25 +231,25 @@ export function CONVERT_TOP(system, component, element, type) {
     
     switch (type) {
         case "%":
-            cache.rules.props.top.val[0] = new types.percentage(1);
+            cache.rules.props.top.setValue(new types.percentage(1));
             break;
         case "em":
-            cache.rules.props.top.val[0] = new types.length(1, "em");
+            cache.rules.props.top.setValue(new types.length(1, "em"));
             break;
         case "vh":
-            cache.rules.props.top.val[0] = new types.length(1, "vh");
+            cache.rules.props.top.setValue(new types.length(1, "vh"));
             break;
         case "vw":
-            cache.rules.props.top.val[0] = new types.length(1, "vw");
+            cache.rules.props.top.setValue(new types.length(1, "vw"));
             break;
         case "vmin":
-            cache.rules.props.top.val[0] = new types.length(1, "vmin");
+            cache.rules.props.top.setValue(new types.length(1, "vmin"));
             break;
         case "vmax":
-            cache.rules.props.top.val[0] = new types.length(1, "vmax");
+            cache.rules.props.top.setValue(new types.length(1, "vmax"));
             break;
         default:
-            cache.rules.props.top.val[0] = new types.length(1, 'px');
+            cache.rules.props.top.setValue(new types.length(1, 'px'));
             break;
     }
     SETTOP(system, component, element, position);
@@ -263,25 +263,25 @@ export function CONVERT_LEFT(system, component, element, type) {
 
     switch (type) {
         case "%":
-            cache.rules.props.left.val[0] = new types.percentage(1);
+            cache.rules.props.left.setValue(new types.percentage(1));
             break;
         case "em":
-            cache.rules.props.left.val[0] = new types.length(1, "em");
+            cache.rules.props.left.setValue(new types.length(1, "em"));
             break;
         case "vh":
-            cache.rules.props.left.val[0] = new types.length(1, "vh");
+            cache.rules.props.left.setValue(new types.length(1, "vh"));
             break;
         case "vw":
-            cache.rules.props.left.val[0] = new types.length(1, "vw");
+            cache.rules.props.left.setValue(new types.length(1, "vw"));
             break;
         case "vmin":
-            cache.rules.props.left.val[0] = new types.length(1, "vmin");
+            cache.rules.props.left.setValue(new types.length(1, "vmin"));
             break;
         case "vmax":
-            cache.rules.props.left.val[0] = new types.length(1, "vmax");
+            cache.rules.props.left.setValue(new types.length(1, "vmax"));
             break;
         default:
-            cache.rules.props.left.val[0] = new types.length(1, 'px');
+            cache.rules.props.left.setValue(new types.length(1, 'px'));
             break;
     }
     SETLEFT(system, component, element, position);
@@ -325,22 +325,22 @@ export function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
             case "left right":
             case "left right margin":
                 if (css.props.right.value instanceof types.length) {
-                    css.props.right.val[0] = new types.percentage((css.props.right / rect.width) * 100);
+                    css.props.right.setValue(new types.percentage((css.props.right / rect.width) * 100));
                 } else {
-                    css.props.right.val[0] = new types.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right.setValue(new types.length(rect.width * (css.props.right / 100), "px"));
                 } /** Intentional fall through **/
             case "left":
                 if (css.props.left.value instanceof types.length) {
-                    css.props.left.val[0] = new types.percentage((css.props.left / rect.width) * 100);
+                    css.props.left.setValue(new types.percentage((css.props.left / rect.width) * 100));
                 } else {
-                    css.props.left.val[0] = new types.length(rect.width * (css.props.left / 100), "px");
+                    css.props.left.setValue(new types.length(rect.width * (css.props.left / 100), "px"));
                 }
                 break;
             case "right":
                 if (css.props.right.value instanceof types.length) {
-                    css.props.right.val[0] = new types.percentage((css.props.right / rect.width) * 100);
+                    css.props.right.setValue(new types.percentage((css.props.right / rect.width) * 100));
                 } else {
-                    css.props.right.val[0] = new types.length(rect.width * (css.props.right / 100), "px");
+                    css.props.right.setValue(new types.length(rect.width * (css.props.right / 100), "px"));
                 }
                 break;
         }

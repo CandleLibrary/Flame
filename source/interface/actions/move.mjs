@@ -16,7 +16,7 @@ const types = css.types;
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
 export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
-
+    
   
     if (IS_COMPONENT) {
         if(!component) debugger;
@@ -37,27 +37,27 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
             switch (cache.move_hori_type) {
                 case "left right margin":
                     //in cases of absolute
-                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
-                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB).ratio;
+                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA).ratio;
                     break;
                 case "left right":
-                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB).ratio;
                 case "left":
-                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA);
+                    cache.valueA = SETDELTALEFT(system, component, element, dx, cache.valueA).ratio;
                     break;
                 case "right":
-                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB);
+                    cache.valueB = SETDELTARIGHT(system, component, element, -dx, cache.valueB).ratio;
                     break;
             }
 
             switch (cache.move_vert_type) {
                 case "top bottom":
-                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC);
+                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC).ratio;
                 case "top":
-                    cache.valueD = SETDELTATOP(system, component, element, dy, cache.valueD);
+                    cache.valueD = SETDELTATOP(system, component, element, dy, cache.valueD).ratio;
                     break;
                 case "bottom":
-                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC);
+                    cache.valueC = SETDELTABOTTOM(system, component, element, -dy, cache.valueC).ratio;
                     break;
             }
         }
@@ -85,10 +85,10 @@ export function CENTER(system, component, element, HORIZONTAL = true, VERTICAL =
             //get the width of the parent element
             css.props.left = new types.length(diff, "px");
             css.props.right = new types.length(diff, "px");
-            cache.unique.addProp(`margin-left:auto; margin-right:auto`);
+            cache.setCSSProp(`margin-left:auto; margin-right:auto`);
             break;
         case "left":
-            cache.unique.addProp(`margin-left:auto; margin-right:auto;left:0px;right:0px`);
+            cache.setCSSProp(`margin-left:auto; margin-right:auto;left:0px;right:0px`);
             break;
         case "right":
             break;
@@ -103,7 +103,7 @@ export function CENTER(system, component, element, HORIZONTAL = true, VERTICAL =
     /*
     switch (cache.move_vert_type) {
         case "top bottom":
-            cache.valueC = setBottom(element, -dy, css, cache.valueC);
+            cache.valueC = setBottom(element, -dy, css, cache.valueC).ratio;
         case "top":
             cache.valueD = setDeltaTop(element, dy, css, cache.valueD);
             break;

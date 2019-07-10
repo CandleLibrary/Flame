@@ -21,7 +21,7 @@ function resetPadding(system, component, element) {
         let val = css.props.padding;
 
         if (!Array.isArray(val)) {
-            cache.unique.addProp(`
+            cache.setCSSProp(`
                 padding-top:${val};
                 padding-right:${val};
                 padding-bottom:${val};
@@ -30,7 +30,7 @@ function resetPadding(system, component, element) {
         } else {
             switch (val.length) {
                 case 2:
-                    cache.unique.addProp(`
+                    cache.setCSSProp(`
                         padding-top:${val[0]};
                         padding-right:${val[1]};
                         padding-bottom:${val[0]};
@@ -38,7 +38,7 @@ function resetPadding(system, component, element) {
                     `)
                     break;
                 case 3:
-                    cache.unique.addProp(`
+                    cache.setCSSProp(`
                         padding-top:${val[0]};
                         padding-right:${val[2]};
                         padding-bottom:${val[1]};
@@ -46,7 +46,7 @@ function resetPadding(system, component, element) {
                     `)
                     break;
                 case 4:
-                    cache.unique.addProp(`
+                    cache.setCSSProp(`
                         padding-top:${val[0]};
                         padding-right:${val[1]};
                         padding-bottom:${val[2]};

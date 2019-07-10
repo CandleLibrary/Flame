@@ -24,7 +24,7 @@ export function SETLEFT(system, component, element, x, LINKED = false) {
         excess = 0;
         
     if (x.type) {
-        cache.rules.props.left.val[0] = x;
+        cache.rules.props.left.setValue(x);
     } else {
         if (cache.cssflagsA & 1)
             excess = setNumericValue("left", system, component, element, x, setNumericValue.parent_width, true);
@@ -56,7 +56,7 @@ export function SETTOP(system, component, element, y, LINKED = false) {
         excess = 0;
 
     if (y.type) {
-        cache.rules.props.top.val[0] = y;
+        cache.rules.props.top.setValue(y);
     } else {
         if (cache.cssflagsA & 1)
             excess = setNumericValue("top", system, component, element, y, setNumericValue.parent_height, true);
@@ -96,9 +96,9 @@ export function SETDELTALEFT(system, component, element, dx, ratio = 0, LINKED =
     if (ratio > 0)
         excess_x = SETLEFT(system, component, element, start_x + dx / ratio, true).excess_x;
     else {
-        let { excess, ratio: r } = getRatio(system, component, element, SETLEFT, start_x, dx, "left", true);
-        ratio = r;
-        excess_x = excess;
+        let r = getRatio(system, component, element, SETLEFT, start_x, dx, "left", true);
+        ratio = r.ratio;
+        excess_x = r.excess;
     }
 
     prepRebuild(element, LINKED);
@@ -115,9 +115,9 @@ export function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED 
     if (ratio > 0)
         excess_x = SETRIGHT(system, component, element, start_x + dx / ratio, true).excess_x;
     else {
-        let { excess, ratio: r } = getRatio(system, component, element, SETRIGHT, start_x, dx, "right", true);
-        ratio = r;
-        excess_x = excess;
+        let r = getRatio(system, component, element, SETRIGHT, start_x, dx, "right", true);
+        ratio = r.ratio;
+        excess_x = r.excess;
     }
 
     prepRebuild(element, LINKED);
@@ -135,9 +135,9 @@ export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = 
     if (ratio > 0)
         excess_y = SETTOP(system, component, element, start_x + dy / ratio, true).excess_y;
     else {
-        let { excess, ratio: r } = getRatio(system, component, element, SETTOP, start_x, dy, "top", true, origin);
-        ratio = r;
-        excess_y = excess;
+        let r = getRatio(system, component, element, SETTOP, start_x, dy, "top", true, origin);
+        ratio = r.ratio;
+        excess_y = r.excess;
     }
 
     prepRebuild(element, LINKED);
@@ -153,9 +153,9 @@ export function SETDELTABOTTOM(system, component, element, dy, ratio = 0, LINKED
     if (ratio > 0)
         excess_y = SETBOTTOM(system, component, element, start_x + dy / ratio, true).excess_y;
     else {
-        let { excess, r: ratio } = getRatio(system, component, element, SETBOTTOM, start_x, dy, "bottom", true);
-        ratio = r;
-        excess_y = excess;
+        let r = getRatio(system, component, element, SETBOTTOM, start_x, dy, "bottom", true);
+        ratio = r.ratio;
+        excess_y = r.excess;
     }
 
     prepRebuild(element, LINKED);

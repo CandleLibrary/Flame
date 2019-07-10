@@ -118,6 +118,8 @@ export default class Default extends Handler {
                 ui.ui_target = null;
             else if (ui.target)
                 actions.COMPLETE(env, comp.active);
+
+            comp.active.element.flame_cache = null;
         }
 
         this.excess_x = 0;

@@ -88,12 +88,15 @@ class Cache {
     }
 
     generateMovementCache(system, component, element) {
+        this.system = system;
 
         let move_type = system.project.components.move_type;
 
         let unique_rule = getUniqueRule(system, component, element),
             css_r = getApplicableRules(system, component, element),
-            css = mergeRules(system, css_r);
+            css = mergeRules(system, ...css_r);
+
+        this.unique = unique_rule;
 
         //test for presence of rules. 
         let POS_R = false,
@@ -153,14 +156,14 @@ class Cache {
             if ((v & 40) == 0) { // HT + HL
                 //missing left / right position value.
                 //Add left
-                unique_rule.addProp(`left:0px`);
+                this.setCSSProp(`left:0px`);
                 v |= 1 << 5;
             }
 
             if ((v & 20) == 0) { // HT + HR
                 //missing top / bottom position value
                 //Add top
-                unique_rule.addProp(`top:0px`);
+                this.setCSSProp(`top:0px`);
                 v |= 1 << 2;
             }
         } else if ((960 & v) > 0) {
@@ -168,7 +171,7 @@ class Cache {
         } else {
 
             //Create left and top positions or us margin depending on current user preferences.
-            unique_rule.addProp(`left:0px;top:0px`);
+            this.setCSSProp(`left:0px;top:0px`);
             v |= 4 | 32;
         }
 
@@ -176,10 +179,10 @@ class Cache {
 
             if (move_type == "absolute") {
                 v |= 2;
-                unique_rule.addProp('position:absolute');
+                this.setCSSProp('position:absolute');
             } else if (move_type == "relative") {
                 v |= 1;
-                unique_rule.addProp('position:relative;');
+                this.setCSSProp('position:relative;');
             }
         }
 
@@ -234,10 +237,8 @@ class Cache {
 
             break;
         }
-
-        this.unique = unique_rule;
         css_r = getApplicableRules(system, component, element);
-        this.rules = mergeRules(system,css_r);
+        this.rules = mergeRules(system,...css_r);
         this.cssflagsA = v;
         this.original_rules =css_r;
         //calculate horizontal and vertical rations. also width and height ratios.  
@@ -253,7 +254,8 @@ class Cache {
     }
 
     setCSSProp(string){
-        this.rules.merge((this.unique.addProp(string), this.unique));
+        this.rules =  mergeRules(this.system,(this.unique.addProp(string), this.unique), this.rules);
+        console.log(this.unique)
     }
 }
 
@@ -263,8 +265,9 @@ Cache.absolute = 2;
 
 export function CacheFactory(system, component, element) {
 
-    if (element.flame_cache)
+    if (element.flame_cache){
         return element.flame_cache;
+    }
 
     let cache;
 
@@ -280,6 +283,8 @@ export function CacheFactory(system, component, element) {
     cache.generateMovementCache(system, component, element);
 
     element.flame_cache = cache;
+
+
 
     return cache;
 }

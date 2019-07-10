@@ -18,7 +18,8 @@
 					<container>
 						((todos))
 						<scope style="((checked ? 'text-decoration: line-through' : 'text-decoration: none' ))" export="removeTodo"  pin="frame">	
-							#### <input  type="checkbox" value="((checked))">  ((value)) <span onclick="((removeTodo)(this.id))">Remove</span>
+							
+ <input  type="checkbox" value="((checked))">  ((value)) <span onclick="((removeTodo)(this.id))">Remove</span>
 							
 							<js on="((checked))">
 								checked 

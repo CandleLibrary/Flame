@@ -26,7 +26,7 @@ export default class Handler {
     //Pointer end
     end(event, env, data) {
        // return Handler.default;
-        if (data && event.button == 0 && data.time_since_last_click < 100) {
+        if (false && data && event.button == 0 && data.time_since_last_click < 100) {
 
            let component = null;
 

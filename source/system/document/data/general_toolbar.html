@@ -1,7 +1,7 @@
 <scope class="main" export="move_action set_control"   style="width:100%;height:100%" element="div" >
 	
-	top: ((widget.top))
-	top: ((widget.left))
+	top: ((widget.x))
+	top: ((widget.y))
 	width: ((widget.width))
 	height: ((widget.Height))
 
@@ -14,11 +14,11 @@
 	<span pin=css></span>
 
 	<script on=((widget))>
+		
 		const component = env.ui.comp.active.component;
 		const element = env.ui.comp.active.element;
 
 		if(component.local_css && component.local_css[0]){
-			console.log(1)
 			const cs = component.local_css[0];
 
 			const stylesheet = css.parse("a{top:null}");

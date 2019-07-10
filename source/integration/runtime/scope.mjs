@@ -19,7 +19,7 @@ export default function(prototype, env) {
     }
 
     prototype.updatedCSS = function(){
-    	console.log("aaa")
     	this.rebuild();
+        env.ui.interface.update();
     }
 }

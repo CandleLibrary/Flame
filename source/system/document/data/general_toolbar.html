@@ -6,6 +6,23 @@
 	height: ((widget.Height))
 
 	(( css_selectors ))<br/>
+
+	<container>
+		((css_names))
+		<scope import="env" element=div>
+			((name))
+			((css_out))
+			<script on=((loading))  >
+				console.log(1)
+				const component = 0
+				const element = 0
+				const cs = component.local_css[0];
+				for(const prop of cs.getApplicableProperties(element, component)){
+				}
+
+			</script>
+		</scope>
+	</container>
 	
 	<div class="cfw_css">
 		((css_out))<br/>
@@ -35,6 +52,7 @@
 			ui.mount(ele);
 
 			css_out = ele;
+			css_names = [{name:"top"},{name:"left"}];
 		}
 
 		this.element = element;

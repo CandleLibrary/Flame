@@ -33,24 +33,21 @@ export default function(prototype, env) {
     };
 
     prototype.toString = function(off) {
-        let str = `${("    ").repeat(off)}<${this.tag}`,
-            atr = this.attributes,
-            i = -1,
-            l = atr.length;
+        var o = offset.repeat(off),
+            str = `${o}<${this.tag}`;
 
-
-
-        while (++i < l) {
-            let attr = atr[i];
-            str += ` ${attr.name}="${attr.value}"`;
+        for (const attr of this.attribs.values()) {
+            if (attr.name)
+                str += ` ${attr.name}="${attr.value}"`;
         }
 
-        if (!this.url && this.css) {
-            str += ">\n";
-            str += this.css.toString(off + 1);
+        str += ">\n";
+
+        if (!this.url && this.children[0]) {
+            str += this.children[0].toString(off + 1);
             str += `${("    ").repeat(off)}</${this.tag}>\n`;
         } else {
-            str += `></${this.tag}>\n`;
+            str += `</${this.tag}>\n`;
         }
 
         return str;
@@ -63,3 +60,5 @@ export default function(prototype, env) {
     prototype.buildExisting = () => { return false };
 
 }
+
+const offset = "    ";

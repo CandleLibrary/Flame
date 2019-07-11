@@ -6,6 +6,7 @@
 export class Component {
 
     constructor(system) {
+        debugger
         //frame for fancy styling
         this.style_frame = document.createElement("div");
         this.style_frame.classList.add("flame_component");
@@ -53,6 +54,8 @@ export class Component {
 
         this.width = this.system.project.defaults.component.width;
         this.height = this.system.project.defaults.component.height;
+
+
     }
 
     createFrameElement() {
@@ -122,11 +125,17 @@ export class Component {
     }
 
     load(document) {
+
+        debugger
         console.log(document.data)
         this.name.innerHTML = document.name;
         this.doc_name = document.name;
         this.doc_path = document.path;
         document.bind(this);
+        debugger
+        setInterval(()=>{
+            console.log(document.toString())
+        }, 5)
     }
 
     documentReady(pkg) {

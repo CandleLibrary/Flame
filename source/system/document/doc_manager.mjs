@@ -21,8 +21,12 @@ import element_draw from "./data/element_draw.html";
 import selector_list from "./data/selector_list.html";
 import master_component_string from "./data/master_component.html";
 
+//CSS Handlers
+import css_color_handler from "./data/css_color_handler.html";
+
 const internal = {
     general_toolbar,
+    css_color_handler,
     basic,
     border,
     element_draw,

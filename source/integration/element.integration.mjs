@@ -1,13 +1,28 @@
+import * as css from "@candlefw/css";
 import integrate_element from "./nodes/element.mjs";
 import integrate_text from "./nodes/text.mjs";
 import integrate_scope from "./nodes/scope.mjs";
 import integrate_style from "./nodes/style.mjs";
 import integrate_runtime_scope from "./runtime/scope.mjs";
-
 /*
 	Integrates Flame systems with Wick HTML nodes
 */
 export default async function(integrating_wick, env) {
+
+    //Replacing the compile environement references to css elements ensures that all css data types are consistent throughout the flame environment
+    integrating_wick.compiler_environment.stylesheet = css.stylesheet;
+    integrating_wick.compiler_environment.stylerule = css.stylerule;
+    integrating_wick.compiler_environment.ruleset = css.ruleset;
+    integrating_wick.compiler_environment.compoundSelector = css.compoundSelector;
+    integrating_wick.compiler_environment.comboSelector = css.comboSelector;
+    integrating_wick.compiler_environment.typeselector = css.typeselector;
+    integrating_wick.compiler_environment.selector = css.selector;
+    integrating_wick.compiler_environment.idSelector = css.idSelector;
+    integrating_wick.compiler_environment.classSelector = css.classSelector;
+    integrating_wick.compiler_environment.attribSelector = css.attribSelector;
+    integrating_wick.compiler_environment.pseudoClassSelector = css.pseudoClassSelector;
+    integrating_wick.compiler_environment.pseudoElementSelector = css.pseudoElementSelector;
+    integrating_wick.compiler_environment.parseDeclaration = css.parseDeclaration;
 
     const
         $filter = integrating_wick("<f/>"),
@@ -62,4 +77,7 @@ export default async function(integrating_wick, env) {
     integrate_style(style_prototype, env);
 
     integrate_runtime_scope((await $scope.mount()).constructor.prototype, env);
+
+
+
 }

@@ -6,7 +6,7 @@ import css_integrations from "../integration/css.integration.mjs";
 import * as actions from "./actions/action.mjs";
 /** Creates and returns an environment  **/
 export default function (options, wick = null, radiate = null) {
-	
+
 	if(radiate)
 		wick = radiate.wick;
 

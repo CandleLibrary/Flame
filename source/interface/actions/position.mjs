@@ -127,6 +127,7 @@ export function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED 
 
 
 export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false, origin = undefined) {
+    console.log("ASD", ratio)
     let start_x = parseFloat(component.window.getComputedStyle(element).top),
         excess_y = 0;
 
@@ -190,6 +191,28 @@ export function RESIZEL(system, component, element, dx, dy, IS_COMPONENT) {
     return { excess_x };
 }
 
+export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
+    
+    if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
+    let cache = CacheFactory(system, component, element),
+        excess_y = 0;
+    switch (cache.move_vert_type) {
+        case "top bottom":
+            excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
+        case "top":
+            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
+            SETDELTATOP(system, component, element, dy + excess_y, 0, true);
+            break;
+        case "bottom":
+            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
+            break;
+    }
+
+    prepRebuild(element, false);
+
+    return { excess_y };
+}
+
 export function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return (component.width += dx);
     let cache = CacheFactory(system, component, element),
@@ -211,30 +234,6 @@ export function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
     prepRebuild(element, false);
 
     return { excess_x };
-}
-
-export function RESIZET(system, component, element, dx, dy, IS_COMPONENT) {
-    
-    if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
-    let cache = CacheFactory(system, component, element),
-        excess_y = 0;
-    switch (cache.move_vert_type) {
-        case "top bottom":
-            excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
-        case "top":
-            let origin = element.getBoundingClientRect().top / system.ui.interface.transform.scale;
-            let out = SETDELTAHEIGHT(system, component, element, -dy, -1, true);
-            excess_y = out.excess_y;
-            SETDELTATOP(system, component, element, dy+out.excess_y, 1/(out.ratio || 1), true);
-            break;
-        case "bottom":
-            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
-            break;
-    }
-
-    prepRebuild(element, false);
-
-    return { excess_y };
 }
 
 export function RESIZEB(system, component, element, dx, dy, IS_COMPONENT) {

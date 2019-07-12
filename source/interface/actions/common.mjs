@@ -68,21 +68,49 @@ export function getFirstPositionedAncestor(ele) {
     return ele;
 }
 
+const adjust_data = { RELATIVE: false, value: 0, denominator: 0, prop: null }
+
+function numericAdjust(ALLOW_NEGATIVE = false) {
+    let excess = 0, value = adjust_data.value;
+
+    if (!ALLOW_NEGATIVE && value < 0) {
+        excess = value;
+        value = 0;
+    }
+
+    const prop = adjust_data.prop;
+
+    if (adjust_data.RELATIVE) {
+        const np = adjust_data.value / adjust_data.denominator;
+        prop.setValue(prop.value.copy(np * 100));
+    } else {
+        if (prop.value.copy)
+            prop.setValue(prop.value.copy(adjust_data.value));
+        else {
+            if (value !== 0)
+                prop.setValue(new types.length(adjust_data.value, "px"));
+            else
+                prop.setValue(0);
+        }
+    }
+
+    return excess;
+}
+
 export function setNumericValue(propname, system, component, element, value, relative_type = 0, ALLOW_NEGATIVE = false) {
-    let cache = CacheFactory(system, component, element);
-    let css = cache.rules;
-    let KEEP_UNIQUE = system.project.components.KEEP_UNIQUE;
-    let props = css.props;
-    let prop = props[propname];
-    let css_name = propname.replace(/_/g, "-");
-    let excess = 0;
+    let
+        cache = CacheFactory(system, component, element),
+        css = cache.rules,
+        KEEP_UNIQUE = system.project.components.KEEP_UNIQUE,
+        props = css.props,
+        prop = props[propname],
+        css_name = propname.replace(/_/g, "-");
 
     if (!prop) {
-
         if (cache.unique.props[propname]) {
             props = cache.unique.props;
             prop = props[propname];
-        }else if (!KEEP_UNIQUE || true) {
+        } else if (!KEEP_UNIQUE || true) {
             let type = (system.project.components.default_unit || "px");
             let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
             cache.setCSSProp(`${css_name}:${value + type}`);
@@ -91,27 +119,29 @@ export function setNumericValue(propname, system, component, element, value, rel
         }
     }
 
-    if (!ALLOW_NEGATIVE && value < 0) {
-        excess = value;
-        value = 0;
-    }
+    adjust_data.RELATIVE = false;
+    adjust_data.prop = prop;
+    adjust_data.value = value;
 
     if (prop == "auto") {
-        //convert to numerical form;
-        props[propname].setValue(new types.length(value, "px"));
-    } else if (prop.value instanceof types.percentage) {
-        //get the nearest positioned ancestor
 
-        let denominator = 0,
-            ele;
+        //convert to numerical form;
+        prop.setValue(new types.length(value, "px"));
+
+        return excess;
+
+    } else if (prop.value.type === "%") {
+        //get the nearest positioned ancestor
+        let denominator = 1,
+            ele = null;
 
         switch (relative_type) {
             case setNumericValue.parent_width:
-                ele = element.parentElement; //getFirstPositionedAncestor(element);
+                ele = element.parentElement;
                 if (ele) denominator = getContentBox(ele, component.window, system).width;
                 break;
             case setNumericValue.parent_height:
-                ele = element.parentElement; //getFirstPositionedAncestor(element);
+                ele = element.parentElement;
                 if (ele) denominator = getContentBox(ele, component.window, system).height;
                 break;
             case setNumericValue.positioned_ancestor_width:
@@ -130,21 +160,11 @@ export function setNumericValue(propname, system, component, element, value, rel
                 break;
         }
 
-        let np = value / denominator;
-
-        props[propname].setValue(prop.copy(np * 100));
-    } else {
-        if (prop.value.copy)
-            props[propname].setValue(prop.value.copy(value));
-        else {
-            if (value !== 0)
-                props[propname].setValue(new types.length(value, "px"));
-            else
-                props[propname].setValue(0);
-        }
+        adjust_data.denominator = denominator;
+        adjust_data.RELATIVE = true;
     }
 
-    return excess;
+    return numericAdjust(ALLOW_NEGATIVE);
 }
 
 setNumericValue.parent_width = 0;
@@ -153,8 +173,6 @@ setNumericValue.positioned_ancestor_width = 2;
 setNumericValue.positioned_ancestor_height = 3;
 setNumericValue.height = 4;
 setNumericValue.width = 5;
-
-
 
 export function getRatio(system, component, element, funct, original_value, delta_value, delta_measure, ALLOW_NEGATIVE = false, NO_ADJUST = false) {
     let excess = 0,
@@ -170,20 +188,24 @@ export function getRatio(system, component, element, funct, original_value, delt
     }
     //*/
 
+
     funct(system, component, element, original_value + delta_value);
 
     let end_x = element.getBoundingClientRect()[delta_measure] / scale;
 
     let diff_x = end_x - begin_x;
 
-
     if (Math.abs(diff_x - delta_value) > 0.0005 && delta_value !== 0) {
 
         ratio = (diff_x / delta_value);
-        let diff = delta_value / ratio;
+        
+        let diff = delta_value / Math.round(ratio);
+
         if (diff !== 0 && !NO_ADJUST) {
-            let out = funct(system, component, element, original_value + diff, true);
-            excess += (out.excess ? out.excess : out.excess_x ? out.excess_x : out.excess_y);
+            adjust_data.value = original_value + diff;
+            let out = numericAdjust();
+            //let out = funct(system, component, element, original_value + diff, true);
+            excess += out;
             //console.log(ratio)
         }
     }

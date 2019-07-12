@@ -7,6 +7,23 @@
 
 	(( css_selectors ))<br/>
 
+	<input type="text" pin="css_value">
+	<button onclick=((add_css_value))>submit</button>
+
+	<script on=((add_css_value))>
+		
+		const value = css_value$.value;
+		const component = env.ui.comp.active.component;
+		const element = env.ui.comp.active.element;
+
+		if(component && element){
+			console.log(actions)
+			actions.SETCSSPROP(env, component, element, value);
+		}
+		
+
+	</script>
+
 
 
 	<container>

@@ -254,8 +254,7 @@ class Cache {
     }
 
     setCSSProp(string){
-        this.rules =  mergeRules(this.system,(this.unique.addProp(string), this.unique), this.rules);
-        console.log(this.unique)
+        this.rules = mergeRules(this.system,(this.unique.addProp(string), this.unique), this.rules);
     }
 }
 

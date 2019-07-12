@@ -49,9 +49,6 @@ export default class Component {
 
     load(document) {
         document.bind(this);
-        setInterval(()=>{
-            console.log(document.toString())
-        }, 5000)
     }
 
     documentReady(ast) {

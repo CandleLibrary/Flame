@@ -1,5 +1,5 @@
 import Handler from "./handler.mjs";
-import { actions } from "../actions/action";
+import * as actions from "../actions/action";
 import UI_Component from "../../component/ui_controller.mjs";
 
 import pan_view from "./pan_view.mjs";

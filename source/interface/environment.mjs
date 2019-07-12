@@ -3,6 +3,7 @@ import DocumentManager from "../system/document/doc_manager.mjs";
 import Poject from "../system/project/project.mjs";
 import css_Manager from "../system/css/css_manager.mjs";
 import css_integrations from "../integration/css.integration.mjs";
+import * as actions from "./actions/action.mjs";
 /** Creates and returns an environment  **/
 export default function (options, wick = null, radiate = null) {
 	
@@ -39,6 +40,7 @@ export default function (options, wick = null, radiate = null) {
 	env.project = new Poject(env);
 	env.presets = wick.presets({
 		custom : {
+			actions,
 			env,
 			css:env.css,
 			docs:env.docs,

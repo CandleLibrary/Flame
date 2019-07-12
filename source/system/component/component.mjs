@@ -125,17 +125,11 @@ export class Component {
     }
 
     load(document) {
-
-        debugger
         console.log(document.data)
         this.name.innerHTML = document.name;
         this.doc_name = document.name;
         this.doc_path = document.path;
         document.bind(this);
-        debugger
-        setInterval(()=>{
-            console.log(document.toString())
-        }, 5)
     }
 
     documentReady(pkg) {

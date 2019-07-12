@@ -11,7 +11,7 @@
 
 		.cfw_css {
 			font-size: 12px;
-			color:white;
+			color:black;
 			position: absolute;
 		}
 
@@ -26,7 +26,6 @@
 		}
 
 		.cfw_css .rule_selectors .selector {
-			color: white;
 			text-align: center;
 			display: inline-block;
 			margin: 2px;
@@ -85,7 +84,6 @@
 
 		.cfw_css .rule_body .prop_list .option:hover{
 			background-color:red;
-			color: white;
 			cursor: pointer;
 		}
 

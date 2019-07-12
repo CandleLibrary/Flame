@@ -1,21 +1,21 @@
-import {CacheFactory} from "./cache";
-import { TEXTEDITOR } from "./text";
-import { MOVE, CENTER } from "./move";
-import { COMPLETE } from "./complete";
-import { CREATE_ELEMENT,CREATE_VIEW_COMPONENT, CREATE_COMPONENT, TRANSFER_ELEMENT, CREATE_CSS_DOC, REMOVE_COMPONENT } from "./create";
-import {SETWIDTH,
+export {CacheFactory} from "./cache";
+export { TEXTEDITOR } from "./text";
+export { MOVE, CENTER } from "./move";
+export { COMPLETE } from "./complete";
+export { CREATE_ELEMENT,CREATE_VIEW_COMPONENT, CREATE_COMPONENT, TRANSFER_ELEMENT, CREATE_CSS_DOC, REMOVE_COMPONENT } from "./create";
+export {SETWIDTH,
 SETHEIGHT,
 SETDELTAWIDTH,
 SETDELTAHEIGHT} from "./dimensions";
-import {
+export {
     SETBACKGROUNDCOLOR,
     SETCOLOR
 } from "./color";
-import {
+export {
     MOVE_PANEL
 }from "./ui_panels";
-import { UNDO , REDO} from "./history";
-import {
+export { UNDO , REDO} from "./history";
+export {
     SETLEFT,
     SETDELTALEFT,
     SETTOP,
@@ -33,7 +33,7 @@ import {
     RESIZEL,
     RESIZEB
 } from "./position";
-import {
+export {
     SETPADDINGLEFT,
     SETDELTAPADDINGLEFT,
     SETPADDINGTOP,
@@ -51,7 +51,7 @@ import {
     RESIZEPADDINGL,
     RESIZEPADDINGB
 } from "./padding";
-import {
+export {
     SETMARGINLEFT,
     SETDELTAMARGINLEFT,
     SETMARGINTOP,
@@ -69,7 +69,7 @@ import {
     RESIZEMARGINL,
     RESIZEMARGINB
 } from "./margin";
-import {
+export {
     TOMARGINLEFT,
     TOMARGINRIGHT,
     TOMARGINLEFTRIGHT,
@@ -86,7 +86,7 @@ import {
     CONVERT_LEFT,
     CONVERT_TOP
 } from "./convert";
-import {
+export {
     SETBORDERLEFT,
     SETDELTABORDERLEFT,
     SETBORDERTOP,
@@ -108,126 +108,7 @@ import {
     BORDERRADIUSBL,
     BORDERRADIUSBR,
 } from "./border";
-const actions = {
-    //UI PANELS
-    MOVE_PANEL,
-    //
-    CacheFactory,
-    COMPLETE,
-    TEXTEDITOR,
-    MOVE,
-    CENTER,
 
-    //CREATE
-    TRANSFER_ELEMENT,
-    CREATE_ELEMENT,
-    CREATE_COMPONENT,
-    CREATE_VIEW_COMPONENT,
-    CREATE_CSS_DOC,
-    REMOVE_COMPONENT,
-
-    //Margin
-    TOMARGINLEFT,
-    TOMARGINRIGHT,
-    TOMARGINLEFTRIGHT,
-    TOLEFT,
-    TORIGHT,
-    TOLEFTRIGHT,
-    TOTOP,
-    TOTOPBOTTOM,
-    TOGGLE_UNIT,
-    TOPOSITIONABSOLUTE,
-    TOPOSITIONRELATIVE,
-    TOPOSITIONFIXED,
-    TOPOSITIONSTICKY,
-    
-    //position
-    SETLEFT,
-    SETDELTALEFT,
-    SETTOP,
-    SETDELTATOP,
-    SETRIGHT,
-    SETDELTARIGHT,
-    SETBOTTOM,
-    SETDELTABOTTOM,
-    RESIZETL,
-    RESIZETR,
-    RESIZEBL,
-    RESIZEBR,
-    RESIZET,
-    RESIZER,
-    RESIZEL,
-    RESIZEB,
-    //Width Height
-    SETWIDTH,
-    SETHEIGHT,
-    SETDELTAWIDTH,
-    SETDELTAHEIGHT,
-    //Border
-    //Margin
-    SETMARGINLEFT,
-    SETDELTAMARGINLEFT,
-    SETMARGINTOP,
-    SETDELTAMARGINTOP,
-    SETMARGINRIGHT,
-    SETDELTAMARGINRIGHT,
-    SETMARGINBOTTOM,
-    SETDELTAMARGINBOTTOM,
-    RESIZEMARGINTL,
-    RESIZEMARGINTR,
-    RESIZEMARGINBL,
-    RESIZEMARGINBR,
-    RESIZEMARGINT,
-    RESIZEMARGINR,
-    RESIZEMARGINL,
-    RESIZEMARGINB,
-    //Padding
-    SETPADDINGLEFT,
-    SETDELTAPADDINGLEFT,
-    SETPADDINGTOP,
-    SETDELTAPADDINGTOP,
-    SETPADDINGRIGHT,
-    SETDELTAPADDINGRIGHT,
-    SETPADDINGBOTTOM,
-    SETDELTAPADDINGBOTTOM,
-    RESIZEPADDINGTL,
-    RESIZEPADDINGTR,
-    RESIZEPADDINGBL,
-    RESIZEPADDINGBR,
-    RESIZEPADDINGT,
-    RESIZEPADDINGR,
-    RESIZEPADDINGL,
-    RESIZEPADDINGB,
-    //Border
-    SETBORDERLEFT,
-    SETDELTABORDERLEFT,
-    SETBORDERTOP,
-    SETDELTABORDERTOP,
-    SETBORDERRIGHT,
-    SETDELTABORDERRIGHT,
-    SETBORDERBOTTOM,
-    SETDELTABORDERBOTTOM,
-    RESIZEBORDERT,
-    RESIZEBORDERR,
-    RESIZEBORDERL,
-    RESIZEBORDERB,
-    RESIZEBORDERTL,
-    RESIZEBORDERTR,
-    RESIZEBORDERBL,
-    RESIZEBORDERBR,
-    BORDERRADIUSTL,
-    BORDERRADIUSTR,
-    BORDERRADIUSBL,
-    BORDERRADIUSBR,
-    //color
-    SETBACKGROUNDCOLOR,
-    SETCOLOR,
-    //convert
-    CONVERT_LEFT,
-    CONVERT_TOP,
-    //History
-    UNDO,
-    REDO
-};
-
-export { actions };
+export {
+    SETCSSPROP
+} from "./set_css.mjs";

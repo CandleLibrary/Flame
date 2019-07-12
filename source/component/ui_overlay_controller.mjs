@@ -1,6 +1,6 @@
 //import wick from "@candlefw/wick";
 import ElementBox from "../interface/widget/element_box.mjs";
-import { actions } from "../interface/actions/action.mjs";
+import * as actions from "../interface/actions/action.mjs";
 import ui_controller from "./ui_controller.mjs";
 
 function getOffsetPos(element) {

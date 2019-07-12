@@ -1,0 +1,30 @@
+<scope class="main" export="move_action set_control"   style="width:100%" element="div" >
+	((value_output))((unit)) 
+	<span onpointerdown=((decrease))> dn </span>
+	<span onpointerdown=((increase))> up </span>
+
+	<style>
+		span{
+			width: 20px;
+			height: 20px;
+			color: red;
+			padding: 2px;
+		}
+	</style>
+
+	<script on=((increase))>
+		segment.css_val = value+1+value.unit;
+		segment.update();
+	</script>
+
+	<script on=((decrease))>
+		segment.css_val = value-1+value.unit;;
+		segment.update();
+	</script>
+
+	<script on=((value))>
+		value_output = value;
+	</script>
+</scope>
+
+

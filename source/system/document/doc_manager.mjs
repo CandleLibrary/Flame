@@ -23,14 +23,17 @@ import master_component_string from "./data/master_component.html";
 
 //CSS Handlers
 import css_color_handler from "./data/css_color_handler.html";
+import css_length_handler from "./data/css_length_handler.html";
 
 const internal = {
     general_toolbar,
-    css_color_handler,
     basic,
     border,
     element_draw,
-    selector_list
+    selector_list,
+
+    css_color_handler,
+    css_length_handler
 };
 
 
@@ -54,14 +57,6 @@ export default class DocumentManager {
 
         this.pending = null;
         this.updated = false;
-        /*
-        const fetch = document.fetch;
-
-        document.fetch = async (...args) => {
-            console.log(args);
-            return fetch(...args);
-        };
-        */
     }
     /*
      * Loads file into project

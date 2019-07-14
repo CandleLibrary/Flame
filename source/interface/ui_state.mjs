@@ -33,7 +33,11 @@ export default function ui_state(env, ui_element, view_element, controllers = []
         },
 
         removeController(controller) {
-
+            for(let i = 0; i < controllers.length; i++){
+                if(controllers[i] == controller)
+                    return ui_state(env, ui_element, view_element, [...controllers.slice(i), ...controllers.slice(i+1,0)], this);
+            }
+            return this;
         },
 
         activate(comp) {

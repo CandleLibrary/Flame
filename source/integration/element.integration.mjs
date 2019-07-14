@@ -10,7 +10,7 @@ import integrate_runtime_scope from "./runtime/scope.mjs";
 export default async function(integrating_wick, env) {
 
     //Replacing the compile environement references to css elements ensures that all css data types are consistent throughout the flame environment
-    integrating_wick.compiler_environment.stylesheet = css.stylesheet;
+    /*integrating_wick.compiler_environment.stylesheet = css.stylesheet;
     integrating_wick.compiler_environment.stylerule = css.stylerule;
     integrating_wick.compiler_environment.ruleset = css.ruleset;
     integrating_wick.compiler_environment.compoundSelector = css.compoundSelector;
@@ -22,7 +22,7 @@ export default async function(integrating_wick, env) {
     integrating_wick.compiler_environment.attribSelector = css.attribSelector;
     integrating_wick.compiler_environment.pseudoClassSelector = css.pseudoClassSelector;
     integrating_wick.compiler_environment.pseudoElementSelector = css.pseudoElementSelector;
-    integrating_wick.compiler_environment.parseDeclaration = css.parseDeclaration;
+    integrating_wick.compiler_environment.parseDeclaration = css.parseDeclaration;*/
 
     const
         $filter = integrating_wick("<f/>"),

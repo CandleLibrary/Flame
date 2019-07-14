@@ -16,11 +16,8 @@
 		const component = env.ui.comp.active.component;
 		const element = env.ui.comp.active.element;
 
-		if(component && element){
-			console.log(actions)
-			actions.SETCSSPROP(env, component, element, value);
-		}
-		
+		if(component && element)
+			actions.SETCSSPROP(env, component, element, value);		
 
 	</script>
 
@@ -45,9 +42,9 @@
 
 						let ele = document.createElement("div");
 
-						const ui = css.ui(prop);
+						this.ui = css.ui(prop);
 
-						ui.mount(ele);
+						this.ui.mount(ele);
 
 						css_out = ele;
 
@@ -74,17 +71,21 @@
 			
 			const cs = component.local_css[0];
 
+			if(this.ui){
+				this.ui.destroy();
+			}
+
 			const stylesheet = css.parse("a{top:null}");
 			
 			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
 
-			const ui = css.ui(stylesheet);
+			this.ui = css.ui(stylesheet);
 
-			ui.update();
+			this.ui.update();
 
-			let ele = document.createElement("div");
+			const ele = document.createElement("div");
 
-			ui.mount(ele);
+			this.ui.mount(ele);
 
 			css_out = ele;
 			css_names = [{name:"top"},{name:"left"}];

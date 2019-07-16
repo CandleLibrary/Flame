@@ -75,7 +75,7 @@
 				this.ui.destroy();
 			}
 
-			const stylesheet = css.parse("a{top:null}");
+			const stylesheet = new css.stylesheet();
 			
 			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
 

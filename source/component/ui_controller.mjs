@@ -30,6 +30,7 @@ export default class ui_controller extends Component {
         this.y = 0;
 
         this.LOADED = false;
+        
     }
 
     documentReady(ast) {

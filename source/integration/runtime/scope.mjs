@@ -1,4 +1,8 @@
+import observer from "@candlefw/observer";
+
 export default function(prototype, env) {
+    observer("updatedScope", prototype);
+
     prototype.rebuild = function() {
         this.ast.buildExisting(this.ele, this, this.presets, this.taps, null, this.window);
         this.loadCSS();
@@ -16,10 +20,10 @@ export default function(prototype, env) {
         }
 
         Array.prototype.slice.apply(element.children).forEach(child => this.loadCSS(child));
-    }
+    };
 
-    prototype.updatedCSS = function(){
-    	this.rebuild();
+    prototype.updatedCSS = function() {
+        this.rebuild();
         env.ui.interface.update();
-    }
+    };
 }

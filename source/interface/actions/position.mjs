@@ -127,7 +127,7 @@ export function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED 
 
 
 export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false, origin = undefined) {
-    console.log("ASD", ratio)
+    
     let start_x = parseFloat(component.window.getComputedStyle(element).top),
         excess_y = 0;
 

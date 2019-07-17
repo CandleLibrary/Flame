@@ -4,10 +4,13 @@ import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
 import Browser_Input_Handler from "./input_handler/default.mjs";
+import css_integrations from "../integration/css.integration.mjs";
 
 export default function(env, html_element, INITIALIZED_HIDDEN = true) {
 
     const view = (env.ui.main_view = document.createElement("div"));
+
+    css_integrations(env);
 
     env.ui.ui_view = document.createElement("div");
     env.ui.comp_view = document.createElement("div");

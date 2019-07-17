@@ -60,8 +60,6 @@ export default function(prototype, env) {
 
         element.innerHTML = "";
 
-        //const scope = new Scope(outer_scope, presets, own_element, this);
-
         if (this.HAS_TAPS)
             this.createRuntimeTaplist(scope)
 

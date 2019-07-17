@@ -15,6 +15,12 @@ export default class Component {
         this.frame = document.createElement("div");
         this.frame.classList.add("flame_component");
         this.frame.style.position = "fixed";
+        this.frame.style.backgroundColor = "white";
+        this.frame.style.overflow = "hidden";
+        this.frame.style.border = "2px solid rgba(25,25,25,0.2)";
+        this.frame.style.borderRadius = "2px";
+        this.frame.style.margin = 0;
+        this.frame.style.padding = 0;
         this.frame.component = this;
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;

@@ -4,9 +4,7 @@ import whind from "@candlefw/whind";
 
 const CSS_Rule_Constructor = CSSRule;
 
-import {
-    CSSComponent
-} from "../component/css_component";
+import {    CSSComponent} from "../../component/css_component";
 
 /**
  *  This module maintains CSS documents and handles the updating of their contents. 

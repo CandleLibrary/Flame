@@ -55,21 +55,18 @@ export default function(prototype, env) {
 
     prototype.reparse = function(text) {
 
-        const element = new this.ReparseConstructor();
-
-        element.parent = this.parent;
-
         return env.wick(text).pending.then(comp => {
+
             const ast = comp.ast;
 
-            ast.parent = null;
-
-            if (this.parent)
-                this.parent.replace(this, ast);
-
-            ast.BUILT = true;
-            ast.prepRebuild(false, true);
-            ast.rebuild();
+            for(const name in ast)
+                this[name] = ast[name];
+            
+            this.BUILT = true;
+            this.prepRebuild(false, true);
+            this.rebuild();
+        }).catch(e=>{
+            return e;
         });
     };
 
@@ -165,7 +162,7 @@ export default function(prototype, env) {
     prototype.resetRebuild = function() {
         this.CHANGED = 0;
 
-        if (!this.parentent)
+        if (!this.parent)
             this.updated();
 
         for (let node = this.fch; node; node = this.getNextChild(node))

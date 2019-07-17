@@ -17,7 +17,9 @@ export default class ui_overlay_controller extends ui_controller {
     constructor(env, pathname) {
 
         super(env, pathname);
+        
         this.frame.classList.add("overlay");
+
         this.element = null;
         this.actions = actions;
 

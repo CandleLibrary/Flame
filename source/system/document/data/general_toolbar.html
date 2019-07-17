@@ -10,6 +10,13 @@
 	<input type="text" pin="css_value">
 	<button onclick=((add_css_value))>submit</button>
 
+	<textarea value=((component_info)(changed))></textarea>
+
+	<script on=((changed))>
+		env.ui.comp.active.component.scope.ast.reparse(changed);
+	</script>
+
+
 	<script on=((add_css_value))>
 		
 		const value = css_value$.value;
@@ -55,6 +62,16 @@
 			</script>
 		</scope>
 	</container>
+
+	<container>
+		((documents))
+		<scope onclick=((add_to_main))>
+			<h4 draggable=true ondragstart=((start))>((name))</h4>
+			<script on=((add_to_main))>
+				actions.CREATE_COMPONENT(env, this.model, 150, 150)
+			</script>
+		</scope>
+	</container>
 	
 	<div class="cfw_css">
 		((css_out))<br/>
@@ -63,6 +80,17 @@
 	<span pin=css></span>
 
 	<script on=((widget))>
+
+		component_info = env.ui.comp.active.component.scope.ast.toString();
+
+		const docs = env.data.docs;
+		let d = [];
+		
+		for(const doc of docs.docs.values()){
+			d.push(doc)
+		}
+
+		documents = d;
 		
 		const component = env.ui.comp.active.component;
 		const element = env.ui.comp.active.element;

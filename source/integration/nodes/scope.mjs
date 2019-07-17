@@ -19,20 +19,20 @@ export default function(prototype, env) {
         return scope.ele;
     };
 
-    prototype.buildExisting = function(element, source, presets, taps, win = window, css) {
+    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css) {
 
         if (true && this.CHANGED !== 0) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
 
-                let span = document.createElement("span");
+                this.replacing_element = element;
 
-                this._build_(span, source, presets, [], taps, {});
+                const node = element.parentNode;
 
-                let ele = span.firstChild;
+                this.remount(element, scope, presets, slots, pinned);
 
-                element.parentElement.replaceChild(ele, element);
+                node.appendChild(element);
 
                 return true;
             }
@@ -42,15 +42,35 @@ export default function(prototype, env) {
 
             if (true || this.CHANGED & 2) {
                 //rebuild children
-                let child_elements = element.childNodes;
+                const children = (element) ? element.childNodes : [];
 
                 for (let i = 0; i < this.children.length; i++) {
                     const node = this.children[i];
-                    if (node.buildExisting(child_elements[i], source, presets, taps, element, win, this.css)) i++;
+                    node.buildExisting(element, scope, presets, slots, pinned, win, css);
                 }
             }
         }
 
         return true;
     };
+
+    prototype.remount = function(element, scope, presets, slots, pinned){
+
+        scope.purge();
+
+        element.innerHTML = "";
+
+        //const scope = new Scope(outer_scope, presets, own_element, this);
+
+        if (this.HAS_TAPS)
+            this.createRuntimeTaplist(scope)
+
+        scope._model_name_ = this.model_name;
+        scope._schema_name_ = this.schema_name;
+
+        //Reset pinned
+        pinned = {};
+
+        return element_prototype.mount.call(this, null, scope, presets, slots, pinned);
+    }
 }

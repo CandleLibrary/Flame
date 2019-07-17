@@ -18,8 +18,11 @@ export default class ui_controller extends Component {
             if (doc) 
                 doc.bind(this);
         }
+
         
         this.frame.classList.add("ui");
+        this.frame.style.overflow = "";
+        this.frame.style.backgroundColor = "";
 
         this.pkg = null;
 

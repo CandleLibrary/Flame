@@ -73,7 +73,7 @@ export default async function(integrating_wick, env) {
 
     integrate_element(element_prototype, env);
     integrate_text(text_prototype, element_prototype, env);
-    integrate_scope(scope_prototype, env);
+    integrate_scope(scope_prototype,element_prototype, env);
     integrate_style(style_prototype, env);
 
     integrate_runtime_scope((await $scope.mount()).constructor.prototype, env);

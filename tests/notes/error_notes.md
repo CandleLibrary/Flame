@@ -14,4 +14,4 @@ common.mjs:133 Uncaught TypeError: Cannot read property 'type' of undefined
 
 ### Cannot select span element in css_length_handler.html
 
-
+### Zoom and middle mouse click to navigate viewport not ideal for two button, ie laptops, systems. 

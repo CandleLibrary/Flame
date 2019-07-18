@@ -1,0 +1,31 @@
+<scope class="main" export="move_action set_control"   style="width:100%; font-family:((font_name))" element="div"  >
+	
+	<input value=((font_name)(update_font_name)) pin=head />
+
+	<script on=((loaded))>
+		let font = document.createElement("link");
+		font.href = "https://fonts.googleapis.com/css?family=Open+Sans&display=swap";
+		font.rel = "stylesheet";
+		
+		document.head.appendChild(font)
+	</script>
+
+	<script on=((destroying))>
+		segment.vh = null;
+		segment.val.innerHTML = "";
+	</script>
+
+	<script on=((update_font_name))>
+		head$.style.fontFamily = event.target.value;
+		segment.css_val = event.target.value;
+		segment.update();
+	</script>
+
+	<script on=((value))>
+		font_name = value
+		head$.style.fontFamily = value;
+
+		
+	</script>
+</scope>
+

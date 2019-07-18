@@ -30,9 +30,15 @@ export default function(prototype, env) {
 
                 const node = element.parentNode;
 
+                const model = scope.model 
+
                 this.remount(element, scope, presets, slots, pinned);
 
                 node.appendChild(element);
+
+                scope.load(model);
+
+                scope.reloadFromHTML();
 
                 return true;
             }

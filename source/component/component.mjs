@@ -22,6 +22,7 @@ export default class Component {
         this.frame.style.margin = 0;
         this.frame.style.padding = 0;
         this.frame.component = this;
+        
         //Flag for mounted state of component. If a component is accessible anywhere on the main UI, then it is considered mounted. 
         this.mounted = false;
 
@@ -57,6 +58,37 @@ export default class Component {
         document.bind(this);
     }
 
+    // Adds style sheet as the components local style sheeet. 
+    setLocalStyleSheet(cssstylesheet){
+        this.local_component_css = cssstylesheet;
+        this.addCSSData(cssstylesheet);
+    }
+
+    // Pushes stylesheet to the components list of stylesheets that affect the component's elements. 
+    addCSSData(cssstylesheet){
+
+        this.local_css.push(cssstylesheet);
+
+        if(this.scope && this.scope.css !== this.local_css)
+            this.updateScopeCSS();
+    }
+
+    updateScopeCSS(){
+        this.local_css.length = 0;
+        
+        this.scope.css.forEach(css => this.local_css.push(css));
+
+        //Insure that Flame environment css objects are used within the scope. 
+
+        this.scope.css = this.local_css;
+        
+        this.local_component_css && this.addCSSData(this.local_component_css)
+    }
+
+    updatedScope(){
+        this.updateScopeCSS();
+    }
+
     documentReady(ast) {
 
         if (this.ast) {
@@ -66,12 +98,14 @@ export default class Component {
         } else {
             this.ast = ast;
             this.scope = this.ast.mount();
+            this.scope.parent = this;
             this.ast.setScope(this.scope);
             let shadow = this.frame.attachShadow({ mode: 'open' });
             shadow.appendChild(this.scope.ele);
             shadow.component = this;
             this.scope.load();
-            this.scope.css.forEach(css => this.local_css.push(css));
+            this.updateScopeCSS();
+            //this.scope.addObserver(this);
         }
 
         this.scope.window = this.window;
@@ -86,6 +120,7 @@ export default class Component {
 
 
     addStyle(tree, INLINE) {
+
         if (!INLINE) {
             return;
             //const style = new StyleNode();

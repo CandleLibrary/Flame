@@ -26,7 +26,7 @@ export default async function(integrating_wick, env) {
 
     const
         $filter = integrating_wick("<f/>"),
-        $scope = integrating_wick("<scope/>"),
+        $scope = integrating_wick("<scope test=((0))/>"),
         $slot = integrating_wick("<slot/>"),
         $void = integrating_wick("<void/>"),
         $style = integrating_wick("<style></style>"),
@@ -41,6 +41,8 @@ export default async function(integrating_wick, env) {
     await $link.pending;
 
     const
+        attribute_prototype = $scope.ast.getAttrib("test").constructor.prototype,
+        binding_prototype = $scope.ast.getAttrib("test").value.constructor.prototype,
         filter_prototype = $filter.ast.constructor.prototype,
         scope_prototype = $scope.ast.constructor.prototype,
         slot_prototype = $slot.ast.constructor.prototype,
@@ -56,6 +58,8 @@ export default async function(integrating_wick, env) {
         link_prototype = $link.ast.constructor.prototype;
 
     env.wick.nodes = {
+        binding : binding_prototype.constructor,
+        attribute : attribute_prototype.constructor,
         filter : filter_prototype.constructor,
         scope : scope_prototype.constructor,
         slot : slot_prototype.constructor,

@@ -31,6 +31,11 @@ export default function(prototype, env) {
 
     const  loadAndParseUrl = prototype.loadAndParseUrl;
 
+    prototype.addAttribute = function(name, value){
+        let attribute = new env.wick.nodes.attribute([name, null, value + ""]);
+        this.attribs.set(name, attribute);
+    }
+
     prototype.loadAndParseUrl = async function(e){
         return loadAndParseUrl.call(this, e);
     };

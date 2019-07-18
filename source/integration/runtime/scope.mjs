@@ -8,9 +8,14 @@ export default function(prototype, env) {
         this.loadCSS();
     };
 
-    prototype.loadCSS = function(element = this.ele) {
+    prototype.reloadFromHTML = function(){
+        if(this.parent)
+            this.parent.updatedScope();
+    }
 
-        for (const css of this.css) {
+    prototype.loadCSS = function(element = this.ele, CSS = this.css) {
+
+        for (const css of CSS) {
 
             const rules = css.getApplicableRules(element);
 
@@ -19,7 +24,8 @@ export default function(prototype, env) {
             css.addObserver(this);
         }
 
-        Array.prototype.slice.apply(element.children).forEach(child => this.loadCSS(child));
+        for(const ele of Array.prototype.slice.apply(element.children))
+            this.loadCSS(ele, CSS);
     };
 
     prototype.updatedCSS = function() {

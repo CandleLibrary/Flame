@@ -135,10 +135,10 @@ export default function(env) {
                 const tree = css_docs[css_docs.length - 1],
                     node = IS_WICK_NODE ? element : element.wick_node,
                     class_name = "n" + ((Math.random() * 10000000) | 0) + "";
-
+                    
                 const
                     a = node.attribs,
-                    nclass = ((a.has("class")) ? null : (a.set("class", { name: "class", value: "" })), a.get("class"));
+                    nclass = ((a.has("class")) ? null : (node.addAttribute("class", "")), a.get("class"));
 
                 nclass.value += ` ${class_name}`;
 
@@ -152,10 +152,10 @@ export default function(env) {
 
                 if (css_docs.length == 0) {
                     //create new css document. it should be located at the same location as the component. Or at a temp location
-                    component.local_css.push(sheet);
-                    component.scope.css.push(sheet);
+                    component.setLocalStyleSheet(sheet);
                     return stylerule;
                 } else {
+                    //Enter the rule into the bestfit CSS dataset.
                     tree.ruleset.rules.push(stylerule);
                     stylerule.parent = tree.ruleset;
                     return stylerule;

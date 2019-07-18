@@ -24,6 +24,7 @@ import master_component_string from "./data/master_component.html";
 //CSS Handlers
 import css_color_handler from "./data/css_color_handler.html";
 import css_length_handler from "./data/css_length_handler.html";
+import css_font_family_handler from "./data/css_font_family_handler.html";
 
 const internal = {
     general_toolbar,
@@ -31,7 +32,7 @@ const internal = {
     border,
     element_draw,
     selector_list,
-
+    css_font_family_handler,
     css_color_handler,
     css_length_handler
 };

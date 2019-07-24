@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/flame",
-  "version": "0.0.6",
+  "version": "0.0.7-0",
   "description": "A browser tech web editing app based on wick and electron",
   "main": "main.mjs",
   "bin": {

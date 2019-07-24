@@ -1,13 +1,13 @@
 <scope class="main" export="move_action set_control"   style="width:100%; font-family:((font_name))" element="div"  >
 	
-	<input value=((font_name)(update_font_name)) pin=head />
+	<input value=((font_name)(update_font_name)) pin=head style="width: 100%"/>
 
 	<script on=((loaded))>
-		let font = document.createElement("link");
+		const font = document.createElement("link");
 		font.href = "https://fonts.googleapis.com/css?family=Open+Sans&display=swap";
 		font.rel = "stylesheet";
 		
-		document.head.appendChild(font)
+		document.head.appendChild(font);
 	</script>
 
 	<script on=((destroying))>
@@ -16,16 +16,38 @@
 	</script>
 
 	<script on=((update_font_name))>
-		head$.style.fontFamily = event.target.value;
-		segment.css_val = event.target.value;
+		let val = event.target.value;
+
+		if(!val)
+			return;
+
+		val.trim();
+
+		if(val.includes(" "))
+			val = `"${val}"`;
+
+		head$.style.fontFamily = val;
+		segment.css_val = val;
 		segment.update();
 	</script>
 
 	<script on=((value))>
-		font_name = value
-		head$.style.fontFamily = value;
+
+		let v = value.trim();
+
+		if(v.charCodeAt(0) == 34 || v.charCodeAt(0) == 39)
+			v = v.slice(1,-1);
+		
+
+		font_name = v;
+		
+		head$.style.fontFamily = v;
 
 		
 	</script>
+
+	<style>
+		
+	</style>
 </scope>
 

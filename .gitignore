@@ -1,4 +1,4 @@
-﻿# Logs
+# Logs
 logs
 *.log
 npm-debug.log*
@@ -31,9 +31,6 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-
-#Build directory
-assets/build
 
 # Dependency directories
 node_modules/
@@ -83,11 +80,14 @@ About
 Press h to open a hovercard with more details.
 
 #Build directory
-
-build/*
-!build/config/
+!build/build_config/
+!build/wick.css
 
 #Api directory
 documents/api/*
 
+#sublime  workspace
 *.sublime-workspace
+
+#HCG backup compiler files.
+*.hcgb*

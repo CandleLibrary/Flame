@@ -9,8 +9,9 @@ import css_integrations from "../integration/css.integration.mjs";
 export default function(env, html_element, INITIALIZED_HIDDEN = true) {
 
     const view = (env.ui.main_view = document.createElement("div"));
-
-    css_integrations(env);
+    
+    //css_integrations(env);
+    // /return
 
     env.ui.ui_view = document.createElement("div");
     env.ui.comp_view = document.createElement("div");

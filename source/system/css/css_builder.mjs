@@ -1,8 +1,8 @@
-import { ui_stylesheet } from "@candlefw/css"
+import { stylesheet } from "@candlefw/css";
 //import {UIRuleSet} from "@candlefw/css"
 import whind from "@candlefw/whind";
 
-export default class CSSContainer extends ui_stylesheet {
+export default class CSSContainer extends stylesheet {
 
     constructor() {
         super({ addObserver: () => {} });

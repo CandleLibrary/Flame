@@ -49,11 +49,20 @@ async function initializeRadiate(radiate, options){
 	await wick_element_integration(radiate.wick, env);
 	
 	radiate_integrate(radiate, env);
-
+	
 	build_editor_environment(env, document.body, HIDDEN);
 }
 
 function initializeLantern(lantern){
+	debugger;
 	//convert the wick export into a flamed version. 
 	//convert the radiate export into a flamed version.
 }
+
+if(window)
+window.addEventListener("load", ()=>{
+	if(radiate)
+		initializeRadiate(radiate);
+	else if(wick)
+		initilizeWick(wick);
+});

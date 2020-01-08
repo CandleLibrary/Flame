@@ -103,6 +103,8 @@
 				this.ui.destroy();
 			}
 
+			return;
+
 			const stylesheet = new css.stylesheet();
 			
 			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));

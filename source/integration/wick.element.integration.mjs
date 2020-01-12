@@ -1,5 +1,3 @@
-import open_environment from "../interface/open.environment.mjs";
-
 /*
 	Integrates Flame systems into Wick's component.prototype 
 */
@@ -11,6 +9,7 @@ export default async function(integrating_wick, flame_environment) {
 
     const mount_function = component_prototype.nonAsyncMount;
 
+    /*
     component_prototype.nonAsyncMount = function(...args) {
 
         const comp = mount_function.call(this, ...args);
@@ -31,4 +30,5 @@ export default async function(integrating_wick, flame_environment) {
 
         return comp;
     };
+    */
 }

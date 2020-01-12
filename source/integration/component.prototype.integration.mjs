@@ -11,6 +11,10 @@ export default async function(integrating_wick, flame_environment){
 
 	const mount_function = component_prototype.nonAsyncMount;
 
+	/* 
+		Deprecated - This used to add a little tag to each component that was mounted to the document. When clicked, this tag would open the Flame environment for that specific component. 
+	*/
+	/*
 	component_prototype.nonAsyncMount = function(...args){
 		
 		const comp = mount_function.call(this, ...args);
@@ -27,8 +31,9 @@ export default async function(integrating_wick, flame_environment){
 			open_environment(comp, flame_environment);
 		});
 
-		element.appendChild(flame_tag);
+		//element.appendChild(flame_tag);
 
 		return comp;
 	};
+	*/
 }

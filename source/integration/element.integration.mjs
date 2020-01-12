@@ -9,7 +9,7 @@ import integrate_runtime_scope from "./runtime/scope.mjs";
 */
 export default async function(integrating_wick, env) {
 
-    //Replacing the compile environement references to css elements ensures that all css data types are consistent throughout the flame environment
+    //Replacing the compile environment references to css elements ensures that all css data types are consistent throughout the flame environment
     /*integrating_wick.compiler_environment.stylesheet = css.stylesheet;
     integrating_wick.compiler_environment.stylerule = css.stylerule;
     integrating_wick.compiler_environment.ruleset = css.ruleset;
@@ -81,7 +81,4 @@ export default async function(integrating_wick, env) {
     integrate_style(style_prototype, env);
 
     integrate_runtime_scope((await $scope.mount()).constructor.prototype, env);
-
-
-
 }

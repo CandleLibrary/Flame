@@ -16,12 +16,12 @@ import flame_environment from "./interface/environment.mjs";
 */
 export default function initializer (cfw_framework, options){
 	switch(cfw_framework.type){
-		case "cfw.wick":
-			return initializeWick(cfw_framework, options);
-		case "cfw.radiate":
-			return initializeRadiate(cfw_framework, options);
 		case "cfw.lantern":
 			return initializeLantern(cfw_framework, options);
+		case "cfw.radiate":
+			return initializeRadiate(cfw_framework, options);
+		case "cfw.wick":
+			return initializeWick(cfw_framework, options);
 		default:
 			console.error("Unrecognized object passed to Flame initializer. Flame accepts [wick] [radiate] or [lantern] initializer objects.");
 	}
@@ -55,7 +55,7 @@ async function initializeRadiate(radiate, options){
 
 function initializeLantern(lantern){
 	debugger;
-	//convert the wick export into a flamed version. 
+	//convert the wick export into a flamed version. Define what "Flamed" Means
 	//convert the radiate export into a flamed version.
 }
 

@@ -1,5 +1,6 @@
 import UI_overlay_controller from "../component/ui_overlay_controller.mjs";
 import UI_toolbar_controller from "../component/ui_toolbar_controller.mjs";
+import UI_header_controller from "../component/ui_header_controller.mjs";
 import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
@@ -9,9 +10,6 @@ import css_integrations from "../integration/css.integration.mjs";
 export default function(env, html_element, INITIALIZED_HIDDEN = true) {
 
     const view = (env.ui.main_view = document.createElement("div"));
-    
-    //css_integrations(env);
-    // /return
 
     env.ui.ui_view = document.createElement("div");
     env.ui.comp_view = document.createElement("div");
@@ -34,7 +32,8 @@ export default function(env, html_element, INITIALIZED_HIDDEN = true) {
     env.ui.setState(
         ui_state(env, env.ui.ui_view, env.ui.comp_view.attachShadow({ mode: 'open' }))
         .addController(new UI_overlay_controller(env, "/@ui/basic.html"))
-        .addController(new UI_toolbar_controller(env, "/@ui/general_toolbar.html"))
+        .addController(new UI_header_controller(env, "/@ui/header_toolbar.html"))
+        //.addController(new UI_toolbar_controller(env, "/@ui/general_toolbar.html"))
         ,comp_state(env)
     );
 

@@ -17,6 +17,7 @@ import html_toolbar from "./data/html_toolbar.html";
 
 //Overlays
 import basic from "./data/basic.html";
+import hover from "./data/hover.html";
 
 import border from "./data/border.html";
 import element_draw from "./data/element_draw.html";
@@ -33,6 +34,7 @@ const internal = {
     general_toolbar,
     html_toolbar,
     basic,
+    hover,
     border,
     element_draw,
     selector_list,

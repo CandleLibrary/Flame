@@ -1,7 +1,7 @@
 
 
 // Tracks components position, marks active components
-export default function ui_comp_state(env, components = [], active = null) {
+export default function ui_comp_state(env, components = [], active = null, hover = null) {
     
     var widget = null;
 

@@ -3,7 +3,9 @@ import Element_box from "./widget/element_box.mjs";
 //Responsible for registering controllers and handling UI state
 export default function ui_state(env, ui_element, view_element, controllers = [], previous) {
 
-    var overlay, comps, widget = null;
+    var overlay, comps, widget = null,
+        hover = null,
+        hover_component = null;
 
     const transform = new(css.types.transform2D)(previous ? previous.transform : undefined);
 
@@ -33,11 +35,38 @@ export default function ui_state(env, ui_element, view_element, controllers = []
         },
 
         removeController(controller) {
-            for(let i = 0; i < controllers.length; i++){
-                if(controllers[i] == controller)
-                    return ui_state(env, ui_element, view_element, [...controllers.slice(i), ...controllers.slice(i+1,0)], this);
+            for (let i = 0; i < controllers.length; i++) {
+                if (controllers[i] == controller)
+                    return ui_state(env, ui_element, view_element, [...controllers.slice(i), ...controllers.slice(i + 1, 0)], this);
             }
             return this;
+        },
+
+        hover(element, component) {
+
+            if (element) {
+
+                if (!hover)
+                    hover = new Element_box(element);
+                else
+                    hover.element = element;
+
+                hover.update();
+
+                for (const controller of controllers) {
+                    if (controller.type == "hover") {
+                        hover_component = controller;
+                    }
+                }
+
+                if (hover_component) {
+                    hover_component.mount(ui_element, { element, component });
+                    hover_component.update(env, hover);
+                }
+
+            } else {
+                hover = null;
+            }
         },
 
         activate(comp) {
@@ -55,12 +84,10 @@ export default function ui_state(env, ui_element, view_element, controllers = []
             }
 
             if (comp.active) {
-                if(!widget)
+                if (!widget)
                     widget = new Element_box(comp.active.element);
-                else 
+                else
                     widget.element = comp.active.element;
-
-                widget.update();
 
                 for (const controller of controllers) {
                     if (controller.type == "overlay") {
@@ -68,33 +95,39 @@ export default function ui_state(env, ui_element, view_element, controllers = []
                     }
                 }
 
-                if(overlay)
+                if (overlay) {
                     overlay.mount(ui_element, comp.active);
+                }
 
-                for(const controller of controllers)
-                    controller.update(env);
+                this.update();
+
             }
         },
 
-        updateOverlay(){
-            if(widget)
+        updateOverlay() {
+            if (widget)
                 widget.update();
 
-            if(overlay)
+            if (overlay)
                 overlay.update(env);
         },
 
-        update(){
+        update() {
 
-            if(widget)
+            if (widget)
                 widget.update();
 
-            for(const controller of controllers)
-                controller.update(env);
-            
+            for (const controller of controllers) {
+                if (controller.type == "hover") {
+                    if (hover)
+                        controller.update(env, hover);
+                } else
+                    controller.update(env);
+            }
+
         },
 
-        get widget(){
+        get widget() {
             return widget;
         },
 

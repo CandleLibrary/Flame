@@ -18,6 +18,8 @@ export default class Handler {
                 return this.drop(event, ui_manager, target);
             case "scroll":
                 return this.scroll(event, ui_manager, target);
+            case "hover":
+                return this.hover(event, ui_manager, target);
             case "context":
                 return this.context(event, ui_manager, target);
         }
@@ -25,8 +27,9 @@ export default class Handler {
 
     //Pointer end
     end(event, env, data) {
+
        // return Handler.default;
-        if (false && data && event.button == 0 && data.time_since_last_click < 100) {
+        if (data && event.button == 0 && data.time_since_last_click < 100) {
 
            let component = null;
 
@@ -62,9 +65,43 @@ export default class Handler {
         return Handler.default;
     }
 
+    hover(event, env, data){
+        if (data) {
+            let component = null;
+
+            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
+
+            if (element && element.component) {
+                while (!element.component) {
+                    element = element.parentNode;
+                }
+
+                if (element.component) {
+
+                    component = element.component;
+
+
+                    if (component.type == "css") {
+                        element = component.element;
+                    } else if(element.shadowRoot){
+                        element = element.shadowRoot.elementFromPoint(data.x, data.y);
+                    }
+                    
+                    env.ui.setHover(element, component);
+                }
+            }
+
+            env.ui.ui_view.style.display = "";
+        }else{
+            env.ui.setHover();
+        }
+
+        return Handler.default;
+    }
+
     //Pointer start
     start(event, env, data) {
-        console.log(!env.ui.interface.active, env.ui.interface.active)
+
         if (data && !env.ui.interface.active && event.button == 0) {
             let component = null;
 
@@ -72,7 +109,7 @@ export default class Handler {
 
             let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
 
-            if (element) {
+            if (element && element.component) {
                 while (!element.component) {
                     element = element.parentNode;
                 }
@@ -90,7 +127,7 @@ export default class Handler {
 
                     data.time_since_last_click = Infinity;
                     
-                    env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
+                    env.ui.setState(undefined, env.ui.comp.setActive({component, element }));
                 }
             }
 

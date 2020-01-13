@@ -1,0 +1,96 @@
+<scope export="move_action set_control"  tabindex="1"  style="pointer-events:none;width:100%;height:100%" element="div" >
+
+	<selectorlist></selectorlist>
+
+	<div class="test" pin="padding">
+	</div>
+
+	<div class="test" pin="margin">
+	</div>
+
+	<div class="test" pin="content" >
+	</div>
+
+
+	<div class="centerer" tabindex="1">
+		<span class="left_position">left: ((posl.toString().slice(0,8)))px</span>
+	</div>
+
+	<div class="centerer">
+		<span class="top_position">top:((post.toString().slice(0,8)))px</span>
+	</div>
+
+	<style>
+
+		.centergrab{
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			top:0px;
+			left:0px;
+			z-index: 0
+		}
+
+		.test{
+			position: absolute;
+			pointer-events: none;
+		}
+
+		#tl{
+			top:-4px;
+			left:-4px;
+		}
+
+		#tr{
+			top:-4px;
+			right:-4px;
+		}
+
+		#bl{
+			bottom:-4px;
+			left:-4px;
+		}
+		
+
+		#br{
+			bottom:-4px;
+			right:-4px;
+		}
+
+		.left_position{
+			font-size: 14px;
+			padding: 3px;
+			position: absolute;
+			top:-40px;
+			background-color: black;
+			color:white;
+		}
+
+		.top_position{
+			font-size: 14px;
+			padding: 3px;
+			position: absolute;
+			top:-10px;
+			left:-80px;
+			justify-content: right;
+			background-color: black;
+			color:white;
+		}
+
+		.center_position{
+			font-size: 14px;
+			padding: 3px;
+			position: relative;
+			width:80px;
+			margin: auto;
+			top:80px;
+			justify-content: right;
+			background-color: rgb(20,110,210);
+			border:  2px solid rgb(190,190,190);
+			border-radius: 8px;
+			color:white;
+		}
+	</style>
+</scope>
+
+

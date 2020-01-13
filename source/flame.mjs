@@ -42,6 +42,20 @@ function initializeWick(wick, options) {
 async function initializeRadiate(radiate, options) {
 	const HIDDEN = true;
 
+	const style = document.createElement("style");
+
+	style.innerHTML = `
+		.flame_component{
+			border: 2px solid blue;
+		}
+
+		.flame_scope{
+			border: 2px solid blue;
+		}
+	`;
+
+	document.head.appendChild(style);
+
 	/* After radiate loads, prime the editor environement. */
 
 	radiate.loaded = async (presets, router) => {

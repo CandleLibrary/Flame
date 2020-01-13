@@ -52,9 +52,7 @@ export default function(env) {
         ui.input = ui.input.handle("start", e, env, data);
     });
 
-
     ele.addEventListener("pointerdown", e => {
-
         data.dx = 0;
         data.dy = 0;
         data.x = e.x;
@@ -65,8 +63,8 @@ export default function(env) {
 
         if(e.button == 1)
             ui.input = ui.input.handle("start", e, env, data);
-        //else 
-            //ui.input.handle("end", e, env, data);
+        else 
+            ui.input.handle("start", e, env, data);
     });
 
     ele.addEventListener("pointerup", e => {
@@ -92,6 +90,8 @@ export default function(env) {
         data.x += e.movementX;
         data.y += e.movementY;
         old_click_time = -Infinity;
+        
+        ui.input.handle("hover", e, env, data);
     });
 
     function updatePointer() {

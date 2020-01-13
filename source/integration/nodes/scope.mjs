@@ -25,20 +25,29 @@ export default function(prototype, env) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
+                let scp = scope;
+                for (const s of scope.scopes) {
+                    if (s.ast == this) {
+                        scp = s;
+                    }
+                }
 
                 this.replacing_element = element;
 
                 const node = element.parentNode;
 
-                const model = scope.model 
+                const model = scp.model;
 
-                this.remount(element, scope, presets, slots, pinned);
+                this.remount(element, scp, presets, slots, pinned);
 
-                node.appendChild(element);
+                //node.replaceChild(scp.ele, element);
+                //node.appendChild(element);
 
-                scope.load(model);
+                scp.load(model);
+               // / scp.reloadFromHTML();
 
-                scope.reloadFromHTML();
+                if (scope !== scp);
+                scope.addScope(scp);
 
                 return true;
             }
@@ -50,9 +59,10 @@ export default function(prototype, env) {
                 //rebuild children
                 const children = (element) ? element.childNodes : [];
 
-                for (let i = 0; i < this.children.length; i++) {
+                for (let i = 0, j = 0; i < this.children.length; i++) {
                     const node = this.children[i];
-                    node.buildExisting(element, scope, presets, slots, pinned, win, css);
+                    if (node.buildExisting(children[j], scope, presets, slots, pinned, win, css))
+                        j++;
                 }
             }
         }
@@ -60,14 +70,21 @@ export default function(prototype, env) {
         return true;
     };
 
-    prototype.remount = function(element, scope, presets, slots, pinned){
+    prototype.remount = function(element, scope, presets, slots, pinned) {
+        /* Remove established taps, scopes, ios, and containers */
 
-        scope.purge();
+        for (const tap of scope.taps.values())
+            tap.destroy();
 
-        element.innerHTML = "";
+        while (scope.scopes[0])
+            scope.scopes[0].destroy();
+
+        // Reset element and rebuild.
+
+       element.innerHTML = "";
 
         if (this.HAS_TAPS)
-            this.createRuntimeTaplist(scope)
+            this.createRuntimeTaplist(scope);
 
         scope._model_name_ = this.model_name;
         scope._schema_name_ = this.schema_name;
@@ -75,6 +92,8 @@ export default function(prototype, env) {
         //Reset pinned
         pinned = {};
 
-        return element_prototype.mount.call(this, null, scope, presets, slots, pinned);
-    }
+       const ele = element_prototype.mount.call(this, null, scope, presets, slots, pinned);
+
+       return ele;
+    };
 }

@@ -55,8 +55,6 @@ export default class ElementDraw extends Default {
         let x = x2 - x1;
         let y = y2 - y1;
 
-        console.log(x1,y1,x2,y2)
-
         if(Math.sqrt(x*x+y*y) < 70.711)
             return Handler.default;
         

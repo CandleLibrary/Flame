@@ -14,8 +14,8 @@ import flame_environment from "./interface/environment.mjs";
 
 	conform flame.initialization
 */
-export default function initializer (cfw_framework, options){
-	switch(cfw_framework.type){
+export default function initializer(cfw_framework, options) {
+	switch (cfw_framework.type) {
 		case "cfw.lantern":
 			return initializeLantern(cfw_framework, options);
 		case "cfw.radiate":
@@ -27,7 +27,7 @@ export default function initializer (cfw_framework, options){
 	}
 }
 
-function initializeWick(wick, options){
+function initializeWick(wick, options) {
 	const HIDDEN = true;
 
 	const env = flame_environment(options);
@@ -35,34 +35,40 @@ function initializeWick(wick, options){
 	env.wick = wick;
 
 	build_editor_environment(env, document.body, HIDDEN);
-	
+
 	wick_component_integration(wick, env);
 }
 
-async function initializeRadiate(radiate, options){
+async function initializeRadiate(radiate, options) {
 	const HIDDEN = true;
 
-	const env = flame_environment(options, radiate.wick, radiate);
+	/* After radiate loads, prime the editor environement. */
 
-	wick_component_integration(radiate.wick, env);
-	
-	await wick_element_integration(radiate.wick, env);
-	
-	radiate_integrate(radiate, env);
-	
-	build_editor_environment(env, document.body, HIDDEN);
+	radiate.loaded = async (presets, router) => {
+
+		const env = flame_environment(options, radiate.wick, radiate);
+
+		wick_component_integration(radiate.wick, env);
+
+		await wick_element_integration(radiate.wick, env);
+
+		build_editor_environment(env, document.body, HIDDEN);
+		
+		radiate_integrate(env, router, presets);
+	};
 }
 
-function initializeLantern(lantern){
+function initializeLantern(lantern) {
 	debugger;
 	//convert the wick export into a flamed version. Define what "Flamed" Means
 	//convert the radiate export into a flamed version.
 }
 
-if(window)
-window.addEventListener("load", ()=>{
-	if(radiate)
-		initializeRadiate(radiate);
-	else if(wick)
-		initilizeWick(wick);
-});
+
+const r = typeof radiate !== "undefined" ? radiate : null,
+	w = typeof wick !== "undefined" ? wick : null;
+
+if (r)
+	initializeRadiate(r, {});
+else if (w)
+	initializeWick(w, {});

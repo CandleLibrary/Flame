@@ -8,12 +8,13 @@
 	(( css_selectors ))<br/>
 
 	<input type="text" pin="css_value">
+	
 	<button onclick=((add_css_value))>submit</button>
 
 	<textarea value=((component_info)(changed))></textarea>
 
 	<script on=((changed))>
-		env.ui.comp.active.component.scope.ast.reparse(changed);
+		env.ui.comp.active.element.wick_node.reparse(changed);
 	</script>
 
 
@@ -81,7 +82,7 @@
 
 	<script on=((widget))>
 
-		component_info = env.ui.comp.active.component.scope.ast.toString();
+		component_info = env.ui.comp.active.element.wick_node.toString();
 
 		const docs = env.data.docs;
 		let d = [];

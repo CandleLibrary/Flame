@@ -59,6 +59,7 @@ export default function(prototype, env) {
     };
 
     prototype.reparse = function(text) {
+        text =  text.substring(text.indexOf("<"), text.lastIndexOf(">")+1);
 
         return env.wick(text).pending.then(comp => {
 
@@ -66,8 +67,9 @@ export default function(prototype, env) {
 
             for(const name in ast)
                 this[name] = ast[name];
-            
+
             this.BUILT = true;
+            
             this.prepRebuild(false, true);
             this.rebuild();
         }).catch(e=>{
@@ -78,9 +80,7 @@ export default function(prototype, env) {
     // Rebuild all sources relying on this node
     prototype.rebuild = function(win = window) {
 
-
         if (this.observing_scopes) {
-
             for (let i = 0; i < this.observing_scopes.length; i++) {
                 try {
                     this.observing_scopes[i].rebuild(this.observing_scopes[i].window);
@@ -119,12 +119,12 @@ export default function(prototype, env) {
 
                 if (this.CHANGED & 8) {
                     if (element) {
-                        element.parentElement.insertBefore(ele, element);
+                        element.parentNode.insertBefore(ele, element);
                     } else
                         parent_element.appendChild(ele);
                     return true;
                 } else {
-                    element.parentElement.replaceChild(ele, element);
+                    element.parentNode.replaceChild(ele, element);
                     return true;
                 }
 
@@ -138,9 +138,12 @@ export default function(prototype, env) {
 
                 const children = (element) ? element.childNodes : [];
                 
-                for (let i = 0; i < this.children.length; i++) {
+                for (let i = 0, j = 0; i < this.children.length; i++) {
                     const node = this.children[i];
-                    node.buildExisting(element, scope, presets, slots, pinned, win, css);
+                    
+                    if(node.buildExisting(children[j], scope, presets, slots, pinned, win, css))
+                        j++;
+                    
                 }
             }
         }

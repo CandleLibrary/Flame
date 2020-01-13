@@ -1,13 +1,15 @@
 import UI_overlay_controller from "../component/ui_overlay_controller.mjs";
 import UI_toolbar_controller from "../component/ui_toolbar_controller.mjs";
 import UI_header_controller from "../component/ui_header_controller.mjs";
+import UI_html_controller from "../component/ui_html_controller.mjs";
 import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
 import Browser_Input_Handler from "./input_handler/default.mjs";
 import css_integrations from "../integration/css.integration.mjs";
+import createEditorButton from "./editor_button.mjs";
 
-export default function(env, html_element, INITIALIZED_HIDDEN = true) {
+export default function(env, html_element, INITIALIZED_HIDDEN = true) { 
 
     const view = (env.ui.main_view = document.createElement("div"));
 
@@ -24,6 +26,9 @@ export default function(env, html_element, INITIALIZED_HIDDEN = true) {
     env.ui.input = new Browser_Input_Handler(env);
     env.ui.input_engine = new Browser_input_engine(env, env.ui.ui_view, env.ui.comp_view);
 
+     //Create an activator button that will allow the flame environment to open and close
+    createEditorButton(html_element, env);
+
     env.ui.setState = function(interfc = env.ui.interface, comp = env.ui.comp) {
         env.ui.comp = comp;
         interfc.activate(comp);
@@ -34,6 +39,7 @@ export default function(env, html_element, INITIALIZED_HIDDEN = true) {
         .addController(new UI_overlay_controller(env, "/@ui/basic.html"))
         .addController(new UI_header_controller(env, "/@ui/header_toolbar.html"))
         //.addController(new UI_toolbar_controller(env, "/@ui/general_toolbar.html"))
+        .addController(new UI_html_controller(env, "/@ui/html_toolbar.html"))
         ,comp_state(env)
     );
 

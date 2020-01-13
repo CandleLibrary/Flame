@@ -30,6 +30,8 @@ export default function(prototype, element_prototype, env) {
 
             }
         }
+
+        return true;
     };
     prototype.prepRebuild = element_prototype.prepRebuild;
     prototype.resetRebuild = element_prototype.resetRebuild;

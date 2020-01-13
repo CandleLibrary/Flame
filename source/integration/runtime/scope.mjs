@@ -11,7 +11,7 @@ export default function(prototype, env) {
     prototype.reloadFromHTML = function(){
         if(this.parent)
             this.parent.updatedScope();
-    }
+    };
 
     prototype.loadCSS = function(element = this.ele, CSS = this.css) {
 

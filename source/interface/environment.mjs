@@ -3,7 +3,9 @@ import DocumentManager from "../system/document/doc_manager.mjs";
 import Poject from "../system/project/project.mjs";
 import css_Manager from "../system/css/css_manager.mjs";
 import * as actions from "./actions/action.mjs";
-/** Creates and returns an environment  **/
+
+
+/** Creates and returns an environment object **/
 export default function (options, wick = null, radiate = null) {
 
 	if(radiate)

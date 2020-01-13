@@ -76,7 +76,8 @@ export function CREATE_VIEW_COMPONENT(env, doc, px, py) {
     return comp;
 }
 
-export function CREATE_COMPONENT(env, doc, px, py) {
+export function CREATE_COMPONENT(env, doc, px, py, pw, ph) {
+    
     let comp = null;
 
     if (doc instanceof Document) {
@@ -103,6 +104,8 @@ export function CREATE_COMPONENT(env, doc, px, py) {
 
     comp.x = px;
     comp.y = py;
+    comp.width = pw;
+    comp.height = ph;
 
     return comp;
 }

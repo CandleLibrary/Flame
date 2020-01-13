@@ -13,6 +13,7 @@ import {
 //Toolbars
 import general_toolbar from "./data/general_toolbar.html";
 import header_toolbar from "./data/header_toolbar.html";
+import html_toolbar from "./data/html_toolbar.html";
 
 //Overlays
 import basic from "./data/basic.html";
@@ -30,6 +31,7 @@ import css_font_family_handler from "./data/css_font_family_handler.html";
 const internal = {
     header_toolbar,
     general_toolbar,
+    html_toolbar,
     basic,
     border,
     element_draw,

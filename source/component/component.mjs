@@ -242,4 +242,9 @@ export default class Component {
             }
         }
     }
+
+    unmount(){
+        if(this.frame.parentNode)
+            this.frame.parentNode.removeChild(this.frame);
+    }
 }

@@ -65,7 +65,9 @@ export default function ui_state(env, ui_element, view_element, controllers = []
                 }
 
             } else {
-                hover = null;
+
+                if(hover_component)
+                    hover_component.unmount();
             }
         },
 

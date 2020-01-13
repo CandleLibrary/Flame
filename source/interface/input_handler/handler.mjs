@@ -1,3 +1,8 @@
+import ui_controller from "../../component/ui_controller.mjs";
+
+/*
+    The base level input handler.
+*/
 export default class Handler {
 
     handle(type, event, ui_manager, target) {
@@ -25,13 +30,56 @@ export default class Handler {
         }
     }
 
+    hover(event, env, data) {
+        if (data) {
+            let component = null;
+
+            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
+
+            if (element && element.component) {
+                while (!element.component) {
+                    element = element.parentNode;
+                }
+
+                if (element.component) {
+
+                    component = element.component;
+
+                    if (component && !(component instanceof ui_controller) ) {
+
+                        if (component.type == "css") {
+                            element = component.element;
+                        } else if (element.shadowRoot) {
+                            element = element.shadowRoot.elementFromPoint(data.x, data.y);
+                        }
+
+                        if (element !== env.ui.interface.widget.element)
+                            env.ui.setHover(element, component);
+
+
+                        return Handler.default;
+                    }
+                }
+            }
+
+            env.ui.ui_view.style.display = "";
+        }
+
+        console.log(1)
+        
+        env.ui.setHover();
+        
+
+        return Handler.default;
+    }
+
     //Pointer end
     end(event, env, data) {
 
-       // return Handler.default;
+        // return Handler.default;
         if (data && event.button == 0 && data.time_since_last_click < 100) {
 
-           let component = null;
+            let component = null;
 
             env.ui.ui_view.style.pointerEvents = "none";
 
@@ -65,40 +113,6 @@ export default class Handler {
         return Handler.default;
     }
 
-    hover(event, env, data){
-        if (data) {
-            let component = null;
-
-            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
-
-            if (element && element.component) {
-                while (!element.component) {
-                    element = element.parentNode;
-                }
-
-                if (element.component) {
-
-                    component = element.component;
-
-
-                    if (component.type == "css") {
-                        element = component.element;
-                    } else if(element.shadowRoot){
-                        element = element.shadowRoot.elementFromPoint(data.x, data.y);
-                    }
-                    
-                    env.ui.setHover(element, component);
-                }
-            }
-
-            env.ui.ui_view.style.display = "";
-        }else{
-            env.ui.setHover();
-        }
-
-        return Handler.default;
-    }
-
     //Pointer start
     start(event, env, data) {
 
@@ -126,8 +140,8 @@ export default class Handler {
                     }
 
                     data.time_since_last_click = Infinity;
-                    
-                    env.ui.setState(undefined, env.ui.comp.setActive({component, element }));
+
+                    env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
                 }
             }
 

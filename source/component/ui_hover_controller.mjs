@@ -79,7 +79,12 @@ export default class ui_hover_controller extends ui_controller {
        // this.update(this.env);
     }
 
-    unmount() {}
+    
+
+    unmount(){
+        if(this.frame.parentNode)
+            this.frame.parentNode.removeChild(this.frame);
+    }
 
     documentReady(ast) {
 

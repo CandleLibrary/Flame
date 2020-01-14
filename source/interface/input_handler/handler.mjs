@@ -64,8 +64,6 @@ export default class Handler {
 
             env.ui.ui_view.style.display = "";
         }
-
-        console.log(1)
         
         env.ui.setHover();
         

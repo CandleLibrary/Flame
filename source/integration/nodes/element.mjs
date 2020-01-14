@@ -6,7 +6,7 @@ export default function(prototype, env) {
      * This node allows an existing element to be removed from DOM trees that were created from the Wick AST. 
      */
     class DeleteNode extends prototype.constructor {
-        
+
         buildExisting(element) {
             element.parentElement.removeChild(element);
             return false;
@@ -18,25 +18,25 @@ export default function(prototype, env) {
 
             if (this.parent)
                 this.parent.removeChild(this);
-            
+
             this.nxt = nxt;
         }
     }
-    
+
     let id = 0;
 
     prototype.constructor.id = 0;
 
     prototype.ReparseConstructor = prototype.constructor;
 
-    const  loadAndParseUrl = prototype.loadAndParseUrl;
+    const loadAndParseUrl = prototype.loadAndParseUrl;
 
-    prototype.addAttribute = function(name, value){
+    prototype.addAttribute = function(name, value) {
         let attribute = new env.wick.nodes.attribute([name, null, value + ""]);
         this.attribs.set(name, attribute);
-    }
+    };
 
-    prototype.loadAndParseUrl = async function(e){
+    prototype.loadAndParseUrl = async function(e) {
         return loadAndParseUrl.call(this, e);
     };
 
@@ -59,20 +59,20 @@ export default function(prototype, env) {
     };
 
     prototype.reparse = function(text) {
-        text =  text.substring(text.indexOf("<"), text.lastIndexOf(">")+1);
+        text = text.substring(text.indexOf("<"), text.lastIndexOf(">") + 1);
 
         return env.wick(text).pending.then(comp => {
 
             const ast = comp.ast;
 
-            for(const name in ast)
+            for (const name in ast)
                 this[name] = ast[name];
 
             this.BUILT = true;
-            
+
             this.prepRebuild(false, true);
             this.rebuild();
-        }).catch(e=>{
+        }).catch(e => {
             return e;
         });
     };
@@ -81,9 +81,9 @@ export default function(prototype, env) {
     prototype.rebuild = function(win = window) {
 
         if (this.observing_scopes) {
-            for (let i = 0; i < this.observing_scopes.length; i++) {
+            for (let i = 0, l = this.observing_scopes.length; i < l; i++) {
                 try {
-                    this.observing_scopes[i].rebuild(this.observing_scopes[i].window);
+                    this.observing_scopes[i].rebuild(i == l-1); // Let the rebuild method know it's time to cleanup after the last observing scope is updated. 
                 } catch (e) {
                     console.error(e);
                 }
@@ -99,9 +99,9 @@ export default function(prototype, env) {
     };
 
 
-    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css) {
+    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css, FINAL_UPDATE = false) {
 
-        if (true || this.CHANGED !== 0) {
+        if (this.CHANGED & 3) {
 
             if (element)
                 element.style.cssText = "";
@@ -118,35 +118,36 @@ export default function(prototype, env) {
                 let ele = span.firstChild;
 
                 if (this.CHANGED & 8) {
-                    if (element) {
+                    if (element) 
                         element.parentNode.insertBefore(ele, element);
-                    } else
+                     else
                         parent_element.appendChild(ele);
-                    return true;
-                } else {
+                } else 
                     element.parentNode.replaceChild(ele, element);
-                    return true;
-                }
+            
+            } else {
 
-            }
+                if (this._merged_)
+                    this._merged_.buildExisting(element, source, presets, taps);
 
-            if (this._merged_)
-                this._merged_.buildExisting(element, source, presets, taps);
+                if (this.CHANGED & 2) {
+                    //rebuild children
 
-            if (true || this.CHANGED & 2) {
-                //rebuild children
+                    const children = (element) ? element.childNodes : [];
 
-                const children = (element) ? element.childNodes : [];
-                
-                for (let i = 0, j = 0; i < this.children.length; i++) {
-                    const node = this.children[i];
-                    
-                    if(node.buildExisting(children[j], scope, presets, slots, pinned, win, css))
-                        j++;
-                    
+                    for (let i = 0, j = 0; i < this.children.length; i++) {
+                        const node = this.children[i];
+
+                        if (node.buildExisting(children[j], scope, presets, slots, pinned, win, css, FINAL_UPDATE))
+                            j++;
+
+                    }
                 }
             }
         }
+
+        if(FINAL_UPDATE)
+            this.CHANGED = 0;
 
         return true;
     };
@@ -154,11 +155,11 @@ export default function(prototype, env) {
     prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false) {
 
         this.CHANGED =
-            this.CHANGED |
-            (!child) |
-            ((!!child) << 1) |
-            ((!!(REBUILT || INSERTED)) << 2) |
-            ((!!INSERTED) << 3);
+            this.CHANGED |  
+            (!child) |                          //1 : Own element needs to be updated 
+            ((!!child) << 1) |                  //2 : A child node needs to updated
+            ((!!(REBUILT || INSERTED)) << 2) |  //4 : Own element needs to rebuilt or have a sub element inserted
+            ((!!INSERTED) << 3);                //8 : Own element needs to be inserted as a new element
 
         if (this.parent)
             this.parent.prepRebuild(true);
@@ -185,7 +186,7 @@ export default function(prototype, env) {
     };
 
     prototype._mergeComponent_ = function() {
-        let component = this._presets_.components[this.tag];
+        const component = this._presets_.components[this.tag];
 
         if (component) {
 

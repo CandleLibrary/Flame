@@ -18,10 +18,11 @@ export default function(prototype, env) {
 
         return scope.ele;
     };
+    /*
+    */
+    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css, FINAL_UPDATE = false) {
 
-    prototype.buildExisting = function(element, scope, presets = this.presets, slots = {}, pinned = {}, win = window, css = this.css) {
-
-        if (true && this.CHANGED !== 0) {
+        if (this.CHANGED & 3) {
             //IO CHANGE 
             //Attributes
             if (this.CHANGED & 4) {
@@ -55,17 +56,20 @@ export default function(prototype, env) {
             if (this._merged_)
                 this._merged_.buildExisting(element, source, presets, taps);
 
-            if (true || this.CHANGED & 2) {
+            if (this.CHANGED & 2) {
                 //rebuild children
                 const children = (element) ? element.childNodes : [];
 
                 for (let i = 0, j = 0; i < this.children.length; i++) {
                     const node = this.children[i];
-                    if (node.buildExisting(children[j], scope, presets, slots, pinned, win, css))
+                    if (node.buildExisting(children[j], scope, presets, slots, pinned, win, css, FINAL_UPDATE))
                         j++;
                 }
             }
         }
+
+        if(FINAL_UPDATE)
+            this.CHANGED = 0;
 
         return true;
     };

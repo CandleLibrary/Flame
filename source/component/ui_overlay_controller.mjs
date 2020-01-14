@@ -70,6 +70,8 @@ export default class ui_overlay_controller extends ui_controller {
         this.IS_COMPONENT = (active.element) == active.component.frame;
         this.IS_ON_MASTER = true;
 
+        this.element.style.zIndex = -1;
+
         if (this.frame.parentNode != element)
             element.appendChild(this.frame);
 

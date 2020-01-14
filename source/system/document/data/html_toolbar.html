@@ -7,7 +7,8 @@
 	</script>
 
 	<script on=((widget))>
-
+		if(env.ui.comp.active.element.wick_node){
+			
 		component_info = env.ui.comp.active.element.wick_node.toString();
 
 		const docs = env.data.docs;
@@ -49,6 +50,7 @@
 		}
 
 		this.element = element;
+		}
 	</script>
 
 	<style>

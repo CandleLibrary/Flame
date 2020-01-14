@@ -47,7 +47,7 @@ export default async function(env, router, presets) {
 
 				for (const comp of ele.components) {
 					ele_comp.ast.children.push(comp.scope.ast);
-					comp.scope.ast.parent = app.ast;
+					comp.scope.ast.parent = ele_comp.ast;
 				}
 			}
 

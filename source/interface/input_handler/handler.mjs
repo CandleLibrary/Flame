@@ -130,7 +130,6 @@ export default class Handler {
 
                     component = element.component;
 
-
                     if (component.type == "css") {
                         element = component.element;
                     } else {

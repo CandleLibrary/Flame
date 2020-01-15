@@ -14,8 +14,6 @@ export default function ui_state(env, ui_element, view_element, controllers = []
     function adjustInterface() {
         env.ui.comp_view.style.transform = transform;
         out.updateOverlay();
-        //if (overlay)
-        //    overlay.render(transform);
     }
 
     const public_transform = new Proxy(transform, {
@@ -78,18 +76,19 @@ export default function ui_state(env, ui_element, view_element, controllers = []
                 controllers.forEach(c => void(c.type == "toolbar" ? c.mount(ui_element) : null));
                 env.ui.interface = this;
             }
-
-            if (comps !== comp) {
-                view_element.innerHTML = "";
+if (comps !== comp) {
+    view_element.innerHTML = "";
                 comp.components.forEach(c => c.mount(view_element));
                 comps = comp;
             }
 
             if (comp.active) {
                 if (!widget)
-                    widget = new Element_box(comp.active.element);
-                else
+                    widget = new Element_box(comp.active.element, comp.active.component);
+                else{
+                    widget.window = comp.active.component;
                     widget.element = comp.active.element;
+                }
 
                 for (const controller of controllers) {
                     if (controller.type == "overlay") {
@@ -115,8 +114,14 @@ export default function ui_state(env, ui_element, view_element, controllers = []
         },
 
         update() {
-            if (widget)
+            
+
+            if (widget){
+                if(widget.element.replacement){
+                    widget.element = widget.element.replacement;
+                }
                 widget.update();
+            }
 
             for (const controller of controllers) {
                 if (controller.type == "hover") {

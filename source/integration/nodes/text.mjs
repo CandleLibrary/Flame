@@ -35,5 +35,5 @@ export default function(prototype, element_prototype, env) {
     };
     prototype.prepRebuild = element_prototype.prepRebuild;
     prototype.resetRebuild = element_prototype.resetRebuild;
-    prototype.updated = function() {};
+    prototype.destruct = prototype.updated = function() {};
 }

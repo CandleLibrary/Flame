@@ -14,9 +14,10 @@ function getOffsetPos(element) {
 
 export default class ElementBox {
 
-    constructor(element) {
+    constructor(element, w = window) {
         //Caching the global transform object for reuse.
         this.element = element;
+        this.window = w;
 
         this.margin_l = 0;
         this.margin_r = 0;
@@ -42,7 +43,7 @@ export default class ElementBox {
         this.real_pos_y = 0;
     }
 
-    update(element = this.element) {
+    update(element = this.element, window = this.window) {
 
         this.element = element;
 

@@ -108,7 +108,9 @@ export {
     BORDERRADIUSBL,
     BORDERRADIUSBR,
 } from "./border";
-
+export {
+    UPDATE_ELEMENT_OUTERHTML
+} from "./html";
 export {
     SETCSSPROP
 } from "./set_css.mjs";

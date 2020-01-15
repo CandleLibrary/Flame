@@ -6,6 +6,7 @@ export default function(prototype, env) {
     prototype.rebuild = function(FINAL_UPDATE = false) {
         this.ast.buildExisting(this.ele, this, this.presets, this.taps, {}, this.window, undefined, FINAL_UPDATE);
         this.loadCSS();
+        this.updateCachedData();
     };
 
     prototype.reloadFromHTML = function(){

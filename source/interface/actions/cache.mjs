@@ -16,7 +16,7 @@ class ComputedStyle{
     constructor(component, element, cache){
         this.cache = cache;
         this._computed = component.window.getComputedStyle(element);
-        this.brect = element.getBoundingClientRect()
+        this.brect = element.getBoundingClientRect();
     }
 
     get width(){

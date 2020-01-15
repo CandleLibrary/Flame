@@ -1,5 +1,3 @@
-import whind from "@candlefw/whind";
-
 export default function(prototype, env) {
 
     /**
@@ -14,10 +12,11 @@ export default function(prototype, env) {
 
         resetRebuild() {
 
-            let nxt = this.nxt;
+            const nxt = this.nxt;
 
-            if (this.parent)
+            if (this.parent) {
                 this.parent.removeChild(this);
+            }
 
             this.nxt = nxt;
         }
@@ -32,7 +31,7 @@ export default function(prototype, env) {
     const loadAndParseUrl = prototype.loadAndParseUrl;
 
     prototype.addAttribute = function(name, value) {
-        let attribute = new env.wick.nodes.attribute([name, null, value + ""]);
+        const attribute = new env.wick.nodes.attribute([name, null, value + ""]);
         this.attribs.set(name, attribute);
     };
 
@@ -61,7 +60,7 @@ export default function(prototype, env) {
     prototype.reparse = function(text) {
         text = text.substring(text.indexOf("<"), text.lastIndexOf(">") + 1);
 
-        return env.wick(text).pending.then(comp => {
+        return env.wick(text).pending.then(async comp => {
 
             const ast = comp.ast;
 
@@ -72,8 +71,12 @@ export default function(prototype, env) {
 
             this.prepRebuild(false, true);
             this.rebuild();
+
+            return true;
         }).catch(e => {
+            return false;
             return e;
+
         });
     };
 
@@ -83,7 +86,7 @@ export default function(prototype, env) {
         if (this.observing_scopes) {
             for (let i = 0, l = this.observing_scopes.length; i < l; i++) {
                 try {
-                    this.observing_scopes[i].rebuild(i == l-1); // Let the rebuild method know it's time to cleanup after the last observing scope is updated. 
+                    this.observing_scopes[i].rebuild(i == l - 1); // Let the rebuild method know it's time to cleanup after the last observing scope is updated. 
                 } catch (e) {
                     console.error(e);
                 }
@@ -111,6 +114,10 @@ export default function(prototype, env) {
             //Attributes
             if (this.CHANGED & 4) {
 
+                this.destruct(scope);
+
+                scope.discardElement(element);
+
                 const span = document.createElement("span");
 
                 this.mount(span, scope, presets, slots, pinned);
@@ -118,13 +125,18 @@ export default function(prototype, env) {
                 const ele = span.firstChild;
 
                 if (this.CHANGED & 8) {
-                    if (element) 
+                    if (element)
                         element.parentNode.insertBefore(ele, element);
-                     else
+                    else
                         element.appendChild(ele);
-                } else 
+                } else
                     element.parentNode.replaceChild(ele, element);
-            
+
+                if (element) {
+                    //clear off any scopes whoes target is an element or sub element of the element
+                    element.replacement = ele;
+                }
+
             } else {
 
                 if (this._merged_)
@@ -146,7 +158,7 @@ export default function(prototype, env) {
             }
         }
 
-        if(FINAL_UPDATE)
+        if (FINAL_UPDATE)
             this.CHANGED = 0;
 
         return true;
@@ -155,11 +167,12 @@ export default function(prototype, env) {
     prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false, CSS = false) {
 
         this.CHANGED =
-            this.CHANGED |  
-            (!child) |                          //1 : Own element needs to be updated 
-            ((!!child) << 1) |                  //2 : A child node needs to updated
-            ((!!(REBUILT || INSERTED)) << 2) |  //4 : Own element needs to rebuilt or have a sub element inserted
-            ((!!INSERTED) << 3);                //8 : Own element needs to be inserted as a new element
+            this.CHANGED |
+            (!child) | //1 : Own element needs to be updated 
+            ((!!child) << 1) | //2 : A child node needs to updated
+            ((!!(REBUILT || INSERTED)) << 2) | //4 : Own element needs to rebuilt or have a sub element inserted
+            ((!!INSERTED) << 3) | //8 : Own element needs to be inserted as a new element
+            ((!!CSS) << 4); //16 : CSS data updated.
 
         if (this.parent)
             this.parent.prepRebuild(true);
@@ -231,6 +244,12 @@ export default function(prototype, env) {
             for (let i = 0; i < this.views.length; i++)
                 this.views[i].update(this);
 
+    };
+
+    prototype.destruct = function(scope) {
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].destruct(scope);
+        }
     };
 
     prototype.BUILT = false;

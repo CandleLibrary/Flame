@@ -32,7 +32,7 @@ export default class ui_toolbar_controller extends ui_controller {
     }
 
     update(env){
-        this.scope.update({widget:env.ui.interface.widget, env});
+        this.scope.update({widget:env.ui.interface.widget, env:env});
     }
 
     load(doc) {

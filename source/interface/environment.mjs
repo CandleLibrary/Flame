@@ -33,7 +33,9 @@ export default function (options, wick = null, radiate = null) {
 
 		radiate,
 
-		presets: null
+		presets: null,
+
+		getCache : (...d) => actions.CacheFactory(...d)
 	};
 
 	env.css.manager = css_Manager(env);

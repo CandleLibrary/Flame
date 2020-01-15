@@ -1,0 +1,66 @@
+Flame Task Today:
+	Rebuild the activation actions to create a facsimile of the on the screen contents that can be manipulated, instead of targeting individual components.
+		Use outlines to define component start elements. 
+
+	Create a simple button interface that allows activating text editors for HTML, CSS, JS, DATA. 
+
+	If time permits, create save back to file action. 
+
+	Need a way to toggle editors?
+		How- 
+		
+	Enable Element Click/Highlight through
+		Turn element selecton into a single function
+		Use a different method to the information about the current element under consideration 
+			- cache element box areas, for instance, which would require cache invalidation methods
+		Us a method to considere alternatives if the element returned is already selected - 
+			need to keep track of cursor movement to allow z-list click through
+
+	Prevent Highlight from operating when elements are being manipulated
+
+	Prevent incomplete style elements from killing the interface
+
+	Allow bindings to be manipulated
+
+	Setup CSS Editor
+		Renaming class should apply globally
+
+	Setup Data Editor
+	
+	prevent widget event from being thrown twice during element selection
+
+	Prevent movement updates from corrupted CSS values with Infinity and NaN
+
+Notes:
+
+UI_Controllers represent large UI components that can be stacked, presented, and hidden from the users view. Think layers / histogram / and effects panel in Photosop.
+	
+	Objects UI_Controllers Receive
+
+		Widget - Event, When element is selected / updated
+			x, y, 
+		env - the flame environment object
+
+		loading - built_in - see cfw wick compoenent lifecycle events
+
+		changed - event, thrown when a new element is selected
+
+		actions - EVENTS that take on the form (env, component, element, ...[values]) that update the state of the given component / element. See action list
+
+		this.ui
+
+Environment Object
+	UI - Access to ui objects
+		comp - access to component objects
+			active - the active component and elements
+				element - the most active element of the active elements
+				elements - list of active elements [todo]
+				component - the active component
+					local_css - list of all css objects that affect elements of the component
+						see candlefw css style sheets.
+
+
+
+
+
+

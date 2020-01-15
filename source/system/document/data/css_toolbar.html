@@ -1,0 +1,41 @@
+<scope class="main" export="move_action set_control"   style="width:100%;height:100%" element="div" >
+	CSS
+	<textarea class=text value=((css_rules)(changed))></textarea>
+	
+	<script on=((changed))>
+		this.cache.setCSSProp(changed.slice(1,-1));
+		if(env.ui.comp.active.element.wick_node){
+			env.ui.comp.active.element.wick_node.prepRebuild();
+			env.ui.comp.active.element.wick_node.rebuild();
+		}
+	</script>
+
+
+	<script on=((widget))>
+
+		if(env.ui.comp.active.element.wick_node){
+
+			const element = env.ui.comp.active.element;
+			const component = env.ui.comp.active.component;
+			const cache  = env.getCache(env, component, element);
+
+			this.cache = cache;
+
+			css_rules = cache.rules;
+		}
+	</script>
+
+	<style>
+		.text{
+			min-width:250px;
+			min-height:300px;
+		}
+		.main{
+			position: relative;
+			left:0;
+			background-color: white;
+		}
+	</style>
+</scope>
+
+

@@ -1,68 +1,26 @@
 <scope class="main" export="move_action set_control"   style="width:100%;height:100%" element="div" >
-	
+	HTML
 	<textarea class="text" value=((component_info)(changed))></textarea>
 
 	<script on=((changed))>
-		env.ui.comp.active.element.wick_node.reparse(changed);
+		if(env.ui.comp.active.element.wick_node)
+			env.ui.comp.active.element.wick_node.reparse(changed);
 	</script>
 
 	<script on=((widget))>
-		if(env.ui.comp.active.element.wick_node){
-			
-		component_info = env.ui.comp.active.element.wick_node.toString();
-
-		const docs = env.data.docs;
-		let d = [];
-		
-		for(const doc of docs.docs.values()){
-			d.push(doc)
-		}
-
-		documents = d;
-		
-		const component = env.ui.comp.active.component;
-		const element = env.ui.comp.active.element;
-
-		if(element !== this.element && component.local_css && component.local_css[0]){
-			
-			const cs = component.local_css[0];
-
-			if(this.ui){
-				this.ui.destroy();
-			}
-
-			return;
-
-			const stylesheet = new css.stylesheet();
-			
-			([...cs.getApplicableSelectors(element)].map(m => stylesheet.ruleset.rules.push(m.parent) ));
-
-			this.ui = css.ui(stylesheet);
-
-			this.ui.update();
-
-			const ele = document.createElement("div");
-
-			this.ui.mount(ele);
-
-			css_out = ele;
-			css_names = [{name:"top"},{name:"left"}];
-		}
-
-		this.element = element;
-		}
+			component_info = (env.ui.comp.active.element.wick_node) ? 
+				env.ui.comp.active.element.wick_node.toString() : 
+				"";
 	</script>
 
 	<style>
 		.text{
-
-			min-width:160px;
-			min-height: 300px;
-			margin: 20px
+			min-width:250px;
+			min-height:300px;
 		}
 		.main{
 			position: relative;
-			top:300px;
+			top:360px;
 			left:0;
 			background-color: white;
 		}

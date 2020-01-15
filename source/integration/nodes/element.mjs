@@ -111,17 +111,17 @@ export default function(prototype, env) {
             //Attributes
             if (this.CHANGED & 4) {
 
-                let span = document.createElement("span");
+                const span = document.createElement("span");
 
                 this.mount(span, scope, presets, slots, pinned);
 
-                let ele = span.firstChild;
+                const ele = span.firstChild;
 
                 if (this.CHANGED & 8) {
                     if (element) 
                         element.parentNode.insertBefore(ele, element);
                      else
-                        parent_element.appendChild(ele);
+                        element.appendChild(ele);
                 } else 
                     element.parentNode.replaceChild(ele, element);
             
@@ -152,7 +152,7 @@ export default function(prototype, env) {
         return true;
     };
 
-    prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false) {
+    prototype.prepRebuild = function(child = false, REBUILT = false, INSERTED = false, CSS = false) {
 
         this.CHANGED =
             this.CHANGED |  

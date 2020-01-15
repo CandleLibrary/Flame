@@ -1,4 +1,4 @@
-let cache_de_cache = null;
+let global_cache = null;
 
 function getApplicableRules(system, component, element) {
     return system.css.manager.aquireCSS(component, element);
@@ -70,8 +70,8 @@ class Cache {
         this.valueB = 0;
         this.valueC = 0;
         this.valueD = 0;
-        this.next = cache_de_cache;
-        cache_de_cache = this;
+        this.next = global_cache;
+        global_cache = this;
     }
 
     get computed () {
@@ -270,9 +270,9 @@ export function CacheFactory(system, component, element) {
 
     let cache;
 
-    if (cache_de_cache) {
-        cache = cache_de_cache;
-        cache_de_cache = cache_de_cache.next;
+    if (global_cache) {
+        cache = global_cache;
+        global_cache = global_cache.next;
     } else
         cache = new Cache();
 
@@ -283,16 +283,13 @@ export function CacheFactory(system, component, element) {
 
     element.flame_cache = cache;
 
-
-
     return cache;
 }
 
 CacheFactory.clear = function(element){
     
-    if(element.flame_cache){
+    if(element.flame_cache)
         element.flame_cache.destroy();
-    }
 
     element.flame_cache = null;
-}
+};

@@ -14,6 +14,9 @@ import {
 import general_toolbar from "./data/general_toolbar.html";
 import header_toolbar from "./data/header_toolbar.html";
 import html_toolbar from "./data/html_toolbar.html";
+import data_toolbar from "./data/data_toolbar.html";
+import js_toolbar from "./data/js_toolbar.html";
+import css_toolbar from "./data/css_toolbar.html";
 
 //Overlays
 import basic from "./data/basic.html";
@@ -33,6 +36,9 @@ const internal = {
     header_toolbar,
     general_toolbar,
     html_toolbar,
+    data_toolbar,
+    js_toolbar,
+    css_toolbar,
     basic,
     hover,
     border,
@@ -57,9 +63,8 @@ export default class DocumentManager {
         this.diffs = [];
         this.diff_step = 0;
 
-        this.data=
-        {
-            ui : internal   
+        this.data = {
+            ui: internal
         };
 
         this.pending = null;

@@ -66,7 +66,7 @@ export default function ui_state(env, ui_element, view_element, controllers = []
 
             } else {
 
-                if(hover_component)
+                if (hover_component)
                     hover_component.unmount();
             }
         },
@@ -115,7 +115,6 @@ export default function ui_state(env, ui_element, view_element, controllers = []
         },
 
         update() {
-
             if (widget)
                 widget.update();
 
@@ -123,10 +122,10 @@ export default function ui_state(env, ui_element, view_element, controllers = []
                 if (controller.type == "hover") {
                     if (hover)
                         controller.update(env, hover);
-                } else
+                } else {
                     controller.update(env);
+                }
             }
-
         },
 
         get widget() {

@@ -16,8 +16,7 @@ const types = css.types;
  * Actions provide mechanisms for updating an element, document, and component through user input. 
  */
 export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, LINKED = false) {
-    
-  
+ 
     if (IS_COMPONENT) {
         if(!component) debugger;
         component.x += dx;

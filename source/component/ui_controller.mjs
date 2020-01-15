@@ -12,6 +12,8 @@ export default class ui_controller extends Component {
 
         super(env);
 
+        this.component_path = component_path;
+
         if(component_path){
             const doc = env.data.docs.get(env.data.docs.loadFile(component_path));
 
@@ -34,6 +36,10 @@ export default class ui_controller extends Component {
 
         this.LOADED = false;
         
+    }
+
+    toString(){
+        return `[UI Controller : ${this.component_path}]`;
     }
 
     documentReady(ast) {

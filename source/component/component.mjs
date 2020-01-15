@@ -96,16 +96,18 @@ export default class Component {
             this.scope.ast = ast;
             this.rebuild();
         } else {
+            const shadow = this.frame.attachShadow({ mode: 'open' });
+
             this.ast = ast;
             this.scope = this.ast.mount();
             this.scope.parent = this;
             this.ast.setScope(this.scope);
-            let shadow = this.frame.attachShadow({ mode: 'open' });
+
             shadow.appendChild(this.scope.ele);
             shadow.component = this;
+
             this.scope.load();
             this.updateScopeCSS();
-            //this.scope.addObserver(this);
         }
 
         this.scope.window = this.window;

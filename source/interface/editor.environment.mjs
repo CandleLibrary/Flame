@@ -2,7 +2,6 @@ import UI_overlay_controller from "../component/ui_overlay_controller.mjs";
 import UI_toolbar_controller from "../component/ui_toolbar_controller.mjs";
 import UI_hover_controller from "../component/ui_hover_controller.mjs";
 import UI_header_controller from "../component/ui_header_controller.mjs";
-import UI_html_controller from "../component/ui_html_controller.mjs";
 import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
@@ -43,9 +42,10 @@ export default function(env, html_element, INITIALIZED_HIDDEN = true) {
         ui_state(env, env.ui.ui_view, env.ui.comp_view.attachShadow({ mode: 'open' }))
         .addController(new UI_hover_controller(env, "/@ui/hover.html"))
         .addController(new UI_overlay_controller(env, "/@ui/basic.html"))
-        .addController(new UI_header_controller(env, "/@ui/header_toolbar.html"))
-        //.addController(new UI_toolbar_controller(env, "/@ui/general_toolbar.html"))
-        .addController(new UI_html_controller(env, "/@ui/html_toolbar.html"))
+        .addController(new UI_toolbar_controller(env, "/@ui/css_toolbar.html"))
+        .addController(new UI_toolbar_controller(env, "/@ui/data_toolbar.html"))
+        //.addController(new UI_toolbar_controller(env, "/@ui/js_toolbar.html"))
+        .addController(new UI_toolbar_controller(env, "/@ui/html_toolbar.html"))
         ,comp_state(env)
     );
 

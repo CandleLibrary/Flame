@@ -6,8 +6,8 @@ Flame Task Today:
 
 	If time permits, create save back to file action. 
 
-	Need a way to toggle editors?
-		How- 
+	Need a way to toggle editors:
+		How- Make each editor the recipient of a state object that determines the position and display of the editors. Allow other editors to modify this state. Think box widget for the editors. 
 		
 	Enable Element Click/Highlight through
 		Turn element selecton into a single function
@@ -25,7 +25,23 @@ Flame Task Today:
 	Setup CSS Editor
 		Renaming class should apply globally
 
+		Sort Editor by CSS Selectors, allow maximis and minimize of these list. Think google chrome developer tools. Allow a single list that coallates all these values. Allow this coallation to be formed into a new rule with a specific selector for the given element. 
+
+		Create buttons for common actions - Color / Gradients; Image selection; Font family; Position conversion; Grid layouts. 
+
+	Setup HTML Editor
+		Prevent Sub-Scope contents from showing up. Scopes should only be accessed as the top level part of a component. This implies a way to access the scopes/components without using the active component. Create a component gallery. Allow a custom CSS to be applied to these components in the gallery view. 
+
+		Change the Text area into a list of elements that can update the highleted state of the elements. 
+
+
 	Setup Data Editor
+		Create a JSON complaint KEY VALUE system
+		Create a DB connector 
+		Data applies to the Component scope, not to its child elements. Allow models to be created / swapped out for the component to re-initialize around
+
+	Setup JS Editor
+		
 	
 	prevent widget event from being thrown twice during element selection
 

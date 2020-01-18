@@ -9,6 +9,8 @@ export default function ui_state(env, ui_element, view_element, controllers = []
 
     const transform = new(css.types.transform2D)(previous ? previous.transform : undefined);
 
+    let focused_element = null;
+
     const raf = requestAnimationFrame;
 
     function adjustInterface() {
@@ -76,32 +78,45 @@ export default function ui_state(env, ui_element, view_element, controllers = []
                 controllers.forEach(c => void(c.type == "toolbar" ? c.mount(ui_element) : null));
                 env.ui.interface = this;
             }
-if (comps !== comp) {
-    view_element.innerHTML = "";
+            if (comps !== comp) {
+                view_element.innerHTML = "";
                 comp.components.forEach(c => c.mount(view_element));
                 comps = comp;
             }
 
             if (comp.active) {
+
+
                 if (!widget)
                     widget = new Element_box(comp.active.element, comp.active.component);
-                else{
+                else {
                     widget.window = comp.active.component;
                     widget.element = comp.active.element;
                 }
 
-                for (const controller of controllers) {
-                    if (controller.type == "overlay") {
-                        overlay = controller;
+                widget.update();
+
+                const data = { element_selected: {}, env };
+
+                if (comp.active.element !== focused_element) {
+                    
+                    focused_element = comp.active.element;
+
+                    //Update Element Selection
+                    for (const controller of controllers) {
+
+                        if (controller.type == "overlay")
+                            overlay = controller;
+
+                        if (controller.type !== "hover") {
+                            controller.update(env);
+                            controller.updateElementSelection(data);
+                        }
                     }
                 }
 
-                if (overlay) {
+                if (overlay)
                     overlay.mount(ui_element, comp.active);
-                }
-
-                this.update();
-
             }
         },
 
@@ -114,10 +129,10 @@ if (comps !== comp) {
         },
 
         update() {
-            
 
-            if (widget){
-                if(widget.element.replacement){
+
+            if (widget) {
+                if (widget.element.replacement) {
                     widget.element = widget.element.replacement;
                 }
                 widget.update();

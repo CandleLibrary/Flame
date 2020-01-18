@@ -106,16 +106,17 @@ export class Document {
 
     bind(object) {
         if (this.LOADED && object.documentReady(this.data) === false) return;
-        this.observers.push(object);
+            this.observers.push(object);
     }
 
-    async alert() {
+    alert() {
         return new Promise(res => {
-            this.bind({ documentReady: () => res() })
-        })
+            this.bind({ documentReady: () => res() });
+        });
     }
 
     alertObservers() {
+
         if (this.observers) {
             for (let i = 0; i < this.observers.length; i++) {
                 if (this.observers[i].documentReady(this.data) === false) {

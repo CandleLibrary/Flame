@@ -1,5 +1,6 @@
-<scope class="main" export="move_action set_control"   style="width:100%" element="span" >
+<scope component=css_ui_length class="main" export="move_action set_control"   style="width:100%" element="span" >
 	((value_output.toString().slice(0, 1000)))((unit)) 
+	
 	<span onpointerdown=((decrease))> dn </span>
 	<span onpointerdown=((increase))> up </span>
 
@@ -18,12 +19,12 @@
 	</script>
 
 	<script on=((increase))>
-		segment.css_val = value+1+value.unit;
+		segment.css_val = value+1+value.unit;		
 		segment.update();
 	</script>
 
 	<script on=((decrease))>
-		segment.css_val = value-1+value.unit;;
+		segment.css_val = value-1+value.unit;
 		segment.update();
 	</script>
 

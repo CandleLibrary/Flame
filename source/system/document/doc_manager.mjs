@@ -16,7 +16,10 @@ import header_toolbar from "./data/header_toolbar.html";
 import html_toolbar from "./data/html_toolbar.html";
 import data_toolbar from "./data/data_toolbar.html";
 import js_toolbar from "./data/js_toolbar.html";
+
+//CSS Stuff
 import css_toolbar from "./data/css_toolbar.html";
+import css_length_handler from "./data/css_length_handler.html";
 
 //Overlays
 import basic from "./data/basic.html";
@@ -26,11 +29,6 @@ import border from "./data/border.html";
 import element_draw from "./data/element_draw.html";
 import selector_list from "./data/selector_list.html";
 import master_component_string from "./data/master_component.html";
-
-//CSS Handlers
-import css_color_handler from "./data/css_color_handler.html";
-import css_length_handler from "./data/css_length_handler.html";
-import css_font_family_handler from "./data/css_font_family_handler.html";
 
 const internal = {
     header_toolbar,
@@ -44,8 +42,8 @@ const internal = {
     border,
     element_draw,
     selector_list,
-    css_font_family_handler,
-    css_color_handler,
+   // css_font_family_handler,
+   // css_color_handler,
     css_length_handler
 };
 

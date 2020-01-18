@@ -1,19 +1,20 @@
 /**
  * Schema for flame_data model
  */
-//const schemed = wick.model.scheme;
+//const schemed = wick.scheme;
+import wax from "@candlefw/wax";
 
 export default function(env) {
-    const wick = env.wick;
-    const schemed = wick.model.scheme;
+    
+    const schemed = wax.scheme;
 
-    const EPOCH_Date = new wick.model.scheme.date.constructor;
-    const EPOCH_Time = new wick.model.scheme.time.constructor;
-    const Longitude = new wick.model.scheme.number.constructor;
-    const Latitude = new wick.model.scheme.number.constructor;
-    const $Number = new wick.model.scheme.number.constructor;
-    const $String = new wick.model.scheme.string.constructor;
-    const $Boolean = new wick.model.scheme.bool.constructor;
+    const EPOCH_Date = new wax.scheme.date.constructor;
+    const EPOCH_Time = new wax.scheme.time.constructor;
+    const Longitude = new wax.scheme.number.constructor;
+    const Latitude = new wax.scheme.number.constructor;
+    const $Number = new wax.scheme.number.constructor;
+    const $String = new wax.scheme.string.constructor;
+    const $Boolean = new wax.scheme.bool.constructor;
 
     const n = new (schemed({
         meta: schemed({

@@ -38,8 +38,8 @@ export default function(env) {
 
     elecomp.addEventListener("pointerdown", e => {
 
-        e.stopPropagation();
-        e.preventDefault();
+      //  e.stopPropagation();
+      //  e.preventDefault();
 
         data.dx = 0;
         data.dy = 0;
@@ -67,10 +67,22 @@ export default function(env) {
             ui.input.handle("start", e, env, data);
     });
 
+    elecomp.addEventListener("pointerup", e => {
+
+       // e.stopPropagation();
+       // e.preventDefault();
+        data.dx = 0;
+        data.dy = 0;
+        data.x = e.x;
+        data.y = e.y;
+
+        data.time_since_last_click = -(old_click_time - (old_click_time = performance.now()));
+
+        ui.input = ui.input.handle("end", e, env, data, "COMPONENT_UI");
+    });
+
     ele.addEventListener("pointerup", e => {
 
-        e.stopPropagation();
-        e.preventDefault();
         data.dx = 0;
         data.dy = 0;
         data.x = e.x;

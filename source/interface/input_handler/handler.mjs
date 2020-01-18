@@ -5,28 +5,28 @@ import ui_controller from "../../component/ui_controller.mjs";
 */
 export default class Handler {
 
-    handle(type, event, ui_manager, target) {
+    handle(type, event, ui_manager, target, source) {
         switch (type) {
             case "key":
-                return this.char(event, ui_manager, target);
+                return this.char(event, ui_manager, target, source);
             case "char":
-                return this.key(event, ui_manager, target);
+                return this.key(event, ui_manager, target, source);
             case "end":
-                return this.end(event, ui_manager, target);
+                return this.end(event, ui_manager, target, source);
             case "start":
-                return this.start(event, ui_manager, target);
+                return this.start(event, ui_manager, target, source);
             case "move":
-                return this.move(event, ui_manager, target);
+                return this.move(event, ui_manager, target, source);
             case "drop":
-                return this.docDrop(event, ui_manager, target);
+                return this.docDrop(event, ui_manager, target, source);
             case "generic_drop":
-                return this.drop(event, ui_manager, target);
+                return this.drop(event, ui_manager, target, source);
             case "scroll":
-                return this.scroll(event, ui_manager, target);
+                return this.scroll(event, ui_manager, target, source);
             case "hover":
-                return this.hover(event, ui_manager, target);
+                return this.hover(event, ui_manager, target, source);
             case "context":
-                return this.context(event, ui_manager, target);
+                return this.context(event, ui_manager, target, source);
         }
     }
 
@@ -45,7 +45,7 @@ export default class Handler {
 
                     component = element.component;
 
-                    if (component && !(component instanceof ui_controller) ) {
+                    if (component && !(component instanceof ui_controller)) {
 
                         if (component.type == "css") {
                             element = component.element;
@@ -64,48 +64,51 @@ export default class Handler {
 
             env.ui.ui_view.style.display = "";
         }
-        
+
         env.ui.setHover();
-        
+
 
         return Handler.default;
     }
 
     //Pointer end
-    end(event, env, data) {
+    end(event, env, data, source) {
 
-        // return Handler.default;
-        if (data && event.button == 0 && data.time_since_last_click < 100) {
+        if (source == "COMPONENT_UI") {
 
-            let component = null;
+            // return Handler.default;
+            if (data && event.button == 0 && data.time_since_last_click < 100) {
 
-            env.ui.ui_view.style.pointerEvents = "none";
+                let component = null;
 
-            let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
+                env.ui.ui_view.style.pointerEvents = "none";
 
-            if (element) {
-                while (element && !element.component) {
-                    element = element.parentNode;
-                }
+                let element = env.ui.comp_view.shadowRoot.elementFromPoint(data.x, data.y);
 
-                if (element && element.component) {
-
-                    component = element.component;
-
-
-                    if (component.type == "css") {
-                        element = component.element;
-                    } else {
-                        element = element.shadowRoot.elementFromPoint(data.x, data.y);
+                if (element) {
+                    while (element && !element.component) {
+                        element = element.parentNode;
                     }
 
-                    data.time_since_last_click = Infinity;
+                    if (element && element.component) {
 
-                    env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
+                        component = element.component;
+
+
+                        if (component.type == "css") {
+                            element = component.element;
+                        } else {
+                            element = element.shadowRoot.elementFromPoint(data.x, data.y);
+                        }
+
+                        data.time_since_last_click = Infinity;
+
+                        env.ui.setState(undefined, env.ui.comp.setActive({ component, element }));
+                    }
                 }
-            }
 
-            env.ui.ui_view.style.pointerEvents = "";
+                env.ui.ui_view.style.pointerEvents = "";
+            }
         }
 
         return Handler.default;

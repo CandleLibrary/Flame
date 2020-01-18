@@ -1,27 +1,57 @@
 <scope class="main" export="move_action set_control"   style="width:100%;height:100%" element="div" >
 	CSS
-	<textarea class=text value=((css_rules)(changed))></textarea>
+
+	<container>
+		((selectors))
+		<scope>
+			(( scope ))
+			<script on="((hash))">
+				
+			</script>
+		</scope>
+	</container>
 	
 	<script on=((changed))>
 		this.cache.setCSSProp(changed.slice(1,-1));
+
 		if(env.ui.comp.active.element.wick_node){
+			console.log("")
 			env.ui.comp.active.element.wick_node.prepRebuild();
 			env.ui.comp.active.element.wick_node.rebuild();
 		}
 	</script>
 
+	<script on=((loaded))>
+		this.updatedCSSStyleRule = function (){
+			this.wick_node.prepRebuild();
+			this.wick_node.rebuild();
+		}
+	</script>
 
-	<script on=((widget))>
+
+	<script on=((element_selected))>
 
 		if(env.ui.comp.active.element.wick_node){
 
 			const element = env.ui.comp.active.element;
 			const component = env.ui.comp.active.component;
 			const cache  = env.getCache(env, component, element);
+			const sels = [];
 
-			this.cache = cache;
+			this.wick_node = element.wick_node;
 
-			css_rules = cache.rules;
+			for(const style of component.local_css)
+				for(const sel of style.getApplicableSelectors(element, component)){
+
+					const rule = new env.css_ui.ui_stylerule(sel.parent);
+					
+					sel.parent.addObserver(this);
+
+					sels.push(rule)
+				}
+
+
+			selectors = sels;
 		}
 	</script>
 

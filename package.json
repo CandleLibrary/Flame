@@ -24,6 +24,7 @@
   "dependencies": {
     "@candlefw/charcoal": "latest",
     "@candlefw/css": "latest",
+    "@candlefw/css.ui": "latest",
     "@candlefw/glow": "latest",
     "@candlefw/lantern": "latest",
     "@candlefw/ll": "latest",

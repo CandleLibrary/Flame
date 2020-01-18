@@ -23,7 +23,7 @@ export default function initializer(cfw_framework, options) {
 		case "cfw.lantern":
 		default:
 			return initializeLantern(cfw_framework, options);
-		// /	console.error("Unrecognized object passed to Flame initializer. Flame accepts [wick] [radiate] or [lantern] initializer objects.");
+			// /	console.error("Unrecognized object passed to Flame initializer. Flame accepts [wick] [radiate] or [lantern] initializer objects.");
 	}
 }
 
@@ -60,15 +60,22 @@ async function initializeRadiate(radiate, options) {
 
 	radiate.loaded = async (presets, router) => {
 
-		const env = flame_environment(options, radiate.wick, radiate);
+		try {
 
-		wick_component_integration(radiate.wick, env);
 
-		await wick_element_integration(radiate.wick, env);
+			const env = await flame_environment(options, radiate.wick, radiate);
 
-		build_editor_environment(env, document.body, HIDDEN);
-		
-		radiate_integrate(env, router, presets);
+			wick_component_integration(radiate.wick, env);
+
+			await wick_element_integration(radiate.wick, env);
+
+			await build_editor_environment(env, document.body, HIDDEN);
+
+			radiate_integrate(env, router, presets);
+			
+		}catch(e){
+			console.log(e)
+		}
 	};
 }
 
@@ -86,4 +93,3 @@ if (r)
 	initializer(r, {});
 else if (w)
 	initializer(w, {});
-

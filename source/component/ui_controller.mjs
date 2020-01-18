@@ -86,6 +86,10 @@ export default class ui_controller extends Component {
 
     unmount() {}
 
+    updateElementSelection(data){
+        this.scope.update(data);
+    }
+
 }
 
 

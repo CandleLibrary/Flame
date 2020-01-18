@@ -74,6 +74,7 @@ export default class Component {
     }
 
     updateScopeCSS(){
+        
         this.local_css.length = 0;
         
         this.scope.css.forEach(css => this.local_css.push(css));

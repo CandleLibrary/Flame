@@ -5,11 +5,17 @@ import comp_state from "./ui_comp_state.mjs";
 import ui_state from "./ui_state.mjs";
 import Browser_input_engine from "./input_engine/browser_input.mjs";
 import Browser_Input_Handler from "./input_handler/default.mjs";
-import css_integrations from "../integration/css.integration.mjs";
 import toggle_environment from "./toggle.environment.mjs";
+import css_ui  from "@candlefw/css.ui";
 
-export default function(env, html_element, INITIALIZED_HIDDEN = true) {
+export default async function(env, html_element, INITIALIZED_HIDDEN = true) {
 
+    /* Load CSS Editing Components */
+    await env.data.docs.get(env.data.docs.loadFile("/@ui/css_length_handler.html")).alert();
+
+    //Update css_ui entry 
+    env.css_ui = css_ui(env.css, env.presets);
+    
     const view = (env.ui.main_view = document.createElement("div"));
 
     env.ui.ui_view = document.createElement("div");

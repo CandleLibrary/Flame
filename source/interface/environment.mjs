@@ -4,9 +4,11 @@ import Poject from "../system/project/project.mjs";
 import css_Manager from "../system/css/css_manager.mjs";
 import * as actions from "./actions/action.mjs";
 
-
-/** Creates and returns an environment object **/
-export default function (options, wick = null, radiate = null) {
+/**
+ 	Environment is a global object that stores objects for use in pretty much every interface component. 
+ 	It is passed as an argument to many functions, including update messages in components.
+**/
+export default async function (options, wick = null, radiate = null) {
 
 	if(radiate)
 		wick = radiate.wick;
@@ -28,6 +30,8 @@ export default function (options, wick = null, radiate = null) {
 		project : null,
 
 		css : Object.assign({},css),
+
+		css_ui : null,
 
 		wick,
 

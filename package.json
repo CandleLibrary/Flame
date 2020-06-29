@@ -1,15 +1,17 @@
 {
   "name": "@candlefw/flame",
   "version": "0.0.7-0",
-  "description": "A browser tech web editing app based on wick and electron",
-  "main": "main.mjs",
+  "description": "An in-browser web editing app based on wick",
+  "main": "build/library/server/server.js",
+  "types": "build/types/server.d.ts",
+  "type": "module",
   "bin": {
-    "flame": "main.mjs"
+    "flame": "bin/flame.js"
   },
   "scripts": {
     "start": "node --experimental-modules ./main.mjs",
-    "build": "rollup --config ./build/config/config.js",
-    "build.watch": "rollup --watch --config ./build/config/config.js"
+    "build": "rollup --config ./source/config/rollup.config.js",
+    "build.watch": "rollup --watch --config ./source/config/rollup.config.js"
   },
   "repository": {
     "type": "git",
@@ -22,22 +24,13 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
-    "@candlefw/charcoal": "latest",
-    "@candlefw/css": "latest",
-    "@candlefw/css.ui": "latest",
-    "@candlefw/glow": "latest",
-    "@candlefw/lantern": "latest",
-    "@candlefw/ll": "latest",
-    "@candlefw/observer": "^1.0.0",
-    "@candlefw/radiate": "latest",
-    "@candlefw/whind": "latest",
-    "@candlefw/wick": "latest",
+    "@candlefw/lantern": "^0.0.14",
+    "@candlefw/wick": "^0.8.13",
+    "codemirror": "^5.54.0",
+    "mongodb": "^3.5.8",
     "paper": "^0.12.0"
   },
   "devDependencies": {
-    "@candlefw/hydrocarbon": "latest",
-    "chai": "^4.2.0",
-    "mocha": "^5.2.0",
     "rollup": "^1.16.2",
     "rollup-plugin-commonjs": "^9.2.0",
     "rollup-plugin-node-resolve": "^4.0.0",

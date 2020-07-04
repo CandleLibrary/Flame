@@ -69,7 +69,7 @@
                  await wick.setWrapper("/flame/editor.jsx");
 
                 //Load the page
-                const c = new (wick.rt.getComponent("{{ROOT_COMPONENT_NAME}}"));
+                const c = new (wick.rt.gC("{{ROOT_COMPONENT_NAME}}"));
 
                 document.body.replaceChild(c.ele, app_root);
             });

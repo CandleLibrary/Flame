@@ -35,3 +35,9 @@ flame(wick, options); // now we have a flaming wick!
 flame(radiate(), options); // now we are radiating flames!
 
 ```
+- 
+- Element Selection
+- Glow Animation Keyframe System
+- Per File Updating with git commits
+- Smart CSS Updating With lazy write back
+- Branching undo/redo tree. 

@@ -1,4 +1,4 @@
-import wick, { Component, Presets, DOMLiteral, componentDataToClassString, buildComponentStyleSheet } from "@candlefw/wick";
+import wick, { Component, Presets, DOMLiteral, componentDataToClassString, componentDataToCSS, componentDataToHTML } from "@candlefw/wick";
 import url from "@candlefw/url";
 /**
  * Render provides the mechanism to turn wick components 
@@ -43,12 +43,14 @@ const
     addBody = (file, body_data) => Object.assign({}, file, { body_html: file.body_html + "\n" + body_data }),
     addTemplate = (file, template_data) => Object.assign({}, file, { templates: file.templates + "\n" + template_data }),
     addScript = (file, script_data) => Object.assign({}, file, { scripts: file.scripts + "\n" + script_data }),
-    createComponentScript = (file, components, fn) => {
-        const str = components.map(fn).join("\n\t");
+    createComponentScript = (file, components, fn, after = "") => {
+        const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script id="wick-components">{
+    window.addEventListener("load", async () => {
     const w = wick.default;
-    ${str}}
+    ${str}})
+}
 </script>`);
     },
     createComponentStyle = (file, components, fn) => {
@@ -90,31 +92,49 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 
     if (!USE_FLAME_RUNTIME) {
 
-        file = addHeader(file, `<script src="/cfw/wickrt"></script>`);
-        file = addHeader(file, `<script src="/cfw/glow"></script>`);
-
-        file = addScript(file, `<script> const w = wick.default; w.setPresets({}); </script>`);
-
+        file = addHeader(file, `<script async src="/cfw/wickrt"></script>`);
+        file = addHeader(file, `<script async src="/cfw/glow"></script>`);
+        file = addHeader(file, `<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@100&display=swap" rel="stylesheet">`);
+        file = addScript(file, `<script>window.addEventListener("load", async () => wick.default.setPresets({})); </script>`);
 
         file = createComponentScript(file, components, comp => {
             const comp_class_string = componentDataToClassString(comp, presets, false, false);
-            return `w.rt.registerComponent("${comp.name}",((c, p, rt)=>${comp_class_string})({}, w.rt.presets, w.rt));`;
+            return `w.rt.rC(${comp_class_string});`;
         });
 
-        file = createComponentStyle(file, components, buildComponentStyleSheet);
+        file = createComponentStyle(file, components, (component) => {
+            const style = componentDataToCSS(component);
+
+            return `/*  ${component.location}  */\n${style}`;
+        });
+
+        if (!USE_RADIATE_RUNTIME) {
+            file = addScript(file, `
+<script async>
+    window.addEventListener("load", async () => {
+        const w = wick.default; 
+        const app_root = document.getElementById("app");
+        if (!app_root)  console.error("Could not find root app element.");        
+        const c = new (w.rt.gC("${component.name}"))(null, app_root);
+    })
+</script>`);
+        }
 
     } else {
 
         file = addHeader(file, `<script src="/cfw/wick"></script>`);
-        file = addHeader(file, `<script src="/cfw/glow"></script>`);
+        file = addHeader(file, `<script async src="/cfw/glow"></script>`);
 
         file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
         file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
 
+        file = addHeader(file, `<script src="/flame/editor/main.js"></script>`);
+        file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
+
         file = addScript(file, `        
-<script>
+<script async>
     {
-        const w = wick.default; 
+        const w = cfw.wick; 
         
         w.setPresets({
             api: {
@@ -147,45 +167,25 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 </script>
         `);
 
-        if (!USE_RADIATE_RUNTIME) {
-            file = addScript(file, `
-<script>
-    window.addEventListener("load", async () => {
-        const w = wick.default; 
+        file = createComponentStyle(file, components, (component) => {
+            const style = componentDataToCSS(component);
 
-        const app_root = document.getElementById("app");
-
-        if (!app_root)  console.error("Could not find root app element.");
-
-        const editor_frame = await (w("/flame/editor/component_editor.jsx").pending);
-    
-        document.body.appendChild((new editor_frame.class()).ele);
-
-        await w.setWrapper("/flame/editor/editor.jsx");
-        
-        const c = new (w.rt.getComponent("${component.name}"))(null, app_root);
-    })
-</script>`);
-        }
+            return `/*  ${component.location}  */\n${style}`;
+        });
 
         file = createComponentScript(file, components, comp => {
 
-            const comp_class_string = wick.componentToClassString(comp, presets, false, true);
+            const comp_class_string = wick.componentToClassString(comp, presets, false, false);
 
-            return (`w.rt.registerComponent("${comp.name}",((c, p, rt)=>${comp_class_string})({
-                            location : "${comp.location}",
-                            source : \`${
-                comp.source
-                    .replace(/\`/g, "\\\`")
-                    .replace(/\n/g, "\\n")
-                    .replace(/\t/g, "\\t")
-                }\`,
-                            name: "${comp.name}",
-                        }, w.rt.presets, w.rt));`);
-        });
+            return (`await w( "${comp.location.toString().replace(process.cwd(), "")}").pending;`);
+        }, `const app_root = document.getElementById("app");
+
+        if (!app_root)  console.error("Could not find root app element.");
+        
+        const c = new (w.rt.gC("${component.name}"))(null, app_root);`);
     }
 
-    const { template_map, html } = getComponentHTML(component, presets);
+    const { template_map, html } = componentDataToHTML(component, presets);
 
     file = addBody(file, html);
     file = addTemplate(file, [...template_map.values()].join("\n"));
@@ -205,55 +205,6 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 </html>`
     };
 };
-
-function getComponentHTML(comp: Component, presets: Presets, template_map = new Map, html = comp.HTML, root = true): { html: string, template_map: Map<string, string>; } {
-
-    let str = "";
-
-    if (html) {
-        //Convert html to string 
-
-        const {
-            t: tag_name = "",
-            a: attributes = [],
-            c: children = [],
-            d: data,
-            ct,
-            cp: component_name,
-            sl: slot_name
-        }: DOMLiteral = html;
-
-        if (ct) {
-            const
-                comp = presets.components.get(component_name);
-
-            if (!template_map.has(comp.name))
-                template_map.set(comp.name, `<template id="${comp.name}">${getComponentHTML(comp, presets, template_map)}</template>`);
-            //create template for the component. 
-
-            str += `<${tag_name.toLowerCase()} ${attributes.map(([n, v]) => `"${n}"="${v}"`).join(" ")} w-container="${comp.name}">`;
-
-
-        } else if (component_name && presets.components.has(component_name)) {
-
-            const comp = presets.components.get(component_name);
-
-            return getComponentHTML(comp, presets, template_map, undefined, false);
-
-        } else if (tag_name)
-            str += `<${tag_name.toLowerCase()} ${root ? "id=\"app\" " : ""}${attributes.map(([n, v]) => `${n}="${v}"`).join(" ")} ${comp.HTML == html ? `w-component="${comp.name}" class="${comp.name}"` : ""}>`;
-        else
-            str += `<w-b>${data}</w-b>`;
-
-        for (const child of children)
-            str += getComponentHTML(comp, presets, template_map, child, false).html;
-
-        if (tag_name)
-            str += `</${tag_name.toLowerCase()}>`;
-    }
-
-    return { html: str, template_map };
-}
 
 function getComponentGroup(comp: Component, presets: Presets, comp_name_set: Set<string> = new Set, out_array: Array<Component> = [comp]): Array<Component> {
 

@@ -1,39 +1,14 @@
-import { comp, meta } from "@model";
-import { setEditingComp } from "@api";
-
-
-/**
- * Loads the editing environment for this component. 
- * @param {*} event 
- */
-function loadEditor(event) {
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    event.stopPropagation();
-
-    const c = comp, m = meta;
-
-    setEditingComp({ comp: c, meta: m });
-
-}
+import { comp, meta } from "@model:flame-editor";
+import element_select from "./element_select_box.jsx";
 
 <style>
     root{
-        position: absolute;
-        height: 25px;
-        width: 25px;
-        bottom: 5px;
-        right: 5px;
-        color:white;
-        background-color: white;
-        border-radius: 5px;
-        cursor:pointer;
-    }
-
-    root:hover {
-        color:white;
+        position: fixed;
+        top: 0;
+        left:0;
     }
 </style>;
 
-export default <div onclick="((loadEditor))"><img width=25 height=25 src="/flame/editor/flaming_f.svg"></div>;
+export default <div>
+    <element_select />
+</div>;

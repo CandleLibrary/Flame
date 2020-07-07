@@ -6,6 +6,7 @@ import element_select from "./element_select_box.jsx";
         position: fixed;
         top: 0;
         left:0;
+        z-index:1000;
     }
 </style>;
 

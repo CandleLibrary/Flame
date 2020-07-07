@@ -3,7 +3,7 @@
         component_map = new Map,
         wick = cfw.wick,
         rt = wick.rt,
-        editor_model = { comp: null, ele: null };
+        editor_model = { comp: null, ele: null, sc: 0 };
     /**
      * Integrate Flame editing system into every component instance. 
      */
@@ -48,7 +48,6 @@
     function selectElementEventResponder(e) {
         const comp = getComponentFromEvent(event),
             ele = getElementFromEvent(event);
-        console.log("Select", ele, comp);
     }
 
     function pointerEnterElementEventResponder(e) {
@@ -65,14 +64,21 @@
         editor_model.ele = null;
     }
 
+    function globalScrollEventListener(e) {
+        editor_model.sc++;
+    }
+
     /**
      * Adds elementSelectEvent to the document.
      */
     function integrateElementTree(comp) {
-        comp.elu.forEach(e => e.addEventListener("pointerenter", pointerEnterElementEventResponder));
         comp.elu.forEach(e => e.addEventListener("pointerleave", pointerExitElementEventResponder));
+        comp.elu.forEach(e => e.addEventListener("pointerenter", pointerEnterElementEventResponder));
         comp.elu.forEach(e => e.addEventListener("click", selectElementEventResponder));
     }
+
+    document.addEventListener("scroll", globalScrollEventListener);
+
 
     /**
      * Include the editor frame system.

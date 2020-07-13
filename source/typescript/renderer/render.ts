@@ -1,5 +1,5 @@
-import wick, { Component, Presets, DOMLiteral, componentDataToClassString, componentDataToCSS, componentDataToHTML } from "@candlefw/wick";
-import url from "@candlefw/url";
+import { Component, Presets, componentDataToClassString, componentDataToCSS, componentDataToHTML } from "@candlefw/wick";
+
 /**
  * Render provides the mechanism to turn wick components 
  * into source files for client use. The output can either
@@ -62,22 +62,16 @@ export const renderPage = async (source: String | Component, wick, options: Rend
     await wick.server();
 
     const {
-        source_type = SourceType.COMBINED,
         USE_RADIATE_RUNTIME = false,
         USE_FLAME_RUNTIME = false,
-        js_page_template = "",
-        html_page_template = "",
-        css_page_template = ""
     } = options;
 
     let component: Component = null, presets = await wick.setPresets();
-
 
     if (typeof (source) == "string") {
         component = await wick(source, presets).pending;
     } else if (isWickComponent(source))
         component = source;
-
 
     if (!component) throw new Error("source is not a wick component!");
 
@@ -123,6 +117,7 @@ export const renderPage = async (source: String | Component, wick, options: Rend
     } else {
 
         file = addHeader(file, `<script src="/cfw/wick"></script>`);
+        file = addHeader(file, `<script src="/cfw/css"></script>`);
         file = addHeader(file, `<script async src="/cfw/glow"></script>`);
 
         file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
@@ -206,7 +201,12 @@ export const renderPage = async (source: String | Component, wick, options: Rend
     };
 };
 
-function getComponentGroup(comp: Component, presets: Presets, comp_name_set: Set<string> = new Set, out_array: Array<Component> = [comp]): Array<Component> {
+function getComponentGroup(
+    comp: Component,
+    presets: Presets,
+    comp_name_set: Set<string> = new Set,
+    out_array: Array<Component> = [comp]
+): Array<Component> {
 
     if (comp.bindings.length > 0 || comp.local_component_names.size > 0) {
 

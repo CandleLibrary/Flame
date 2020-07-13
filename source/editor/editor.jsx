@@ -1,5 +1,5 @@
-import { comp, meta } from "@model:flame-editor";
-import element_select from "./element_select_box.jsx";
+import select_box from "./element_select_box.jsx";
+import hover_box from "./element_hover_box.jsx";
 
 <style>
     root{
@@ -11,5 +11,6 @@ import element_select from "./element_select_box.jsx";
 </style>;
 
 export default <div>
-    <element_select />
+    <hover_box />
+    <select_box />
 </div>;

@@ -1,6 +1,6 @@
 import {
-    ele,
-    comp,
+    selected_ele,
+    selected_comp,
     ele_updated,
     pos_type,
     //The action that will occur when this handle is moved. 
@@ -38,7 +38,7 @@ switch (pos_type) {
         break;
 }
 
-function onpointerdown(event) { START_ACTION(ACTION, ele, comp); }
+function onpointerdown(event) { START_ACTION(ACTION); }
 
 <style>
     root{

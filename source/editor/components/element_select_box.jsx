@@ -1,8 +1,10 @@
 import {
     selected_comp as comp,
     selected_ele as ele,
-    sc
+    sc,
+    ACTIONS
 } from "@model:flame-editor";
+
 
 import handle from "./handle.jsx";
 
@@ -48,6 +50,7 @@ function showBox() {
 
         const div = "@#main", bb = ele.getBoundingClientRect();
 
+
         div.style.opacity = 1;
 
         a = bb.width;
@@ -59,6 +62,8 @@ function showBox() {
         div.style.height = b + "px";
         div.style.left = c + "px";
         div.style.top = d + "px";
+
+        const u = ACTIONS.RESIZETR;
 
         test = [{
             ele: ele,
@@ -74,7 +79,7 @@ function showBox() {
             ele: ele,
             ele_updated: 1,
             pos_type: "top-right",
-            ACTION: "test",
+            ACTION: u,
         }, {
             ele: ele,
             ele_updated: 1,

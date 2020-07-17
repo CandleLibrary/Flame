@@ -1,4 +1,5 @@
 import { Component, Presets, componentDataToClassString, componentDataToCSS, componentDataToHTML } from "@candlefw/wick";
+import URL from "@candlefw/url";
 
 /**
  * Render provides the mechanism to turn wick components 
@@ -22,7 +23,7 @@ export enum SourceType {
 }
 
 export interface RenderOptions {
-
+    source_url: URL,
     source_type: SourceType;
     js_page_template?: string;
     html_page_template?: string;
@@ -64,6 +65,7 @@ export const renderPage = async (source: String | Component, wick, options: Rend
     const {
         USE_RADIATE_RUNTIME = false,
         USE_FLAME_RUNTIME = false,
+        source_url
     } = options;
 
     let component: Component = null, presets = await wick.setPresets();
@@ -79,12 +81,13 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 
     const components = getComponentGroup(component, presets);
 
-    if (USE_RADIATE_RUNTIME) {
-        file = addHeader(file, `<script src="/flame/router/radiate"></script>`);
-        file = addScript(file, `<script>{const w = wick.default; cfw.radiate("${component.name}");}</script>`);
-    }
-
     if (!USE_FLAME_RUNTIME) {
+
+        if (USE_RADIATE_RUNTIME) {
+            file = addHeader(file, `<script src="/flame/router/radiate"></script>`);
+            file = addScript(file, `<script>{const w = wick.default; cfw.radiate("${component.name}");}</script>`);
+        }
+
 
         file = addHeader(file, `<script async src="/cfw/wickrt"></script>`);
         file = addHeader(file, `<script async src="/cfw/glow"></script>`);
@@ -114,6 +117,11 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 </script>`);
         }
 
+        const { template_map, html } = componentDataToHTML(component, presets);
+
+        file = addBody(file, html);
+        file = addTemplate(file, [...template_map.values()].join("\n"));
+
     } else {
 
         file = addHeader(file, `<script src="/cfw/wick"></script>`);
@@ -123,8 +131,13 @@ export const renderPage = async (source: String | Component, wick, options: Rend
         file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
         file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
 
-        file = addHeader(file, `<script src="/flame/editor/main.js"></script>`);
+        file = addHeader(file, `<script src="/flame/editor/flame.js"></script>`);
         file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
+        const unflamed_url = new URL(source_url);
+
+        unflamed_url.setData("flaming", false);
+
+        file = addBody(file, `<iframe cors="* default-src 'self'" sandbox="allow-same-origin allow-scripts" id="composition" style="border:none;margin:0;position:absolute;width:100vw;height:100vh;top:0;left:0;" src="${unflamed_url}"></iframe>`);
 
         file = addScript(file, `        
 <script async>
@@ -162,28 +175,23 @@ export const renderPage = async (source: String | Component, wick, options: Rend
 </script>
         `);
 
-        file = createComponentStyle(file, components, (component) => {
-            const style = componentDataToCSS(component);
-
-            return `/*  ${component.location}  */\n${style}`;
-        });
+        // file = createComponentStyle(file, components, (component) => {
+        //     const style = componentDataToCSS(component);
+        //
+        //     return `/*  ${component.location}  */\n${style}`;
+        // });
 
         file = createComponentScript(file, components, comp => {
 
             const comp_class_string = wick.componentToClassString(comp, presets, false, false);
 
             return (`await w( "${comp.location.toString().replace(process.cwd(), "")}").pending;`);
-        }, `const app_root = document.getElementById("app");
+        }, `const composition = document.getElementById("composition");
+            const comp_cfw = composition.contentWindow.cfw;
 
-        if (!app_root)  console.error("Could not find root app element.");
-        
-        const c = new (w.rt.gC("${component.name}"))(null, app_root);`);
+            flame(cfw, comp_cfw, composition.contentWindow);
+        `);
     }
-
-    const { template_map, html } = componentDataToHTML(component, presets);
-
-    file = addBody(file, html);
-    file = addTemplate(file, [...template_map.values()].join("\n"));
 
 
     return {

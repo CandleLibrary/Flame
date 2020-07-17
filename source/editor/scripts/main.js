@@ -1,10 +1,16 @@
-{ //For Isolation
+import * as ACTIONS from "./actions/action.js";
+import css_sys from "./css.js";
+
+export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //For Isolation
+
     const
         component_map = new Map,
-        wick = cfw.wick,
-        css = cfw.css,
+        wick = comp_cfw.wick,
+        css = comp_cfw.css,
         rt = wick.rt,
-        editor_model = { comp: null, ele: null, sc: 0, selected_ele: null, selected_element: null };
+        edit_rt = editor_cfw.wick.rt,
+        edit_wick = editor_cfw.wick,
+        editor_model = { comp: null, ele: null, sc: 0, selected_ele: null, selected_element: null, ACTIONS };
 
     //Root UI element in document markup.
     let
@@ -27,7 +33,7 @@
         do {
             if (ele.wick_component && !ele.hasAttribute("w-o"))
                 /* Presence of "w-o" indicates the element belongs to a component that has integrated it's 
-                 * element into the context of another component.  */
+                 * element into the tree of another component.  */
                 return ele.wick_component;
 
             ele = ele.parentNode;
@@ -70,6 +76,7 @@
 
         const comp = getComponentFromEvent(event),
             ele = getElementFromEvent(event);
+
         if (ISElementUI(ele))
             return;
 
@@ -101,18 +108,94 @@
         }
     }
 
-    let prev = null, ACTIVE_ACTION = null;
+    let prev = null, ACTIVE_ACTION = null, cx = 0, cy = 0, px = 0, py = 0;
 
-    function START_ACTION(act, ele, comp) {
-        ACTIVE_ACTION = { test: true };
+    const change_stack = [];
+    let change_pointer = 0;
+    let edit_css = comp_window.document.createElement("style");
+    comp_window.document.head.appendChild(edit_css);
+
+    const system = {
+        move_type: "relative",
+        css: css_sys,
+        window: comp_window,
+        document: comp_window.document,
+        body: comp_window.document.body,
+        head: comp_window.document.head,
+        flags: {
+            KEEP_UNIQUE: true
+        },
+        global: {
+            default_pos_unit: "px"
+        },
+        ui: {
+            transform: {
+                scale: 1
+            }
+        },
+        edit_css,
+        edit_wick
+    };
+
+
+    /**
+     * UPDATE the ui system to reflect the 
+     * changes made by the active action.
+     */
+    function UPDATE_EDIT_STATE() {
+
+    }
+    /**
+     * Create a change list for the current
+     * UI state and apply, pushing the change
+     * list to the history stack.
+     */
+    function FREEZE_EDIT_STATE() {
+
+    }
+    /**
+     * Decrement the history stack pointer 
+     * and apply the rollback
+     * changes of the change list the pointer is 
+     * currently at.
+     */
+    function ROLLBACK_EDIT_STATE() {
+
+    }
+    /**
+     * Increment the history stack pointer
+     * and apply the rollforward
+     * changes of the change list the pointer is 
+     * currently at.
+     */
+    function ROLLFORWARD_EDIT_STATE() {
+
     }
 
-    function UPDATE_ACTION(event) {
+    function START_ACTION(act) {
+        ACTIVE_ACTION = act;
+        px = cx;
+        py = cy;
+        UPDATE_ACTION();
+    }
 
+    function UPDATE_ACTION() {
+
+        const dx = cx - px;
+        const dy = cy - py;
+
+        const
+            ele = editor_model.selected_ele,
+            comp = editor_model.selected_comp;
+
+        ACTIVE_ACTION(system, comp, ele, dx, dy, false);
+        UPDATE_EDIT_STATE();
+        editor_model.sc++;
     }
 
     function END_ACTION(event) {
         ACTIVE_ACTION = null;
+        FREEZE_EDIT_STATE();
     }
 
     function pointerReleaseElementEventResponder(e) {
@@ -120,11 +203,16 @@
         selectElementEventResponder(e);
     }
 
-    function pointerEnterElementEventResponder(e) {
+    function pointerMoveEventResponder(e) {
 
-        if (ACTIVE_ACTION) return UPDATE_ACTION(e);
+        px = cx;
+        cx = e.x;
+        py = cy;
+        cy = e.y;
 
-        const ele = document.elementFromPoint(e.x, e.y);
+        if (ACTIVE_ACTION) return UPDATE_ACTION();
+
+        const ele = comp_window.document.elementFromPoint(e.x, e.y);
 
         if (!ele || ISElementUI(ele))
             return;
@@ -164,25 +252,23 @@
     function HTMLActionHandler() { }
 
     //document.addEventListener("pointermove", pointerExitElementEventResponder);
-    window.addEventListener("pointermove", pointerEnterElementEventResponder);
-    window.addEventListener("pointerup", pointerReleaseElementEventResponder);
+    comp_window.addEventListener("pointermove", pointerMoveEventResponder);
+    comp_window.addEventListener("pointerup", pointerReleaseElementEventResponder);
 
-    document.addEventListener("scroll", globalScrollEventListener);
-    window.addEventListener("resize", globalScrollEventListener);
+    comp_window.document.addEventListener("scroll", globalScrollEventListener);
+    comp_window.addEventListener("resize", globalScrollEventListener);
 
     /**
      * Include the editor frame system.
      */
-    window.addEventListener("load", async () => {
+    edit_rt.presets.models["flame-editor"] = editor_model;
 
-        rt.presets.models["flame-editor"] = editor_model;
-        rt.presets.api.START_ACTION = START_ACTION;
-        rt.presets.ACTIONS = {};
+    edit_rt.presets.api.START_ACTION = START_ACTION;
+    edit_rt.presets.api.ACTIONS = ACTIONS;
 
-        const editor_frame = await (wick("/flame/editor/editor.jsx").pending);
+    const editor_frame = await (edit_wick("/flame/editor/components/editor.jsx").pending);
 
-        ui_root = (new editor_frame.classWithIntegratedCSS()).ele;
+    ui_root = (new editor_frame.classWithIntegratedCSS()).ele;
 
-        document.body.appendChild(ui_root);
-    });
+    document.body.insertBefore(ui_root, document.body.firstElementChild);
 }

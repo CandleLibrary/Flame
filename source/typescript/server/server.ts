@@ -125,11 +125,11 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
 
                     tools.setMIMEBasedOnExt();
 
-                    return tools.sendRawStreamFromFile(path.join(__root_dir, "source/editor/", tools.file));
+                    return tools.sendRawStreamFromFile(path.join(__root_dir, "source/editor/", tools.dir.replace("/flame/editor", ""), tools.file));
                 },
 
                 keys: [
-                    { ext: server.ext.all, dir: "/flame/editor" }
+                    { ext: server.ext.all, dir: "/flame/editor/*" }
                 ]
 
             },
@@ -230,9 +230,12 @@ client side.`,
 
                         if (!url) return false;
 
+                        tools.setHeader("Access-Control-Allow-Origin", "*");
+
                         const { html } = await renderPage(url, wick, {
                             source_type: SourceType.COMBINED,
-                            USE_FLAME_RUNTIME: tools.url.host.split(".").shift() == "flame"
+                            USE_FLAME_RUNTIME: tools.url.getData("flaming") || false,
+                            source_url: tools.url
                         });
 
                         tools.setMIMEBasedOnExt("html");

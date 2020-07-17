@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node --experimental-modules ./main.mjs",
     "build": "rollup --config ./source/config/rollup.config.js",
-    "build.watch": "rollup --watch --config ./source/config/rollup.config.js"
+    "build.watch": "rollup --watch --config ./source/config/rollup.config.js",
+    "build.flame.watch": "rollup --watch --config ./source/config/flame.config.js"
   },
   "repository": {
     "type": "git",

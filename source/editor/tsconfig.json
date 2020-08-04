@@ -1,0 +1,27 @@
+{
+    "compileOnSave": true,
+    "include": [
+        "./typescript/**/*"
+    ],
+    "compilerOptions": {
+        "types": [
+            "@types/node"
+        ],
+        "allowJs": true,
+        "baseUrl": "./",
+        "alwaysStrict": true,
+        "target": "ES2020",
+        "lib": [
+            "ES2020",
+            "DOM"
+        ],
+        "allowSyntheticDefaultImports": true,
+        "outDir": "./build/library",
+        "declarationDir": "./build/types",
+        "declaration": true,
+        "moduleResolution": "node",
+        "sourceRoot": "/flame/editor/typescript",
+        "inlineSourceMap": true,
+        "skipLibCheck": true
+    }
+}

@@ -5,7 +5,6 @@ import {
     ACTIONS
 } from "@model:flame-editor";
 
-
 import handle from "./handle.jsx";
 
 var a = 0, b = 0, c = 0, d = 0, test = [];
@@ -63,48 +62,46 @@ function showBox() {
         div.style.left = c + "px";
         div.style.top = d + "px";
 
-        const u = ACTIONS.RESIZETR;
-
         test = [{
             ele: ele,
             ele_updated: 1,
             pos_type: "top-left",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZETL,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "top",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZET,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "top-right",
-            ACTION: u,
+            ACTION: ACTIONS.RESIZETR,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "right",
-            ACTION: "test",
+            ACTION: ACTIONS.SET_ATTRIBUTE,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom-right",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZEBR,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZEB,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom-left",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZEBL,
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "left",
-            ACTION: "test",
+            ACTION: ACTIONS.RESIZEL,
         }];
 
     } else {
@@ -116,7 +113,7 @@ watch(showBox, sc);
 
 
 export default <div id="main" class="main">
-    <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location )) <span class="color">((ele.tagName))</span> ((ele.getAttribute("w-s")))</div>
+    <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location )) <span class="color">(( sc &&  ele.tagName + (ele.id ?  "."+ele.id : "")))</span> ((ele.getAttribute("w-s")))</div>
     <container data=((test))>
         <handle />
     </container>

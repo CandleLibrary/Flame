@@ -54,6 +54,16 @@ const
 }
 </script>`);
     },
+    createModuleComponentScript = (file, components, fn, after = "") => {
+        const str = components.map(fn).join("\n\t") + "\n" + after;
+        return addScript(file, `
+<script async type="module" id="wick-components">
+    import flame from "/flame/editor/build/library/main.js";
+    window.addEventListener("load", async () => {
+    const w = wick.default;
+    ${str}})
+</script>`);
+    },
     createComponentStyle = (file, components, fn) => {
         const str = components.map(fn).join("\n");
         return addHeader(file, `<style id="wick-css">${str}\n</style>`);
@@ -131,7 +141,7 @@ export const renderPage = async (source: String | Component, wick, options: Rend
         file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
         file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
 
-        file = addHeader(file, `<script src="/flame/editor/flame.js"></script>`);
+        //file = addHeader(file, `<script type="module" src="/flame/editor/build/library/main.js"></script>`);
         file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
         const unflamed_url = new URL(source_url);
 
@@ -181,7 +191,7 @@ export const renderPage = async (source: String | Component, wick, options: Rend
         //     return `/*  ${component.location}  */\n${style}`;
         // });
 
-        file = createComponentScript(file, components, comp => {
+        file = createModuleComponentScript(file, components, comp => {
 
             const comp_class_string = wick.componentToClassString(comp, presets, false, false);
 

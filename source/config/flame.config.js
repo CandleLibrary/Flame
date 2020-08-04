@@ -8,7 +8,7 @@ const output = [{
 }];
 
 export default {
-    input: "./source/editor/scripts/main.js",
+    input: "./source/editor/build/library/main.js",
     treeshake: { unknownGlobalSideEffects: true },
     output,
     plugins: [resolve({ jail: "", modulesOnly: true })],

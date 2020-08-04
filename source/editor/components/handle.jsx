@@ -7,6 +7,7 @@ import {
     ACTION
 } from "@model";
 
+
 import { START_ACTION } from "@api";
 
 const div = "@div"[0];
@@ -38,7 +39,9 @@ switch (pos_type) {
         break;
 }
 
-function onpointerdown(event) { START_ACTION(ACTION); }
+function onpointerdown(event) {
+    START_ACTION([ACTION], { key: "id", val: "test" });
+}
 
 <style>
     root{

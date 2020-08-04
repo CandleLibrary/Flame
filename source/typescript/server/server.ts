@@ -164,12 +164,13 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
                         switch (data.action) {
                             case "update":
                                 try {
-                                    await fsp.writeFile(data.location, data.source);
 
-                                    await gitCommit(`Updated ${data.location}`);
+                                    await fsp.writeFile(path.join(cwd, data.location), data.source);
+
+                                    // await gitCommit(`Updated ${data.location}`);
 
                                 } catch (e) {
-                                    console.error(e);
+                                    tools.error(e);
                                 }
 
 
@@ -179,7 +180,7 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
                 },
 
                 keys: [
-                    { ext: server.ext.all, dir: "/component_sys" }
+                    { ext: server.ext.all, dir: "/component_sys/*" }
                 ]
 
             },

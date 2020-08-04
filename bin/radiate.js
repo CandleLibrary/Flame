@@ -1,5 +1,22 @@
-var radiate = (function (exports, cfw) {
+var radiate = (function (exports) {
     'use strict';
+
+    const global_object = (typeof global !== "undefined") ? global : window, cfw = global_object.cfw || {};
+    function addModuleToCFW(module, name) {
+        if (global_object) {
+            if (!global_object.cfw || !global_object.cfw[name]) {
+                //@ts-ignore
+                if (typeof global_object.cfw == "undefined") {
+                    //@ts-ignore
+                    global_object.cfw = cfw;
+                    //@ts-ignore
+                }
+                Object.defineProperty(global_object.cfw, name, { value: module, writable: false, configurable: false });
+            }
+            return global_object[name];
+        }
+        return null;
+    }
 
     let fetch = (typeof window !== "undefined") ? window.fetch : null;
     const uri_reg_ex = /(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:\/\/))?(?:([a-zA-Z][\dA-Za-z\+\.\-]*)(?:\:([^\<\>\:\?\[\]\@\/\#\b\s]*)?)?\@)?(?:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})|((?:\[[0-9a-f]{1,4})+(?:\:[0-9a-f]{0,4}){2,7}\])|([^\<\>\:\?\[\]\@\/\#\b\s\.]{2,}(?:\.[^\<\>\:\?\[\]\@\/\#\b\s]*)*))?(?:\:(\d+))?((?:[^\?\[\]\#\s\b]*)+)?(?:\?([^\[\]\#\s\b]*))?(?:\#([^\#\s\b]*))?/i;
@@ -1062,7 +1079,7 @@ var radiate = (function (exports, cfw) {
          * @param {Bool} IS_SAME_PAGE -
          */
         loadPage(page, wurl = new URL(document.location.href), IS_SAME_PAGE = false) {
-            let transition = cfw.cfw.glow.createTransition();
+            let transition = cfw.glow.createTransition();
             let app_ele = document.getElementById("app");
             let transition_elements = {};
             let finalizing_pages = [];
@@ -1226,7 +1243,7 @@ var radiate = (function (exports, cfw) {
                 //collect the templates and add to root dom. 
                 const wick_script = DOM.getElementById("wick-components");
                 if (wick_script)
-                    (Function("cfw", "wick", wick_script.innerHTML))(cfw.cfw, { default: cfw.cfw.wick });
+                    (Function("cfw", "wick", wick_script.innerHTML))(cfw, { default: cfw.wick });
                 const wick_style = DOM.getElementById("wick-css");
                 if (wick_style) {
                     page.style = wick_style.cloneNode(true);
@@ -1285,13 +1302,13 @@ var radiate = (function (exports, cfw) {
             return;
         LINKER_LOADED = true;
         window.addEventListener("load", () => {
-            const router = new Router(cfw.cfw.wick.rt.presets);
+            const router = new Router(cfw.wick.rt.presets);
             router
                 .loadNewPage(new URL(document.location), document, false)
                 .then(page => router.loadPage(page, new URL(location.href), true));
         });
     }
-    cfw.addModuleToCFW(radiate, "radiate");
+    addModuleToCFW(radiate, "radiate");
 
     exports.Component = Component;
     exports.Element = Element;
@@ -1301,4 +1318,4 @@ var radiate = (function (exports, cfw) {
 
     return exports;
 
-}({}, cfw));
+}({}));

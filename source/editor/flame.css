@@ -1,0 +1,15 @@
+/**
+* This object will appear on top of all other elements
+* to ensure the editor can intercept all events that
+* are received by the document.
+*/
+.flame_editor_fill.event_intercept{
+    position: fixed;
+    background-color: rgba(255,255,256,0.01);
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    top:0;
+    left:0;
+    z-index: 1000000000; /* Should always appear on top */
+}

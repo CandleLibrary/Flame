@@ -23,7 +23,20 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         edit_wick = editor_cfw.wick,
         editor_model = { comp: <RuntimeComponent>null, ele: null, sc: 0, selected_comp: null, selected_ele: null, selected_element: null, ACTIONS, POINTER_DN: false },
         edit_css = comp_window.document.createElement("style"),
+        event_intercept_ele = document.createElement("div"),
         system = initSystem(wick, edit_wick, css_sys, edit_css, comp_window);
+
+    event_intercept_ele.classList.add("flame_editor_fill", "event_intercept");
+
+    document.body.appendChild(event_intercept_ele);
+
+    function revealEventIntercept() {
+        event_intercept_ele.style.display = "block";
+    }
+
+    function hideEventIntercept() {
+        event_intercept_ele.style.display = "";
+    }
 
     let prev = null, ACTIVE_ACTION = null, cx = 0, cy = 0, px = 0, py = 0;
     let crate: ObjectCrate = null;
@@ -155,6 +168,9 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
     function START_ACTION(act: Action[], data: ObjectCrate["data"]) {
 
+        //Enable event intercept object.
+        revealEventIntercept();
+
         editor_model.POINTER_DN = true;
 
         //Make sure all actions in slug are actions.
@@ -214,6 +230,8 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
     }
 
     function END_ACTION(event?) {
+
+        hideEventIntercept();
 
         editor_model.POINTER_DN = false;
 
@@ -275,6 +293,9 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
     comp_window.document.addEventListener("pointermove", pointerMoveEventResponder);
     comp_window.document.addEventListener("pointerup", pointerReleaseElementEventResponder);
+
+    event_intercept_ele.addEventListener("pointermove", pointerMoveEventResponder);
+    event_intercept_ele.addEventListener("pointerup", pointerReleaseElementEventResponder);
 
     comp_window.document.addEventListener("scroll", globalScrollEventListener);
     comp_window.addEventListener("resize", globalScrollEventListener);

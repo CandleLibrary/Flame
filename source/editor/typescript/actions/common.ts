@@ -5,6 +5,7 @@ let types = css.types;
 import { CSSCacheFactory } from "../cache/css_cache.js";
 import { prepUIUpdate } from "./update.js";
 import { FlameSystem } from "../types/flame_system.js";
+import { ObjectCrate } from "../types/object_crate.js";
 
 
 export function getContentBox(ele, win: Window = window, system) {
@@ -177,16 +178,15 @@ setNumericValue.positioned_ancestor_height = 3;
 setNumericValue.height = 4;
 setNumericValue.width = 5;
 
-export function setValue(system, component, element, value_name, value) {
-
-    let
-        cache = CSSCacheFactory(system, component, element),
-        props = cache.rules.props;
+export function setValue(crate: ObjectCrate, value_name, value) {
+    const
+        { css_cache } = crate,
+        props = css_cache.unique;
 
     if (props.has(value_name))
-        props.get(value_name).setValue(value);
+        props.get(value_name).prop.setValue(value);
     else
-        cache.setProp(cache.createProp(`${value_name.replace(/\_/g, "-")}:${value}`));
+        css_cache.setPropFromString(`${value_name.replace(/\_/g, "-")}:${value}`);
 }
 
 

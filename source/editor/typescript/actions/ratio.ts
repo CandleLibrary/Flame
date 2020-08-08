@@ -36,35 +36,45 @@ export interface RatioMarker {
     t2: number,
     t3: number,
     level: number;
+
+    max_level: number;
 }
 
-const ratio_markers = (new Array(20)).fill({}, 0, 20).map(c => <RatioMarker>{
+const ratio_markers = (new Array(64)).fill({}, 0, 64).map(c => <RatioMarker>{
     type: "",
     input_value: 0,
     output_value: 0,
-    ratio: 0
+    ratio: 0,
+    output_value: 0,
+    ratio: 1,
+    level: 0,
+    t1: 0,
+    t2: 0,
+    t3: 0,
+    max_level: 0
 });
 
 let pointer = 0;
 
-export function startRatioMeasure(sys: FlameSystem, crate: ObjectCrate, delta: number, measurement_key: string): RatioMarker {
-
+export function startRatioMeasure(sys: FlameSystem, crate: ObjectCrate, delta: number = 0, measurement_key: string = "", max_level: number = 4): RatioMarker {
     const
         { ele } = crate,
+        measure = (measurement_key) ? ele.getBoundingClientRect()[measurement_key] / sys.ui.transform.scale : 0,
         marker = Object.assign(ratio_markers.pop(), <RatioMarker>{
             type: measurement_key,
             original_delta: delta,
             delta_value: delta,
             adjusted_delta: delta,
-            goal_value: delta + ele.getBoundingClientRect()[measurement_key] / sys.ui.transform.scale,
-            input_value: ele.getBoundingClientRect()[measurement_key] / sys.ui.transform.scale,
-            original_value: ele.getBoundingClientRect()[measurement_key] / sys.ui.transform.scale,
+            goal_value: delta + measure,
+            input_value: measure,
+            original_value: measure,
             output_value: 0,
             ratio: 1,
             level: 0,
             t1: 0,
             t2: 0,
-            t3: 0
+            t3: 0,
+            max_level
         });
 
     return marker;

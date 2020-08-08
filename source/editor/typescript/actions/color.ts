@@ -1,20 +1,44 @@
 import { css } from "../env.js";
-
-let types = css.types;
-
 import { setValue } from "./common.js";
+import { ActionType } from "../types/action_type.js";
+import { sealCSS, updateCSS } from "./position.js";
+import { Action } from "../types/action.js";
 
 //set background color
-export function SETBACKGROUNDCOLOR(system, component, element, r, g, b, a = 1) {
-	let color = new types.color(r, g, b, a);
-	setValue(system, component, element, "background_color", color);
-	prepUIUpdate(system, component, element, "STYLE");
-}
+
+export const SETBACKGROUNDCOLOR = <Action>{
+	type: ActionType.SET_CSS,
+	priority: 0,
+	sealFN: sealCSS,
+	initFN: (sys, crate, ratio) => {
+		const { r, g, b, a } = crate.data;
+		setValue(crate, "background_color", new css.types.color(r, g, b, a));
+	},
+	updateFN: (sys, crate, ratio) => {
+		const { r, g, b, a } = crate.data;
+		setValue(crate, "background_color", new css.types.color(r, g, b, a));
+	},
+	historyProgress: updateCSS,
+	historyRegress: updateCSS
+};
+
 //set background image
 //set font color
-export function SETCOLOR(system, component, element, r, g, b, a = 1) {
-	let color = new types.color(r, g, b, a);
-	setValue(system, component, element, "color", color);
-	prepUIUpdate(system, component, element, "STYLE");
-}
+
+
+export const SETCOLOR = <Action>{
+	type: ActionType.SET_CSS,
+	priority: 0,
+	sealFN: sealCSS,
+	initFN: (sys, crate, ratio) => {
+		const { r, g, b, a } = crate.data;
+		setValue(crate, "color", new css.types.color(r, g, b, a));
+	},
+	updateFN: (sys, crate, ratio) => {
+		const { r, g, b, a } = crate.data;
+		setValue(crate, "color", new css.types.color(r, g, b, a));
+	},
+	historyProgress: updateCSS,
+	historyRegress: updateCSS
+};
 //set font image

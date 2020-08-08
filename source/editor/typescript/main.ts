@@ -152,7 +152,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
         if (!ACTIVE_ACTION) return;
 
-        if (!crate) {
+        if (!crate) { //TODO Setup crate information for each selected object.
 
             crate = {
                 comp: editor_model.selected_comp,
@@ -320,8 +320,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         cy = e.y;
 
 
-        if (ACTIVE_ACTION)
-            return UPDATE_ACTION();
+        if (ACTIVE_ACTION) return UPDATE_ACTION();
 
         let ele = comp_window.document.elementFromPoint(e.x, e.y);
 

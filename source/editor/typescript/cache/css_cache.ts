@@ -1,9 +1,12 @@
-import { CSSProperty, CSSTreeNode } from "@candlefw/css";
+import { CSSProperty, CSSTreeNode, CSSRuleNode } from "@candlefw/css";
 import { RuntimeComponent } from "@candlefw/wick";
 import { css, conflagrate } from "../env.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { getApplicableProps } from "../css.js";
+import { SET_ATTRIBUTE } from "../actions/html.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { getComponentData, getActiveComponentInstances } from "../common_functions.js";
 
 let global_cache = null;
 
@@ -31,18 +34,24 @@ function isSelectorCapableOfBeingUnique(selector: CSSTreeNode, root_name: string
     return count == 1;
 }
 
-function getApplicableProps_(system, component, element) {
+function getApplicableProps_(system: FlameSystem, component: RuntimeComponent, element: HTMLElement, unique_selector: CSSTreeNode) {
 
     const props = getApplicableProps(system, component, element);
 
-    const selectors = new Set([...props.values()].map(p => p.sel));
-
     for (const v of props.values()) {
-        const { sel } = v;
+        const
+            { sel } = v,
+            elements = [...css.getMatchedElements(component.ele, sel)];
 
-        const elements = [...css.getMatchedElements(component.ele, sel)];
-
-        if (elements.length == 1 && isSelectorCapableOfBeingUnique(sel, component.name)) {
+        if (
+            css.isSelectorEqual(sel, unique_selector)
+            || (
+                elements.length == 1
+                &&
+                isSelectorCapableOfBeingUnique(sel, component.name
+                )
+            )
+        ) {
             v.unique = true;
         }
     }
@@ -74,7 +83,7 @@ class ComputedStyle {
         return this.brect.height;
     }
 
-    get(value) {
+    get(value: string) {
 
         const internal_value = this.cache.rules.props[value];
 
@@ -85,24 +94,15 @@ class ComputedStyle {
     }
 }
 
-const ADD_ID_ACTION = {
-    act: (sys, comp, ele, id = sys.text) => {
-        if (id) {
-            ele.prev_id = ele.id; ele.id = id;
-        }
-    },
-    prec: 1000,
-    seal: (history_state, sys, comp, ele) => {
-        history_state.insert.push(["add_id", comp.elu.indexOf(ele), ele.id]);
-        history_state.delete.push(["add_id", comp.elu.indexOf(ele), ele.prev_id]);
-    }
-};
-
 interface ACTION {
 
 }
 
-/* Cache collects info about the CSS state of an element and provides methods to create new properties. */
+/**  
+ * Cache collects info about the CSS state of an element and provides methods to create new properties.
+ * It maintains a connection to the Component Data of an element, and directly manipulates CSS values
+ * within the Component DATA. 
+*/
 
 export class CSSCache {
 
@@ -122,11 +122,11 @@ export class CSSCache {
     changed: Set<string>;
 
     unique: Map<string, TrackedCSSProp>;
-    unique_selector: string;
+    unique_selector: CSSTreeNode;
     original_props: Map<string, TrackedCSSProp>;
     _computed: any;
 
-    component: any;
+    component: RuntimeComponent;
 
     rules: any;
 
@@ -178,14 +178,14 @@ export class CSSCache {
         return this._computed;
     }
 
-    update(system) {
+    update(system: any) {
         if (!system)
             return;
 
         this.generateMovementCache(system, this.component, this.element);
     }
 
-    setUniqueSelector(sys, comp, ele) {
+    setUniqueSelector(sys: FlameSystem, comp: RuntimeComponent, ele: HTMLElement, crate: ObjectCrate) {
 
         //get all rules that match selector
         //for all rules that have a single selector 
@@ -222,19 +222,20 @@ export class CSSCache {
             }
         }
 
-        //if at this point there is no suitable rule,
-        //create a new ID, assign to ele and
-        //use the id for the selector for the element.
-
         if (ele.id) {
             this.unique_selector = css.selector(`#${ele.id}`);
         } else {
+
+            //if at this point there is no suitable rule,
+            //create a new ID, assign to ele and
+            //use the id for the selector for the element.
             const id = "A" + ((Math.random() * 12565845322) + "").slice(0, 5);
 
-            sys.action_sabot.push(ADD_ID_ACTION);
+            crate.action_list.unshift(SET_ATTRIBUTE);
 
-            //Immediately apply action.
-            ADD_ID_ACTION.act(sys, comp, ele, id);
+            crate.data.key = "id";
+
+            crate.data.val = id;
 
             this.unique_selector = css.selector(`#${id}`);
         }
@@ -246,11 +247,12 @@ export class CSSCache {
         return this.LOCKED;
     }
 
-    init(system: FlameSystem, component: RuntimeComponent, element: HTMLElement) {
+    init(system: FlameSystem, crate: ObjectCrate) {
 
-        this.element = element;
+        this.crate = crate;
+        this.element = crate.ele;
         this.system = system;
-        this.component = component;
+        this.component = crate.comp;
         //calculate horizontal and vertical rations. also width and height ratios.  
         this.setupStyle();
     }
@@ -262,7 +264,12 @@ export class CSSCache {
             component = this.component;
 
         let move_type = system.move_type || "absolute";
-        let css_r = getApplicableProps_(system, component, element);
+
+        // The unique rule either exists within the edit style sheet cache,
+        // or a new one needs to be made.
+        this.setUniqueSelector(system, component, element, this.crate);
+
+        let css_r = getApplicableProps_(system, component, element, this.unique_selector);
 
         this.original_props = css_r;
         this.changed = new Set();
@@ -272,10 +279,6 @@ export class CSSCache {
             if (val.unique)
                 this.unique.set(name, { sel: val.sel, prop: val.prop.copy(), unique: true });
 
-
-        // The unique rule either exists within the edit style sheet cache,
-        // or a new one needs to be made.
-        this.setUniqueSelector(system, component, element);
 
         //test for presence of rules. 
         let POS_R = false,
@@ -427,7 +430,7 @@ export class CSSCache {
     }
 
     //Need a way to keep check of changed properties.
-    getProp(name): CSSProperty {
+    getProp(name: string): CSSProperty {
         let prop = null;
 
         if (this.unique.has(name))
@@ -466,20 +469,62 @@ export class CSSCache {
 
 
     setPropFromString(string: string) {
-        const prop = this.createProp(string);
-        this.setProp(prop);
+        for (const str of string.split(";")) {
+            const prop = this.createProp(str);
+            this.setProp(prop);
+        }
     }
 
-    applyTempElementChanges() {
-        if (this.unique) {
-            const ele = this.element;
-            const string = [...this.unique.values()].map(v => v.prop).join(";");
-            ele.style = string;
+    applyChangesToCSS();
+
+    clearChanges(system: FlameSystem) {
+        //Retrieve all components with that match the selector
+        const
+            comp = getActiveComponentInstances(system, this.component.name),
+            props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
+        for (const c of comp) {
+
+            for (const e of css.getMatchedElements(c.ele, this.unique_selector)) {
+                for (const prop of props)
+                    e.style[prop.camelName] = "";
+            }
+        }
+
+        return;
+    }
+
+    applyChanges(system: FlameSystem, nonce: number) {
+
+        //Retrieve all components with that match the selector
+        const
+            comp = getActiveComponentInstances(system, this.component.name),
+            props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
+        for (const c of comp) {
+
+            for (const e of css.getMatchedElements(c.ele, this.unique_selector)) {
+                for (const prop of props)
+                    e.style[prop.camelName] = prop.value_string;
+            }
         }
     }
 
     clearStyle() {
         this.element.style = "";
+    }
+}
+
+export function updateLastOccurrenceOfRuleInStyleSheet(stylesheet: any, rule: CSSRuleNode) {
+
+    const selector_string = css.render(rule.selectors[0]);
+    let matching_rule = css.getLastRuleWithMatchingSelector(stylesheet, rule.selectors[0]);
+
+    if (!matching_rule) {
+        matching_rule = conflagrate.copy(rule);
+        stylesheet.nodes.push(matching_rule);
+    } else {
+        for (const [name, prop] of rule.props.entries()) {
+            matching_rule.props.set(name, prop);
+        }
     }
 }
 
@@ -492,7 +537,8 @@ const cache_array = [];
 export function CSSCacheFactory(
     sys: FlameSystem,
     comp: RuntimeComponent,
-    ele: HTMLElement
+    ele: HTMLElement,
+    crate: ObjectCrate
 ): CSSCache {
 
     for (const { comp: c, cache } of cache_array) {
@@ -503,7 +549,7 @@ export function CSSCacheFactory(
 
     cache = new CSSCache();
 
-    cache.init(sys, comp, ele);
+    cache.init(sys, crate);
 
     cache_array.push({ comp, cache });
 

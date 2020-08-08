@@ -2,7 +2,8 @@ import { css } from "../env.js";
 
 const types = css.types;
 
-import { setNumericValue, getRatio, setValue, getFirstPositionedAncestor, prepRebuild } from "./common.js";
+import { setNumericValue, setValue, getFirstPositionedAncestor, prepRebuild } from "./common.js";
+import { getRatio } from "./ratio.js";
 import { SETDELTAWIDTH, SETDELTAHEIGHT } from "./dimensions.js";
 import { CSSCacheFactory } from "../cache/css_cache.js";
 

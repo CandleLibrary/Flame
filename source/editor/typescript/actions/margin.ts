@@ -1,4 +1,5 @@
-import { setNumericValue, getRatio } from "./common.js";
+import { setNumericValue } from "./common.js";
+import { getRatio } from "./ratio.js";
 import { SETDELTALEFT, SETDELTATOP } from "./position.js";
 
 import { CSSCacheFactory } from "../cache/css_cache.js";

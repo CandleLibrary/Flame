@@ -2,7 +2,7 @@
 
 import { RuntimeComponent } from "@candlefw/wick";
 import { FlameSystem } from "../types/flame_system";
-import { getElementIndex } from "../system.js";
+import { getElementIndex } from "../common_functions.js";
 
 export class HTMLCache {
     ele: HTMLElement;
@@ -23,7 +23,7 @@ export class HTMLCache {
         this.index = -1;
     }
 
-    applyTempElementChanges(): void {
+    applyChanges(): void {
 
     }
 }

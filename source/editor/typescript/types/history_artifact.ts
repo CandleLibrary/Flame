@@ -2,6 +2,12 @@ import { ActionType } from "./action_type";
 
 export interface HistoryArtifact {
     type: ActionType;
+
+    /**
+     * If set to true, do not call the progress function
+     * on the action after sealing.
+     */
+    DO_NOT_CALL_AFTER_UPDATE?: boolean;
     progress?: {
         comp_data_name: string;
         ele_index: number,

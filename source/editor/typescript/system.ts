@@ -1,22 +1,6 @@
 import { RuntimeComponent, wickOutput } from "@candlefw/wick";
 import { FlameSystem } from "./types/flame_system.js";
 
-export function getElementIndex(comp: RuntimeComponent, ele: HTMLElement): number {
-    return comp.elu.indexOf(ele);
-}
-
-export function getElementFromIndex(comp: RuntimeComponent, index: number): HTMLElement {
-    return comp.elu[index];
-}
-
-export function getComponents(sys: FlameSystem, name: string): RuntimeComponent[] {
-    return Array.from(sys.document.getElementsByClassName(name)).map(comp => comp.wick_component);
-}
-
-export function getComponentData(sys: FlameSystem, name: string): Component {
-    return sys.edit_wick.rt.presets.components.get(name);
-}
-
 export function initSystem(
     w: wickOutput,
     edit_wick: wickOutput,

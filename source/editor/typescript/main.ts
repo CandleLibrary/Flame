@@ -6,22 +6,65 @@ import {
 import css_sys from "./css.js";
 import history from "./history.js";
 import { ObjectCrate } from "./types/object_crate.js";
-import { RuntimeComponent } from "@candlefw/wick";
+import { RuntimeComponent, ObservableWatcher, ObservableModel } from "@candlefw/wick";
 import { CSSCacheFactory } from "./cache/css_cache.js";
 import { HTMLCacheFactory } from "./cache/html_cache.js";
 import { Action } from "./types/action.js";
 import { initSystem } from "./system.js";
+import { getComponentHierarchy, getComponentData, getComponentFromEvent, getElementFromEvent, retrieveComponentFromElement } from "./common_functions.js";
+import { t } from "@candlefw/wind/build/types/ascii_code_points";
+import { startRatioMeasure } from "./actions/ratio.js";
 
 export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //For Isolation
 
     const
         component_map = new Map,
         wick = comp_cfw.wick,
-        css = comp_cfw.css,
+        css = editor_cfw.css,
         rt = wick.rt,
         edit_rt = editor_cfw.wick.rt,
         edit_wick = editor_cfw.wick,
-        editor_model = { comp: <RuntimeComponent>null, ele: null, sc: 0, selected_comp: null, selected_ele: null, selected_element: null, ACTIONS, POINTER_DN: false },
+        editor_model = new (class implements ObservableModel {
+            comp: RuntimeComponent;
+            ele: any;
+            sc: number;
+            selected_comp: RuntimeComponent;
+            selected_ele: HTMLElement;
+            selected_element: HTMLElement;
+            ACTIONS: any;
+            POINTER_DN: boolean;
+
+            observers: ObservableWatcher[];
+
+            OBSERVABLE: true;
+            constructor() {
+                this.comp = null;
+                this.ele = null;
+                this.sc = 0;
+                this.selected_comp = null;
+                this.selected_element = null;
+                this.ACTIONS = ACTIONS;
+                this.POINTER_DN = false;
+                this.observers = [];
+            }
+
+            update() {
+                for (const observer of this.observers)
+                    observer.onModelUpdate(this);
+
+            }
+            subscribe(comp: ObservableWatcher) {
+                this.unsubscribe(comp);
+                this.observers.push(comp);
+                return true;
+            };
+
+            unsubscribe(comp: ObservableWatcher) {
+                let i = this.observers.indexOf(comp);
+                if (i >= 0) return this.observers.splice(i, 1), true;
+                return false;
+            }
+        }),
         edit_css = comp_window.document.createElement("style"),
         event_intercept_ele = document.createElement("div"),
         system = initSystem(wick, edit_wick, css_sys, edit_css, comp_window);
@@ -59,40 +102,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
             comp.ele.wick_component = comp;
     };
 
-    function retrieveComponentFromElement(ele) {
-        do {
-            if (ele.wick_component && !ele.hasAttribute("w-o"))
-                /* Presence of "w-o" indicates the element belongs to a component that has integrated it's 
-                 * element into the tree of another component.  */
-                return ele.wick_component;
 
-            ele = ele.parentNode;
-        } while (ele);
-        return null;
-    }
-
-    function getComponentDataFromComponent(comp) {
-        if (!comp) return null;
-        return cfw.wick.rt.presets.components.get(comp.name);
-    }
-
-    function getElementFromEvent(event) {
-        return event.target;
-    }
-
-    function getComponentFromEvent(event) {
-        return retrieveComponentFromElement(getElementFromEvent(event));
-    }
-
-    function getComponentHierarchy(comp) {
-        const list = [comp];
-        while (comp.par) { list.push(comp.par); comp = comp.par; }
-        return list.reverse();
-    }
-
-    function getComponentData(...comp) {
-        return comp.flatMap(e => e).map(getComponentDataFromComponent);
-    }
 
     function ISElementUI(ele) {
         while (ele) {
@@ -102,69 +112,8 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         return false;
     }
 
-    function selectElementEventResponder(e) {
-
-        const comp = getComponentFromEvent(event),
-            ele = getElementFromEvent(event);
-
-        if (ISElementUI(ele))
-            return;
-
-        editor_model.selected_comp = comp;
-        editor_model.selected_ele = ele;
-        editor_model.comp = null;
-        editor_model.ele = null;
-
-        const roots = getComponentData(getComponentHierarchy(comp));
-
-        for (const comp of roots) {
-            for (const CSS of (comp.CSS || [])) {
-                resume:
-                for (const node of (CSS.nodes || [])) {
-                    for (const selector of (node.selectors || [])) {
-                        if (css.matchElements(ele, selector, css.DOMHelpers)) {
-                            const css_package = {
-                                comp: comp,
-                                root: CSS,
-                                rule: node
-                            };
-                            console.log(css_package);
-                            console.log(selector, selector.pos);
-                            break resume;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    function APPLY_ACTION(act: Action[], data: ObjectCrate["data"]) {
-
-        editor_model.POINTER_DN = true;
-
-        //Make sure all actions in slug are actions.
-        //arrange the actions based on their ordering precedence
-
-        const sabot = act
-            .filter(a => typeof a == "object"
-                && typeof a.type == "number"
-                && typeof a.priority == "number")
-            .sort((a, b) => a.priority > b.priority ? -1 : 1);
-
-        if (sabot.length !== act.length) {
-            ACTIVE_ACTION = null;
-            system.action_sabot = null;
-        } else {
-            system.action_sabot = sabot;
-            ACTIVE_ACTION = sabot;
-        }
-
-        px = cx;
-        py = cy;
-
-        UPDATE_ACTION(true, data);
-        END_ACTION();
-    }
+    let ox = 0;
+    let oy = 0;
 
     function START_ACTION(act: Action[], data: ObjectCrate["data"]) {
 
@@ -190,6 +139,9 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
             ACTIVE_ACTION = sabot;
         }
 
+        ox = cx;
+        oy = cy;
+
         px = cx;
         py = cy;
 
@@ -205,28 +157,46 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
             crate = {
                 comp: editor_model.selected_comp,
                 ele: editor_model.selected_ele,
-                css_cache: CSSCacheFactory(system, editor_model.selected_comp, editor_model.selected_ele),
-                html_cache: HTMLCacheFactory(system, editor_model.selected_comp, editor_model.selected_ele),
+                css_cache: null,
+                html_cache: null,
+                limits: {
+                    min_x: -Infinity,
+                    max_x: Infinity,
+                    min_y: -Infinity,
+                    max_y: Infinity,
+                },
                 data: {
+                    abs_x: 0,
+                    abs_y: 0,
                     curr_comp: editor_model.selected_comp.name,
                     data: "",
-                }
+                },
+                action_list: ACTIVE_ACTION.slice(),
+                ratio_list: []
             };
+
+            crate.css_cache = CSSCacheFactory(system, editor_model.selected_comp, editor_model.selected_ele, crate);
+            crate.html_cache = HTMLCacheFactory(system, editor_model.selected_comp, editor_model.selected_ele, crate);
 
             if (data)
                 for (const d in data)
                     crate.data[d] = data[d];
+
         }
 
         crate.data.dx = cx - px;
         crate.data.dy = cy - py;
 
-        applyAction(ACTIVE_ACTION, system, [crate], INITIAL_PASS);
+        if (INITIAL_PASS)
+            console.log(crate.data.dx);
+
+        applyAction(system, [crate], INITIAL_PASS);
 
         crate.data.dx = 0;
         crate.data.dy = 0;
 
         editor_model.sc++;
+        editor_model.update();
     }
 
     function END_ACTION(event?) {
@@ -241,7 +211,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
             ele = editor_model.selected_ele,
             comp = editor_model.selected_comp;
 
-        sealAction(ACTIVE_ACTION, system, [crate]);
+        sealAction(system, [crate]);
 
         ACTIVE_ACTION = null;
         system.action_sabot = null;
@@ -253,6 +223,36 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         crate = null;
 
         editor_model.sc++;
+
+        editor_model.update();
+    }
+
+    function APPLY_ACTION(act: Action[], data: ObjectCrate["data"]) {
+
+        editor_model.POINTER_DN = true;
+
+        //Make sure all actions in slug are actions.
+        //arrange the actions based on their ordering precedence
+
+        const sabot = act
+            .filter(a => typeof a == "object"
+                && typeof a.type == "number"
+                && typeof a.priority == "number")
+            .sort((a, b) => a.priority > b.priority ? -1 : 1);
+
+        if (sabot.length !== act.length) {
+            ACTIVE_ACTION = null;
+            system.action_sabot = null;
+        } else {
+            system.action_sabot = sabot;
+            ACTIVE_ACTION = sabot;
+        }
+
+        px = 0;
+        py = 0;
+
+        UPDATE_ACTION(true, data);
+        END_ACTION();
     }
 
     function pointerReleaseElementEventResponder(e) {
@@ -262,6 +262,56 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         selectElementEventResponder(e);
     }
 
+    function getElementInHTMLNamespace(ele: Node) {
+        if (ele.parentNode) {
+            const par = ele.parentNode;
+
+            if (par.namespaceURI.includes("html"))
+                return ele;
+
+            return getElementInHTMLNamespace(par);
+        }
+
+        return null;
+    }
+
+    function selectElementEventResponder(e) {
+
+        const comp = getComponentFromEvent(event),
+            ele = getElementFromEvent(event);
+
+        if (ISElementUI(ele))
+            return;
+
+        editor_model.selected_comp = comp;
+        editor_model.selected_ele = getElementInHTMLNamespace(ele);
+        editor_model.comp = null;
+        editor_model.ele = null;
+
+        const roots = getComponentData(system, ...getComponentHierarchy(comp));
+
+        for (const comp of roots) {
+            for (const CSS of (comp.CSS || [])) {
+                resume:
+                for (const node of (CSS.nodes || [])) {
+                    for (const selector of (node.selectors || [])) {
+
+                        if (css.matchElements(ele, selector, css.DOMHelpers)) {
+                            const css_package = {
+                                comp: comp,
+                                root: CSS,
+                                rule: node
+                            };
+
+                            break resume;
+                        }
+                    }
+                }
+            }
+        }
+        editor_model.update();
+    }
+
     function pointerMoveEventResponder(e) {
 
         px = cx;
@@ -269,12 +319,17 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         py = cy;
         cy = e.y;
 
-        if (ACTIVE_ACTION) return UPDATE_ACTION();
 
-        const ele = comp_window.document.elementFromPoint(e.x, e.y);
+        if (ACTIVE_ACTION)
+            return UPDATE_ACTION();
 
-        if (!ele || ISElementUI(ele))
+        let ele = comp_window.document.elementFromPoint(e.x, e.y);
+
+        if (!ele || ele == editor_model.ele || ISElementUI(ele))
             return;
+
+        if (!ele.namespaceURI.includes("html"))
+            ele = getElementInHTMLNamespace(ele);
 
         if (ele !== prev) {
             prev = ele;
@@ -284,15 +339,21 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         const comp = retrieveComponentFromElement(ele);
         editor_model.comp = comp;
         editor_model.ele = ele;
+        editor_model.update();
     }
 
     function globalScrollEventListener(e) {
         editor_model.sc++;
+        editor_model.update();
     }
 
 
     comp_window.document.addEventListener("pointermove", pointerMoveEventResponder);
+    window.document.addEventListener("pointermove", pointerMoveEventResponder);
     comp_window.document.addEventListener("pointerup", pointerReleaseElementEventResponder);
+
+    //window.addEventListener("pointermove", pointerMoveEventResponder);
+    //window.addEventListener("pointerup", pointerReleaseElementEventResponder);
 
     event_intercept_ele.addEventListener("pointermove", pointerMoveEventResponder);
     event_intercept_ele.addEventListener("pointerup", pointerReleaseElementEventResponder);
@@ -303,6 +364,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         if (e.key == "z") history.ROLLBACK_EDIT_STATE(system);
         if (e.key == "r") history.ROLLFORWARD_EDIT_STATE(system);
         editor_model.sc++;
+        editor_model.update();
     });
 
     /**

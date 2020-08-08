@@ -1,59 +1,90 @@
-import { setNumericValue, getRatio, ensureBlocklike, prepRebuild } from "./common.js";
+import { setNumericValue, ensureBlocklike, prepRebuild } from "./common.js";
+import { getRatio, startRatioMeasure, RatioMarker, clearRatioMeasure } from "./ratio.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { FlameSystem } from "../types/flame_system.js";
+import { sealCSS, updateCSS } from "./position.js";
+import { ActionType } from "../types/action_type.js";
+import { Action } from "../types/action.js";
 
-export function SETWIDTH(system, component, element, x, LINKED = false) {
+function getContentBox(ele, win: Window = window, system) {
+    const
+        scale = system.ui.transform.scale,
+
+        rect = ele.getBoundingClientRect(),
+        par_prop = win.getComputedStyle(ele),
+
+        border_l = parseFloat(par_prop.getPropertyValue("border-left")),
+        border_r = parseFloat(par_prop.getPropertyValue("border-right")),
+        border_t = parseFloat(par_prop.getPropertyValue("border-top")),
+        border_b = parseFloat(par_prop.getPropertyValue("border-bottom")),
+
+        padding_l = parseFloat(par_prop.getPropertyValue("padding-left")),
+        padding_r = parseFloat(par_prop.getPropertyValue("padding-right")),
+        padding_t = parseFloat(par_prop.getPropertyValue("padding-top")),
+        padding_b = parseFloat(par_prop.getPropertyValue("padding-bottom")),
+
+        top = rect.top / scale + border_t,
+        left = rect.left / scale + border_l,
+        width = rect.width / scale - border_l - border_r - padding_l - padding_r,
+        height = rect.height / scale - border_t - border_b - padding_t - padding_b;
+    return { top, left, width, height };
+}
+
+function getNumericValue(sys: FlameSystem, crate: ObjectCrate, type: string): number {
+    const { ele } = crate;
+    return getContentBox(ele, sys.window, sys)[type];
+}
+
+export function SETWIDTH(system, component, element, x) {
     ensureBlocklike(system, component, element);
 
     const excess = setNumericValue("width", system, component, element, x, setNumericValue.parent_width);
-
-    prepRebuild(system, component, element, LINKED);
-
-    return { excess_x: excess, ratio: 0 };
 }
 
-export function SETHEIGHT(system, component, element, y, LINKED = false) {
+export function SETHEIGHT(system, component, element, y) {
     ensureBlocklike(system, component, element);
 
     let excess = setNumericValue("height", system, component, element, y, setNumericValue.parent_height);
-
-    prepRebuild(system, component, element, LINKED);
-
-    return { excess_y: excess, ratio: 0 };
 }
 
-export function SETDELTAWIDTH(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element).width),
-        excess = 0;
+export const SETDELTAWIDTH = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "width" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-    if (ratio > 0) {
-        let { ratio: r, excess_x: e } = SETWIDTH(system, component, element, start_x + dx / ratio, true);
-        ratio = r;
-        excess = e;
-    } else {
-        let { ratio: r, excess: e } = getRatio(system, component, element, SETWIDTH, start_x, dx, "width");
-        ratio = r;
-        excess = e;
-    }
+        const { comp, ele, } = crate,
 
-    prepRebuild(system, component, element, LINKED);
+            start_x = getNumericValue(sys, crate, "width"),
 
-    return { excess_x: excess, ratio };
-}
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-export function SETDELTAHEIGHT(system, component, element, dy, ratio = 0, LINKED = false) {
-    let start_y = parseFloat(system.window.getComputedStyle(element).height),
-        excess = 0;
+        SETWIDTH(sys, comp, ele, start_x + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (ratio > 0) {
-        let { ratio: r, excess_y: e } = SETHEIGHT(system, component, element, start_y + dy / ratio, true);
-        ratio = r;
-        excess = e;
-    } else {
-        let { ratio: r, excess: e } = getRatio(system, component, element, SETHEIGHT, start_y, dy, "height");
-        ratio = r;
-        excess = e;
-    }
 
-    prepRebuild(system, component, element, LINKED);
 
-    return { excess_y: excess, ratio };
-}
+export const SETDELTAHEIGHT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "height" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+
+        const { comp, ele, } = crate,
+
+            start_x = getNumericValue(sys, crate, "height"),
+
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
+
+        SETHEIGHT(sys, comp, ele, start_x + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};

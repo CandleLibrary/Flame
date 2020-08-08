@@ -101,6 +101,7 @@ export default (function HISTORY() {
         ROLLBACK_EDIT_STATE(system: FlameSystem) {
             if (pointer > -1) {
                 const state = stack[pointer];
+                console.log(state);
                 setState(false, state, system);
                 pointer--;
             }
@@ -115,11 +116,14 @@ export default (function HISTORY() {
             if (pointer < stack.length - 1) {
                 pointer++;
                 const state = stack[pointer];
+                console.log(state);
                 setState(true, state, system);
             }
+
         },
 
         WriteBack(system: FlameSystem) {
+            return;
             //Write current changes back to file. 
             const components = <Map<string, Component>>system.edit_wick.rt.presets.components;
 
@@ -140,8 +144,9 @@ export default (function HISTORY() {
 
                     // If there are active frames (frames with ast data) then output will be 
                     // JS format. If not, then the output will be in html format.
-                    const html = renderHTMLFromComponentData(component);
-                    const css_ = component.CSS.slice(-1)[0];
+                    const
+                        html = renderHTMLFromComponentData(component),
+                        css_ = component.CSS.slice(-1)[0];
 
                     let out_node = {
                         type: MinTreeNodeType.Script,
@@ -200,11 +205,11 @@ export default (function HISTORY() {
                     const url_ = <typeof component.location>new component.location.constructor("/component_sys/t");
 
                     //@ts-ignore
-                    url_.submitJSON({
-                        location: component.location + "",
-                        source: out_data,
-                        action: "update"
-                    });
+                    //  url_.submitJSON({
+                    //      location: component.location + "",
+                    //      source: out_data,
+                    //      action: "update"
+                    //  });
 
                 }
                 //Need to go through the components and rebuild the parts that have changed.

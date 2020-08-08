@@ -17,7 +17,7 @@ var a = 0, b = 0, c = 0, d = 0, test = [];
         color:white;
         z-index:10000;
         pointer-events:none;
-        border:1px solid rgb(255,128,128)
+        border:1px solid rgb(100,100,200);
     }
 
     #test, .lower-data {
@@ -49,6 +49,12 @@ function showBox() {
 
         const div = "@#main", bb = ele.getBoundingClientRect();
 
+        const
+            prop = window.getComputedStyle(ele),
+            padding_l = parseFloat(prop.getPropertyValue("padding-left")) || 0,
+            padding_r = parseFloat(prop.getPropertyValue("padding-right")) || 0,
+            padding_t = parseFloat(prop.getPropertyValue("padding-top")) || 0,
+            padding_b = parseFloat(prop.getPropertyValue("padding-bottom")) || 0;
 
         div.style.opacity = 1;
 
@@ -57,65 +63,67 @@ function showBox() {
         c = bb.left;
         d = bb.top;
 
-        div.style.width = a + "px";
-        div.style.height = b + "px";
-        div.style.left = c + "px";
-        div.style.top = d + "px";
+        div.style.width = (a - padding_l - padding_r) + "px";
+        div.style.height = (b - padding_t - padding_b) + "px";
+        div.style.left = (c + padding_l) + "px";
+        div.style.top = (d + padding_t) + "px";
 
         test = [{
             ele: ele,
             ele_updated: 1,
             pos_type: "top-left",
-            ACTION: ACTIONS.RESIZETL,
+            ACTION: [ACTIONS.RESIZEPADDINGT, ACTIONS.RESIZEPADDINGL],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "top",
-            ACTION: ACTIONS.RESIZET,
+            ACTION: [ACTIONS.RESIZEPADDINGT],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "top-right",
-            ACTION: ACTIONS.RESIZETR,
+            ACTION: [ACTIONS.RESIZEPADDINGT, ACTIONS.RESIZEPADDINGR],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "right",
-            ACTION: ACTIONS.SET_ATTRIBUTE,
+            ACTION: [ACTIONS.RESIZEPADDINGR],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom-right",
-            ACTION: ACTIONS.RESIZEBR,
+            ACTION: [ACTIONS.RESIZEPADDINGB, ACTIONS.RESIZEPADDINGR],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom",
-            ACTION: ACTIONS.RESIZEB,
+            ACTION: [ACTIONS.RESIZEPADDINGB],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "bottom-left",
-            ACTION: ACTIONS.RESIZEBL,
+            ACTION: [ACTIONS.RESIZEPADDINGB, ACTIONS.RESIZEPADDINGL],
         }, {
             ele: ele,
             ele_updated: 1,
             pos_type: "left",
-            ACTION: ACTIONS.RESIZEL,
+            ACTION: [ACTIONS.RESIZEPADDINGL],
+        }, , {
+            ele: ele,
+            ele_updated: 1,
+            pos_type: "center",
+            ACTION: [ACTIONS.RESIZEPADDINGT, ACTIONS.RESIZEPADDINGB, ACTIONS.RESIZEPADDINGL, ACTIONS.RESIZEPADDINGR],
         }];
 
-    } else {
-        ("@#main").style.opacity = 0;
-    }
+
+    } else ("@#main").style.opacity = 0;
 };
 
 watch(showBox, sc);
 
 
 export default <div id="main" class="main">
-    <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location )) <span class="color">(( sc &&  ele.tagName + (ele.id ?  "."+ele.id : "")))</span> ((ele.getAttribute("w-s")))</div>
     <container data=((test))>
         <handle />
     </container>
-    <div class="lower-data">w:((a)) h:((b)) l:((c)) t:((d))</div>
 </div >;

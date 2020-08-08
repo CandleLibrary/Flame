@@ -1,8 +1,8 @@
 import {
     setNumericValue,
-    getRatio,
     prepRebuild
 } from "./common.js";
+import { getRatio, startRatioMeasure, RatioMarker, markRatioMeasure, clearRatioMeasure } from "./ratio.js";
 import {
     CSSCacheFactory
 } from "../cache/css_cache.js";
@@ -17,8 +17,8 @@ import { HistoryArtifact } from "../types/history_artifact.js";
 import { Component } from "@candlefw/wick";
 import { ActionType } from "../types/action_type.js";
 import { Action } from "../types/action.js";
-import { getElementIndex, getComponentData } from "../system.js";
 import { ObjectCrate } from "../types/object_crate.js";
+import { getComponentDataFromName } from "../common_functions.js";
 
 const types = css.types;
 
@@ -26,245 +26,239 @@ const types = css.types;
 /********************************** POSITION SUB ACTIONS *************************************/
 /***************************************************************************************/
 
-export function SETLEFT(system, component, element, x, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element),
-        excess = 0;
+export function SETLEFT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
 
-    if (x.type) {
-        cache.rules.props.left.setValue(x);
-    } else {
-        if (cache.cssflagsA & 1)
-            excess = setNumericValue("left", system, component, element, x, setNumericValue.parent_width, true);
-        else
-            excess = setNumericValue("left", system, component, element, x, setNumericValue.positioned_ancestor_width, true);
-    }
+    const { comp, ele, css_cache, data: { dx } } = crate, pos = val || dx;
 
-    prepRebuild(system, component, element, LINKED);
-
-    return { excess_x: excess };
-}
-
-export function SETRIGHT(system, component, element, x, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element),
-        excess = 0;
-
-    if (cache.cssflagsA & 1)
-        excess = setNumericValue("right", system, component, element, x, setNumericValue.parent_width, true);
+    if (css_cache.cssflagsA & 1)
+        setNumericValue("left", sys, comp, ele, pos, setNumericValue.parent_width, true);
     else
-        excess = setNumericValue("right", system, component, element, x, setNumericValue.positioned_ancestor_width, true);
+        setNumericValue("left", sys, comp, ele, pos, setNumericValue.positioned_ancestor_width, true);
 
-    prepRebuild(system, component, element, LINKED);
-
-    return { excess_x: excess };
+    css_cache.applyChanges(sys, 0);
 }
 
-export function SETTOP(system, component, element, y, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element),
-        excess = 0;
+export function SETRIGHT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
 
-    if (y.type) {
-        cache.rules.props.top.setValue(y);
-    } else {
-        if (cache.cssflagsA & 1)
-            excess = setNumericValue("top", system, component, element, y, setNumericValue.parent_height, true);
-        else
-            excess = setNumericValue("top", system, component, element, y, setNumericValue.positioned_ancestor_height, true);
-    }
+    const { comp, ele, css_cache, data: { dx } } = crate, pos = val || dx;
 
-    prepRebuild(system, component, element, LINKED);
-
-    return { excess_y: excess };
-}
-
-export function SETBOTTOM(system, component, element, y, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element),
-        excess = 0;
-
-    if (cache.cssflagsA & 1)
-        excess = setNumericValue("bottom", system, component, element, y, setNumericValue.parent_height, true);
+    if (css_cache.cssflagsA & 1)
+        setNumericValue("right", sys, comp, ele, pos, setNumericValue.parent_width, true);
     else
-        excess = setNumericValue("bottom", system, component, element, y, setNumericValue.positioned_ancestor_height, true);
+        setNumericValue("right", sys, comp, ele, pos, setNumericValue.positioned_ancestor_width, true);
 
-    prepRebuild(system, component, element, LINKED);
+    css_cache.applyChanges(sys, 0);
+}
 
-    return { excess_y: excess };
+export function SETTOP(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
+
+    const { comp, ele, css_cache, data: { dy } } = crate, pos = val || dy;
+
+    if (css_cache.cssflagsA & 1)
+        setNumericValue("top", sys, comp, ele, pos, setNumericValue.parent_height, true);
+    else
+        setNumericValue("top", sys, comp, ele, pos, setNumericValue.positioned_ancestor_height, true);
+
+    css_cache.applyChanges(sys, 0);
+}
+
+export function SETBOTTOM(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
+
+    const { comp, ele, css_cache, data: { dy } } = crate, pos = val || dy;
+
+    if (css_cache.cssflagsA & 1)
+        setNumericValue("bottom", sys, comp, ele, pos, setNumericValue.parent_height, true);
+    else
+        setNumericValue("bottom", sys, comp, ele, pos, setNumericValue.positioned_ancestor_height, true);
+
+    css_cache.applyChanges(sys, 0);
 }
 
 /***************************************************************************************/
 /********************************** DELTA SUB ACTIONS *************************************/
 /***************************************************************************************/
 
-export function SETDELTALEFT(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element).left),
-        excess_x = 0;
+export const SETDELTALEFT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "left" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const { ele } = crate,
+            value = parseFloat(sys.window.getComputedStyle(ele).left),
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    start_x = isNaN(start_x) ? 0 : start_x;
+        SETLEFT(sys, crate, value + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (ratio > 0)
-        excess_x = SETLEFT(system, component, element, start_x + dx / ratio, true).excess_x;
-    else {
-        let r = getRatio(system, component, element, SETLEFT, start_x, dx, "left", true);
-        ratio = r.ratio;
-        excess_x = r.excess;
-    }
+export const SETDELTARIGHT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "right" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const { ele } = crate,
+            value = parseFloat(sys.window.getComputedStyle(ele).right),
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    prepRebuild(system, component, element, LINKED);
+        SETRIGHT(sys, crate, value + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    return { ratio, excess_x };
-}
+export const SETDELTATOP = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "top" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const { ele } = crate,
+            value = parseFloat(sys.window.getComputedStyle(ele).top),
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-export function SETDELTARIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element).right),
-        excess_x = 0;
-
-    start_x = isNaN(start_x) ? 0 : start_x;
-
-    if (ratio > 0)
-        excess_x = SETRIGHT(system, component, element, start_x + dx / ratio, true).excess_x;
-    else {
-        let r = getRatio(system, component, element, SETRIGHT, start_x, dx, "right", true);
-        ratio = r.ratio;
-        excess_x = r.excess;
-    }
-
-    prepRebuild(system, component, element, LINKED);
-
-    return { ratio, excess_x };
-}
+        SETTOP(sys, crate, value + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
 
-export function SETDELTATOP(system, component, element, dy, ratio = 0, LINKED = false, origin = undefined) {
+export const SETDELTABOTTOM = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "bottom" }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const { ele } = crate,
+            value = parseFloat(sys.window.getComputedStyle(ele).bottom),
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    let start_x = parseFloat(system.window.getComputedStyle(element).top),
-        excess_y = 0;
-
-    start_x = isNaN(start_x) ? 0 : start_x;
-
-    if (ratio > 0)
-        excess_y = SETTOP(system, component, element, start_x + dy / ratio, true).excess_y;
-    else {
-        let r = getRatio(system, component, element, SETTOP, start_x, dy, "top", true, origin);
-        ratio = r.ratio;
-        excess_y = r.excess;
-    }
-
-    prepRebuild(system, component, element, LINKED);
-
-    return { ratio, excess_y };
-}
-export function SETDELTABOTTOM(system, component, element, dy, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element).bottom),
-        excess_y = 0;
-
-    start_x = isNaN(start_x) ? 0 : start_x;
-
-    if (ratio > 0)
-        excess_y = SETBOTTOM(system, component, element, start_x + dy / ratio, true).excess_y;
-    else {
-        let r = getRatio(system, component, element, SETBOTTOM, start_x, dy, "bottom", true);
-        ratio = r.ratio;
-        excess_y = r.excess;
-    }
-
-    prepRebuild(system, component, element, LINKED);
-
-    return { ratio, excess_y };
-}
+        SETBOTTOM(sys, crate, value + delta);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
 /***************************************************************************************/
 /********************************** RESIZE ACTIONS *************************************/
 /***************************************************************************************/
 
 
-export function RESIZEL(system, component, element, dx = system.dx, dy = system.dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return (component.x += dx, component.width -= dx);
-    let cache = CSSCacheFactory(system, component, element),
-        excess_x = 0;
-    switch (cache.move_hori_type) {
-        case "left right":
-            excess_x = SETDELTALEFT(system, component, element, dx, 0, true).excess_x;
-            break;
-        case "left":
-            excess_x = SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
-            SETDELTALEFT(system, component, element, dx + excess_x, 0, true);
-            break;
-        case "right":
-            excess_x = SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
-            break;
-    }
+export const RESIZER = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "right" }),
+    updateFN: (sys, crate, ratio) => {
 
-    prepRebuild(system, component, element, false);
+        const { css_cache } = crate;
 
-    return { excess_x };
-}
+        switch (css_cache.move_hori_type) {
+            case "left right":
+                SETDELTARIGHT.updateFN(sys, crate, ratio, true);
+                break;
+            case "right":
+                SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+                SETDELTARIGHT.updateFN(sys, crate, ratio, false);
+                break;
+            case "left":
+                SETDELTAWIDTH.updateFN(sys, crate, ratio, false);
+                break;
+        }
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-export function RESIZET(system, component, element, dx = system.dx, dy = system.dy, IS_COMPONENT) {
+export const RESIZEL = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "left" }),
+    updateFN: (sys, crate, ratio) => {
 
-    if (IS_COMPONENT) return (component.y += dy, component.height -= dy);
-    let cache = CSSCacheFactory(system, component, element),
-        excess_y = 0;
-    switch (cache.move_vert_type) {
-        case "top bottom":
-            excess_y = SETDELTATOP(system, component, element, dy, 0, true).excess_y;
-        case "top":
-            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
-            SETDELTATOP(system, component, element, dy + excess_y, 0, true);
-            break;
-        case "bottom":
-            excess_y = SETDELTAHEIGHT(system, component, element, -dy, 0, true).excess_y;
-            break;
-    }
+        const { css_cache } = crate;
 
-    prepRebuild(system, component, element, false);
+        switch (css_cache.move_hori_type) {
+            case "left right":
+                SETDELTALEFT.updateFN(sys, crate, ratio, true);
+                break;
+            case "left":
+                SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+                SETDELTALEFT.updateFN(sys, crate, ratio, false);
+                break;
+            case "right":
+                SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+                break;
+        }
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    return { excess_y };
-}
+export const RESIZET = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "top" }),
+    updateFN: (sys, crate, ratio) => {
 
-export function RESIZER(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return (component.width += dx);
-    let cache = CSSCacheFactory(system, component, element),
-        excess_x = 0;
+        const { css_cache } = crate;
 
-    switch (cache.move_hori_type) {
-        case "left right":
-            excess_x = -SETDELTARIGHT(system, component, element, -dx, 0, true).excess_x;
-            break;
-        case "right":
-            excess_x = -SETDELTAWIDTH(system, component, element, -dx, 0, true).excess_x;
-            SETDELTARIGHT(system, component, element, -dx - excess_x, 0, true);
-            break;
-        case "left":
-            excess_x = -SETDELTAWIDTH(system, component, element, dx, 0, true).excess_x;
-            break;
-    }
+        switch (css_cache.move_vert_type) {
+            case "top bottom":
+                SETDELTATOP.updateFN(sys, crate, ratio, true);
+                break;
+            case "bottom":
+                SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+                break;
+            case "top":
+                SETDELTATOP.updateFN(sys, crate, ratio, true);
+                SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+                break;
+        }
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    prepRebuild(system, component, element, false);
+export const RESIZEB = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: (sys, crate) => { },
+    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "bottom" }),
+    updateFN: (sys, crate, ratio) => {
 
-    return { excess_x };
-}
+        const { css_cache } = crate;
 
-export function RESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return (component.height += dy);
-    let cache = CSSCacheFactory(system, component, element),
-        excess_y = 0;
-    switch (cache.move_vert_type) {
-        case "top bottom":
-            excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
-            //SETDELTABOTTOM(system, component, element, -dy, ratio * 0.5, true);
-            break;
-        case "bottom":
-            excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
-            SETDELTABOTTOM(system, component, element, -dy - excess_y, 0, true);
-            break;
-        case "top":
-            excess_y = -SETDELTAHEIGHT(system, component, element, dy, 0, true).excess_y;
-            break;
-    }
-
-    prepRebuild(system, component, element, false);
-
-    return { excess_y };
-}
+        switch (css_cache.move_vert_type) {
+            case "top bottom":
+                SETDELTABOTTOM.updateFN(sys, crate, ratio, false);
+                break;
+            case "bottom":
+                SETDELTAHEIGHT.updateFN(sys, crate, ratio, false);
+                SETDELTABOTTOM.updateFN(sys, crate, ratio, true);
+                break;
+            case "top":
+                SETDELTAHEIGHT.updateFN(sys, crate, ratio, false);
+                break;
+        }
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
 export function SUBRESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
     if (IS_COMPONENT) return (component.height += dy);
@@ -289,18 +283,94 @@ export function SUBRESIZEB(system, component, element, dx, dy, IS_COMPONENT) {
         SUBRESIZEB(system, component, element, dx, dy, cache.valueB);
 }
 
+
 /***************************************************************************************************/
 /********************************** COMBINATION RESIZE ACTIONS *************************************/
 /***************************************************************************************************/
 
-export const RESIZETL = {
-    act(system, component, element, dx = system.dx, dy = system.dy, IS_COMPONENT) {
 
-    },
-    precedence: 0,
-    type: "CSS"
 
-};
+export function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = true) {
+
+    const
+        active = FORWARD ? history.progress : history.regress,
+        opposite = FORWARD ? history.regress : history.progress,
+        names = [];
+
+    if (active) {
+
+        const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = active;
+        //Mode Updated data stylesheets.
+
+        // Setup css object in the environment and in the wick component
+        const comp_data = getComponentDataFromName(sys, name);
+
+        // For each prop, find rule with correct selector, bottom up. 
+        // Insert new prop into rule. 
+
+        //Find matching rule.
+        let rule = css.getLastRuleWithMatchingSelector(comp_data.CSS[0], css.selector(selector_string));
+
+        if (!rule) {
+            rule = css.rule(`${selector_string}{${prop_string}}`);
+            comp_data.CSS[0].nodes.push(rule);
+        } else {
+            const prop = css.property(prop_string);
+            rule.props.set(prop.name, prop);
+        }
+
+        names.push(name);
+    }
+
+
+    if (!FORWARD) {
+        if (active) {
+
+            const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = active;
+            // Setup css object in the environment and in the wick component
+            const comp_data = <Component>sys.edit_wick.rt.presets.components.get(name);
+
+            // For each prop, find rule with correct selector, bottom up. 
+            // Insert new prop into rule. 
+
+            //Find matching rule.
+            const rule = css.getLastRuleWithMatchingSelector(comp_data.CSS[0], css.selector(selector_string));
+
+            if (rule) {
+                const prop = css.property(prop_string);
+                rule.props.set(prop.name, prop);
+            }
+
+            names.push(name);
+        } else {
+            const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = opposite;
+
+
+            // Setup css object in the environment and in the wick component
+            const comp_data = <Component>sys.edit_wick.rt.presets.components.get(name);
+
+            // For each prop, find rule with correct selector, bottom up. 
+            // Insert new prop into rule. 
+
+            //Find matching rule.
+            const rule = css.getLastRuleWithMatchingSelector(comp_data.CSS[0], css.selector(selector_string));
+
+            if (rule) {
+
+                rule.props.delete(prop_name);
+
+                if (rule.props.size == 0)
+                    css.removeRule(comp_data.CSS[0], rule);
+            }
+
+            names.push(name);
+
+        }
+    }
+
+
+    return names;
+}
 
 
 export function sealCSS(sys, crate: ObjectCrate) {
@@ -335,6 +405,8 @@ export function sealCSS(sys, crate: ObjectCrate) {
 
             const { prop, unique } = original.get(name);
 
+            console.log({ unique });
+
             if (unique) {
                 //do something
                 hist.regress = {
@@ -346,7 +418,7 @@ export function sealCSS(sys, crate: ObjectCrate) {
                     pos: prop.pos,
                 };
             }
-        };
+        }
 
         hist.progress = {
             comp_data_name: comp.name,
@@ -363,116 +435,4 @@ export function sealCSS(sys, crate: ObjectCrate) {
     cache.lock(true);
 
     return history;
-}
-/*
-export const RESIZETR = {
-    act(system, component, element, dx = system.dx, dy = system.dy, IS_COMPONENT) {
-
-        let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
-        let { excess_y } = RESIZET(system, component, element, dx, dy, IS_COMPONENT);
-        if (!IS_COMPONENT)
-            prepRebuild(system, component, element, false);
-
-        return { excess_x, excess_y };
-    },
-    precedence: 0,
-    type: "CSS"
-};
-*/
-
-
-export const RESIZETR = <Action>{
-    type: ActionType.SET_CSS,
-    priority: 0, //Should always come first. except for delete element
-    sealFN: sealCSS,
-    initFN: (sys, crate) => {
-
-    },
-    updateFN: (sys, crate) => {
-        const
-            { comp, ele, data: { dx, dy } } = crate,
-            { excess_x } = RESIZER(sys, comp, ele, dx, dy, false),
-            { excess_y } = RESIZET(sys, comp, ele, dx, dy, false);
-
-        return { excess_x, excess_y };
-    }, each dildo
-    historyProgress: updateCSS,
-    historyRegress: updateCSS
-};
-
-function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = true) {
-
-    const
-        active = FORWARD ? history.progress : history.regress,
-        opposite = FORWARD ? history.regress : history.progress,
-        names = [];
-
-    if (active) {
-
-        const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = active;
-        //Mode Updated data stylesheets.
-
-        // Setup css object in the environment and in the wick component
-        const comp_data = getComponentData(sys, name);
-
-        // For each prop, find rule with correct selector, bottom up. 
-        // Insert new prop into rule. 
-
-        //Find matching rule.
-        let rule = css.getLastRuleWithMatchingSelector(comp_data.CSS[0], css.selector(selector_string));
-
-        if (!rule) {
-            rule = css.rule(`${selector_string}{${prop_string}}`);
-            comp_data.CSS[0].nodes.push(rule);
-        } else {
-            const prop = css.property(prop_string);
-            rule.props.set(prop.name, prop);
-        }
-        names.push(name);
-    }
-
-
-    if (!FORWARD && opposite) {
-
-        const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = opposite;
-
-        // Setup css object in the environment and in the wick component
-        const comp_data = <Component>sys.edit_wick.rt.presets.components.get(name);
-
-        // For each prop, find rule with correct selector, bottom up. 
-        // Insert new prop into rule. 
-
-        //Find matching rule.
-        const rule = css.getLastRuleWithMatchingSelector(comp_data.CSS[0], css.selector(selector_string));
-
-        if (rule) {
-            rule.props.delete(prop_name);
-            if (rule.props.size == 0)
-                css.removeRule(comp_data.CSS[0], rule);
-        }
-
-        names.push(name);
-    }
-
-
-    return names;
-}
-
-export function RESIZEBL(system, component, element, dx, dy, IS_COMPONENT) {
-
-    let { excess_x } = RESIZEL(system, component, element, dx, dy, IS_COMPONENT);
-    let { excess_y } = RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
-    if (!IS_COMPONENT)
-        prepRebuild(system, component, element, false);
-
-    return { excess_x, excess_y };
-}
-
-export function RESIZEBR(system, component, element, dx, dy, IS_COMPONENT) {
-    let { excess_x } = RESIZER(system, component, element, dx, dy, IS_COMPONENT);
-    let { excess_y } = RESIZEB(system, component, element, dx, dy, IS_COMPONENT);
-    if (!IS_COMPONENT)
-        prepRebuild(system, component, element, false);
-
-    return { excess_x, excess_y };
 }

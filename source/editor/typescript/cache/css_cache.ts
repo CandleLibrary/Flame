@@ -466,13 +466,10 @@ export class CSSCache {
 
     }
 
-
-
     setPropFromString(string: string) {
-        for (const str of string.split(";")) {
-            const prop = this.createProp(str);
-            this.setProp(prop);
-        }
+        for (const str of string.split(";"))
+            if (str)
+                this.setProp(this.createProp(str));
     }
 
     applyChangesToCSS();

@@ -29,7 +29,7 @@ export interface Action {
      * Assign value to the ratio marker
      */
     setRatio: (sys: FlameSystem, crate: ObjectCrate) => {
-        delta: number, type: string;
+        delta?: number, type?: string, max_level?: 1 | 2 | 3 | 4;
     } | null;
     sealFN: (sys: FlameSystem, crate: ObjectCrate) => HistoryArtifact[] | void;
 

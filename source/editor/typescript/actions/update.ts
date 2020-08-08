@@ -67,7 +67,6 @@ let change_nonce = 0;
 export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PASS: boolean = false) {
 
     if (INITIAL_PASS) {
-        console.clear();
 
         sys.pending_history_state = history.ADD_HISTORY_STATE();
 
@@ -89,7 +88,6 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
                     if (typeof min_x == "number") crate.limits.min_x = Math.max(min_x, crate.limits.min_x);
                     if (typeof max_y == "number") crate.limits.max_y = Math.min(max_y, crate.limits.max_y);
                     if (typeof min_y == "number") crate.limits.min_y = Math.max(min_y, crate.limits.min_y);
-                    console.log(crate.limits);
                 }
 
                 const history_artifact = action.initFN(sys, crate);
@@ -130,32 +128,34 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
         else if (ay < min_y)
             dy = Math.max(0, new_val_y - min_y);
 
-        console.log({ dy, ay, max_y, min_y });
         crate.data.dx = dx;
         crate.data.dy = dy;
         crate.data.abs_x = new_val_x;
         crate.data.abs_y = new_val_y;
 
         for (const action of crate.action_list.sort((a, b) => a < b ? -1 : 1)) {
+            let ratio = null;
 
-            const
-                { delta, type } = action.setRatio(sys, crate),
-                ratio = startRatioMeasure(sys, crate, delta, type);
+            if (action.setRatio) {
+                const
+                    { delta, type, max_level } = action.setRatio(sys, crate);
+                ratio = startRatioMeasure(sys, crate, delta, type, max_level);
+            }
 
             let t = 0;
 
-            while (ratio.adjusted_delta !== 0 && t++ < 1) {
-                action.updateFN(sys, crate, ratio);
-                crate.css_cache.applyChanges(sys, 0);
-                markRatioMeasure(sys, crate, ratio);
-            }
-            clearRatioMeasure(ratio);
+            if (ratio) {
+                while (ratio.adjusted_delta !== 0 && t++ < ratio.max_level) {
+                    action.updateFN(sys, crate, ratio);
+                    crate.css_cache.applyChanges(sys, 0);
+                    markRatioMeasure(sys, crate, ratio);
+                }
+                clearRatioMeasure(ratio);
+            } else action.updateFN(sys, crate, ratio);
         }
     }
 
-
-    for (const crate of crates)
-        crate.css_cache.applyChanges(sys, change_nonce);
+    for (const crate of crates) crate.css_cache.applyChanges(sys, change_nonce);
 
     change_nonce++;
 }

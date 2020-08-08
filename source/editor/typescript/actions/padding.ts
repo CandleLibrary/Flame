@@ -1,14 +1,8 @@
 import {
     setNumericValue,
     ensureBlocklike,
-    prepRebuild,
     getContentBox
 } from "./common.js";
-import { getRatio } from "./ratio.js";
-
-import {
-    CSSCacheFactory
-} from "../cache/css_cache.js";
 
 import {
     SETDELTAHEIGHT,
@@ -21,13 +15,13 @@ import { ObjectCrate } from "../types/object_crate.js";
 import { Action } from "../types/action.js";
 
 function resetPadding(sys: FlameSystem, crate: ObjectCrate) {
-
+    return;
     const { css_cache: cache, comp, ele } = crate;
 
-    let rules = cache.rules;
+    let rules = cache.unique;
 
     if (rules.has("padding")) {
-        let val = rules.get("padding");
+        let val = rules.get("padding").prop;
 
         if (!Array.isArray(val)) {
             cache.setPropFromString(`
@@ -100,7 +94,7 @@ export const SETDELTAPADDINGTOP = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "top" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),
@@ -117,7 +111,7 @@ export const SETDELTAPADDINGBOTTOM = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "top" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),
@@ -135,7 +129,7 @@ export const SETDELTAPADDINGRIGHT = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "top" }),
+    setRatio: (sys, crate) => d({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),
@@ -153,7 +147,7 @@ export const SETDELTAPADDINGLEFT = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "top" }),
+    setRatio: (sys, crate) => d({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),
@@ -179,7 +173,7 @@ export const RESIZEPADDINGT = <Action>{
         const max_y = height - padding_top - padding_bottom;
         return { min_y, max_y };
     },
-    setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "bottom" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio) => {
 
         if (ratio.adjusted_delta == 0) return;
@@ -203,7 +197,7 @@ export const RESIZEPADDINGB = <Action>{
         const max_y = padding_bottom;
         return { min_y, max_y };
     },
-    setRatio: (sys, crate) => ({ delta: -crate.data.dy, type: "bottom" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio) => {
         if (ratio.adjusted_delta == 0) return;
         SETDELTAPADDINGBOTTOM.updateFN(sys, crate, ratio, false);
@@ -225,7 +219,7 @@ export const RESIZEPADDINGL = <Action>{
         const max_x = width;
         return { min_x, max_x };
     },
-    setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "bottom" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio) => {
         if (ratio.adjusted_delta == 0) return;
         SETDELTAPADDINGLEFT.updateFN(sys, crate, ratio, false);
@@ -247,7 +241,7 @@ export const RESIZEPADDINGR = <Action>{
         const max_x = padding_right;
         return { min_x, max_x };
     },
-    setRatio: (sys, crate) => ({ delta: -crate.data.dx, type: "bottom" }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio) => {
         if (ratio.adjusted_delta == 0) return;
         SETDELTAPADDINGRIGHT.updateFN(sys, crate, ratio, false);

@@ -7,6 +7,8 @@ import { prepUIUpdate } from "./update.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 
+export const noop = () => { };
+
 
 export function getContentBox(ele, win: Window = window, system) {
     const

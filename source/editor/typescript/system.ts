@@ -1,20 +1,41 @@
-import { RuntimeComponent, wickOutput } from "@candlefw/wick";
+import { wickOutput } from "@candlefw/wick";
 import { FlameSystem } from "./types/flame_system.js";
+import { EditorModel } from "./editor_model";
+
+
+const event_intercept = document.createElement("div");
+
+
+export function revealEventIntercept() { event_intercept.style.display = "block"; }
+
+export function hideEventIntercept() { event_intercept.style.display = ""; }
+
+export var active_system: FlameSystem = null;
+
+export function activeSys() { return active_system; }
 
 export function initSystem(
-    w: wickOutput,
-    edit_wick: wickOutput,
-    css: any,
-    edit_css: any,
-    comp_window: Window,
+    w?: wickOutput,
+    edit_wick?: wickOutput,
+    css?: any,
+    edit_css?: any,
+    comp_window?: Window,
 ): FlameSystem {
 
-    return <FlameSystem>{
+    if (active_system) return active_system;
+
+    event_intercept.classList.add("flame_editor_fill", "event_intercept");
+
+    active_system = <FlameSystem>{
+        editor_model: new EditorModel,
         action_sabot: null,
         text_info: "",
         dx: 0,
         dy: 0,
         dz: 0,
+        cx: 0,
+        cy: 0,
+        cz: 0,
         move_type: "relative",
         css: css,
         window: comp_window,
@@ -22,18 +43,12 @@ export function initSystem(
         body: comp_window.document.body,
         head: comp_window.document.head,
         wick: w,
-        flags: {
-            KEEP_UNIQUE: true
-        },
-        global: {
-            default_pos_unit: "px"
-        },
-        ui: {
-            transform: {
-                scale: 1
-            }
-        },
+        flags: { KEEP_UNIQUE: true },
+        global: { default_pos_unit: "px" },
+        ui: { event_intercept_frame: event_intercept, transform: { scale: 1 } },
         edit_css,
         edit_wick
     };
+
+    return active_system;
 }

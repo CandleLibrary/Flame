@@ -1,14 +1,19 @@
 import { wickOutput } from "@candlefw/wick";
 
 import { HistoryState } from "./history_state";
+import { EditorModel } from "../editor_model";
 
 export interface FlameSystem {
+    editor_model: EditorModel;
     pending_history_state: HistoryState;
     action_sabot: any[],
     text_info: string,
     dx: number,
     dy: number,
     dz: number,
+    cx: number,
+    cy: number,
+    cz: number,
     move_type: string,
     css: any,
     window: Window,
@@ -23,6 +28,7 @@ export interface FlameSystem {
         default_pos_unit: string;
     },
     ui: {
+        event_intercept_frame: HTMLDivElement;
         transform: {
             scale: number;
         };

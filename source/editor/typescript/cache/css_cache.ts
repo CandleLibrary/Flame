@@ -4,7 +4,7 @@ import { css, conflagrate } from "../env.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { getApplicableProps } from "../css.js";
-import { SET_ATTRIBUTE } from "../actions/html.js";
+import { SET_ATTRIBUTE } from "../actions/element.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { getComponentData, getActiveComponentInstances } from "../common_functions.js";
 

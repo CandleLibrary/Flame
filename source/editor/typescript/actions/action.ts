@@ -104,7 +104,7 @@ export {
     UPDATE_ELEMENT_OUTERHTML,
     SET_ATTRIBUTE,
     CREATE_ELEMENT
-} from "./html.js";
+} from "./element.js";
 export {
     SETCSSPROP
 } from "./set_css.js";

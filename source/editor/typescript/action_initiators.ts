@@ -112,15 +112,15 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]):
     return true;
 }
 
-export function END_ACTION(event?) {
+export function END_ACTION(event?): boolean {
+
+    if (ACTIVE_ACTIONS.length == 0) return false;
 
     hideEventIntercept();
 
     const { editor_model } = activeSys();
 
     editor_model.POINTER_DN = false;
-
-    if (ACTIVE_ACTIONS.length = 0) return;
 
     sealAction(system, crates);
 
@@ -129,7 +129,7 @@ export function END_ACTION(event?) {
     //history.WriteBack(system);
 
     for (const crate of crates) {
-        CSSCacheFactory.destroy(crate.comp);
+        CSSCacheFactory.destroy(crate.ele);
         //crate.css_cache.destroy();
         crate.html_cache.destroy();
     }
@@ -137,6 +137,8 @@ export function END_ACTION(event?) {
     editor_model.sc++;
 
     editor_model.update();
+
+    return true;
 }
 
 /**

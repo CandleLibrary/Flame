@@ -2,6 +2,8 @@ import * as ACTIONS from "./actions/action.js";
 
 import css_sys from "./css.js";
 import history from "./history.js";
+import { ObjectCrate } from "./types/object_crate.js";
+import { RuntimeComponent, ObservableWatcher, ObservableModel } from "@candlefw/wick";
 
 import { initSystem } from "./system.js";
 import { getComponentHierarchy, getComponentData, getComponentFromEvent, getElementFromEvent, retrieveComponentFromElement } from "./common_functions.js";
@@ -47,7 +49,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
     function pointerReleaseElementEventResponder(e) {
 
-        if (ACTIVE_ACTION) return END_ACTION();
+        if (END_ACTION()) return;
 
         selectElementEventResponder(e);
     }
@@ -70,8 +72,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         const comp = getComponentFromEvent(event),
             ele = getElementFromEvent(event);
 
-        if (ISElementUI(ele))
-            return;
+        if (!comp || !ele || ISElementUI(ele)) return;
 
         system.editor_model.selected_comp = comp;
         system.editor_model.selected_ele = getElementInHTMLNamespace(ele);
@@ -107,7 +108,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         system.cx = e.x;
         system.cy = e.y;
 
-        if (ACTIVE_ACTION) return UPDATE_ACTION();
+        if (UPDATE_ACTION()) return;
 
         let ele = comp_window.document.elementFromPoint(e.x, e.y);
 

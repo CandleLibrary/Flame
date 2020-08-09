@@ -538,28 +538,30 @@ export function CSSCacheFactory(
     crate: ObjectCrate
 ): CSSCache {
 
-    for (const { comp: c, cache } of cache_array) {
-        if (comp == c) return cache;
+    let eligible = null;
+
+    for (const cache of cache_array) {
+        const { ele: e, cache: c } = cache;
+
+        if (ele == e) return c;
+
+        else if (!eligible && !e) eligible = cache;
     }
 
-    let cache: CSSCache = null;
+    if (!eligible) {
+        eligible = { ele, cache: new CSSCache };
+        cache_array.push(eligible);
+    }
 
-    cache = new CSSCache();
+    eligible.cache.init(sys, crate);
 
-    cache.init(sys, crate);
-
-    cache_array.push({ comp, cache });
-
-    return cache;
+    return eligible.cache;
 }
 
-CSSCacheFactory.destroy = function (comp: RuntimeComponent) {
-    for (let i = 0; i < cache_array.length; i++) {
-        const { comp: c, cache } = cache_array[i];
-
-        if (comp == c) {
-            cache_array.splice(i, 1);
+CSSCacheFactory.destroy = function (ele: HTMLElement) {
+    for (const cache of cache_array)
+        if (cache.ele == ele) {
+            cache.ele = null;
             return;
         }
-    }
 };

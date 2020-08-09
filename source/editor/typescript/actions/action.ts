@@ -108,3 +108,6 @@ export {
 export {
     SETCSSPROP
 } from "./set_css.js";
+export {
+    CREATE_COMPONENT
+} from "./component.js";

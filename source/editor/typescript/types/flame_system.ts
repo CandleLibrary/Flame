@@ -6,7 +6,6 @@ import { EditorModel } from "../editor_model";
 export interface FlameSystem {
     editor_model: EditorModel;
     pending_history_state: HistoryState;
-    action_sabot: any[],
     text_info: string,
     dx: number,
     dy: number,

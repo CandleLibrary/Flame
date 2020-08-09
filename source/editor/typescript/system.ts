@@ -1,6 +1,6 @@
 import { wickOutput } from "@candlefw/wick";
 import { FlameSystem } from "./types/flame_system.js";
-import { EditorModel } from "./editor_model";
+import { EditorModel } from "./editor_model.js";
 
 
 const event_intercept = document.createElement("div");
@@ -28,7 +28,6 @@ export function initSystem(
 
     active_system = <FlameSystem>{
         editor_model: new EditorModel,
-        action_sabot: null,
         text_info: "",
         dx: 0,
         dy: 0,

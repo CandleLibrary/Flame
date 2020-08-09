@@ -16,8 +16,7 @@ import { revealEventIntercept, active_system as system, activeSys, hideEventInte
 
 let ACTIVE_ACTIONS: Action[] = [], crates: ObjectCrate[], ox = 0, oy = 0, px = 0, py = 0;
 
-export function START_ACTION(act: Action[], data: ObjectCrate["data"]) {
-
+export function START_ACTION(actions: Action[], data: ObjectCrate["data"]) {
     //Enable event intercept object.
     revealEventIntercept();
 
@@ -25,18 +24,22 @@ export function START_ACTION(act: Action[], data: ObjectCrate["data"]) {
     //arrange the actions based on their ordering precedence
 
     const sys = activeSys(),
-        sabot = act
+        sabot = actions
             .filter(a => typeof a == "object"
                 && typeof a.type == "number"
                 && typeof a.priority == "number")
             .sort((a, b) => a.priority > b.priority ? -1 : 1);
 
-    if (sabot.length !== act.length) {
-        ACTIVE_ACTIONS = null;
-        sys.action_sabot = null;
+    if (sabot.length !== actions.length) {
+        ACTIVE_ACTIONS.length = 0;
     } else {
-        sys.action_sabot = sabot;
-        ACTIVE_ACTIONS = sabot;
+
+        ACTIVE_ACTIONS.length = sabot.length;
+
+        let i = 0;
+
+        for (const action of sabot)
+            ACTIVE_ACTIONS[i++] = action;
     }
 
     ox = sys.cx;
@@ -47,9 +50,9 @@ export function START_ACTION(act: Action[], data: ObjectCrate["data"]) {
     UPDATE_ACTION(true, data);
 }
 
-export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]) {
+export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]): boolean {
 
-    if (!ACTIVE_ACTIONS) return;
+    if (ACTIVE_ACTIONS.length == 0) return false;
 
     const { editor_model, cx, cy } = activeSys();
 
@@ -69,7 +72,7 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]) 
             data: {
                 abs_x: 0,
                 abs_y: 0,
-                curr_comp: sys.editor_model.selected_comp.name,
+                curr_comp: editor_model.selected_comp.name,
                 data: "",
             },
             action_list: ACTIVE_ACTIONS.slice(),
@@ -105,6 +108,8 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]) 
 
     editor_model.sc++;
     editor_model.update();
+
+    return true;
 }
 
 export function END_ACTION(event?) {
@@ -115,13 +120,11 @@ export function END_ACTION(event?) {
 
     editor_model.POINTER_DN = false;
 
-    if (!ACTIVE_ACTIONS) return;
+    if (ACTIVE_ACTIONS.length = 0) return;
 
     sealAction(system, crates);
 
-    ACTIVE_ACTIONS = null;
-
-    system.action_sabot = null;
+    ACTIVE_ACTIONS.length = 0;
 
     //history.WriteBack(system);
 
@@ -159,9 +162,7 @@ export function APPLY_ACTION(act: Action[], data: ObjectCrate["data"]) {
 
     if (sabot.length !== act.length) {
         ACTIVE_ACTIONS = null;
-        system.action_sabot = null;
     } else {
-        system.action_sabot = sabot;
         ACTIVE_ACTIONS = sabot;
     }
 

@@ -78,7 +78,7 @@ export default (function HISTORY() {
 
                 if (changes.length > 0) {
 
-                    const str = componentDataToSourceString(system, component.name);
+                    const str = componentDataToSourceString(component);
 
                     // from this ast apply changes that need to occur, then render back to file.
 

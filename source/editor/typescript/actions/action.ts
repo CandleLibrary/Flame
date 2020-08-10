@@ -101,7 +101,6 @@ export {
     BORDERRADIUSBR,
 } from "./border.js";
 export {
-    UPDATE_ELEMENT_OUTERHTML,
     SET_ATTRIBUTE,
     CREATE_ELEMENT,
     DELETE_ELEMENT

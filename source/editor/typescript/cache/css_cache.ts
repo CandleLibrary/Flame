@@ -6,7 +6,7 @@ import { FlameSystem } from "../types/flame_system.js";
 import { getApplicableProps } from "../css.js";
 import { SET_ATTRIBUTE } from "../actions/element.js";
 import { ObjectCrate } from "../types/object_crate.js";
-import { getComponentData, getActiveComponentInstances } from "../common_functions.js";
+import { getListOfComponentData, getRTInstances } from "../common_functions.js";
 
 let global_cache = null;
 
@@ -477,7 +477,7 @@ export class CSSCache {
     clearChanges(system: FlameSystem) {
         //Retrieve all components with that match the selector
         const
-            comp = getActiveComponentInstances(system, this.component.name),
+            comp = getRTInstances(system, this.component.name),
             props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
         for (const c of comp) {
 
@@ -494,7 +494,7 @@ export class CSSCache {
 
         //Retrieve all components with that match the selector
         const
-            comp = getActiveComponentInstances(system, this.component.name),
+            comp = getRTInstances(system, this.component.name),
             props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
         for (const c of comp) {
 

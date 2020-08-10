@@ -2,7 +2,7 @@
 
 import { RuntimeComponent } from "@candlefw/wick";
 import { FlameSystem } from "../types/flame_system";
-import { getElementIndex } from "../common_functions.js";
+import { getIndexOfElementInRTInstance } from "../common_functions.js";
 
 export class HTMLCache {
     ele: HTMLElement;
@@ -10,7 +10,7 @@ export class HTMLCache {
     index: number;
 
     getElementIndex(): number {
-        return getElementIndex(this.comp, this.ele);
+        return getIndexOfElementInRTInstance(this.comp, this.ele);
     }
 
     init(sys: FlameSystem, comp: RuntimeComponent, ele: HTMLElement) {

@@ -29,6 +29,9 @@ export function initSystem(
     active_system = <FlameSystem>{
         editor_model: new EditorModel,
         text_info: "",
+        file_dir: ".",
+        comp_ext: ".wick",
+        comp_name_counter: 0,
         dx: 0,
         dy: 0,
         dz: 0,

@@ -13,7 +13,7 @@ import { APPLY_ACTION, ACTIONS } from "@api";
 
 var a = 0, b = 0, c = 0, d = 0;
 
-function createComponent() { APPLY_ACTION([ACTIONS.DELETE_ELEMENT]); }
+function createComponent() { APPLY_ACTION([ACTIONS.CREATE_COMPONENT]); }
 
 function showBox() {
 

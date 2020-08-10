@@ -37,7 +37,9 @@ watch(showBox, sc);
         color:white;
         z-index:10000;
         pointer-events:none;
-        border:1px solid rgb(128,128,255)
+        border:1px solid rgb(50,50,150);
+        font-size:12px;
+        font-family:Arial;
     }
 
     #test, .lower-data {
@@ -46,9 +48,8 @@ watch(showBox, sc);
         top:-21px;
         left:-1px;
         min-height:14px;
-        padding:3px;
-        background-color:rgb(128,128,255);
-        border-radius: 4px 4px 0px 0px
+        padding:3px 5px;
+        background-color:rgb(50,50,150);
     }
 
     .lower-data{
@@ -63,7 +64,7 @@ watch(showBox, sc);
 </style>;
 
 export default <div id="main" class="main">
-    <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location )) <span class="color">((ele.tagName))</span> ((ele.getAttribute("w-s")))
+    <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location + " "))<span class="color">((ele.tagName +( ele.id ? "." + ele.id : "") ))</span> ((ele.getAttribute("w-s")))
     </div>
     <div class="lower-data">w:((a)) h:((b)) l:((c)) t:((d))</div>
 </div>;

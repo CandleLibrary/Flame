@@ -5,6 +5,7 @@
  * global object by @candlefw/cfw library.
  */
 
+//@ts-ignore
 const url = cfw.url, wick = cfw.wick, glow = cfw.glow, css = cfw.css, js = cfw.js, conflagrate = cfw.conflagrate;
 
 export {

@@ -1,20 +1,26 @@
-import wick, { DOMLiteral, Component, RuntimeComponent } from "@candlefw/wick";
 import { Action } from "../types/action.js";
 import { ActionType } from "../types/action_type.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
 import {
-	getElementIndex,
-	getElementFromIndex,
+	getIndexOfElementInRTInstance,
+	getElementAtIndexInRTInstance,
 	getComponentDataFromName,
-	getActiveComponentInstances,
-	componentDataToSourceString,
-	getComponentDataFromComponent,
+	getRTInstances,
+	getComponentDataFromRTInstance,
 	cloneComponentData,
-	replaceComponents,
-	getMaxIndexDOMLiteral,
-	removeBindingsWithinIndexRange,
-	removeUnmatchedRulesMatchingElement
+	replaceRTInstances,
+	getLastIndexInDOMLiteralTree,
+	removeBindingsWithinDOMLiteralIndexRange,
+	removeUnmatchedRulesMatchingElement,
+	createRTComponentFromComponentData,
+	insertDOMLiteralAtIndex,
+	removeDOMLiteralAtIndex,
+	insertElementAtIndexInRTInstance,
+	removeElementAtIndexInRTInstance,
+	getDOMLiteralAtIndex,
+	removeDOMLiteralAttribute,
+	setDOMLiteralAttribute
 } from "../common_functions.js";
 import { noop } from "./common.js";
 
@@ -24,19 +30,19 @@ function histSetAttribute(sys: FlameSystem, history: HistoryArtifact, FOREWARD =
 
 	const component_data = getComponentDataFromName(sys, comp_data_name);
 
-	const ele = getComponentDataHTMLNode(component_data, ele_index);
+	const ele = getDOMLiteralAtIndex(component_data, ele_index);
 
 	if (!ele) throw new ReferenceError("Missing element when trying to apply attribute information.");
 
 	if (!valueA)
-		deleteDomLiteralAttribute(ele, <string>valueB);
+		removeDOMLiteralAttribute(ele, <string>valueB);
 	else
-		setDomLiteralAttribute(ele, <string>valueA, <string>valueB);
+		setDOMLiteralAttribute(ele, <string>valueA, <string>valueB);
 
 	//Apply value to all components of type;
-	getActiveComponentInstances(sys, history.progress.comp_data_name)
+	getRTInstances(sys, history.progress.comp_data_name)
 		.forEach(comp => {
-			const ele = getElementFromIndex(comp, ele_index);
+			const ele = getElementAtIndexInRTInstance(comp, ele_index);
 
 			if (!ele) throw new ReferenceError("Missing element when trying to apply attribute information.");
 
@@ -57,7 +63,7 @@ export const SET_ATTRIBUTE = <Action>{
 		const
 			{ key, val } = crate.data,
 			{ ele, comp } = crate,
-			ele_index = getElementIndex(comp, ele),
+			ele_index = getIndexOfElementInRTInstance(comp, ele),
 			data = ele.getAttribute(key),
 			old_key = data ? key : "",
 			old_val = data || key;
@@ -95,7 +101,7 @@ export const DELETE_ATTRIBUTE = <Action>{
 		const
 			{ key, val } = crate.data,
 			{ ele, comp } = crate,
-			ele_index = getElementIndex(comp, ele),
+			ele_index = getIndexOfElementInRTInstance(comp, ele),
 			data = ele.getAttribute(key),
 			old_key = data ? key : "",
 			old_val = data || key;
@@ -142,29 +148,23 @@ export const DELETE_ELEMENT = <Action>{
 
 		if (comp.ele == ele) return;
 
-		const comp_data = getComponentDataFromComponent(sys, comp);
+		const
+			old_comp_data = getComponentDataFromRTInstance(sys, comp),
+			clone_comp_data = cloneComponentData(old_comp_data),
+			start_index = getIndexOfElementInRTInstance(comp, ele),
+			{ cloned_root: clone_root, removed_node: old_node } = removeDOMLiteralAtIndex(clone_comp_data, start_index),
+			end_index = getLastIndexInDOMLiteralTree(old_node) + start_index;
 
-		//Make a copy of the comp_data.
 
-		const clone_comp_data = cloneComponentData(comp_data);
-		const start_index = getElementIndex(comp, ele);
-		const { clone_root, old_node } = removeHTMLNodeFromIndexSlot(clone_comp_data, start_index);
 		clone_comp_data.HTML = clone_root;
-		const end_index = getMaxIndexDOMLiteral(old_node) + start_index;
 
-		removeBindingsWithinIndexRange(clone_comp_data, start_index, end_index);
+		removeBindingsWithinDOMLiteralIndexRange(clone_comp_data, start_index, end_index);
+
 		removeUnmatchedRulesMatchingElement(clone_comp_data, old_node);
 
-		clone_comp_data.bindings = clone_comp_data.bindings.filter(c => c.html_element_index);
+		createRTComponentFromComponentData(sys, clone_comp_data);
 
-		clone_comp_data.name = sys.edit_wick.parse.createNameHash(componentDataToSourceString(sys, clone_comp_data));
-
-		//create a new component
-		const new_comp = sys.edit_wick.componentDataToJSCached(clone_comp_data, sys.edit_wick.rt.presets);
-		sys.edit_wick.rt.presets.components.set(clone_comp_data.name, clone_comp_data);
-
-		// add component to global cache
-		replaceComponents(sys, comp.name, clone_comp_data.name);
+		replaceRTInstances(sys, comp.name, clone_comp_data.name);
 
 		//remove the element from the source component
 
@@ -186,8 +186,8 @@ export const DELETE_ELEMENT = <Action>{
 		return [history];
 	},
 	updateFN: noop,
-	historyProgress: (sys, history) => { replaceComponents(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
-	historyRegress: (sys, history) => { replaceComponents(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
+	historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
+	historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
 };
 
 /**
@@ -224,7 +224,7 @@ export const CREATE_ELEMENT = <Action>{
 
 		//Index of element 
 		const
-			ele_index = getElementIndex(comp, target_element),
+			ele_index = getIndexOfElementInRTInstance(comp, target_element),
 			history = <HistoryArtifact>{
 				type: ActionType.CREATE_ELEMENT,
 				progress: {
@@ -258,20 +258,20 @@ export const CREATE_ELEMENT = <Action>{
 		} = history.progress,
 			comp = getComponentDataFromName(sys, name);
 
-		insertHTMLNodeIntoIndexSlot(comp, ele_index, {
-			tag_name: history.progress.valueA,
+		insertDOMLiteralAtIndex(comp, ele_index, {
+			tag_name: <string>history.progress.valueA,
 			attributes: [],
 			children: [{
 				tag_name: "",
-				data: inner_html
+				data: <string>inner_html,
 			}]
 		});
 
 		//find the element with existing index.
-		for (const comp of getActiveComponentInstances(sys, name,)) {
+		for (const comp of getRTInstances(sys, name,)) {
 			const ele = sys.document.createElement(<string>tag);
 			ele.innerHTML = <string>inner_html;
-			insertComponentElementAtIndex(comp, ele_index, ele, !!INSERT_INTO_COMPONENT);
+			insertElementAtIndexInRTInstance(comp, ele_index, ele, !!INSERT_INTO_COMPONENT);
 		}
 
 		return [history.progress.comp_data_name];
@@ -284,160 +284,12 @@ export const CREATE_ELEMENT = <Action>{
 		} = history.regress,
 			comp = getComponentDataFromName(sys, name);
 
-		removeHTMLNodeFromIndexSlot(comp, ele_index);
+		removeDOMLiteralAtIndex(comp, ele_index);
 
 		//find the element with existing index.
-		for (const comp of getActiveComponentInstances(sys, name,))
-			removeComponentElementAtIndex(comp, ele_index);
+		for (const comp of getRTInstances(sys, name,))
+			removeElementAtIndexInRTInstance(comp, ele_index);
 
 		return [history.regress.comp_data_name];
 	}
 };
-
-export function insertComponentElementAtIndex(comp: RuntimeComponent, index: number, ele: HTMLElement, APPEND_TO_ELEMENT: boolean = false) {
-
-	const
-		elu = comp.elu,
-		target_ele = elu[index],
-		parent = target_ele.parentElement;
-
-	if (APPEND_TO_ELEMENT) {
-		target_ele.insertBefore(ele, target_ele.firstChild);
-		elu.splice(index + 1, 0, ele);
-	} else if (index > elu.length) {
-		elu.push(ele);
-		comp.ele.appendChild(ele);
-	} else if (index == 0) {
-		elu.unshift(ele);
-		comp.ele.insertBefore(ele, comp.ele.firstChild);
-	} else {
-		elu.splice(index, 0, ele);
-		parent.insertBefore(ele, target_ele);
-	}
-}
-
-export function removeComponentElementAtIndex(comp: RuntimeComponent, index: number) {
-
-	const
-		elu = comp.elu,
-		target_ele = elu[index];
-
-	target_ele.parentElement.removeChild(target_ele);
-
-	elu.splice(index, 1);
-}
-
-function insertHTMLNodeIntoIndexSlot(comp: Component, insert_before_index, ele: DOMLiteral, actual = { i: 0 }, node: DOMLiteral = null) {
-
-	if (!node)
-		node = comp.HTML;
-
-	if (insert_before_index == 0) {
-		if (!node.children)
-			node.children = [];
-		node.children.unshift(ele);
-		return true;
-	} else if (node.children) {
-		actual.i++;
-
-		for (let i = 0; i < node.children.length; i++, actual.i++) {
-
-			if (actual.i == insert_before_index)
-				return node.children.splice(i, 0, ele), true;
-
-			if (insertHTMLNodeIntoIndexSlot(comp, insert_before_index, ele, actual, node.children[i]))
-				return true;
-		}
-
-		node.children.push(ele);
-
-		return true;
-	}
-
-	return false;
-}
-
-
-function removeHTMLNodeFromIndexSlot(comp: Component, index_to_remove: number, actual = { i: 0 }, node: DOMLiteral = null): { old_node: DOMLiteral, clone_root: DOMLiteral; } {
-
-	if (!node) node = comp.HTML;
-
-	if (index_to_remove == 0) {
-		return { old_node: node, clone_root: Object.assign({}, node) };
-	}
-
-	if (node.children) {
-		for (let i = 0; i < node.children.length; i++) {
-
-			actual.i++;
-
-			if (actual.i == index_to_remove) {
-
-				const new_node: DOMLiteral = Object.assign({}, node);
-
-				new_node.children = [...node.children.slice(0, i), ...node.children.slice(i + 1)];
-
-				return { clone_root: new_node, old_node: node.children[i] };
-			}
-
-			let result = removeHTMLNodeFromIndexSlot(comp, index_to_remove, actual, node.children[i]);
-
-			if (result) {
-				const new_node: DOMLiteral = Object.assign({}, node);
-
-				new_node.children = [...node.children.slice(0, i), result.clone_root, ...node.children.slice(i + 1)];
-
-				return { clone_root: new_node, old_node: result.old_node };
-			}
-
-		}
-	}
-
-	return null;
-}
-
-
-
-function getComponentDataHTMLNode(component: Component, requested_index: number, actual = { i: 0 }, node: DOMLiteral = null): DOMLiteral {
-	if (!node)
-		node = component.HTML;
-
-	if (requested_index == actual.i)
-		return node;
-
-	let out = null;
-
-	if (node.children)
-		for (const c_node of node.children) {
-			actual.i++;
-			if ((out = getComponentDataHTMLNode(component, requested_index, actual, c_node))) return out;
-		}
-
-	return null;
-}
-
-export async function UPDATE_ELEMENT_OUTERHTML(system, component, element, outer_html) {
-	//TODO - Collect old html data and store as history
-	if (await element.wick_node.reparse(outer_html))
-		system.ui.update();
-}
-
-export function deleteDomLiteralAttribute(node: DOMLiteral, name: string) {
-	if (node.attributes) {
-		for (let i = 0; i < node.attributes.length; i++)
-			if (node.attributes[i][0] == name)
-				return node.attributes.splice(i, 1);
-	}
-}
-
-export function setDomLiteralAttribute(node: DOMLiteral, name: string, val: string) {
-
-	if (!node.attributes)
-		node.attributes = [];
-
-	for (let i = 0; i < node.attributes.length; i++)
-		if (node.attributes[i][0] == name)
-			return node.attributes[i][1] = val;
-
-	node.attributes.push([name, val]);
-}

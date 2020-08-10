@@ -4,7 +4,7 @@ import css_sys from "./css.js";
 import history from "./history.js";
 
 import { initSystem } from "./system.js";
-import { getComponentHierarchy, getComponentData, getComponentFromEvent, getElementFromEvent, retrieveComponentFromElement, getEditedElementFromPoint } from "./common_functions.js";
+import { getListOfRTInstanceAndAncestors, getListOfComponentData, getRTInstanceFromEvent, getElementFromEvent, retrieveRTInstanceFromElement, getElementFromPoint } from "./common_functions.js";
 import { START_ACTION, APPLY_ACTION, UPDATE_ACTION, END_ACTION } from "./action_initiators.js";
 
 
@@ -70,7 +70,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
     function selectElementEventResponder(e) {
 
-        const comp = getComponentFromEvent(event),
+        const comp = getRTInstanceFromEvent(event),
             ele = getElementFromEvent(event);
 
         if (!comp || !ele || ISElementUI(ele)) return;
@@ -80,7 +80,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         system.editor_model.comp = null;
         system.editor_model.ele = null;
 
-        const roots = getComponentData(system, ...getComponentHierarchy(comp));
+        const roots = getListOfComponentData(system, ...getListOfRTInstanceAndAncestors(comp));
 
         for (const comp of roots) {
             for (const CSS of (comp.CSS || [])) {
@@ -111,7 +111,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
         if (UPDATE_ACTION()) return;
 
-        let ele = getEditedElementFromPoint(e.x, e.y);
+        let ele = getElementFromPoint(e.x, e.y);
 
         if (!ele || ele == system.editor_model.ele || ISElementUI(ele))
             return;
@@ -124,7 +124,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         } else
             return;
 
-        const comp = retrieveComponentFromElement(ele);
+        const comp = retrieveRTInstanceFromElement(ele);
         system.editor_model.comp = comp;
         system.editor_model.ele = ele;
         system.editor_model.update();
@@ -147,9 +147,21 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
     comp_window.document.addEventListener("scroll", globalScrollEventListener);
     comp_window.addEventListener("resize", globalScrollEventListener);
-    comp_window.addEventListener("keypress", e => {
+
+
+    window.addEventListener("keypress", e => {
         if (e.key == "z") history.ROLLBACK_EDIT_STATE(system);
         if (e.key == "r") history.ROLLFORWARD_EDIT_STATE(system);
+        system.editor_model.sc++;
+        system.editor_model.update();
+    });
+
+    comp_window.addEventListener("keypress", (e: KeyboardEvent) => {
+        if (e.ctrlKey) {
+            if (e.key == "z")
+                if (e.shiftKey) history.ROLLFORWARD_EDIT_STATE(system);
+                else history.ROLLBACK_EDIT_STATE(system);
+        }
         system.editor_model.sc++;
         system.editor_model.update();
     });

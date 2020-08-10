@@ -4,7 +4,12 @@ import { HistoryState } from "./history_state";
 import { EditorModel } from "../editor_model";
 
 export interface FlameSystem {
+    comp_name_counter: number;
+    file_dir: string,
     editor_model: EditorModel;
+
+    /*Default extension name to give new components */
+    comp_ext: string;
     pending_history_state: HistoryState;
     text_info: string,
     dx: number,

@@ -32,7 +32,7 @@ export function setState(FORWARD = true, history_state: HistoryState, system: Fl
         else
             comp = handler.regress(system, state, FORWARD);
 
-        for (const name of comp)
+        for (const name of comp || [])
             update_components.add(name);
     }
 

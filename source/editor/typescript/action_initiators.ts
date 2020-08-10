@@ -134,6 +134,8 @@ export function END_ACTION(event?): boolean {
         crate.html_cache.destroy();
     }
 
+    crates = null;
+
     editor_model.sc++;
 
     editor_model.update();

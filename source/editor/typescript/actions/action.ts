@@ -103,7 +103,8 @@ export {
 export {
     UPDATE_ELEMENT_OUTERHTML,
     SET_ATTRIBUTE,
-    CREATE_ELEMENT
+    CREATE_ELEMENT,
+    DELETE_ELEMENT
 } from "./element.js";
 export {
     SETCSSPROP

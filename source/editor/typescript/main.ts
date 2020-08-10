@@ -2,11 +2,9 @@ import * as ACTIONS from "./actions/action.js";
 
 import css_sys from "./css.js";
 import history from "./history.js";
-import { ObjectCrate } from "./types/object_crate.js";
-import { RuntimeComponent, ObservableWatcher, ObservableModel } from "@candlefw/wick";
 
 import { initSystem } from "./system.js";
-import { getComponentHierarchy, getComponentData, getComponentFromEvent, getElementFromEvent, retrieveComponentFromElement } from "./common_functions.js";
+import { getComponentHierarchy, getComponentData, getComponentFromEvent, getElementFromEvent, retrieveComponentFromElement, getEditedElementFromPoint } from "./common_functions.js";
 import { START_ACTION, APPLY_ACTION, UPDATE_ACTION, END_ACTION } from "./action_initiators.js";
 
 
@@ -21,6 +19,9 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         edit_css = comp_window.document.createElement("style"),
         system = initSystem(wick, edit_wick, css_sys, edit_css, comp_window),
         { event_intercept_frame: event_intercept_ele } = system.ui;
+
+    //Turn off cursor events for the edited elements
+    comp_window.document.body.style.pointerEvents = "none";
 
     let prev = null, ACTIVE_ACTION = null, ui_root = null;;
 
@@ -110,7 +111,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
 
         if (UPDATE_ACTION()) return;
 
-        let ele = comp_window.document.elementFromPoint(e.x, e.y);
+        let ele = getEditedElementFromPoint(e.x, e.y);
 
         if (!ele || ele == system.editor_model.ele || ISElementUI(ele))
             return;
@@ -156,6 +157,8 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
     /**
      * Include the editor frame system.
      */
+    //edit_rt.presets.window = comp_window;
+    //edit_rt.presets.document = comp_window.document;
     edit_rt.presets.models["flame-editor"] = system.editor_model;
     edit_rt.presets.api.APPLY_ACTION = APPLY_ACTION;
     edit_rt.presets.api.START_ACTION = START_ACTION;

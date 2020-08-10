@@ -4,8 +4,8 @@ export interface HistoryArtifact {
     type: ActionType;
 
     /**
-     * If set to true, do not call the progress function
-     * on the action after sealing.
+     * If set to true, do not call the history progress function
+     * of the ActionType after sealing.
      */
     DO_NOT_CALL_AFTER_UPDATE?: boolean;
     progress?: {

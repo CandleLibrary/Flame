@@ -1,11 +1,11 @@
 import * as ACTIONS from "./actions/action.js";
 
-import css_sys from "./css.js";
 import history from "./history.js";
 
 import { initSystem } from "./system.js";
 import { getListOfRTInstanceAndAncestors, getListOfComponentData, getRTInstanceFromEvent, getElementFromEvent, retrieveRTInstanceFromElement, getElementFromPoint } from "./common_functions.js";
 import { START_ACTION, APPLY_ACTION, UPDATE_ACTION, END_ACTION } from "./action_initiators.js";
+import * as common from "./common_functions.js";
 
 
 export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //For Isolation
@@ -17,7 +17,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
         edit_rt = editor_cfw.wick.rt,
         edit_wick = editor_cfw.wick,
         edit_css = comp_window.document.createElement("style"),
-        system = initSystem(wick, edit_wick, css_sys, edit_css, comp_window),
+        system = initSystem(wick, edit_wick, edit_css, comp_window),
         { event_intercept_frame: event_intercept_ele } = system.ui;
 
     //Turn off cursor events for the edited elements
@@ -175,6 +175,8 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window) { //F
     edit_rt.presets.api.APPLY_ACTION = APPLY_ACTION;
     edit_rt.presets.api.START_ACTION = START_ACTION;
     edit_rt.presets.api.ACTIONS = ACTIONS;
+    edit_rt.presets.api.sys = system;
+    Object.assign(edit_rt.presets.api, common);
 
     const editor_frame = await (edit_wick("/flame/editor/components/editor.jsx").pending);
 

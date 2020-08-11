@@ -1,63 +1,14 @@
 import { CSSProperty, CSSTreeNode, CSSRuleNode } from "@candlefw/css";
 import { RuntimeComponent } from "@candlefw/wick";
+
 import { css, conflagrate } from "../env.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
 import { FlameSystem } from "../types/flame_system.js";
-import { getApplicableProps } from "../css.js";
 import { SET_ATTRIBUTE } from "../actions/element.js";
 import { ObjectCrate } from "../types/object_crate.js";
-import { getListOfComponentData, getRTInstances } from "../common_functions.js";
+import { getRTInstances, getApplicableProps_, getApplicableRulesFromComponentData } from "../common_functions.js";
 
 let global_cache = null;
-
-function isSelectorCapableOfBeingUnique(selector: CSSTreeNode, root_name: string): boolean {
-    let count = 0;
-
-    const { CSSTreeNodeType } = css;
-
-    for (const { node, meta: { parent } } of conflagrate.traverse(selector, "nodes")) {
-        switch (node.type) {
-            case CSSTreeNodeType.CompoundSelector:
-            case CSSTreeNodeType.ComplexSelector:
-                break;
-            case CSSTreeNodeType.ClassSelector:
-                if (node.value == root_name && parent)
-                    break;
-            case CSSTreeNodeType.IdSelector:
-                count++;
-                break;
-            default:
-                count += 2;
-        }
-    }
-
-    return count == 1;
-}
-
-function getApplicableProps_(system: FlameSystem, component: RuntimeComponent, element: HTMLElement, unique_selector: CSSTreeNode) {
-
-    const props = getApplicableProps(system, component, element);
-
-    for (const v of props.values()) {
-        const
-            { sel } = v,
-            elements = [...css.getMatchedElements(component.ele, sel)];
-
-        if (
-            css.isSelectorEqual(sel, unique_selector)
-            || (
-                elements.length == 1
-                &&
-                isSelectorCapableOfBeingUnique(sel, component.name
-                )
-            )
-        ) {
-            v.unique = true;
-        }
-    }
-
-    return props;
-}
 
 class ComputedStyle {
     cache: CSSCache;
@@ -130,6 +81,8 @@ export class CSSCache {
 
     rules: any;
 
+    crate: ObjectCrate;
+
     move_type: string;
 
     LOCKED: boolean;
@@ -174,15 +127,8 @@ export class CSSCache {
 
     get computed() {
         if (!this._computed)
-            this._computed = new ComputedStyle(this.component, this.element, this);
+            this._computed = new ComputedStyle(this.system, this.component, this.element, this);
         return this._computed;
-    }
-
-    update(system: any) {
-        if (!system)
-            return;
-
-        this.generateMovementCache(system, this.component, this.element);
     }
 
     setUniqueSelector(sys: FlameSystem, comp: RuntimeComponent, ele: HTMLElement, crate: ObjectCrate) {
@@ -194,7 +140,7 @@ export class CSSCache {
         //      if this number is 1, then select this rule to be 
         //      unique rule for this element.
 
-        const rules = sys.css.getApplicableRulesFromComponentData(sys, comp, ele).reverse();
+        const rules = getApplicableRulesFromComponentData(sys, comp, ele).reverse();
 
         for (const rule of rules) {
             if (rule.selectors.length == 1) {
@@ -281,51 +227,51 @@ export class CSSCache {
 
 
         //test for presence of rules. 
-        let POS_R = false,
-            POS_A = false,
-            HT = false,
-            HL = false,
-            HB = false,
-            HR = false,
-            HM = false,
-            HMR = false,
-            HMT = false,
-            HMB = false,
-            HML = false,
-            W = false,
-            H = false;
+        let POS_R = 0,
+            POS_A = 0,
+            HT = 0,
+            HL = 0,
+            HB = 0,
+            HR = 0,
+            HM = 0,
+            HMR = 0,
+            HMT = 0,
+            HMB = 0,
+            HML = 0,
+            W = 0,
+            H = 0;
 
         if (css_r.has("position")) {
-            if (css_r.position == "relative")
-                POS_R = true;
+            if (css_r.get("position").prop.toString() == "relative")
+                POS_R = 1;
             else
-                POS_A = true;
+                POS_A = 1;
         }
 
         if (css_r.has("left"))
-            HL = true;
+            HL = 1;
         if (css_r.has("right"))
-            HR = true;
+            HR = 1;
         if (css_r.has("top"))
-            HT = true;
+            HT = 1;
         if (css_r.has("bottom"))
-            HB = true;
+            HB = 1;
 
         if (css_r.has("margin_left"))
-            HML = true;
+            HML = 1;
         if (css_r.has("margin_right"))
-            HMR = true;
+            HMR = 1;
         if (css_r.has("margin_top"))
-            HMT = true;
+            HMT = 1;
         if (css_r.has("margin_bottom"))
-            HMB = true;
+            HMB = 1;
         if (css_r.has("margin"))
-            HM = true;
+            HM = 1;
 
         if (css_r.has("width"))
-            W = true;
+            W = 1;
         if (css_r.has("height"))
-            H = true;
+            H = 1;
 
         //      1                     2                   4                 8                 16                
         let v = ((POS_R | 0) << 0) | ((POS_A | 0) << 1) | ((HT | 0) << 2) | ((HR | 0) << 3) | ((HB | 0) << 4) |
@@ -457,22 +403,11 @@ export class CSSCache {
         return css.property(prop_string);
     }
 
-    get position() {
-        if (this.cssflagsA & CSSCache.relative)
-            return "relative";
-        if (this.cssflagsA & CSSCache.absolute)
-            return "absolute";
-        return "auto";
-
-    }
-
     setPropFromString(string: string) {
         for (const str of string.split(";"))
             if (str)
                 this.setProp(this.createProp(str));
     }
-
-    applyChangesToCSS();
 
     clearChanges(system: FlameSystem) {
         //Retrieve all components with that match the selector
@@ -503,10 +438,6 @@ export class CSSCache {
                     e.style[prop.camelName] = prop.value_string;
             }
         }
-    }
-
-    clearStyle() {
-        this.element.style = "";
     }
 }
 

@@ -6,11 +6,9 @@ import {
     WickRTComponent, VARIABLE_REFERENCE_TYPE,
     FunctionFrame,
     MinTreeNode,
-    PendingBinding,
-    DATA_FLOW_FLAG
 } from "@candlefw/wick";
-import { CSSRuleNode } from "@candlefw/css";
-
+import { CSSTreeNode, CSSRuleNode, getApplicableRules } from "@candlefw/css";
+import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
 import { activeSys } from "./system.js";
 import { wick, js, conflagrate, css, url } from "./env.js";
@@ -26,6 +24,7 @@ const {
     }
 } = <wickOutput>wick;
 
+export { render };
 
 export function createNewFileURL(sys: FlameSystem, name: string) {
     return new url(sys.file_dir + name);
@@ -38,6 +37,148 @@ export function createNewFileURL(sys: FlameSystem, name: string) {
  * ██           ██      ██ 
  *  ██████ ███████ ███████ 
  */
+
+export function getApplicableRulesFromComponentData(
+    sys: FlameSystem,
+    comp: RuntimeComponent,
+    ele: HTMLElement
+) {
+    return [comp]
+        .map(c => getComponentDataFromRTInstance(sys, c))
+        .flatMap(c => c.CSS || [])
+        .flatMap(e => css.getApplicableRules(ele, e));
+};
+
+export function getApplicableRulesFromFullHierarchy(
+    sys: FlameSystem,
+    comp: RuntimeComponent,
+    ele: HTMLElement
+) {
+    return getListOfRTInstanceAndAncestors(comp)
+        .map(c => getComponentDataFromRTInstance(sys, c))
+        .flatMap(c => c.CSS || [])
+        .flatMap(e => css.getApplicableRules(ele, e));
+};
+
+export function getListOfApplicableSelectors(
+    sys: FlameSystem,
+    comp: RuntimeComponent,
+    ele: HTMLElement
+) {
+    return getApplicableRulesFromComponentData(sys, comp, ele)
+        .flatMap(r => css.getMatchedSelectors(r, ele));
+}
+
+export function getApplicableProps(
+    sys: FlameSystem,
+    comp: RuntimeComponent,
+    ele: HTMLElement
+): Map<string, TrackedCSSProp> {
+
+
+    //Get applicable css files,
+
+    //Then get applicable rules,
+
+    //For each rule -> Identify 1 matching selector.
+
+    //Extract selector, for each prop in rule create
+    // sel,prop pairs. 
+
+    //bottom-up gather props.
+
+    //return array of selector/prop pairs.
+
+    return getApplicableRulesFromFullHierarchy(sys, comp, ele)
+        .reverse()
+        .reduce((m, r) => {
+            const s = css.getFirstMatchedSelector(r, ele);
+
+            for (const [name, val] of r.props.entries())
+                if (!m.has(name) || val.IMPORTANT)
+                    m.set(name, { sel: s, prop: val.copy() });
+
+            return m;
+        }, new Map);
+};
+
+
+
+export function getUniqueSelector(
+    sys: FlameSystem,
+    comp: RuntimeComponent,
+    ele: HTMLElement
+) {
+    return null;
+
+    const hierarchy = getListOfRTInstanceAndAncestors(comp),
+        comp_css = hierarchy
+            .map(c => getComponentDataFromRTInstance(sys, c))
+            .map(c => c.CSS);
+
+    for (const css_data of comp_css.flatMap(e => e)) {
+
+        if (css_data) {
+
+            const rules = css.getApplicableRules(ele, css_data);
+
+        }
+    }
+
+    const rule = css.rule("*{top:0}");
+
+    return rule;
+}
+
+
+export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector: CSSTreeNode, root_name: string = comp.name): boolean {
+    let count = 0;
+
+    const { CSSTreeNodeType } = css;
+
+    for (const { node, meta: { parent } } of conflagrate.traverse(selector, "nodes")) {
+        switch (node.type) {
+            case CSSTreeNodeType.CompoundSelector:
+            case CSSTreeNodeType.ComplexSelector:
+                break;
+            case CSSTreeNodeType.ClassSelector:
+                if (node.value == root_name && parent)
+                    break;
+            case CSSTreeNodeType.IdSelector:
+                count++;
+                break;
+            default:
+                count += 2;
+        }
+    }
+
+    return count == 1;
+}
+
+export function getApplicableProps_(system: FlameSystem, component: RuntimeComponent, element: HTMLElement, unique_selector: CSSTreeNode) {
+
+    const props = getApplicableProps(system, component, element);
+
+    for (const v of props.values()) {
+        const
+            { sel } = v,
+            elements = [...css.getMatchedElements(component.ele, sel)];
+
+        if (
+            css.isSelectorEqual(sel, unique_selector)
+            || (
+                elements.length == 1
+                &&
+                isSelectorCapableOfBeingUnique(component, sel)
+            )
+        ) {
+            v.unique = true;
+        }
+    }
+
+    return props;
+}
+
 export function removeUnmatchedRulesMatchingElement(comp: Component, ele: DOMLiteral): CSSRuleNode[] {
 
     const existing_tree = comp.HTML, removed_rules = [];
@@ -375,6 +516,8 @@ export function createRootFrame(IS_ROOT: boolean): FunctionFrame {
         output_names: new Set,
         prev: null,
         IS_TEMP_CLOSURE: false,
+        ATTRIBUTE: false,
+        name: ""
     };
 }
 

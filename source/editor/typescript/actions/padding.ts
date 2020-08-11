@@ -64,29 +64,17 @@ function resetPadding(sys: FlameSystem, crate: ObjectCrate) {
 }
 
 export function SETPADDINGTOP(sys: FlameSystem, crate: ObjectCrate, x: number) {
-    const { ele, comp } = crate;
-    resetPadding(sys, crate);
-    ensureBlocklike(sys, comp, ele);
-    setNumericValue("padding_top", sys, comp, ele, x, setNumericValue.parent_height);
+    setNumericValue(sys, crate, "padding_top", x, setNumericValue.parent_height);
 }
 
 export function SETPADDINGBOTTOM(sys: FlameSystem, crate: ObjectCrate, x: number) {
-    const { ele, comp } = crate;
-    resetPadding(sys, crate);
-    ensureBlocklike(sys, comp, ele);
-    setNumericValue("padding_bottom", sys, comp, ele, x, setNumericValue.parent_height);
+    setNumericValue(sys, crate, "padding_bottom", x, setNumericValue.parent_height);
 }
 export function SETPADDINGLEFT(sys: FlameSystem, crate: ObjectCrate, x: number) {
-    const { ele, comp } = crate;
-    resetPadding(sys, crate);
-    ensureBlocklike(sys, comp, ele);
-    setNumericValue("padding_left", sys, comp, ele, x, setNumericValue.parent_width);
+    setNumericValue(sys, crate, "padding_left", x, setNumericValue.parent_width);
 }
 export function SETPADDINGRIGHT(sys: FlameSystem, crate: ObjectCrate, x: number) {
-    const { ele, comp } = crate;
-    resetPadding(sys, crate);
-    ensureBlocklike(sys, comp, ele);
-    setNumericValue("padding_right", sys, comp, ele, x, setNumericValue.parent_width);
+    setNumericValue(sys, crate, "padding_right", x, setNumericValue.parent_width);
 }
 
 export const SETDELTAPADDINGTOP = <Action>{

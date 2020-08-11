@@ -35,16 +35,14 @@ function getNumericValue(sys: FlameSystem, crate: ObjectCrate, type: string): nu
     return getContentBox(ele, sys.window, sys)[type];
 }
 
-export function SETWIDTH(system, component, element, x) {
-    ensureBlocklike(system, component, element);
-
-    const excess = setNumericValue("width", system, component, element, x, setNumericValue.parent_width);
+export function SETWIDTH(system, crate: ObjectCrate, x: number) {
+    //ensureBlocklike(system, component, element);
+    setNumericValue(system, crate, "width", x, setNumericValue.parent_width);
 }
 
-export function SETHEIGHT(system, component, element, y) {
-    ensureBlocklike(system, component, element);
-
-    let excess = setNumericValue("height", system, component, element, y, setNumericValue.parent_height);
+export function SETHEIGHT(system, crate: ObjectCrate, y: number) {
+    //ensureBlocklike(system, component, element);
+    setNumericValue(system, crate, "height", y, setNumericValue.parent_height);
 }
 
 export const SETDELTAWIDTH = <Action>{
@@ -55,13 +53,11 @@ export const SETDELTAWIDTH = <Action>{
     setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "width" }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-        const { comp, ele, } = crate,
-
-            start_x = getNumericValue(sys, crate, "width"),
+        const start_x = getNumericValue(sys, crate, "width"),
 
             delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-        SETWIDTH(sys, comp, ele, start_x + delta);
+        SETWIDTH(sys, crate, start_x + delta);
     },
     historyProgress: updateCSS,
     historyRegress: updateCSS
@@ -77,13 +73,11 @@ export const SETDELTAHEIGHT = <Action>{
     setRatio: (sys, crate) => ({ delta: crate.data.dy, type: "height" }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-        const { comp, ele, } = crate,
-
-            start_x = getNumericValue(sys, crate, "height"),
+        const start_x = getNumericValue(sys, crate, "height"),
 
             delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-        SETHEIGHT(sys, comp, ele, start_x + delta);
+        SETHEIGHT(sys, crate, start_x + delta);
     },
     historyProgress: updateCSS,
     historyRegress: updateCSS

@@ -103,32 +103,32 @@ function numericAdjust(ALLOW_NEGATIVE = false, RELATIVE = false, value = 0, deno
 }
 
 export function setNumericValue(
-    propname,
-    system: FlameSystem,
-    component,
-    element: HTMLElement,
+    sys: FlameSystem,
+    crate: ObjectCrate,
+    prop_name,
     value: number,
     relative_type: number = 0,
     ALLOW_NEGATIVE: boolean = false
 ): number {
+
+    const { css_cache: cache, ele, comp } = crate;
+
     let
-        cache = CSSCacheFactory(system, component, element),
-        KEEP_UNIQUE = system.flags.KEEP_UNIQUE,
-        prop = cache.getProp(propname),
-        css_name = propname.replace(/_/g, "-");
+        prop = cache.getProp(prop_name),
+        css_name = prop_name.replace(/_/g, "-"),
+        RELATIVE = false, denominator = 1;
 
     if (!prop) {
-        let type = (system.global.default_pos_unit || "px");
-        let value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
+        let
+            type = (sys.global.default_pos_unit || "px"),
+            value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
         prop = cache.createProp(`${css_name}:${value + type}`);
     }
 
-    let RELATIVE = false, denominator = 1;
+    if (prop.value == undefined)
+        return;
 
-    if (prop.value == undefined) return;
-
-
-    if (prop.value_string == "auto") {
+    else if (prop.value_string == "auto") {
 
         //convert to numerical form;
         prop.setValue(new types.length(value, "px"));
@@ -137,33 +137,35 @@ export function setNumericValue(
 
         return 0;
 
-    } else if (prop.value.type === "%") {
+    }
+
+    else if (prop.value.type === "%") {
 
         //get the nearest positioned ancestor
-        let ele = null;
+        let ref_ele = null;
 
         switch (relative_type) {
             case setNumericValue.parent_width:
-                ele = element.parentElement;
-                if (ele) denominator = getContentBox(ele, system.window, system).width;
+                ref_ele = ele.parentElement;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).width;
                 break;
             case setNumericValue.parent_height:
-                ele = element.parentElement;
-                if (ele) denominator = getContentBox(ele, system.window, system).height;
+                ref_ele = ele.parentElement;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).height;
                 break;
             case setNumericValue.positioned_ancestor_width:
-                ele = getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, system.window, system).width;
+                ref_ele = getFirstPositionedAncestor(ele);
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).width;
                 break;
             case setNumericValue.positioned_ancestor_height:
-                ele = getFirstPositionedAncestor(element);
-                if (ele) denominator = getContentBox(ele, system.window, system).height;
+                ref_ele = getFirstPositionedAncestor(ele);
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).height;
                 break;
             case setNumericValue.height:
-                denominator = getContentBox(component, system.window, system).width;
+                denominator = getContentBox(comp, sys.window, sys).width;
                 break;
             case setNumericValue.width:
-                denominator = getContentBox(component, system.window, system).width;
+                denominator = getContentBox(comp, sys.window, sys).width;
                 break;
         }
 

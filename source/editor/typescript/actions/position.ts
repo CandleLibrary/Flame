@@ -31,9 +31,9 @@ export function SETLEFT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
     const { comp, ele, css_cache, data: { dx } } = crate, pos = val || dx;
 
     if (css_cache.cssflagsA & 1)
-        setNumericValue("left", sys, comp, ele, pos, setNumericValue.parent_width, true);
+        setNumericValue(sys, crate, "left", pos, setNumericValue.parent_width, true);
     else
-        setNumericValue("left", sys, comp, ele, pos, setNumericValue.positioned_ancestor_width, true);
+        setNumericValue(sys, crate, "left", pos, setNumericValue.positioned_ancestor_width, true);
 
     css_cache.applyChanges(sys, 0);
 }
@@ -43,9 +43,9 @@ export function SETRIGHT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) 
     const { comp, ele, css_cache, data: { dx } } = crate, pos = val || dx;
 
     if (css_cache.cssflagsA & 1)
-        setNumericValue("right", sys, comp, ele, pos, setNumericValue.parent_width, true);
+        setNumericValue(sys, crate, "right", pos, setNumericValue.parent_width, true);
     else
-        setNumericValue("right", sys, comp, ele, pos, setNumericValue.positioned_ancestor_width, true);
+        setNumericValue(sys, crate, "right", pos, setNumericValue.positioned_ancestor_width, true);
 
     css_cache.applyChanges(sys, 0);
 }
@@ -55,9 +55,9 @@ export function SETTOP(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
     const { comp, ele, css_cache, data: { dy } } = crate, pos = val || dy;
 
     if (css_cache.cssflagsA & 1)
-        setNumericValue("top", sys, comp, ele, pos, setNumericValue.parent_height, true);
+        setNumericValue(sys, crate, "top", pos, setNumericValue.parent_height, true);
     else
-        setNumericValue("top", sys, comp, ele, pos, setNumericValue.positioned_ancestor_height, true);
+        setNumericValue(sys, crate, "top", pos, setNumericValue.positioned_ancestor_height, true);
 
     css_cache.applyChanges(sys, 0);
 }
@@ -67,9 +67,9 @@ export function SETBOTTOM(sys: FlameSystem, crate: ObjectCrate, val: number = 0)
     const { comp, ele, css_cache, data: { dy } } = crate, pos = val || dy;
 
     if (css_cache.cssflagsA & 1)
-        setNumericValue("bottom", sys, comp, ele, pos, setNumericValue.parent_height, true);
+        setNumericValue(sys, crate, "bottom", pos, setNumericValue.parent_height, true);
     else
-        setNumericValue("bottom", sys, comp, ele, pos, setNumericValue.positioned_ancestor_height, true);
+        setNumericValue(sys, crate, "bottom", pos, setNumericValue.positioned_ancestor_height, true);
 
     css_cache.applyChanges(sys, 0);
 }

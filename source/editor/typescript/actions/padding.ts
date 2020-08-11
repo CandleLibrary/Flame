@@ -66,7 +66,7 @@ export const SETDELTAPADDINGRIGHT = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => d({ max_level: 1 }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),
@@ -84,7 +84,7 @@ export const SETDELTAPADDINGLEFT = <Action>{
     priority: 0,
     sealFN: sealCSS,
     initFN: (sys, crate) => { },
-    setRatio: (sys, crate) => d({ max_level: 1 }),
+    setRatio: (sys, crate) => ({ max_level: 1 }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
         const
             style = sys.window.getComputedStyle(crate.ele),

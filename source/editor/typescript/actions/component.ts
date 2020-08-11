@@ -81,7 +81,7 @@ export const CREATE_COMPONENT = <Action>{
 
         return [history];
     },
-    sealFN: (sys, crate) => { },
+    sealFN: noop,
     updateFN: noop,
     historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
     historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
@@ -134,13 +134,28 @@ export const DELETE_COMPONENT = <Action>{
         createRTComponentFromComponentData(sys, clone_comp_data);
 
         replaceRTInstances(sys, comp.name, clone_comp_data.name);
-    },
-    sealFN: (sys, crate) => {
 
+        const history = <HistoryArtifact>{
+            type: ActionType.DELETE_COMPONENT,
+            progress: {
+                comp_data_name: comp.name,
+                ele_index: start_index,
+                valueA: clone_comp_data.name
+            },
+            regress: {
+                comp_data_name: clone_comp_data.name,
+                ele_index: start_index,
+                valueA: comp.name
+            },
+            DO_NOT_CALL_AFTER_UPDATE: true
+        };
+
+        return [history];
     },
+    sealFN: noop,
     updateFN: noop,
-    historyProgress: noop,
-    historyRegress: (sys, history) => {
-    }
+    historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
+    historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
+}
 };
 

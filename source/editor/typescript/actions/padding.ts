@@ -1,7 +1,5 @@
 import {
-    setNumericValue,
-    ensureBlocklike,
-    getContentBox
+    setNumericValue, getContentBox
 } from "./common.js";
 
 import {
@@ -13,55 +11,6 @@ import { sealCSS, updateCSS } from "./position.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { Action } from "../types/action.js";
-
-function resetPadding(sys: FlameSystem, crate: ObjectCrate) {
-    return;
-    const { css_cache: cache, comp, ele } = crate;
-
-    let rules = cache.unique;
-
-    if (rules.has("padding")) {
-        let val = rules.get("padding").prop;
-
-        if (!Array.isArray(val)) {
-            cache.setPropFromString(`
-                padding-top:${val};
-                padding-right:${val};
-                padding-bottom:${val};
-                padding-left:${val};
-            `);
-        } else {
-            switch (val.length) {
-                case 2:
-                    cache.setPropFromString(`
-                        padding-top:${val[0]};
-                        padding-right:${val[1]};
-                        padding-bottom:${val[0]};
-                        padding-left:${val[1]};
-                    `);
-                    break;
-                case 3:
-                    cache.setPropFromString(`
-                        padding-top:${val[0]};
-                        padding-right:${val[2]};
-                        padding-bottom:${val[1]};
-                        padding-left:${val[2]};
-                    `);
-                    break;
-                case 4:
-                    cache.setPropFromString(`
-                        padding-top:${val[0]};
-                        padding-right:${val[1]};
-                        padding-bottom:${val[2]};
-                        padding-left:${val[3]};
-                    `);
-                    break;
-            }
-        }
-        //Convert padding value into 
-        css.props.padding = null;
-    }
-}
 
 export function SETPADDINGTOP(sys: FlameSystem, crate: ObjectCrate, x: number) {
     setNumericValue(sys, crate, "padding_top", x, setNumericValue.parent_height);

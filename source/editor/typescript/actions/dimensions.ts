@@ -1,5 +1,4 @@
 import { setNumericValue, ensureBlocklike, prepRebuild } from "./common.js";
-import { getRatio, startRatioMeasure, RatioMarker, clearRatioMeasure } from "./ratio.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { sealCSS, updateCSS } from "./position.js";

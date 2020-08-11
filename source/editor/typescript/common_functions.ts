@@ -5,7 +5,7 @@ import {
     wickOutput,
     WickRTComponent, VARIABLE_REFERENCE_TYPE,
     FunctionFrame,
-    MinTreeNode,
+    JSNode,
 } from "@candlefw/wick";
 import { CSSTreeNode, CSSRuleNode, getApplicableRules } from "@candlefw/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
@@ -18,7 +18,7 @@ const {
         render
     },
     types: {
-        MinTreeNodeType,
+        JSNodeType,
         CSSTreeNodeType,
         WickASTNodeType
     }
@@ -417,7 +417,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
     if (component_data.frames.filter(f => f.ast).length > 0) {
 
         out_node = {
-            type: MinTreeNodeType.Script,
+            type: JSNodeType.Script,
             nodes: [],
         };
         //Go through each import and export and create nodes for them.
@@ -499,14 +499,14 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
 
     // from this ast apply changes that need to occur, then render back to file.
 
-    return render(<wickOutput["types"]["MinTreeNode"]>out_node) || "";
+    return render(<wickOutput["types"]["JSNode"]>out_node) || "";
 }
 
 export function createRootFrame(IS_ROOT: boolean): FunctionFrame {
     return {
         IS_ROOT: IS_ROOT,
-        ast: <MinTreeNode>{
-            type: MinTreeNodeType.EmptyStatement,
+        ast: <JSNode>{
+            type: JSNodeType.EmptyStatement,
             pos: null
         },
         binding_type: new Map,

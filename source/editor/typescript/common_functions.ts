@@ -7,7 +7,7 @@ import {
     FunctionFrame,
     JSNode,
 } from "@candlefw/wick";
-import { CSSTreeNode, CSSRuleNode, getApplicableRules } from "@candlefw/css";
+import { CSSNode, CSSRuleNode, getApplicableRules } from "@candlefw/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
 import { activeSys } from "./system.js";
@@ -19,8 +19,8 @@ const {
     },
     types: {
         JSNodeType,
-        CSSTreeNodeType,
-        WickASTNodeType
+        CSSNodeType,
+        WickNodeType
     }
 } = <wickOutput>wick;
 
@@ -131,20 +131,20 @@ export function getUniqueSelector(
 }
 
 
-export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector: CSSTreeNode, root_name: string = comp.name): boolean {
+export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector: CSSNode, root_name: string = comp.name): boolean {
     let count = 0;
 
-    const { CSSTreeNodeType } = css;
+    const { CSSNodeType } = css;
 
     for (const { node, meta: { parent } } of conflagrate.traverse(selector, "nodes")) {
         switch (node.type) {
-            case CSSTreeNodeType.CompoundSelector:
-            case CSSTreeNodeType.ComplexSelector:
+            case CSSNodeType.CompoundSelector:
+            case CSSNodeType.ComplexSelector:
                 break;
-            case CSSTreeNodeType.ClassSelector:
+            case CSSNodeType.ClassSelector:
                 if (node.value == root_name && parent)
                     break;
-            case CSSTreeNodeType.IdSelector:
+            case CSSNodeType.IdSelector:
                 count++;
                 break;
             default:
@@ -155,7 +155,7 @@ export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector:
     return count == 1;
 }
 
-export function getApplicableProps_(system: FlameSystem, component: RuntimeComponent, element: HTMLElement, unique_selector: CSSTreeNode) {
+export function getApplicableProps_(system: FlameSystem, component: RuntimeComponent, element: HTMLElement, unique_selector: CSSNode) {
 
     const props = getApplicableProps(system, component, element);
 
@@ -194,7 +194,7 @@ export function removeUnmatchedRulesMatchingElement(comp: Component, ele: DOMLit
             //Necessary
             node.parent = parent;
 
-            if (node.type == CSSTreeNodeType.Rule) {
+            if (node.type == CSSNodeType.Rule) {
 
                 const selectors = css.getMatchedSelectors(node, ele, wick.css_selector_helpers);
 
@@ -246,7 +246,7 @@ export function getMatchedRules(comp: Component, ele: DOMLiteral): CSSRuleNode[]
             //Necessary
             node.parent = parent;
 
-            if (node.type == CSSTreeNodeType.Rule) {
+            if (node.type == CSSNodeType.Rule) {
 
                 const selectors = css.getMatchedSelectors(node, ele, wick.css_selector_helpers);
 
@@ -374,13 +374,13 @@ export function convertDOMLiteralToSourceNode(component_data: Component, node: D
 
     if (node.tag_name) {
 
-        out.type = WickASTNodeType["HTML_" + node.tag_name.toUpperCase()] || WickASTNodeType.HTML_Element;
+        out.type = WickNodeType["HTML_" + node.tag_name.toUpperCase()] || WickNodeType.HTML_Element;
 
         out.tagname = node.tag_name;
 
         if (node.attributes)
             out.attributes = node.attributes.map(a => ({
-                type: WickASTNodeType.HTMLAttribute,
+                type: WickNodeType.HTMLAttribute,
                 name: a[0],
                 value: a[1]
             }));
@@ -390,7 +390,7 @@ export function convertDOMLiteralToSourceNode(component_data: Component, node: D
 
     } else {
 
-        out.type = WickASTNodeType.HTMLText;
+        out.type = WickNodeType.HTMLText;
 
         if (node.is_bindings) {
             const d = component_data.bindings.filter(b => b.html_element_index == node.lookup_index)[0];
@@ -492,7 +492,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
         html.nodes.push({
             attributes: [],
             tag: "STYLE",
-            type: WickASTNodeType.HTML_STYLE,
+            type: WickNodeType.HTML_STYLE,
             nodes: [css_]
         });
 

@@ -1,4 +1,4 @@
-import { CSSProperty, CSSTreeNode, CSSRuleNode } from "@candlefw/css";
+import { CSSProperty, CSSNode, CSSRuleNode } from "@candlefw/css";
 import { RuntimeComponent } from "@candlefw/wick";
 
 import { css, conflagrate } from "../env.js";
@@ -73,7 +73,7 @@ export class CSSCache {
     changed: Set<string>;
 
     unique: Map<string, TrackedCSSProp>;
-    unique_selector: CSSTreeNode;
+    unique_selector: CSSNode;
     original_props: Map<string, TrackedCSSProp>;
     _computed: any;
 
@@ -145,17 +145,17 @@ export class CSSCache {
         for (const rule of rules) {
             if (rule.selectors.length == 1) {
                 const [sel] = rule.selectors;
-                const { CSSTreeNodeType } = css;
+                const { CSSNodeType } = css;
 
                 let count = -1;
 
                 for (const { node, meta } of conflagrate.traverse(sel, "nodes")) {
                     switch (node.type) {
-                        case CSSTreeNodeType.CompoundSelector:
-                        case CSSTreeNodeType.ComplexSelector:
+                        case CSSNodeType.CompoundSelector:
+                        case CSSNodeType.ComplexSelector:
                             break;
-                        case CSSTreeNodeType.ClassSelector:
-                        case CSSTreeNodeType.IdSelector:
+                        case CSSNodeType.ClassSelector:
+                        case CSSNodeType.IdSelector:
                             count++;
                             break;
                         default:

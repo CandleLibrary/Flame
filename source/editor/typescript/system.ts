@@ -17,7 +17,6 @@ export function activeSys() { return active_system; }
 export function initSystem(
     w?: wickOutput,
     edit_wick?: wickOutput,
-    css?: any,
     edit_css?: any,
     comp_window?: Window,
 ): FlameSystem {
@@ -39,7 +38,6 @@ export function initSystem(
         cy: 0,
         cz: 0,
         move_type: "relative",
-        css: css,
         window: comp_window,
         document: comp_window.document,
         body: comp_window.document.body,

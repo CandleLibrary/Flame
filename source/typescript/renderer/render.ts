@@ -68,7 +68,11 @@ const
         const str = components.map(fn).join("\n");
         return addHeader(file, `<style id="wick-css">${str}\n</style>`);
     };
-export const renderPage = async (source: String | Component, wick, options: RenderOptions): Promise<{ html?: string, js?: string, css?: string; }> => {
+export const renderPage = async (
+    source: String | Component,
+    wick,
+    options: RenderOptions
+): Promise<{ html?: string, js?: string, css?: string; }> => {
 
     await wick.server();
 

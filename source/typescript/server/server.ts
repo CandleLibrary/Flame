@@ -128,9 +128,7 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
                     return tools.sendRawStreamFromFile(path.join(__root_dir, "source/editor/", tools.dir.replace("/flame/editor", ""), tools.file));
                 },
 
-                keys: [
-                    { ext: server.ext.all, dir: "/flame/editor/*" }
-                ]
+                keys: [{ ext: server.ext.all, dir: "/flame/editor/*" }]
 
             },
 
@@ -144,9 +142,7 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
                     return tools.sendRawStreamFromFile(path.join(__root_dir, "bin/", "radiate.js"));
                 },
 
-                keys: [
-                    { ext: server.ext.all, dir: "/flame/router" }
-                ]
+                keys: [{ ext: server.ext.all, dir: "/flame/router" }]
 
             },
 
@@ -201,8 +197,8 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
                 name: "FLAME_RUNTIME_EDITOR",
                 description:
                     `This systems provides an ad hoc editing environment to wick components. It will dynamically build a wick 
-component based page and inject server communication code to update these components as changes are made 
-client side.`,
+                     component based page and inject server communication code to update these components as changes are made 
+                     client side.`,
                 MIME: "text/html",
                 respond: async function (tools) {
 
@@ -217,6 +213,7 @@ client side.`,
 
                             return tools.redirect(new_path.path);
                         }
+
                         let url = "";
 
                         try {

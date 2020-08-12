@@ -2,6 +2,7 @@ import { wickOutput } from "@candlefw/wick";
 
 import { HistoryState } from "./history_state";
 import { EditorModel } from "../editor_model";
+import { CSS_Transform2D } from "@candlefw/css";
 
 export interface FlameSystem {
     comp_name_counter: number;
@@ -33,9 +34,7 @@ export interface FlameSystem {
     },
     ui: {
         event_intercept_frame: HTMLDivElement;
-        transform: {
-            scale: number;
-        };
+        transform: CSS_Transform2D;
     },
     edit_css: any,
     edit_wick: any;

@@ -1,6 +1,7 @@
-import { wickOutput } from "@candlefw/wick";
+import WICK from "@candlefw/wick";
 import { FlameSystem } from "./types/flame_system.js";
 import { EditorModel } from "./editor_model.js";
+import { css } from "./env.js";
 
 
 const event_intercept = document.createElement("div");
@@ -16,7 +17,7 @@ export function activeSys() { return active_system; }
 
 export function initSystem(
     w?: wickOutput,
-    edit_wick?: wickOutput,
+    edit_wick?: typeof WICK,
     edit_css?: any,
     comp_window?: Window,
 ): FlameSystem {
@@ -45,7 +46,17 @@ export function initSystem(
         wick: w,
         flags: { KEEP_UNIQUE: true },
         global: { default_pos_unit: "px" },
-        ui: { event_intercept_frame: event_intercept, transform: { scale: 1 } },
+        ui: {
+            event_intercept_frame: event_intercept,
+            transform: new Proxy<typeof css.types.transform2D>(
+                new css.transform2D, {
+                set: (obj, prop, val) => {
+                    obj[prop] = val;
+                    active_system.body.style.transform = obj;
+                    return true;
+                }
+            })
+        },
         edit_css,
         edit_wick
     };

@@ -50,9 +50,11 @@ export function START_ACTION(actions: Action[], data: ObjectCrate["data"]) {
     UPDATE_ACTION(true, data);
 }
 
+export function areActionsRunning() { return (ACTIVE_ACTIONS.length > 0); }
+
 export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]): boolean {
 
-    if (ACTIVE_ACTIONS.length == 0) return false;
+    if (!areActionsRunning()) return false;
 
     const { editor_model, cx, cy } = activeSys();
 
@@ -114,7 +116,7 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]):
 
 export function END_ACTION(event?): boolean {
 
-    if (ACTIVE_ACTIONS.length == 0) return false;
+    if (!areActionsRunning()) return false;
 
     hideEventIntercept();
 

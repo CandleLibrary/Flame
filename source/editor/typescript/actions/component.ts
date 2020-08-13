@@ -1,8 +1,22 @@
 import { noop } from "./common.js";
 import { ActionType } from "../types/action_type";
 import { Action } from "../types/action";
-import { getComponentDataFromRTInstance, cloneComponentData, getIndexOfElementInRTInstance, getLastIndexInDOMLiteralTree, removeDOMLiteralAtIndex, createComponentData, removeBindingsWithinDOMLiteralIndexRange, removeUnmatchedRulesMatchingElement, createRTComponentFromComponentData, insertDOMLiteralAtIndex, replaceRTInstances, componentDataToSourceString, createNewFileURL, addComponentImport } from "../common_functions.js";
-import { url } from "../env.js";
+import {
+    getComponentDataFromRTInstance,
+    cloneComponentData,
+    getIndexOfElementInRTInstance,
+    getLastIndexInDOMLiteralTree,
+    removeDOMLiteralAtIndex,
+    createComponentData,
+    removeBindingsWithinDOMLiteralIndexRange,
+    removeUnmatchedRulesMatchingElement,
+    createRTComponentFromComponentData,
+    insertDOMLiteralAtIndex,
+    replaceRTInstances,
+    componentDataToSourceString,
+    createNewFileURL,
+    addComponentImport
+} from "../common_functions.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
 
 /**
@@ -41,11 +55,13 @@ export const CREATE_COMPONENT = <Action>{
         clone_comp_data.HTML = cloned_root;
         new_comp_data.HTML = removed_node;
 
+        const name = "comp" + sys.comp_name_counter++;
+
+        new_comp_data.location = createNewFileURL(sys, old_comp_data.location.dir + "/" + name + sys.comp_ext);
+
         createRTComponentFromComponentData(sys, new_comp_data);
 
         //Insert a new component node into the cloned comp_data 
-        const name = "comp" + sys.comp_name_counter++;
-        new_comp_data.location = createNewFileURL(sys, old_comp_data.location.dir + "/" + name + sys.comp_ext);
 
         addComponentImport(name, clone_comp_data, new_comp_data);
 

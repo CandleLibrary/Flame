@@ -1,12 +1,25 @@
+import WICK, { RuntimeComponent, Presets, WickRuntime } from "@candlefw/wick";
+
 import * as ACTIONS from "./actions/action.js";
-
 import history from "./history.js";
-
 import { initSystem } from "./system.js";
-import { getListOfRTInstanceAndAncestors, getListOfComponentData, getRTInstanceFromEvent, getElementFromEvent, retrieveRTInstanceFromElement, getElementFromPoint } from "./common_functions.js";
-import { START_ACTION, APPLY_ACTION, UPDATE_ACTION, END_ACTION, areActionsRunning } from "./action_initiators.js";
+import {
+    getListOfRTInstanceAndAncestors,
+    getListOfComponentData,
+    getRTInstanceFromEvent,
+    getElementFromEvent,
+    retrieveRTInstanceFromElement,
+    getElementFromPoint
+} from "./common_functions.js";
+import {
+    START_ACTION,
+    APPLY_ACTION,
+    UPDATE_ACTION,
+    END_ACTION,
+    areActionsRunning
+} from "./action_initiators.js";
 import * as common from "./common_functions.js";
-import WICK, { RuntimeComponent } from "@candlefw/wick";
+import { ExtendedComponent } from "@candlefw/wick/build/types/types/extended_component";
 
 
 export default async function initFlame(editor_cfw, edited_cfw, edited_window: Window) { //For Isolation
@@ -78,7 +91,7 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
 
             if (areActionsRunning()) return action_input_handler.move(e);
 
-            if (button = ButtonType.MIDDLE) return drag_handler.drag(e, button);
+            if (button == ButtonType.MIDDLE) return drag_handler.drag(e, button);
 
             return default_handler;
         },
@@ -110,7 +123,7 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
                 { x, y, deltaY } = event,
                 { px, py, scale } = transform,
                 old_scale = scale,
-                new_scale = Math.max(0.4, Math.min(1, old_scale + -deltaY * 0.0005));
+                new_scale = Math.max(0.2, Math.min(1, old_scale + -deltaY * 0.0005));
 
             transform.scale = new_scale;
             transform.px -= ((((px - x) * old_scale) - ((px - x) * new_scale))) / (old_scale);
@@ -248,29 +261,77 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
         system.editor_model.update();
     }
 
+    async function initializeHarness(wick: typeof WICK): Promise<ExtendedComponent> {
+        return await editor_wick("/flame/editor/components/harness.jsx").pending;
+    }
 
-    comp_window.document.head.appendChild(edit_css);
+    function extractIFrameContentAndPlaceIntoHarness(harness_component: ExtendedComponent, window: Window, edited_presets: Presets) {
+        //Pull out the content of the app and place into a harness component
+        const
+            //Every new component will be placed in its own harness, which is used to 
+            //represent the component's window and document context.
+            root_component: RuntimeComponent =
+                (<Element & { wick_component: RuntimeComponent; }>
+                    window.document.querySelector("[w-s]"))
+                    .wick_component;
+        console.log(harness_component.class_string.class_string);
+        const harness = new harness_component.classWithIntegratedCSS(
+            root_component,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            edited_presets
+        );
+
+        root_component.par = harness;
+
+        harness.ele.appendChild(root_component.ele);
+        window.document.body.appendChild(harness.ele);
+    }
+
+    edited_window.document.head.appendChild(edited_css);
+    document.body.appendChild(event_intercept_ele);
 
     edited_window.document.addEventListener("pointermove", pointerMoveEventResponder);
     window.document.addEventListener("pointermove", pointerMoveEventResponder);
-    window.addEventListener("focusout", pointerUpEventResponder);
-    comp_window.document.addEventListener("pointerup", pointerUpEventResponder);
-    comp_window.document.addEventListener("pointerdown", pointerDownEventResponder);
-
-    document.body.appendChild(event_intercept_ele);
     event_intercept_ele.addEventListener("pointermove", pointerMoveEventResponder);
+
+    window.addEventListener("focusout", pointerUpEventResponder);
+    window.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+    });
+    edited_window.addEventListener("contextmenu", e => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+    });
+
+    edited_window.document.addEventListener("pointerdown", pointerDownEventResponder);
+    window.document.addEventListener("pointerdown", pointerDownEventResponder);
+
     event_intercept_ele.addEventListener("pointerup", pointerUpEventResponder);
+    edited_window.document.addEventListener("pointerup", pointerUpEventResponder);
+    window.document.addEventListener("pointerup", pointerUpEventResponder);
 
-    comp_window.document.addEventListener("wheel", wheelScrollEventResponder);
-    comp_window.document.addEventListener("scroll", windowResizeEventResponder);
-    comp_window.addEventListener("resize", windowResizeEventResponder);
+    edited_window.document.addEventListener("wheel", wheelScrollEventResponder);
+    window.document.addEventListener("wheel", wheelScrollEventResponder);
+    edited_window.document.addEventListener("scroll", windowResizeEventResponder);
+    edited_window.addEventListener("resize", windowResizeEventResponder);
 
+
+    window.addEventListener("keydown", e => {
+        e.preventDefault();
+    });
 
     window.addEventListener("keypress", e => {
         if (e.key == "z") history.ROLLBACK_EDIT_STATE(system);
         if (e.key == "r") history.ROLLFORWARD_EDIT_STATE(system);
         system.editor_model.sc++;
         system.editor_model.update();
+        e.preventDefault();
     });
 
     edited_window.addEventListener("keypress", (e: KeyboardEvent) => {
@@ -281,39 +342,40 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
         }
         system.editor_model.sc++;
         system.editor_model.update();
+        e.preventDefault();
     });
 
-    //Pull out the content of the app and place into a harness component
-    const harness_component = await edit_wick("/flame/editor/components/harness.jsx").pending;
-
-    //Every new component will be placed in its own harness, which is used to 
-    //represent the component's window and document context.
-
-    const root_component: RuntimeComponent = (<Element & { wick_component: RuntimeComponent; }>comp_window.document.querySelector("[w-s]")).wick_component,
-        { ele: root_component_ele } = root_component;
-
-    const harness = new harness_component.classWithIntegratedCSS(root_component, undefined, undefined, undefined, undefined, edit_wick.rt.presets);
-
-    root_component.par = harness;
-
-    harness.ele.appendChild(root_component.ele);
-
-    comp_window.document.body.appendChild(harness.ele);
-    comp_window.document.body.style.transformOrigin = "top left";
-
-
+    edited_window.document.body.style.transformOrigin = "top left";
+    edited_window.document.body.style.overflow = "hidden";
 
     /**
      * Include the editor frame system.
      */
-    edit_rt.presets.models["flame-editor"] = system.editor_model;
-    edit_rt.presets.api.APPLY_ACTION = APPLY_ACTION;
-    edit_rt.presets.api.START_ACTION = START_ACTION;
-    edit_rt.presets.api.ACTIONS = ACTIONS;
-    edit_rt.presets.api.sys = system;
-    Object.assign(edit_rt.presets.api, common);
+    editor_rt.presets.models["flame-editor"] = system.editor_model;
+    editor_rt.presets.api.APPLY_ACTION = APPLY_ACTION;
+    editor_rt.presets.api.START_ACTION = START_ACTION;
+    editor_rt.presets.api.ACTIONS = ACTIONS;
+    editor_rt.presets.api.sys = system;
+    Object.assign(editor_rt.presets.api, common);
 
-    const editor_frame = await (edit_wick("/flame/editor/components/editor.jsx").pending);
+
+    //ALLOW DEBUGGING ON EDITOR COMPONENTS
+    //editor_rt.presets.options.GENERATE_SOURCE_MAPS = true;
+    editor_rt.presets.options.REMOVE_DEBUGGER_STATEMENTS = false;
+
+    extractIFrameContentAndPlaceIntoHarness(
+        await initializeHarness(editor_wick),
+        edited_window,
+        edited_wick.rt.presets
+    );
+
+
+
+    const editor_frame = await (editor_wick("/flame/editor/components/editor.jsx").pending);
+
+    //DO NOT DEBUG ON COMPONENTS GENERATED BY EDITING
+    editor_rt.presets.options.GENERATE_SOURCE_MAPS = false;
+    editor_rt.presets.options.REMOVE_DEBUGGER_STATEMENTS = true;
 
     ui_root = (new editor_frame.classWithIntegratedCSS()).ele;
 

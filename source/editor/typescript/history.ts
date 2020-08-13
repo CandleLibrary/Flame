@@ -44,7 +44,6 @@ export default (function HISTORY() {
         ROLLBACK_EDIT_STATE(system: FlameSystem) {
             if (pointer > -1) {
                 const state = stack[pointer];
-                console.log(state);
                 setState(false, state, system);
                 pointer--;
             }
@@ -59,7 +58,6 @@ export default (function HISTORY() {
             if (pointer < stack.length - 1) {
                 pointer++;
                 const state = stack[pointer];
-                console.log(state);
                 setState(true, state, system);
             }
 

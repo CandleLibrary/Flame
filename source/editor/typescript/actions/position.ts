@@ -405,8 +405,6 @@ export function sealCSS(sys, crate: ObjectCrate) {
 
             const { prop, unique } = original.get(name);
 
-            console.log({ unique });
-
             if (unique) {
                 //do something
                 hist.regress = {

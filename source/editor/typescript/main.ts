@@ -274,7 +274,7 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
                 (<Element & { wick_component: RuntimeComponent; }>
                     window.document.querySelector("[w-s]"))
                     .wick_component;
-        console.log(harness_component.class_string.class_string);
+
         const harness = new harness_component.classWithIntegratedCSS(
             root_component,
             undefined,

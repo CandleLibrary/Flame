@@ -1,6 +1,6 @@
 import { selected_ele as ele, selected_comp as comp, sc } from "@model:flame-editor";
 import {
-    getApplicableRulesFromComponentData,
+    getMatchedRulesFromComponentData,
     getListOfApplicableSelectors,
     isSelectorCapableOfBeingUnique,
     sys,

@@ -9,16 +9,16 @@ import * as common from "./common_functions.js";
 import WICK, { RuntimeComponent } from "@candlefw/wick";
 
 
-export default async function initFlame(editor_cfw, comp_cfw, comp_window: Window) { //For Isolation
+export default async function initFlame(editor_cfw, edited_cfw, edited_window: Window) { //For Isolation
 
     const
         component_map = new Map,
-        wick = comp_cfw.wick,
-        css = editor_cfw.css,
-        edit_rt = editor_cfw.wick.rt,
-        edit_wick: typeof WICK = editor_cfw.wick,
-        edit_css = comp_window.document.createElement("style"),
-        system = initSystem(wick, edit_wick, edit_css, comp_window),
+        edited_wick = edited_cfw.wick,
+        editor_css = editor_cfw.css,
+        editor_rt: WickRuntime = editor_cfw.wick.rt,
+        editor_wick: typeof WICK = editor_cfw.wick,
+        edited_css = edited_window.document.createElement("style"),
+        system = initSystem(edited_wick, editor_wick, edited_css, edited_window),
         { event_intercept_frame: event_intercept_ele } = system.ui;
 
     interface InputHandler {
@@ -30,7 +30,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window: Windo
     }
 
     //Turn off cursor events for the edited elements
-    comp_window.document.body.style.pointerEvents = "none";
+    edited_window.document.body.style.pointerEvents = "none";
 
     let prev: HTMLElement = null, ui_root: HTMLElement = null;;
 
@@ -39,7 +39,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window: Windo
     /**
      * Integrate Flame editing system into every component instance. 
      */
-    comp_cfw.wick.rt.OVERRIDABLE_onComponentCreate = function (comp) {
+    edited_cfw.wick.rt.OVERRIDABLE_onComponentCreate = function (comp) {
 
         //Register all components within a tracker based on their instance type. 
         if (component_map.has(comp.name) == false) component_map.set(comp.name, new Set);
@@ -183,7 +183,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window: Windo
                 for (const node of (CSS.nodes || [])) {
                     for (const selector of (node.selectors || [])) {
 
-                        if (css.matchElements(ele, selector, css.DOMHelpers)) {
+                        if (editor_css.matchElements(ele, selector, editor_css.DOMHelpers)) {
                             const css_package = {
                                 comp: comp,
                                 root: CSS,
@@ -251,7 +251,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window: Windo
 
     comp_window.document.head.appendChild(edit_css);
 
-    comp_window.document.addEventListener("pointermove", pointerMoveEventResponder);
+    edited_window.document.addEventListener("pointermove", pointerMoveEventResponder);
     window.document.addEventListener("pointermove", pointerMoveEventResponder);
     window.addEventListener("focusout", pointerUpEventResponder);
     comp_window.document.addEventListener("pointerup", pointerUpEventResponder);
@@ -273,7 +273,7 @@ export default async function initFlame(editor_cfw, comp_cfw, comp_window: Windo
         system.editor_model.update();
     });
 
-    comp_window.addEventListener("keypress", (e: KeyboardEvent) => {
+    edited_window.addEventListener("keypress", (e: KeyboardEvent) => {
         if (e.ctrlKey) {
             if (e.key == "z")
                 if (e.shiftKey) history.ROLLFORWARD_EDIT_STATE(system);

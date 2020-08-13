@@ -6,8 +6,9 @@ import {
     WickRTComponent, VARIABLE_REFERENCE_TYPE,
     FunctionFrame,
     JSNode,
+    JSNodeType,
 } from "@candlefw/wick";
-import { CSSNode, CSSRuleNode, getApplicableRules } from "@candlefw/css";
+import { CSSNodeType, CSSNode, CSSRuleNode } from "@candlefw/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
 import { activeSys } from "./system.js";
@@ -38,7 +39,11 @@ export function createNewFileURL(sys: FlameSystem, name: string) {
  *  ██████ ███████ ███████ 
  */
 
-export function getApplicableRulesFromComponentData(
+const {
+
+} = css;
+
+export function getMatchedRulesFromComponentData(
     sys: FlameSystem,
     comp: RuntimeComponent,
     ele: HTMLElement
@@ -46,10 +51,10 @@ export function getApplicableRulesFromComponentData(
     return [comp]
         .map(c => getComponentDataFromRTInstance(sys, c))
         .flatMap(c => c.CSS || [])
-        .flatMap(e => css.getApplicableRules(ele, e));
+        .flatMap(e => css.getMatchedRules(ele, e));
 };
 
-export function getApplicableRulesFromFullHierarchy(
+export function getMatchedRulesFromFullHierarchy(
     sys: FlameSystem,
     comp: RuntimeComponent,
     ele: HTMLElement
@@ -57,7 +62,7 @@ export function getApplicableRulesFromFullHierarchy(
     return getListOfRTInstanceAndAncestors(comp)
         .map(c => getComponentDataFromRTInstance(sys, c))
         .flatMap(c => c.CSS || [])
-        .flatMap(e => css.getApplicableRules(ele, e));
+        .flatMap(e => css.getMatchedRules(ele, e));
 };
 
 export function getListOfApplicableSelectors(
@@ -65,7 +70,7 @@ export function getListOfApplicableSelectors(
     comp: RuntimeComponent,
     ele: HTMLElement
 ) {
-    return getApplicableRulesFromComponentData(sys, comp, ele)
+    return getMatchedRulesFromComponentData(sys, comp, ele)
         .flatMap(r => css.getMatchedSelectors(r, ele));
 }
 
@@ -89,7 +94,7 @@ export function getApplicableProps(
 
     //return array of selector/prop pairs.
 
-    return getApplicableRulesFromFullHierarchy(sys, comp, ele)
+    return getMatchedRulesFromFullHierarchy(sys, comp, ele)
         .reverse()
         .reduce((m, r) => {
             const s = css.getFirstMatchedSelector(r, ele);
@@ -120,7 +125,7 @@ export function getUniqueSelector(
 
         if (css_data) {
 
-            const rules = css.getApplicableRules(ele, css_data);
+            const rules = css.getMatchedRules(ele, css_data);
 
         }
     }

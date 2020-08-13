@@ -1,6 +1,20 @@
 import { css } from "../env.js";
 
-let types = css.types;
+let {
+    CSS_Color,
+    CSS_Length,
+    CSS_Percentage,
+    CSS_URL,
+    CSS_Number,
+    CSS_Id,
+    CSS_String,
+    CSS_Shape,
+    CSS_Bezier,
+    CSS_Gradient,
+    CSS_Transform2D,
+    CSS_Path,
+    CSS_FontName
+} = css;
 
 import { CSSCacheFactory } from "../cache/css_cache.js";
 import { prepUIUpdate } from "./update.js";
@@ -91,7 +105,7 @@ function numericAdjust(ALLOW_NEGATIVE = false, RELATIVE = false, value = 0, deno
             prop.setValue(prop.value.copy(value));
         else {
             if (value !== 0)
-                prop.setValue(new types.length(value, "px"));
+                prop.setValue(new CSS_Length(value, "px"));
             else
                 prop.setValue(0);
         }
@@ -121,7 +135,7 @@ export function setNumericValue(
     if (!prop) {
         let
             type = (sys.global.default_pos_unit || "px"),
-            value = (type == "%") ? new types.percentage(0) : new types.length(0, type);
+            value = (type == "%") ? new CSS_Percentage(0) : new CSS_Length(0, type);
         prop = cache.createProp(`${css_name}:${value + type}`);
     }
 
@@ -131,7 +145,7 @@ export function setNumericValue(
     else if (prop.value_string == "auto") {
 
         //convert to numerical form;
-        prop.setValue(new types.length(value, "px"));
+        prop.setValue(new CSS_Length(value, "px"));
 
         cache.setProp(prop);
 

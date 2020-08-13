@@ -48,11 +48,11 @@ export function initSystem(
         global: { default_pos_unit: "px" },
         ui: {
             event_intercept_frame: event_intercept,
-            transform: new Proxy<typeof css.types.transform2D>(
-                new css.transform2D, {
+            transform: new Proxy(
+                new css.CSS_Transform2D, {
                 set: (obj, prop, val) => {
                     obj[prop] = val;
-                    active_system.body.style.transform = obj;
+                    active_system.body.style.transform = obj.toString();
                     return true;
                 }
             })

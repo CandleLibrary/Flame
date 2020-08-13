@@ -6,7 +6,7 @@ import { TrackedCSSProp } from "../types/tracked_css_prop.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { SET_ATTRIBUTE } from "../actions/element.js";
 import { ObjectCrate } from "../types/object_crate.js";
-import { getRTInstances, getApplicableProps_, getApplicableRulesFromComponentData } from "../common_functions.js";
+import { getRTInstances, getApplicableProps_, getMatchedRulesFromComponentData } from "../common_functions.js";
 
 let global_cache = null;
 
@@ -140,7 +140,7 @@ export class CSSCache {
         //      if this number is 1, then select this rule to be 
         //      unique rule for this element.
 
-        const rules = getApplicableRulesFromComponentData(sys, comp, ele).reverse();
+        const rules = getMatchedRulesFromComponentData(sys, comp, ele).reverse();
 
         for (const rule of rules) {
             if (rule.selectors.length == 1) {

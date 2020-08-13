@@ -109,8 +109,8 @@ export const renderPage = async (
         file = addScript(file, `<script>window.addEventListener("load", async () => wick.default.setPresets({})); </script>`);
 
         file = createComponentScript(file, components, comp => {
-            const comp_class_string = componentDataToClassString(comp, presets, false, false);
-            return `w.rt.rC(${comp_class_string});`;
+            const { class_string, source_map } = componentDataToClassString(comp, presets, false, false);
+            return `w.rt.rC(${class_string});`;
         });
 
         file = createComponentStyle(file, components, (component) => {

@@ -90,6 +90,27 @@ export class CSSCache {
     system: FlameSystem;
 
     constructor() {
+        this.setup();
+    }
+
+    destroy() {
+        this.LOCKED = false;
+        this.changed = null;
+        this.rules = null;
+        this.element = null;
+        this._computed = null;
+        this.cssflagsA = 0;
+        this.cssflagsB = 0;
+        this.move_type = "";
+        this.valueA = 0;
+        this.valueB = 0;
+        this.valueC = 0;
+        this.valueD = 0;
+        this.next = global_cache;
+        global_cache = this;
+    }
+
+    setup() {
         this.rules = null;
         this.element = null;
         this.component = null;
@@ -108,21 +129,14 @@ export class CSSCache {
         this.LOCKED = false;
     }
 
-    destroy() {
-        this.LOCKED = false;
-        this.changed = null;
-        this.rules = null;
-        this.element = null;
-        this._computed = null;
-        this.cssflagsA = 0;
-        this.cssflagsB = 0;
-        this.move_type = "";
-        this.valueA = 0;
-        this.valueB = 0;
-        this.valueC = 0;
-        this.valueD = 0;
-        this.next = global_cache;
-        global_cache = this;
+    init(system: FlameSystem, crate: ObjectCrate) {
+        this.setup();
+        this.crate = crate;
+        this.element = crate.ele;
+        this.system = system;
+        this.component = crate.comp;
+        //calculate horizontal and vertical rations. also width and height ratios.  
+        this.setupStyle();
     }
 
     get computed() {
@@ -191,16 +205,6 @@ export class CSSCache {
         if (lock)
             this.LOCKED = true;
         return this.LOCKED;
-    }
-
-    init(system: FlameSystem, crate: ObjectCrate) {
-
-        this.crate = crate;
-        this.element = crate.ele;
-        this.system = system;
-        this.component = crate.comp;
-        //calculate horizontal and vertical rations. also width and height ratios.  
-        this.setupStyle();
     }
 
     setupStyle() {

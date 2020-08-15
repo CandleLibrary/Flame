@@ -15,10 +15,14 @@ export var active_system: FlameSystem = null;
 
 export function activeSys() { return active_system; }
 
+export function CreateTimeStamp(): number { return window.performance.now(); }
+
+export function GetElapsedTimeSinceStamp(stamp: number): number { return window.performance.now() - stamp; };
+
 export function initSystem(
     w?: wickOutput,
     edit_wick?: typeof WICK,
-    edit_css?: any,
+    edit_css?: type,
     comp_window?: Window,
 ): FlameSystem {
 
@@ -27,11 +31,20 @@ export function initSystem(
     event_intercept.classList.add("flame_editor_fill", "event_intercept");
 
     active_system = <FlameSystem>{
-        editor_model: new EditorModel,
+        metrics: {
+            startup_time: 0,
+            ui_components_error_count: 0,
+            ui_components_load_time: 0
+        },
+        comp_name_counter: 0,
+
+        edit_view: null,
+        editor_model: <EditorModel>new EditorModel,
         text_info: "",
         file_dir: ".",
         comp_ext: ".wick",
-        comp_name_counter: 0,
+
+        //Move these to ui
         dx: 0,
         dy: 0,
         dz: 0,
@@ -39,12 +52,18 @@ export function initSystem(
         cy: 0,
         cz: 0,
         move_type: "relative",
+        //End move
+
+
+        pending_history_state: null,
         window: comp_window,
         document: comp_window.document,
         body: comp_window.document.body,
         head: comp_window.document.head,
+        edited_components: { components: [] },
         wick: w,
-        flags: { KEEP_UNIQUE: true },
+        css,
+        flags: { CSS_SELECTOR_KEEP_UNIQUE: true },
         global: { default_pos_unit: "px" },
         ui: {
             event_intercept_frame: event_intercept,
@@ -52,7 +71,8 @@ export function initSystem(
                 new css.CSS_Transform2D, {
                 set: (obj, prop, val) => {
                     obj[prop] = val;
-                    active_system.body.style.transform = obj.toString();
+                    if (active_system.edit_view)
+                        active_system.edit_view.style.transform = obj.toString();
                     return true;
                 }
             })

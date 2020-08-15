@@ -56,7 +56,7 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]):
 
     if (!areActionsRunning()) return false;
 
-    const { editor_model, cx, cy } = activeSys();
+    const { editor_model, cx, cy, dx, dy, ui: { transform: { scale } } } = activeSys();
 
     if (!crates) { //TODO Setup crate information for each selected object.
 
@@ -94,8 +94,8 @@ export function UPDATE_ACTION(INITIAL_PASS = false, data?: ObjectCrate["data"]):
     }
 
     for (const crate of crates) {
-        crate.data.dx = cx - px;
-        crate.data.dy = cy - py;
+        crate.data.dx = dx / scale;
+        crate.data.dy = dy / scale;
     }
 
     applyAction(system, crates, INITIAL_PASS);
@@ -167,7 +167,7 @@ export function APPLY_ACTION(act: Action[], data: ObjectCrate["data"]) {
         .sort((a, b) => a.priority > b.priority ? -1 : 1);
 
     if (sabot.length !== act.length) {
-        ACTIVE_ACTIONS = null;
+        ACTIVE_ACTIONS = [];
     } else {
         ACTIVE_ACTIONS = sabot;
     }

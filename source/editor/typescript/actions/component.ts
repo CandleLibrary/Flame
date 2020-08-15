@@ -18,6 +18,39 @@ import {
     addComponentImport
 } from "../common_functions.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
+import { ObjectCrate } from "../types/object_crate.js";
+
+
+/**
+ * Creates a new and places the component at the root of the editor. 
+ * The new component will have a unique identifier to separate if from other 
+ * components. 
+ */
+export const CREATE_ROOT_COMPONENT = <Action>{
+    type: ActionType.CREATE_ROOT_COMPONENT,
+    priority: -500001,
+    initFN: (sys, crate) => {
+
+        /*
+         * The existing node needs to be modified with a new component that has the element replaced with 
+         * a component entry.
+         */
+        const { comp, ele, data: { px1, py1, px2, py2 } } = crate;
+
+        //create new iFrame for the component
+
+
+
+
+        console.log(px1, py1, px2, py2);
+
+    },
+    sealFN: noop,
+    updateFN: noop,
+    historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
+    historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
+
+};
 
 /**
  * Creates a new component from an existing element within an existing 

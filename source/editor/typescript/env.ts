@@ -1,3 +1,5 @@
+import * as c from "@candlefw/css";
+
 /**
  * Common CandleFW libraries.
  * 
@@ -6,7 +8,7 @@
  */
 
 //@ts-ignore
-const url = cfw.url, wick = cfw.wick, glow = cfw.glow, css = cfw.css, js = cfw.js, conflagrate = cfw.conflagrate;
+const url = cfw.url, wick = cfw.wick, glow = cfw.glow, css: typeof c = cfw.css, js = cfw.js, conflagrate = cfw.conflagrate;
 
 export {
     url,

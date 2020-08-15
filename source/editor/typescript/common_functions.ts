@@ -19,11 +19,10 @@ const {
         render
     },
     types: {
-        JSNodeType,
-        CSSNodeType,
-        WickNodeType
+        HTMLNodeType
     }
 } = <wickOutput>wick;
+
 
 export { render };
 
@@ -135,13 +134,31 @@ export function getUniqueSelector(
     return rule;
 }
 
+export function willPropertyOnSelectorHaveAnEffect(sys: FlameSystem, comp: RuntimeComponent, ele: HTMLElement, selector: CSSNode, prop_name: string): boolean {
+    //Boils down to whether the selector is the last selector with the property set.
+    let RESULT = true;
+
+    for (const { selectors, props } of getMatchedRules(getComponentDataFromRTInstance(sys, comp), ele, true)) {
+        if (props.has(prop_name)) {
+
+            const id = selectors.indexOf(selector);
+
+            if (id >= 0)
+                RESULT = true;
+            else
+                RESULT = false;
+        }
+    }
+
+    return RESULT;
+}
 
 export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector: CSSNode, root_name: string = comp.name): boolean {
     let count = 0;
 
-    const { CSSNodeType } = css;
-
     for (const { node, meta: { parent } } of conflagrate.traverse(selector, "nodes")) {
+
+        //Only certain selector types are allowed to serve as a unique selector. 
         switch (node.type) {
             case CSSNodeType.CompoundSelector:
             case CSSNodeType.ComplexSelector:
@@ -156,6 +173,11 @@ export function isSelectorCapableOfBeingUnique(comp: RuntimeComponent, selector:
                 count += 2;
         }
     }
+
+    const matched_elements = [...css.getMatchedElements(comp.ele, selector)];
+
+    if (matched_elements.length > 1)
+        return false;
 
     return count == 1;
 }
@@ -236,11 +258,35 @@ export function removeUnmatchedRulesMatchingElement(comp: Component, ele: DOMLit
     return removed_rules;
 };
 
-export function getMatchedRules(comp: Component, ele: DOMLiteral): CSSRuleNode[] {
+export function getMatchedRules(comp: Component, ele: DOMLiteral | HTMLElement, USE_REAL_NODE: boolean = false): CSSRuleNode[] {
+
+    const rules = [];
+
+    for (let i = 0; i < comp.CSS.length; i++) {
+
+        const css_node = comp.CSS[i];
+
+        for (
+            const { node, meta: { parent, replace } } of conflagrate.traverse(css_node, "nodes")
+        ) {
+            //Necessary
+            node.parent = parent;
+
+            if (node.type == CSSNodeType.Rule)
+                if (css.matchAnySelector(ele, USE_REAL_NODE ? undefined : wick.css_selector_helpers, ...node.selectors))
+                    rules.push(node);
+        }
+    }
+
+    return rules;
+}
+
+export function getNewCSSArrayWithRulesThatMatchElement(comp: Component, ele: DOMLiteral | HTMLElement, USE_REAL_NODE: boolean = false): CSSRuleNode[] {
 
     const CSS_SHEETS = [];
 
     for (let i = 0; i < comp.CSS.length; i++) {
+
         const css_node = comp.CSS[i], extractor = { ast: null };
 
         for (
@@ -251,15 +297,14 @@ export function getMatchedRules(comp: Component, ele: DOMLiteral): CSSRuleNode[]
             //Necessary
             node.parent = parent;
 
-            if (node.type == CSSNodeType.Rule) {
+            if (node.type == CSSNodeType.Rule)
+                if (!css.matchAnySelector(ele, USE_REAL_NODE ? undefined : wick.css_selector_helpers, ...node.selectors))
+                    replace(null);
 
-                const selectors = css.getMatchedSelectors(node, ele, wick.css_selector_helpers);
-
-                if (selectors.length == 0) replace(null);
-            }
         }
 
-        CSS_SHEETS.push(extractor.ast);
+        if (extractor.ast)
+            CSS_SHEETS.push(extractor.ast);
     }
 
     return CSS_SHEETS;
@@ -295,14 +340,16 @@ export function getListOfRTInstanceAndAncestors(comp: RuntimeComponent): Runtime
 }
 
 export function retrieveRTInstanceFromElement(ele) {
-    do {
-        if (ele.wick_component && !ele.hasAttribute("w-o"))
-            /* Presence of "w-o" indicates the element belongs to a component that has integrated its 
-             * element into the tree of another component.  */
-            return ele.wick_component;
+    if (ele) {
+        do {
+            if (ele.wick_component && !ele.hasAttribute("w-o"))
+                /* Presence of "w-o" indicates the element belongs to a component that has integrated its 
+                * element into the tree of another component.  */
+                return ele.wick_component;
 
-        ele = ele.parentNode;
-    } while (ele);
+            ele = ele.parentNode;
+        } while (ele);
+    }
     return null;
 }
 
@@ -379,13 +426,13 @@ export function convertDOMLiteralToSourceNode(component_data: Component, node: D
 
     if (node.tag_name) {
 
-        out.type = WickNodeType["HTML_" + node.tag_name.toUpperCase()] || WickNodeType.HTML_Element;
+        out.type = HTMLNodeType["HTML_" + node.tag_name.toUpperCase()] || HTMLNodeType.HTML_Element;
 
         out.tagname = node.tag_name;
 
         if (node.attributes)
             out.attributes = node.attributes.map(a => ({
-                type: WickNodeType.HTMLAttribute,
+                type: HTMLNodeType.HTMLAttribute,
                 name: a[0],
                 value: a[1]
             }));
@@ -395,7 +442,7 @@ export function convertDOMLiteralToSourceNode(component_data: Component, node: D
 
     } else {
 
-        out.type = WickNodeType.HTMLText;
+        out.type = HTMLNodeType.HTMLText;
 
         if (node.is_bindings) {
             const d = component_data.bindings.filter(b => b.html_element_index == node.lookup_index)[0];
@@ -497,7 +544,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
         html.nodes.push({
             attributes: [],
             tag: "STYLE",
-            type: WickNodeType.HTML_STYLE,
+            type: HTMLNodeType.HTML_STYLE,
             nodes: [css_]
         });
 

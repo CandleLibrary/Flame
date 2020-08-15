@@ -8,8 +8,10 @@ export const enum ActionType {
     DELETE_ELEMENT,
 
     CREATE_COMPONENT,
+    CREATE_ROOT_COMPONENT,
 
     DELETE_COMPONENT,
 
-    SET_CSS
+    SET_CSS,
+
 }

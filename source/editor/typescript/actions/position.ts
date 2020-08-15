@@ -1,3 +1,4 @@
+import { Component } from "@candlefw/wick";
 import {
     setNumericValue,
     prepRebuild
@@ -11,10 +12,9 @@ import {
     SETDELTAHEIGHT
 } from "./dimensions.js";
 
-import { css } from "../env.js";
+import { css, wick } from "../env.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
-import { Component } from "@candlefw/wick";
 import { ActionType } from "../types/action_type.js";
 import { Action } from "../types/action.js";
 import { ObjectCrate } from "../types/object_crate.js";
@@ -412,7 +412,7 @@ export function sealCSS(sys, crate: ObjectCrate) {
                     ele_index: -1,
                     valueA: prop.name,
                     valueB: prop + "",
-                    valueC: css.render(selector),
+                    valueC: wick.parse.render(selector),
                     pos: prop.pos,
                 };
             }
@@ -423,7 +423,7 @@ export function sealCSS(sys, crate: ObjectCrate) {
             ele_index: -1,
             valueA: prop.name,
             valueB: prop + "",
-            valueC: css.render(selector),
+            valueC: wick.parse.render(selector),
             pos: prop.pos,
         };
 

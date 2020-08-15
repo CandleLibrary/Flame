@@ -1,9 +1,10 @@
-import { selected_ele } from "@model:flame-editor";
+import { selected_ele, state } from "@model:flame-editor";
 
 //ToolBar Options
 import componentinfo from "./tools/component_info.jsx";
 import position from "./tools/position_tool.jsx";
 import css from "./tools/css_tool.jsx";
+import color from "./tools/color_tool.jsx";
 
 var selected_tools = [{
     type: "position"
@@ -11,13 +12,18 @@ var selected_tools = [{
     type: "css"
 }, {
     type: "component"
+}, {
+    type: "color"
 }];
 
 export default <div>
-    <container data="((selected_tools))">
+    <p>current state: ((state)) </p>
+    <img id="logo" src="./flame/editor/cfw.ts.svg" height=50>
+        <container data="((selected_tools))">
         <componentinfo useif="((m1.type == 'component'))" class="tool" />
         <position useif="((m1.type == 'position'))" class="tool" />
         <css useif="((m1.type == 'css'))" class="tool" />
+        <color useif="((m1.type == 'color'))" class="tool" />
     </container>
 </div >;
 
@@ -27,14 +33,19 @@ export default <div>
         font-weight:600;
         top:0;
         right:0;
-        width:220px;
+        width:250px;
         height:100vh;
         background-color:white;
         border-left:1px solid #EEEEEE;
-        z-index:10005;
+        z-index:10006;
         font-family:arial;
         font-size:12px;
         padding: 50px 0 0 0;
+    }
+
+    #logo {
+        position:absolute;
+        bottom:70px;
     }
 
     .tool {

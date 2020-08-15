@@ -1,5 +1,6 @@
 import { selected_ele as ele, selected_comp as comp, sc } from "@model:flame-editor";
 import {
+    willPropertyOnSelectorHaveAnEffect,
     getMatchedRulesFromComponentData,
     getListOfApplicableSelectors,
     isSelectorCapableOfBeingUnique,
@@ -7,39 +8,49 @@ import {
     render
 } from "@api";
 
-var type = "default", w = 0, h = 0,
-    selector = "",
-    unique = false,
+var selector = "",
+    prop_name = "",
+    CAN_USE_PROP = false,
+    IS_UNIQUE = false,
     styles = "test",
-    selectors = "selectors";
+    selectors = "selectors",
+    all_rules = "",
+    unique_selectors = "selectors";
 
 function elementUpdate() {
-    type = ele.tagName;
-    const bb = ele.getBoundingClientRect();
-    w = bb.width;
-    h = bb.height;
-
     //Find all selector that apply to this component in the current state.
 
-    const rules = getApplicableRulesFromComponentData(sys, comp, ele);
+    const applicable_selectors = getListOfApplicableSelectors(sys, comp, ele),
 
-    if (rules.length > 0) {
+        unique = applicable_selectors
+            .filter(sel => isSelectorCapableOfBeingUnique(comp, sel));
 
-        const
-            rule = rules[0],
-            sel = rule.selectors[0];
 
-        selector = render(sel);
+    selectors = applicable_selectors
+        .map(render)
+        .join(",\n");
+
+    unique_selectors = unique
+        .map(render)
+        .join(",\n");
+
+    const unique_sel = unique[0];
+
+    if (unique_sel) {
+        selector = render(unique_sel);
+        IS_UNIQUE = true;
+        CAN_USE_PROP = willPropertyOnSelectorHaveAnEffect(sys, comp, ele, unique_sel, prop_name);
+    } else {
+        if (applicable_selectors.length > 0)
+            selector = render(applicable_selectors[0]);
+        else
+            selector = "";
+        IS_UNIQUE = false;
+        CAN_USE_PROP = false;
     }
 
-    selectors = getListOfApplicableSelectors(sys, comp, ele)
-        .map(render)
-        .join(",\n");
 
-    unique_selectors = getListOfApplicableSelectors(sys, comp, ele)
-        .filter(sel => isSelectorCapableOfBeingUnique(comp, sel))
-        .map(render)
-        .join(",\n");
+
 };
 
 watch(elementUpdate, sc);
@@ -50,13 +61,17 @@ watch(elementUpdate, sc);
 
 export default <div class="tool">
     <h4>style </h4>
+    <p>((prop_name)) ((CAN_USE_PROP))</p>
+    <p> <input type="text" value="((prop_name))" /> </p>
     <p>primary selector <br /><span class="selector">((selector))</span></p>
-    <p>unique selector  <br /><span class="selector">((unique))</span></p>
+    <p>unique selector  <br /><span class="selector">((IS_UNIQUE))</span></p>
     <p>force unique selector <input type="checkbox" /></p>
+    <p>use global selector <input type="checkbox" /></p>
     <p><button>choose primary selector</button></p>
     <p><button>make unique selector</button></p>
     <p><button>change unique selector</button></p>
     <p>TODO - list applicable selectors <textarea readonly=true>((selectors))</textarea></p>
     <p>TODO - list applicable selectors <textarea readonly=true>((unique_selectors))</textarea></p>
     <p>TODO - list active styles <textarea readonly=true>((styles))</textarea></p>
-</div>;
+    <p>((all_rules))</p>
+</div >;

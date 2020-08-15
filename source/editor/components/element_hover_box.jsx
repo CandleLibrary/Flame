@@ -66,5 +66,4 @@ watch(showBox, sc);
 export default <div id="main" class="main">
     <div id="test">(( cfw.wick.rt.presets.components.get(comp.name).location + " "))<span class="color">((ele.tagName +( ele.id ? "." + ele.id : "") ))</span> ((ele.getAttribute("w-s")))
     </div>
-    <div class="lower-data">w:((a)) h:((b)) l:((c)) t:((d))</div>
 </div>;

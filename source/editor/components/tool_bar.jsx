@@ -4,42 +4,7 @@ import { APPLY_ACTION } from "@api";
 var a = 0, b = 0, c = 0, d = 0, test = [],
     ctx = ("@#canvas").getContext("2d");
 
-<style>
-    root {
-        position:fixed;
-        width:150px;
-        height:150px;
-        color:white;
-        z-index:10000;
-        pointer-events:auto;
-        border:1px solid rgb(100,100,200);
-    }
-
-    #test, .lower-data {
-        position:absolute,
-        font-size:12px;
-        top:-21px;
-        left:-1px;
-        min-height:14px;
-        padding:3px;
-        background-color:rgb(255,128,128);
-        border-radius: 4px 4px 0px 0px
-    }
-
-    .lower-data{
-        top:unset;
-        bottom:-21px;
-    }
-
-    .color{
-        color:orange;
-        font-weight:600;
-    }
-</style>;
-
 function applyColor() { APPLY_ACTION([ACTIONS.SETBACKGROUNDCOLOR], { r: 120, g: 120, b: 120 }); }
-
-
 
 function showBox() {
 
@@ -66,3 +31,38 @@ export default <div id="main" class="main">
         <blah useif="((d==t))"></blah>
     </container>
 </div >;
+
+
+<style>
+    root {
+        position:fixed;
+
+        width:220px;
+        height:150px;
+        color:white;
+        z-index:10000;
+        pointer-events:auto;
+        border:8px solid rgb(100,100,200);
+    }
+
+    #test, .lower-data {
+        position:absolute,
+        font-size:12px;
+        top:-21px;
+        left:-1px;
+        min-height:14px;
+        padding:3px;
+        background-color:rgb(255,128,128);
+        border-radius: 4px 4px 0px 0px
+    }
+
+    .lower-data{
+        top:unset;
+        bottom:-21px;
+    }
+
+    .color{
+        color:orange;
+        font-weight:600;
+    }
+</style>;

@@ -6,7 +6,8 @@
 import {
     selected_comp as comp,
     selected_ele as ele,
-    sc
+    sc,
+    selection_box
 } from "@model:flame-editor";
 
 import { APPLY_ACTION, ACTIONS } from "@api";
@@ -15,8 +16,13 @@ var a = 0, b = 0, c = 0, d = 0;
 
 function createComponent() { APPLY_ACTION([ACTIONS.CREATE_COMPONENT]); }
 
-function showBox() {
+function $createComponentFromBox() {
+    if (selection_box) {
+        APPLY_ACTION([ACTIONS.CREATE_ROOT_COMPONENT], selection_box);
+    }
+}
 
+function showBox() {
     if (ele && !ele.wick_component) {
 
         const div = "@#main", bb = ele.getBoundingClientRect();

@@ -56,12 +56,11 @@ function onpointerdown(event) {
     .fill{
         border: 1px solid white;
         position: absolute;
-        left:-6px;
-        top:-6px;
-        width: 8px;
-        height: 8px;
+        left:-2px;
+        top:-2px;
+        width: 4px;
+        height: 4px;
         background-color: rgb(100,100,200);
-        border-radius: 6px;
         transition: width 2s, height 2s;
     }
 

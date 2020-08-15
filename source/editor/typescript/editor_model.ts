@@ -1,6 +1,31 @@
 import { RuntimeComponent, ObservableModel, ObservableWatcher } from "@candlefw/wick";
 import * as ACTIONS from "./actions/action.js";
+
+
+export enum EditorToolState {
+
+    UNSET = "unset",
+    COLOR = "color",
+    COMPONENT = "component",
+    MARGIN = "margin",
+    BORDER = "border",
+    PADDING = "padding",
+    DIMENSIONS = "dimensions",
+    POSITION = "position",
+    TRANSFORM = "transform",
+    ELEMENT = "element"
+}
+
+export interface DrawObject {
+    type: "horizontal_line" | "vertical_line" | "infinite_line" | "box",
+    px1: number;
+    px2: number;
+    py1: number;
+    py2: number;
+}
 export class EditorModel implements ObservableModel {
+
+    selection_box: any;
     comp: RuntimeComponent;
     ele: any;
     sc: number;
@@ -9,9 +34,9 @@ export class EditorModel implements ObservableModel {
     selected_element: HTMLElement;
     ACTIONS: any;
     POINTER_DN: boolean;
-
+    draw_objects: DrawObject[];
     observers: ObservableWatcher[];
-
+    state: EditorToolState;
     OBSERVABLE: true;
     constructor() {
         this.comp = null;
@@ -19,9 +44,12 @@ export class EditorModel implements ObservableModel {
         this.sc = 0;
         this.selected_comp = null;
         this.selected_element = null;
-        this.ACTIONS = ACTIONS;
+        this.selection_box = null;
+        //this.ACTIONS = ACTIONS;
         this.POINTER_DN = false;
         this.observers = [];
+        this.state = EditorToolState.UNSET;
+        this.draw_objects = [];
     }
 
     update() {

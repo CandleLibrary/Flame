@@ -232,7 +232,7 @@ o4VgkSlOvlFp6ZgQOoQc20Q33wS7RYtWz6ExZGW2btVHmgcwCNABfQ==
 
                         const { html } = await renderPage(url, wick, {
                             source_type: SourceType.COMBINED,
-                            USE_FLAME_RUNTIME: tools.url.getData("flaming") || false,
+                            USE_FLAME_RUNTIME: tools.url.getData().flaming || false,
                             source_url: tools.url
                         });
 

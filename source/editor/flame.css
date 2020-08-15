@@ -1,3 +1,17 @@
+body {
+    position:absolute;
+    top:0;
+    left:0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height:100%;
+    background-color: #f6f6f6;
+    overflow: hidden;
+}
+
+
 /**
 * This object will appear on top of all other elements
 * to ensure the editor can intercept all events that

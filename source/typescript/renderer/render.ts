@@ -1,4 +1,4 @@
-import { Component, Presets, componentDataToClassString, componentDataToCSS, componentDataToHTML } from "@candlefw/wick";
+import { Component, Presets, componentDataToClassString, componentDataToCSS, componentDataToHTML, WickLibrary } from "@candlefw/wick";
 import URL from "@candlefw/url";
 
 /**
@@ -47,18 +47,17 @@ const
     createComponentScript = (file, components, fn, after = "") => {
         const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
-<script id="wick-components">{
-    window.addEventListener("load", async () => {
-    const w = wick.default;
-    ${str}})
-}
+<script id="wick-components" async type="module">
+    import w from "/@candlefw/wick/";
+    w.setPresets({});
+    ${str}
 </script>`);
     },
     createModuleComponentScript = (file, components, fn, after = "") => {
         const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script async type="module" id="wick-components">
-    import flame from "/flame/editor/build/library/main.js";
+    import flame from "/flame/editor/build/library/init.js";
     window.addEventListener("load", async () => {
     const w = wick.default;
     ${str}})
@@ -70,7 +69,7 @@ const
     };
 export const renderPage = async (
     source: String | Component,
-    wick,
+    wick: WickLibrary,
     options: RenderOptions
 ): Promise<{ html?: string, js?: string, css?: string; }> => {
 
@@ -83,13 +82,15 @@ export const renderPage = async (
     } = options;
 
     let component: Component = null, presets = await wick.setPresets();
+    console.log({ source });
 
     if (typeof (source) == "string") {
-        component = await wick(source, presets).pending;
+        component = await wick(source, presets);
     } else if (isWickComponent(source))
-        component = source;
+        component = <Component>source;
 
     if (!component) throw new Error("source is not a wick component!");
+
 
     let file = Object.assign({}, FILE);
 
@@ -102,11 +103,9 @@ export const renderPage = async (
             file = addScript(file, `<script>{const w = wick.default; cfw.radiate("${component.name}");}</script>`);
         }
 
-
-        file = addHeader(file, `<script async src="/cfw/wickrt"></script>`);
-        file = addHeader(file, `<script async src="/cfw/glow"></script>`);
-        file = addHeader(file, `<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@100&display=swap" rel="stylesheet">`);
-        file = addScript(file, `<script>window.addEventListener("load", async () => wick.default.setPresets({})); </script>`);
+        file = addHeader(file, `<script type="module" src="/cfw/wickrt/"></script>`);
+        file = addHeader(file, `<script type="module" src="/cfw/glow/"></script>`);
+        file = addHeader(file, `<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;500;600;700;800&family=Mitr:wght@200;300;400;500;600&display=swap" rel="stylesheet">`);
 
         file = createComponentScript(file, components, comp => {
             const { class_string, source_map } = componentDataToClassString(comp, presets, false, false);
@@ -120,10 +119,11 @@ export const renderPage = async (
         });
 
         if (!USE_RADIATE_RUNTIME) {
-            file = addScript(file, `
-<script async>
+            file = addScript(file,
+                `
+<script  type="module">
+    import w from "/@candlefw/wick/";
     window.addEventListener("load", async () => {
-        const w = wick.default; 
         const app_root = document.getElementById("app");
         if (!app_root)  console.error("Could not find root app element.");        
         const c = new (w.rt.gC("${component.name}"))(null, app_root);
@@ -138,9 +138,9 @@ export const renderPage = async (
 
     } else {
 
-        file = addHeader(file, `<script src="/cfw/wick"></script>`);
-        file = addHeader(file, `<script src="/cfw/css"></script>`);
-        file = addHeader(file, `<script async src="/cfw/glow"></script>`);
+        file = addHeader(file, `<script type="module" src="/cfw/wick/"></script>`);
+        file = addHeader(file, `<script type="module" src="/cfw/css/"></script>`);
+        file = addHeader(file, `<script type="module" async src="/cfw/glow/"></script>`);
 
         file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
         file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
@@ -149,14 +149,14 @@ export const renderPage = async (
         file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
         const unflamed_url = new URL(source_url);
 
-        unflamed_url.setData("flaming", false);
+        unflamed_url.setData({ flaming: false });
 
         file = addBody(file, `<iframe cors="* default-src 'self'" sandbox="allow-same-origin allow-scripts" id="composition" style="border:none;margin:0;position:absolute;width:100vw;height:100vh;top:0;left:0;" src="${unflamed_url}"></iframe>`);
 
         file = addScript(file, `        
-<script async>
+<script async type="module">
+import w from "/@candlefw/wick/";
     {
-        const w = cfw.wick; 
         
         w.setPresets({
             api: {
@@ -197,7 +197,7 @@ export const renderPage = async (
 
         file = createModuleComponentScript(file, components, comp => {
 
-            const comp_class_string = wick.componentToClassString(comp, presets, false, false);
+            const comp_class_string = wick.utils.componentToClassString(comp, presets, false, false);
 
             return (`await w( "${comp.location.toString().replace(process.cwd(), "")}").pending;`);
         }, `const composition = document.getElementById("composition");
@@ -230,7 +230,8 @@ function getComponentGroup(
     out_array: Array<Component> = [comp]
 ): Array<Component> {
 
-    if (comp.bindings.length > 0 || comp.local_component_names.size > 0) {
+
+    if (comp && (comp.bindings.length > 0 || comp.local_component_names.size > 0)) {
 
         for (const name of comp.local_component_names.values()) {
 
@@ -245,6 +246,8 @@ function getComponentGroup(
             getComponentGroup(comp, presets, comp_name_set, out_array);
         }
     }
+
+    console.log(out_array);
 
     return out_array;
 }; 

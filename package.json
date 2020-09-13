@@ -1,6 +1,6 @@
 {
   "name": "@candlefw/flame",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Server & Browser Wick Component Editor",
   "main": "build/library/server/server.js",
   "types": "build/types/server.d.ts",

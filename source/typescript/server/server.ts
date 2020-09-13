@@ -27,7 +27,7 @@ const
 
 lantern({
     port: parseInt(process.env.PORT) || 8080,
-    host: "0.0.0.0"
+    host: "localhost"
 })
     .then(async server => {
         //Configure wick to run server side

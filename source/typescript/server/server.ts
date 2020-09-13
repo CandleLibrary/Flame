@@ -26,7 +26,7 @@ const
     cwd = process.cwd();
 
 lantern({
-    port: 8081,
+    port: parseInt(process.env.PORT) || 8080,
     host: "127.0.0.1",
     secure: lantern.mock_certificate
 })

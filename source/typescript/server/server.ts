@@ -27,8 +27,7 @@ const
 
 lantern({
     port: parseInt(process.env.PORT) || 8080,
-    host: "0.0.0.0",
-    secure: lantern.mock_certificate
+    host: "0.0.0.0"
 })
     .then(async server => {
         //Configure wick to run server side

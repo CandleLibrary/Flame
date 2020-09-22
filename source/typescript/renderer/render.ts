@@ -1,4 +1,12 @@
-import { Component, Presets, componentDataToClassString, componentDataToCSS, componentDataToHTML, WickLibrary } from "@candlefw/wick";
+import {
+    Component,
+    Presets,
+    componentDataToClassString,
+    componentDataToCSS,
+    componentDataToHTML,
+    WickLibrary
+} from "@candlefw/wick";
+
 import URL from "@candlefw/url";
 
 /**
@@ -81,8 +89,14 @@ export const renderPage = async (
         source_url
     } = options;
 
-    let component: Component = null, presets = await wick.setPresets();
-    console.log({ source });
+    let component: Component = null, presets = await wick.setPresets({
+        options: {
+            url: {
+                wickrt: "/cfw/wick/build/library/wick.runtime.js",
+                glow: "/cfw/glow/"
+            }
+        }
+    });
 
     if (typeof (source) == "string") {
         component = await wick(source, presets);
@@ -103,38 +117,9 @@ export const renderPage = async (
             file = addScript(file, `<script>{const w = wick.default; cfw.radiate("${component.name}");}</script>`);
         }
 
-        file = addHeader(file, `<script type="module" src="/cfw/wickrt/"></script>`);
-        file = addHeader(file, `<script type="module" src="/cfw/glow/"></script>`);
-        file = addHeader(file, `<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhai+2:wght@400;500;600;700;800&family=Mitr:wght@200;300;400;500;600&display=swap" rel="stylesheet">`);
+        const html = wick.utils.RenderPage(component).page;
 
-        file = createComponentScript(file, components, comp => {
-            const { class_string, source_map } = componentDataToClassString(comp, presets, false, false);
-            return `w.rt.rC(${class_string});`;
-        });
-
-        file = createComponentStyle(file, components, (component) => {
-            const style = componentDataToCSS(component);
-
-            return `/*  ${component.location}  */\n${style}`;
-        });
-
-        if (!USE_RADIATE_RUNTIME) {
-            file = addScript(file,
-                `
-<script  type="module">
-    import w from "/@candlefw/wick/";
-    window.addEventListener("load", async () => {
-        const app_root = document.getElementById("app");
-        if (!app_root)  console.error("Could not find root app element.");        
-        const c = new (w.rt.gC("${component.name}"))(null, app_root);
-    })
-</script>`);
-        }
-
-        const { template_map, html } = componentDataToHTML(component, presets);
-
-        file = addBody(file, html);
-        file = addTemplate(file, [...template_map.values()].join("\n"));
+        return { html };
 
     } else {
 
@@ -189,12 +174,6 @@ import w from "/@candlefw/wick/";
 </script>
         `);
 
-        // file = createComponentStyle(file, components, (component) => {
-        //     const style = componentDataToCSS(component);
-        //
-        //     return `/*  ${component.location}  */\n${style}`;
-        // });
-
         file = createModuleComponentScript(file, components, comp => {
 
             const comp_class_string = wick.utils.componentToClassString(comp, presets, false, false);
@@ -246,8 +225,6 @@ function getComponentGroup(
             getComponentGroup(comp, presets, comp_name_set, out_array);
         }
     }
-
-    console.log(out_array);
 
     return out_array;
 }; 

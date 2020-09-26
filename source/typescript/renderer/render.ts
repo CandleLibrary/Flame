@@ -56,7 +56,8 @@ const
         const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script id="wick-components" async type="module">
-    import w from "/@candlefw/wick/";
+    import "/@candlefw/wick/";
+    const w = cfw.wick; 
     w.setPresets({});
     ${str}
 </script>`);
@@ -69,7 +70,36 @@ const
     import "/@candlefw/wick/";
     const w = cfw.wick; 
     window.addEventListener("load", async () => {
-    w.rt.setPresets({});
+   // w.rt.setPresets({});
+    
+    w.rt.setPresets({
+        api: {
+            async getHistory(url) {
+                //Send data back to the server to handle the update of the file
+            },
+
+            async updateComponent(url, string) {
+                //Send data back to the server to handle the update of the file
+                const update_url = new w.URL("/component_sys/");
+
+                update_url.submitJSON({
+                    action:"update",
+                    location:url,
+                    source:string
+                });
+            },
+
+            setEditingComp(comp_data){
+                w.rt.presets.models.flame_editor_model.component_tabs = [comp_data];
+            }
+
+        },
+
+        models: {
+            flame_editor_model : { component_tabs : [] }
+        }
+    });
+
     //const w = wick.default;
     ${str}})
 </script>`);
@@ -140,42 +170,6 @@ export const renderPage = async (
         unflamed_url.setData({ flaming: false });
 
         file = addBody(file, `<iframe cors="* default-src 'self'" sandbox="allow-same-origin allow-scripts" id="composition" style="border:none;margin:0;position:absolute;width:100vw;height:100vh;top:0;left:0;" src="${unflamed_url}"></iframe>`);
-
-        file = addScript(file, `        
-<script async type="module">
-import w from "/@candlefw/wick/";
-    {
-        
-        w.setPresets({
-            api: {
-                async getHistory(url) {
-                    //Send data back to the server to handle the update of the file
-                },
-
-                async updateComponent(url, string) {
-                    //Send data back to the server to handle the update of the file
-                    const update_url = new w.URL("/component_sys/");
-
-                    update_url.submitJSON({
-                        action:"update",
-                        location:url,
-                        source:string
-                    });
-                },
-
-                setEditingComp(comp_data){
-                    w.rt.presets.models.flame_editor_model.component_tabs = [comp_data];
-                }
-
-            },
-
-            models: {
-                flame_editor_model : { component_tabs : [] }
-            }
-        });
-    }
-</script>
-        `);
 
         file = createModuleComponentScript(file, components, comp => {
 

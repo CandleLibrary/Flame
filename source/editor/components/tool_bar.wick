@@ -46,7 +46,7 @@ export default <div id="main" class="main">
     }
 
     #test, .lower-data {
-        position:absolute,
+        position:absolute;
         font-size:12px;
         top:-21px;
         left:-1px;

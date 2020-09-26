@@ -6,6 +6,52 @@ import { initSystem, CreateTimeStamp, GetElapsedTimeSinceStamp } from "./system.
 import { START_ACTION, APPLY_ACTION } from "./action_initiators.js";
 import * as common from "./common_functions.js";
 import { initializeEvents } from "./event.js";
+import { FlameSystem } from "./types/flame_system.js";
+
+
+
+async function initializeHarness(wick: typeof WICK): Promise<ExtendedComponent> {
+    return await wick("/flame/editor/components/harness.wick");
+}
+
+function extractIFrameContentAndPlaceIntoHarness(
+    system: FlameSystem,
+    harness_component: ExtendedComponent,
+    captive_window: Window,
+    edited_presets: Presets
+) {
+    //Pull out the content of the app and place into a harness component
+    const
+        //Every new component will be placed in its own harness, which is used to 
+        //represent the component's window and document context.
+        root_component: RuntimeComponent =
+            (<Element & { wick_component: RuntimeComponent; }>
+                captive_window.document.querySelector("[w\\3A c]"))
+                .wick_component;
+
+    system.edited_components.components = [{ comp: root_component.name }];
+
+    const ele = document.querySelector("iframe");
+    document.body.removeChild(ele);
+    root_component.destructor();
+
+    const harness = new (harness_component.class_with_integrated_css)(
+        system.edited_components,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        edited_presets
+    );
+
+    window.document.body.appendChild(harness.ele);
+    //root_component.par = harness;
+    ////harness.onModelUpdate();
+    //
+    system.edit_view = harness.ele;
+    system.edit_view.style.transformOrigin = "top left";
+    //
+}
 export default async function initFlame(editor_cfw, edited_cfw, edited_window: Window) { //For Isolation
 
     const
@@ -40,56 +86,7 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
         if (comp.ele) comp.ele.wick_component = comp;
     };
 
-    async function initializeHarness(wick: typeof WICK): Promise<ExtendedComponent> {
-        return await editor_wick("/flame/editor/components/harness.jsx");
-    }
-
-    function extractIFrameContentAndPlaceIntoHarness(
-        harness_component: ExtendedComponent,
-        captive_window: Window,
-        edited_presets: Presets
-    ) {
-        //Pull out the content of the app and place into a harness component
-        const
-            //Every new component will be placed in its own harness, which is used to 
-            //represent the component's window and document context.
-            root_component: RuntimeComponent =
-                (<Element & { wick_component: RuntimeComponent; }>
-                    captive_window.document.querySelector("[w\\3A c]"))
-                    .wick_component;
-
-        system.edited_components.components = [{ comp: root_component.name }];
-
-        const ele = document.querySelector("iframe");
-        document.body.removeChild(ele);
-        root_component.destructor();
-
-        const harness = new (harness_component.class_with_integrated_css)(
-            system.edited_components,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            edited_presets
-        );
-
-        window.document.body.appendChild(harness.ele);
-        //root_component.par = harness;
-        ////harness.onModelUpdate();
-        //
-        system.edit_view = harness.ele;
-        system.edit_view.style.transformOrigin = "top left";
-        //
-    }
-
-    window.document.body.appendChild(event_intercept_ele);
-
-    //edited_window.document.head.appendChild(edited_css);
-
-    //edited_window.document.body.style.transformOrigin = "top left";
-    //edited_window.document.body.style.overflow = "hidden";
-
-    editor_rt.setPresets({});
+    //LOAD PRESETS -----------------------------------------------------
 
     //MODELS
     editor_rt.presets.models["flame-editor"] = system.editor_model;
@@ -102,8 +99,6 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
     editor_rt.presets.api.sys = system;
     Object.assign(editor_rt.presets.api, common);
 
-    initializeEvents(system, window);
-
     const wick_load_start = CreateTimeStamp();
 
     //ALLOW DEBUGGING ON EDITOR COMPONENTS
@@ -111,9 +106,13 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
     editor_rt.presets.options.REMOVE_DEBUGGER_STATEMENTS = false;
 
 
-    const editor_frame = await (editor_wick("/flame/editor/components/editor.jsx"));
+    //LOAD EDITOR COMPONENT -----------------------------------------------------
+
+
+    const editor_frame = await (editor_wick("/flame/editor/components/editor.wick"));
 
     extractIFrameContentAndPlaceIntoHarness(
+        system,
         await initializeHarness(editor_wick),
         edited_window,
         edited_wick.rt.presets
@@ -128,6 +127,12 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
     ui_root = (new (editor_frame.class_with_integrated_css)());
 
     ui_root.appendToDOM(document.body, <HTMLElement>document.body.firstElementChild);
+
+    //PREPARE WINDOW & EVENTS -----------------------------------------------------
+
+    initializeEvents(system, window);
+
+    //
 
     console.log(
         `%ccfw.FLAME

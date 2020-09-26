@@ -4,18 +4,9 @@ import { EditorModel } from "./editor_model.js";
 import { css } from "./env.js";
 
 
-const event_intercept = document.createElement("div");
+export function revealEventIntercept() { event_intercept.style.display = "block"; }
 
-
-export function revealEventIntercept(sys: FlameSystem) {
-    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
-    event_intercept_ele.style.zIndex = "100000";
-}
-
-export function hideEventIntercept(sys: FlameSystem) {
-    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
-    event_intercept_ele.style.zIndex = "";
-}
+export function hideEventIntercept() { event_intercept.style.display = ""; }
 
 export var active_system: FlameSystem = null;
 
@@ -36,7 +27,7 @@ export function GetElapsedTimeSinceStampInNanoSeconds(stamp: number): number { r
 export function initSystem(
     w?: WickLibrary,
     edit_wick?: WickLibrary,
-    edit_css?: Element,
+    edit_css?: typeof css,
     comp_window?: Window,
 ): FlameSystem {
 
@@ -94,7 +85,7 @@ export function initSystem(
         flags: { CSS_SELECTOR_KEEP_UNIQUE: true },
         global: { default_pos_unit: "px" },
         ui: {
-            event_intercept_frame: event_intercept,
+            event_intercept_frame: null,
             transform: new Proxy(
                 new css.CSS_Transform2D, {
                 set: (obj, prop, val) => {

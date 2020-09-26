@@ -59,7 +59,7 @@ export default <div> <canvas id="canvas" width="20"></canvas></div>;
         width:20px;
         position:fixed;
         z-index:998;
-        background-color:white;
+        background-color:#16141e;
     }
 
     #canvas {

@@ -1,5 +1,5 @@
 import { component_tabs } from "@model:flame_editor_model";
-import component_editor from "./component_editor_tab.jsx";
+import component_editor from "./component_editor_tab.wick";
 
 function test() {
     console.log(component_tabs);

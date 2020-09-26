@@ -1,7 +1,7 @@
 import { top, left, width, height, ele } from "@model";
 import { ACTIONS } from "@api";
 
-import handle from "./handle.jsx";
+import handle from "./handle.wick";
 
 var test = [{
     ele: ele,

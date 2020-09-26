@@ -1,10 +1,11 @@
 import { selected_ele, state } from "@model:flame-editor";
 
+
 //ToolBar Options
-import componentinfo from "./tools/component_info.jsx";
-import position from "./tools/position_tool.jsx";
-import css from "./tools/css_tool.jsx";
-import color from "./tools/color_tool.jsx";
+import componentinfo from "./tools/component_info.wick";
+import position from "./tools/position_tool.wick";
+import css from "./tools/css_tool.wick";
+import color from "./tools/color_tool.wick";
 
 var selected_tools = [{
     type: "position"
@@ -30,13 +31,14 @@ export default <div>
 <style>
     root {
         position:fixed;
-        font-weight:600;
+        font-weight:400;
         top:0;
         right:0;
         width:250px;
         height:100vh;
-        background-color:white;
-        border-left:1px solid #EEEEEE;
+        color:#c0c0c0;
+        background-color:#16141e;
+        border-left:1px solid #211f27;
         z-index:10006;
         font-family:arial;
         font-size:12px;
@@ -50,7 +52,6 @@ export default <div>
 
     .tool {
         margin:auto;
-        color:#555555;
     }
 
     .tool h4 {
@@ -63,6 +64,20 @@ export default <div>
 
     .tool p {
         padding: 0px 20px;
+    }
+
+    button {
+        background-color:#7b00c2;
+        color:white;
+        border:1px solid #7b00c2;
+        border-radius: 2px;
+        padding:3px 8px;
+
+    }
+
+    button:hover {
+        background-color:#bb02cc;
+        border:1px solid #7b00c2;
     }
 </style>;
 

@@ -66,8 +66,10 @@ const
         return addScript(file, `
 <script async type="module" id="wick-components">
     import flame from "/flame/editor/build/library/entry.js";
-    import w from "/@candlefw/wick/";
+    import "/@candlefw/wick/";
+    const w = cfw.wick; 
     window.addEventListener("load", async () => {
+    w.rt.setPresets({});
     //const w = wick.default;
     ${str}})
 </script>`);
@@ -179,7 +181,7 @@ import w from "/@candlefw/wick/";
 
             const comp_class_string = wick.utils.componentToClassString(comp, presets, false, false);
 
-            return (`await w( "${comp.location.toString().replace(process.cwd(), "")}").pending;`);
+            return (`await w( "${comp.location.toString().replace(process.cwd(), "")}");`);
         }, `const composition = document.getElementById("composition");
             const comp_cfw = composition.contentWindow.cfw;
 

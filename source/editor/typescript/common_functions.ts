@@ -2,26 +2,29 @@ import {
     RuntimeComponent,
     Component,
     DOMLiteral,
-    wickOutput,
+    WickLibrary,
     WickRTComponent, VARIABLE_REFERENCE_TYPE,
     FunctionFrame,
     JSNode,
     JSNodeType,
 } from "@candlefw/wick";
-import { CSSNodeType, CSSNode, CSSRuleNode } from "@candlefw/css";
+import { CSSNodeType, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlefw/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
-import { activeSys } from "./system.js";
 import { wick, js, conflagrate, css, url } from "./env.js";
+import { EditorSelection } from "./types/selection";
+
 const {
-    parse: {
-        parser,
-        render
+    utils: {
+        parse: {
+            parser,
+            render
+        }
     },
     types: {
         HTMLNodeType
     }
-} = <wickOutput>wick;
+} = <WickLibrary>wick;
 
 
 export { render };
@@ -412,7 +415,7 @@ export function setComponentData(sys: FlameSystem, comp: Component) {
     sys.wick.rt.presets.components.set(comp.name, comp);
 }
 
-export function createImportName(b: wickOutput["types"]["BindingVariable"]) {
+export function createImportName(b: WickLibrary["types"]["BindingVariable"]) {
     if (b.external_name)
         return `${b.external_name} as ${b.internal_name}`;
     else
@@ -551,7 +554,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
 
     // from this ast apply changes that need to occur, then render back to file.
 
-    return render(<wickOutput["types"]["JSNode"]>out_node) || "";
+    return render(<WickLibrary["types"]["JSNode"]>out_node) || "";
 }
 
 export function createRootFrame(IS_ROOT: boolean): FunctionFrame {

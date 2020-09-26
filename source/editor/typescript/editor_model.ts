@@ -1,5 +1,7 @@
 import { RuntimeComponent, ObservableModel, ObservableWatcher } from "@candlefw/wick";
 import * as ACTIONS from "./actions/action.js";
+import { EditorSelection } from "./types/selection.js";
+import { wick } from "./env.js";
 
 
 export enum EditorToolState {

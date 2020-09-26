@@ -1,5 +1,5 @@
-import WICK from "@candlefw/wick";
-import { FlameSystem } from "./types/flame_system.js";
+import WICK, { WickLibrary } from "@candlefw/wick";
+import { FlameSystem, EditedComponent } from "./types/flame_system.js";
 import { EditorModel } from "./editor_model.js";
 import { css } from "./env.js";
 
@@ -7,9 +7,15 @@ import { css } from "./env.js";
 const event_intercept = document.createElement("div");
 
 
-export function revealEventIntercept() { event_intercept.style.display = "block"; }
+export function revealEventIntercept(sys: FlameSystem) {
+    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+    event_intercept_ele.style.zIndex = "100000";
+}
 
-export function hideEventIntercept() { event_intercept.style.display = ""; }
+export function hideEventIntercept(sys: FlameSystem) {
+    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+    event_intercept_ele.style.zIndex = "";
+}
 
 export var active_system: FlameSystem = null;
 
@@ -19,10 +25,18 @@ export function CreateTimeStamp(): number { return window.performance.now(); }
 
 export function GetElapsedTimeSinceStamp(stamp: number): number { return window.performance.now() - stamp; };
 
+export function GetElapsedTimeSinceStampInSeconds(stamp: number): number { return GetElapsedTimeSinceStamp(stamp) / 1000; };
+
+export function GetElapsedTimeSinceStampInMilliseconds(stamp: number): number { return GetElapsedTimeSinceStamp(stamp) / 1; };
+
+export function GetElapsedTimeSinceStampInMicroSeconds(stamp: number): number { return GetElapsedTimeSinceStamp(stamp) * 1000; };
+
+export function GetElapsedTimeSinceStampInNanoSeconds(stamp: number): number { return GetElapsedTimeSinceStamp(stamp) * 1000000; };
+
 export function initSystem(
-    w?: wickOutput,
-    edit_wick?: typeof WICK,
-    edit_css?: type,
+    w?: WickLibrary,
+    edit_wick?: WickLibrary,
+    edit_css?: Element,
     comp_window?: Window,
 ): FlameSystem {
 
@@ -39,10 +53,13 @@ export function initSystem(
         comp_name_counter: 0,
 
         edit_view: null,
-        editor_model: <EditorModel>new EditorModel,
+
+        editor_model: edit_wick.objects.Observable<EditorModel>(new EditorModel),
         text_info: "",
         file_dir: ".",
         comp_ext: ".wick",
+
+        harness: null,
 
         //Move these to ui
         dx: 0,
@@ -60,7 +77,18 @@ export function initSystem(
         document: comp_window.document,
         body: comp_window.document.body,
         head: comp_window.document.head,
-        edited_components: { components: [] },
+        edited_components: edit_wick.objects.Observable({
+            components: [<EditedComponent><unknown>{
+                model: new edit_wick.objects.ObservableScheme<EditedComponent>({
+                    comp: "",
+                    frame: null,
+                    height: 0,
+                    px: 0,
+                    py: 0,
+                    width: 0
+                })
+            }]
+        }),
         wick: w,
         css,
         flags: { CSS_SELECTOR_KEEP_UNIQUE: true },

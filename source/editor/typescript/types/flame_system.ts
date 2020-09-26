@@ -1,8 +1,48 @@
-import { wickOutput, RuntimeComponent } from "@candlefw/wick";
+import { WickLibrary, RuntimeComponent } from "@candlefw/wick";
 import { CSS_Transform2D } from "@candlefw/css";
 
 import { HistoryState } from "./history_state";
 import { EditorModel } from "../editor_model";
+
+
+export interface EditedComponent {
+    /**
+     * Hash name of the component
+     */
+    comp: string;
+    /**
+     * IFrame element the component mounts to
+     */
+    frame?: HTMLElement;
+    /**
+     * Optional starting position x
+     * 
+     * Must be present with all other starting dimensions to have 
+     * an effect
+     */
+    px?: number;
+    /**
+     * Optional starting position y
+     * 
+     * Must be present with all other starting dimensions to have 
+     * an effect
+     */
+    py?: number;
+    /**
+     * Optional starting width
+     * 
+     * Must be present with all other starting dimensions to have 
+     * an effect
+     */
+    width?: number;
+    /**
+     * Optional starting height
+     * 
+     * Must be present with all other starting dimensions to have 
+     * an effect
+     */
+    height?: number;
+}
 
 export interface FlameSystem {
 
@@ -34,7 +74,7 @@ export interface FlameSystem {
      * edited within the editor context. 
      */
     edited_components: {
-        components: { comp: string; }[];
+        components: EditedComponent[];
     };
 
     /**
@@ -60,6 +100,11 @@ export interface FlameSystem {
     comp_ext: string;
 
     /**
+     * Root component handling all other components edited within 
+     * flame */
+    harness: RuntimeComponent;
+
+    /**
      * Root element containing the actively edited
      * components.
      */
@@ -79,7 +124,7 @@ export interface FlameSystem {
     document: Document,
     body: HTMLElement,
     head: HTMLElement,
-    wick: wickOutput,
+    wick: WickLibrary,
     flags: {
         CSS_SELECTOR_KEEP_UNIQUE?: boolean;
         DUBUG_DISPLAY_STARTUP_METRICS?: boolean;
@@ -92,5 +137,5 @@ export interface FlameSystem {
         transform: CSS_Transform2D;
     },
     edit_css: any,
-    edit_wick: any;
+    edit_wick: WickLibrary;
 }

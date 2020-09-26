@@ -352,8 +352,8 @@ export function getListOfRTInstanceAndAncestors(comp: RuntimeComponent): Runtime
 export function getRTInstanceFromElement(ele): RuntimeComponent {
     if (ele) {
         do {
-            if (ele.wick_component && !ele.hasAttribute("w-o"))
-                /* Presence of "w-o" indicates the element belongs to a component that has integrated its 
+            if (ele.wick_component && !ele.hasAttribute("w:o"))
+                /* Presence of "w:o" indicates the element belongs to a component that has integrated its 
                 * element into the tree of another component.  */
                 return ele.wick_component;
 

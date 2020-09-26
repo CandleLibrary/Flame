@@ -100,7 +100,7 @@ export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: Obj
                         data: Object.assign({
                             abs_x: 0,
                             abs_y: 0,
-                            curr_comp: comp.name,
+                            curr_comp: comp?.name ?? "",
                             data: "",
                         }, data || {}),
                         action_list: ACTIVE_ACTIONS.slice(),

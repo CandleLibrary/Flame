@@ -4,9 +4,18 @@ import { EditorModel } from "./editor_model.js";
 import { css } from "./env.js";
 
 
-export function revealEventIntercept() { event_intercept.style.display = "block"; }
+const event_intercept = document.createElement("div");
 
-export function hideEventIntercept() { event_intercept.style.display = ""; }
+
+export function revealEventIntercept(sys: FlameSystem) {
+    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+    event_intercept_ele.style.zIndex = "100000";
+}
+
+export function hideEventIntercept(sys: FlameSystem) {
+    const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+    event_intercept_ele.style.zIndex = "";
+}
 
 export var active_system: FlameSystem = null;
 
@@ -32,8 +41,6 @@ export function initSystem(
 ): FlameSystem {
 
     if (active_system) return active_system;
-
-    event_intercept.classList.add("flame_editor_fill", "event_intercept");
 
     active_system = <FlameSystem>{
         metrics: {

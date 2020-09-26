@@ -58,7 +58,7 @@ export default <div> <canvas id="canvas" width="20"></canvas></div>;
         height:100vh;
         width:20px;
         position:fixed;
-        z-index:10005;
+        z-index:998;
         background-color:white;
     }
 

@@ -84,7 +84,6 @@ function $draw() {
         id = ctx.getImageData(0, 0, width, height),
         data = id.data;
 
-    console.log(1);
     for (var i = 0; i < height; i++) {
 
         for (var j = 0; j < width; j++) {
@@ -166,7 +165,6 @@ export default <div>
 </div>;
 <style>
     root{
-
         position:relative;
         width:200px;
         height:400px;

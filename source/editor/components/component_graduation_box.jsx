@@ -3,27 +3,24 @@
  * a previous sibling, following sibling, or as the first
  * child of the element.
  */
-import {
-    selected_comp as comp,
-    selected_ele as ele,
-    sc,
-    selection_box
-} from "@model:flame-editor";
+import { selections, draw_objects, selection_box, sc } from "@model:flame-editor";
 
-import { APPLY_ACTION, ACTIONS } from "@api";
+import { APPLY_ACTION, ACTIONS, sys, getValidSelectionsCount } from "@api";
 
 var a = 0, b = 0, c = 0, d = 0;
 
 function createComponent() { APPLY_ACTION([ACTIONS.CREATE_COMPONENT]); }
 
+
 function $createComponentFromBox() {
-    if (selection_box) {
-        APPLY_ACTION([ACTIONS.CREATE_ROOT_COMPONENT], selection_box);
-    }
+    if (selection_box)
+        APPLY_ACTION(sys, [ACTIONS.CREATE_ROOT_COMPONENT], selection_box);
 }
 
 function showBox() {
-    if (ele && !ele.wick_component) {
+    if (false) {
+
+
 
         const div = "@#main", bb = ele.getBoundingClientRect();
 

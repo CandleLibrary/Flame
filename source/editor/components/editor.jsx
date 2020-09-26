@@ -30,25 +30,25 @@ export default <div>
     <hover_box />
     <draw_canvas />
 
-    <container filter="${ m1.state == state }" data="${ states }">
+    <container filter=${ m1.state == state} data=${states}>
 
-        <color_box useif="${m1.state == 'color'}" />
+        <color_box useif=${m1.state == 'color'} />
 
-        <component_box useif="${m1.state == 'component'}" />
+        <component_box useif=${m1.state == 'component'} />
 
-        <margin_box useif="${m1.state == 'margin'}" />
+        <margin_box useif=${m1.state == 'margin'} />
 
-        <border_box useif="${m1.state == 'border'}" />
+        <border_box useif=${m1.state == 'border'} />
 
-        <padding_box useif="${m1.state == 'padding'}" />
+        <padding_box useif=${m1.state == 'padding'} />
 
-        <adjust_box useif="${m1.state == 'dimensions'}" />
+        <adjust_box useif=${m1.state == 'dimensions'} />
 
-        <position_box useif="${m1.state == 'position'}" />
+        <position_box useif=${m1.state == 'position'} />
 
-        <transform_box useif="${m1.state == 'transform'}" />
+        <transform_box useif=${m1.state == 'transform'} />
 
-        <element_box useif="${m1.state == 'element'}" />
+        <element_box useif=${m1.state == 'element'} />
 
     </container>
 </div>;

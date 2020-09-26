@@ -1,14 +1,9 @@
 import {
-    selected_ele,
-    selected_comp,
-    ele_updated,
     pos_type,
-    //The action that will occur when this handle is moved. 
     ACTION
 } from "@model";
 
-
-import { START_ACTION } from "@api";
+import { START_ACTION, sys } from "@api";
 
 const div = "@div"[0];
 
@@ -42,9 +37,10 @@ switch (pos_type) {
         break;
 }
 
-function onpointerdown(event) {
-    START_ACTION(ACTION, { key: "id", val: "test" });
-}
+function onpointerdown(event) { START_ACTION(sys, ACTION); }
+
+export default <div><div class="fill"></div></div>;
+
 
 <style>
     root{
@@ -123,5 +119,3 @@ function onpointerdown(event) {
         cursor:nwse-resize;
     }
 </style >;
-
-export default <div><div class="fill"></div></div>;

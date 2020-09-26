@@ -40,7 +40,7 @@ export default <div id="main" class="main">
         width:220px;
         height:150px;
         color:white;
-        z-index:10000;
+        z-index:2000;
         pointer-events:auto;
         border:8px solid rgb(100,100,200);
     }

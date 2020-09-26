@@ -15,10 +15,13 @@ export default <container data="${components}">
 
     root > * {
         position:absolute;
-        border: 1px solid gray;
-        background-color: rgb(200,200,200);
-        border-radius:5px;
+        width:100vw;
+        height:100vh;
         overflow:hidden;
+        padding:2px;
+        border-radius: 2px;
+        border: 1px solid #c0c0c0;
+        background-color: white;
     }
 
 </style >;

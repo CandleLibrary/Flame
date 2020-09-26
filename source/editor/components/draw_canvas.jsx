@@ -1,10 +1,9 @@
-import { draw_objects, sc } from "@model:flame-editor";
+import { draw_objects, selection_box, sc } from "@model:flame-editor";
 import { sys } from "@api";
 
 var canvas = "@#canvas", ctx = canvas.getContext("2d");
 
 function updateDraw() {
-
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -50,9 +49,11 @@ export default <canvas id="canvas"></canvas>;
 <style>
     root {
         position:absolute;
+        pointer-events:none;
         top:0;
         left:0;
         width:100vw;
         height:100vh;
+        z-index:997;
     }
 </style>;

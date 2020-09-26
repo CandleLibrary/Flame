@@ -4,8 +4,10 @@ import { getComponentDataFromRTInstance, sys } from "@api";
 var name = "default", loc = "";
 
 function elementUpdate() {
-    name = selected_comp.name;
-    loc = getComponentDataFromRTInstance(sys, selected_comp).location + "";
+    if (selected_comp) {
+        name = selected_comp.name;
+        loc = getComponentDataFromRTInstance(sys, selected_comp).location + "";
+    }
 };
 watch(elementUpdate, sc);
 

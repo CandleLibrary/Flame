@@ -85,7 +85,7 @@ export default <div> <canvas id="canvas" height="30"></canvas><div id="fill">px<
         width:100vw;
         position:fixed;
         background-color:white;
-        z-index:10005;
+        z-index:998;
     }
 
     #fill {

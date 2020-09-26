@@ -27,7 +27,8 @@ const
 
 lantern({
     port: parseInt(process.env.PORT) || 8080,
-    host: "localhost"
+    host: "0.0.0.0",
+    type: "http"
 })
     .then(async server => {
         //Configure wick to run server side
@@ -69,8 +70,10 @@ lantern({
                 respond: async function (tools) {
 
                     tools.setMIMEBasedOnExt();
-
-                    return tools.sendRawStreamFromFile(path.join(__root_dir, "source/editor/", tools.dir.replace("/flame/editor", ""), tools.file));
+                    const str = await tools.getUTF8FromFile(path.join(__root_dir, "source/editor/", tools.dir.replace("/flame/editor", ""), tools.file));
+                    //tools.setMIMEBasedOnExt(ext || "js");
+                    return tools.sendUTF8String(str.replace(/\"\@candlefw\/([^\/\"]+)/g, "\"/cfw\/$1/"));
+                    return tools.sendRawStreamFromFile();
                 },
 
                 keys: [{ ext: server.ext.all, dir: "/flame/editor/*" }]

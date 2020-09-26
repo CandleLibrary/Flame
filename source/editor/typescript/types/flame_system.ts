@@ -44,6 +44,10 @@ export interface EditedComponent {
     height?: number;
 }
 
+/**
+ * Stores state information about the current Flame editing 
+ * context. 
+ */
 export interface FlameSystem {
 
     metrics: {

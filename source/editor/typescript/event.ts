@@ -211,42 +211,43 @@ const action_input_handler: InputHandler = <InputHandler>{
 
 let active_input_handler = default_handler;
 
-function keypressEventResponder(e: KeyboardEvent, sys: FlameSystem) {
+function keypressEventResponder(e: KeyboardEvent, sys: FlameSystem): boolean {
 
     if (e.ctrlKey) {
-        if (e.key == "z")
+        if (e.key == "z") {
+
             if (e.shiftKey) history.ROLLFORWARD_EDIT_STATE(sys);
             else history.ROLLBACK_EDIT_STATE(sys);
+            return true;
+        }
     } else {
         switch (e.key) {
             case "c":
                 sys.editor_model.state = EditorToolState.COMPONENT;
-                break;
+                return true;
             case "e":
                 sys.editor_model.state = EditorToolState.ELEMENT;
-                break;
+                return true;
             case "p":
                 sys.editor_model.state = EditorToolState.POSITION;
-                break;
+                return true;
             case "b":
                 sys.editor_model.state = EditorToolState.BORDER;
-                break;
+                return true;
             case "m":
                 sys.editor_model.state = EditorToolState.MARGIN;
-                break;
+                return true;
             case "d":
                 sys.editor_model.state = EditorToolState.DIMENSIONS;
-                break;
+                return true;
             case "o":
                 sys.editor_model.state = EditorToolState.COLOR;
-                break;
+                return true;
             case "v":
                 sys.editor_model.state = EditorToolState.PADDING;
-                break;
+                return true;
         }
     }
-
-    e.preventDefault();
 };
 
 let POINTER_DOWN = false, DRAG_BUTTON = 0;
@@ -311,9 +312,9 @@ export function initializeEvents(
 ) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
 
-    document.body.appendChild(event_intercept_ele);
+    //document.body.appendChild(event_intercept_ele);
 
-    // editor_window.document.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
+    editor_window.document.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
 
     event_intercept_ele.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
 
@@ -333,7 +334,12 @@ export function initializeEvents(
 
     editor_window.addEventListener("resize", e => windowResizeEventResponder(e, sys));
 
-    editor_window.addEventListener("keydown", e => { });
+    window.addEventListener("keydown", e => { });
 
-    editor_window.addEventListener("keypress", e => keypressEventResponder(e, sys));
+    window.addEventListener("keypress", e => {
+        if (keypressEventResponder(e, sys)) {
+            e.preventDefault();
+        }
+
+    });
 }

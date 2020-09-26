@@ -65,7 +65,7 @@ const
         const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script async type="module" id="wick-components">
-    import flame from "/flame/editor/build/library/main.js";
+    import flame from "/flame/editor/build/library/entry.js";
     import w from "/@candlefw/wick/";
     window.addEventListener("load", async () => {
     //const w = wick.default;

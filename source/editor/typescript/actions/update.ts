@@ -1,20 +1,15 @@
 import history from "../history.js";
 import { HistoryState } from "../types/history_state";
-import { CSSCacheFactory } from "../cache/css_cache.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { Action } from "../types/action.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { ActionType } from "../types/action_type.js";
-import { getComponentDataFromName } from "../common_functions.js";
+import { getComponentDataFromName, getRTInstances } from "../common_functions.js";
 import { startRatioMeasure, clearRatioMeasure, markRatioMeasure } from "./ratio.js";
+import { debug } from "console";
 
 
-export function prepUIUpdate(system, component, element, type) {
-    const cache = CSSCacheFactory(system, component, element);
-    cache.applyChanges(system, 0);
-}
-
-export function setState(FORWARD = true, history_state: HistoryState, system: FlameSystem, POST_UPDATE: boolean = false) {
+export function setState(FORWARD = true, history_state: HistoryState, sys: FlameSystem, POST_UPDATE: boolean = false) {
 
     const update_components: Set<string> = new Set;
 
@@ -28,9 +23,9 @@ export function setState(FORWARD = true, history_state: HistoryState, system: Fl
         let comp = null;
 
         if (FORWARD)
-            comp = handler.progress(system, state, FORWARD);
+            comp = handler.progress(sys, state, FORWARD);
         else
-            comp = handler.regress(system, state, FORWARD);
+            comp = handler.regress(sys, state, FORWARD);
 
         for (const name of comp || [])
             update_components.add(name);
@@ -40,22 +35,47 @@ export function setState(FORWARD = true, history_state: HistoryState, system: Fl
 
     for (const comp_name of update_components.values()) {
 
-        const comp = getComponentDataFromName(system, comp_name);
+        const LU = new Set();
 
-        let ele = null;
+        const
+            comp = getComponentDataFromName(sys, comp_name),
+            string = sys.edit_wick.utils.componentDataToCSS(comp);
 
-        if (system.wick.rt.css_cache[comp.name]) {
-            ele = system.wick.rt.css_cache[comp.name];
-        } else {
-            ele = system.document.createElement("style");
-            system.head.appendChild(ele);
-            system.wick.rt.css_cache[comp.name] = ele;
+
+
+        for (const rt_comp of
+            (
+                sys.harness.name == comp_name
+                    ? [sys.harness]
+                    : getRTInstances(sys, comp_name)
+            )
+        ) {
+
+
+            const {
+                css_cache: { [comp_name]: { css_ele: ele } },
+                window: { document }
+            } = rt_comp.presets;
+
+            if (!ele) {
+
+                const ele = document.createElement("style");
+
+                rt_comp.presets.css_cache[comp_name] = ele;
+
+                ele.innerHTML = string;
+
+                rt_comp.presets.window.head.appendChild(ele);
+
+                LU.add(ele);
+
+            } else if (!LU.has(ele)) {
+
+                ele.innerHTML = string;
+
+                LU.add(ele);
+            }
         }
-
-        //Push node to the document 
-        const string = system.edit_wick.componentDataToCSS(comp);
-
-        ele.innerHTML = string;
     }
 
     //*/
@@ -150,12 +170,14 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
                     crate.css_cache.applyChanges(sys, 0);
                     markRatioMeasure(sys, crate, ratio);
                 }
-                clearRatioMeasure(ratio);
             } else action.updateFN(sys, crate, ratio);
+
+            clearRatioMeasure(ratio);
         }
     }
 
-    for (const crate of crates) crate.css_cache.applyChanges(sys, change_nonce);
+    for (const { css_cache } of crates)
+        if (css_cache) css_cache.applyChanges(sys, change_nonce);
 
     change_nonce++;
 }
@@ -164,7 +186,10 @@ export function sealAction(sys: FlameSystem, crates: ObjectCrate[]) {
 
     for (const crate of crates) {
 
-        crate.css_cache.clearChanges(sys);
+        if (crate.css_cache) {
+            crate.css_cache.clearChanges(sys);
+        };
+
 
         for (const action of crate.action_list.sort((a, b) => a < b ? -1 : 1)) {
             const history_artifact = action.sealFN(sys, crate);

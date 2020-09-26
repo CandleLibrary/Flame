@@ -1,152 +1,199 @@
-import { setNumericValue } from "./common.js";
-import { getRatio } from "./ratio.js";
-import { SETDELTALEFT, SETDELTATOP } from "./position.js";
+import {
+    setNumericValue, getContentBox, noop
+} from "./common.js";
 
-import { CSSCacheFactory } from "../cache/css_cache.js";
+import {
+    SETDELTAHEIGHT,
+    SETDELTAWIDTH
+} from "./dimensions.js";
+import { ActionType } from "../types/action_type.js";
+import { sealCSS, updateCSS } from "./update_css.js";
+import { FlameSystem } from "../types/flame_system.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { Action } from "../types/action.js";
 
-function resetMargin(system, component, element) {
-    let cache = CSSCacheFactory(system, component, element);
-    let css = cache.rules;
-    if (css.props.margin) {
-        //Convert margin value into 
-        css.props.margin = null;
-    }
+export function SETMARGINTOP(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_top", x, setNumericValue.parent_height);
 }
 
-export function SETMARGINLEFT(system, component, element, x, LINKED = false) {
-    resetMargin(system, component, element);
-    setNumericValue("margin_left", system, component, element, x, setNumericValue.parent_width);
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
+export function SETMARGINBOTTOM(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_bottom", x, setNumericValue.parent_height);
+}
+export function SETMARGINLEFT(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_left", x, setNumericValue.parent_width);
+}
+export function SETMARGINRIGHT(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_right", x, setNumericValue.parent_width);
 }
 
-export function SETDELTAMARGINLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["margin-left"]);
+export const SETDELTAMARGINTOP = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-    if (ratio > 0)
-        SETMARGINLEFT(system, component, element, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, component, element, SETMARGINLEFT, start_x, dx, "margin-left");
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginTop) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
+        SETMARGINTOP(sys, crate, value + delta);
+        SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
+export const SETDELTAMARGINBOTTOM = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginBottom) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    return ratio;
-}
+        SETMARGINBOTTOM(sys, crate, value + delta);
+        SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
+export const SETDELTAMARGINRIGHT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-export function SETMARGINTOP(system, component, element, x, LINKED = false) {
-    resetMargin(system, component, element);
-    setNumericValue("margin_top", system, component, element, x, setNumericValue.parent_height);
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
-}
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginRight) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-export function SETDELTAMARGINTOP(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["margin-top"]);
+        SETMARGINRIGHT(sys, crate, value + delta);
+        SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (ratio > 0)
-        SETMARGINTOP(system, component, element, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, component, element, SETMARGINTOP, start_x, dx, "margin-top");
+export const SETDELTAMARGINLEFT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginLeft) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
+        SETMARGINLEFT(sys, crate, value + delta);
+        SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    return ratio;
-}
+export const RESIZEMARGINT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
+            margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
+            height = getContentBox(crate.sel.ele, sys.window, sys).height,
+            min_y = -margin_top,
+            max_y = height - margin_top - margin_bottom;
 
-export function SETMARGINRIGHT(system, component, element, x, LINKED = false) {
-    resetMargin(system, component, element);
-    setNumericValue("margin_right", system, component, element, x, setNumericValue.parent_height);
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
-}
+        return { min_y, max_y };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
 
+        if (ratio.adjusted_delta == 0) return;
 
-export function SETDELTAMARGINRIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["margin-right"]);
+        SETDELTAMARGINTOP.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (ratio > 0)
-        SETMARGINRIGHT(system, component, element, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, component, element, SETMARGINRIGHT, start_x, dx, "margin-right");
+export const RESIZEMARGINB = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
+            margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
+            height = getContentBox(crate.sel.ele, sys.window, sys).height,
+            min_y = (-height + margin_bottom) + margin_top,
+            max_y = margin_bottom;
 
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
+        return { min_y, max_y };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINBOTTOM.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    return ratio;
-}
+export const RESIZEMARGINL = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_left = parseFloat(crate.css_cache.computed.marginLeft) || 0,
+            width = getContentBox(crate.sel.ele, sys.window, sys).width,
+            min_x = -margin_left,
+            max_x = width;
 
-export function SETMARGINBOTTOM(system, component, element, x, LINKED = false) {
-    resetMargin(system, component, element);
-    setNumericValue("margin_bottom", system, component, element, x, setNumericValue.parent_height);
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
-}
+        return { min_x, max_x };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINLEFT.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
+export const RESIZEMARGINR = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_right = parseFloat(crate.css_cache.computed.marginRight) || 0,
+            width = getContentBox(crate.sel.ele, sys.window, sys).width,
+            min_x = -width,
+            max_x = margin_right;
 
-export function SETDELTAMARGINBOTTOM(system, component, element, dx, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["margin-bottom"]);
-
-    if (ratio > 0)
-        SETMARGINBOTTOM(system, component, element, start_x + dx / ratio, true);
-    else
-        ratio = getRatio(system, component, element, SETMARGINBOTTOM, start_x, dx, "margin-bottom");
-
-    if (!LINKED) prepUIUpdate(system, component, element, "STYLE");
-
-    return ratio;
-}
-
-export function RESIZEMARGINT(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINTOP(system, component, element, dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINRIGHT(system, component, element, -dx, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINLEFT(system, component, element, dx, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINB(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINBOTTOM(system, component, element, -dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINTL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    let cache = CSSCacheFactory(system, component, element);
-
-    if ((cache.cssflagsA & 1)) {
-        SETDELTALEFT(system, component, element, dx, 0, true);
-        SETDELTATOP(system, component, element, dy, 0, true);
-    }
-
-    SETDELTAMARGINLEFT(system, component, element, -dx, 0, true);
-    SETDELTAMARGINTOP(system, component, element, -dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINTR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-
-    SETDELTAMARGINRIGHT(system, component, element, dx, 0, true);
-    SETDELTAMARGINTOP(system, component, element, dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINBL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINLEFT(system, component, element, dx, 0, true);
-    SETDELTAMARGINBOTTOM(system, component, element, dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
-
-export function RESIZEMARGINBR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTAMARGINRIGHT(system, component, element, dx, 0, true);
-    SETDELTAMARGINBOTTOM(system, component, element, dy, 0, true);
-    prepUIUpdate(system, component, element, "STYLE");
-}
+        return { min_x, max_x };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINRIGHT.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};

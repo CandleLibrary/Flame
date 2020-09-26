@@ -1,238 +1,199 @@
-import { css } from "../env.js";
+import {
+    setNumericValue, getContentBox, noop
+} from "./common.js";
 
-const types = css.types;
+import {
+    SETDELTAHEIGHT,
+    SETDELTAWIDTH
+} from "./dimensions.js";
+import { ActionType } from "../types/action_type.js";
+import { sealCSS, updateCSS } from "./update_css.js";
+import { FlameSystem } from "../types/flame_system.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { Action } from "../types/action.js";
 
-import { setNumericValue, setValue, getFirstPositionedAncestor, prepRebuild } from "./common.js";
-import { getRatio } from "./ratio.js";
-import { SETDELTAWIDTH, SETDELTAHEIGHT } from "./dimensions.js";
-import { CSSCacheFactory } from "../cache/css_cache.js";
-
-function resetBorder(system, component, element) {
-    return;
-    let cache = CSSCacheFactory(system, component, element);
-    let css = cache.rules;
-    if (css.props.border) {
-        //Convert border value into 
-        css.props.border = null;
-    }
+export function SETMARGINTOP(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_top", x, setNumericValue.parent_height);
 }
 
-export function SETBORDERLEFT(system, component, element, x, LINKED = false) {
-    resetBorder(system, component, element);
-    let excess_x = setNumericValue("border_left_width", system, component, element, x, setNumericValue.parent_width);
-    prepRebuild(system, component, element, LINKED);
-    return { ratio: 0, excess_x };
+export function SETMARGINBOTTOM(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_bottom", x, setNumericValue.parent_height);
+}
+export function SETMARGINLEFT(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_left", x, setNumericValue.parent_width);
+}
+export function SETMARGINRIGHT(sys: FlameSystem, crate: ObjectCrate, x: number) {
+    setNumericValue(sys, crate, "margin_right", x, setNumericValue.parent_width);
 }
 
-export function SETBORDERRIGHT(system, component, element, x, LINKED = false) {
-    resetBorder(system, component, element);
-    let excess_y = setNumericValue("border_right_width", system, component, element, x, setNumericValue.parent_height);
-    prepRebuild(system, component, element, LINKED);
-    return { ratio: 0, excess_y };
-}
+export const SETDELTAMARGINTOP = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-export function SETBORDERTOP(system, component, element, x, LINKED = false) {
-    resetBorder(system, component, element);
-    let excess_y = setNumericValue("border_top_width", system, component, element, x, setNumericValue.parent_height);
-    prepRebuild(system, component, element, LINKED);
-    return { ratio: 0, excess_y };
-}
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginTop) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
+        SETMARGINTOP(sys, crate, value + delta);
+        SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
+export const SETDELTAMARGINBOTTOM = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-export function SETBORDERBOTTOM(system, component, element, x, LINKED = false) {
-    resetBorder(system, component, element);
-    let excess_y = setNumericValue("border_bottom_width", system, component, element, x, setNumericValue.parent_height);
-    prepRebuild(system, component, element, LINKED);
-    return { ratio: 0, excess_y };
-}
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginBottom) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-export function SETDELTABORDERLEFT(system, component, element, dx, ratio = 0, LINKED = false) {
+        SETMARGINBOTTOM(sys, crate, value + delta);
+        SETDELTAHEIGHT.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
+export const SETDELTAMARGINRIGHT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
 
-    let start_x = parseFloat(system.window.getComputedStyle(element)["border-left-width"]),
-        width = parseFloat(system.window.getComputedStyle(element)["width"]),
-        excess_x = 0,
-        excess_x_extra = 0;
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginRight) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    if (dx > 0 && width - dx < 0) {
-        excess_x_extra = (width - dx);
-        dx = width;
-    }
+        SETMARGINRIGHT(sys, crate, value + delta);
+        SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (ratio > 0)
-        excess_x = -SETBORDERLEFT(system, component, element, start_x + dx / ratio, true).excess_x;
-    else
-        excess_x = -getRatio(system, component, element, SETBORDERLEFT, start_x, dx, "border-left-width").excess;
+export const SETDELTAMARGINLEFT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio, INVERSE = false) => {
+        const
+            style = crate.css_cache.computed,
+            value = parseFloat(style.marginLeft) || 0,
+            delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 
-    prepRebuild(system, component, element, LINKED);
+        SETMARGINLEFT(sys, crate, value + delta);
+        SETDELTAWIDTH.updateFN(sys, crate, ratio, true);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    SETDELTAWIDTH(system, component, element, -dx - excess_x, 0, true);
+export const RESIZEMARGINT = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
+            margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
+            height = crate.sel.actual_height,
+            min_y = -margin_top,
+            max_y = height - margin_top - margin_bottom;
 
-    excess_x += excess_x_extra;
+        return { min_y, max_y };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
 
-    return { excess_x };
-}
+        if (ratio.adjusted_delta == 0) return;
 
+        SETDELTAMARGINTOP.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-export function SETDELTABORDERRIGHT(system, component, element, dx, ratio = 0, LINKED = false) {
+export const RESIZEMARGINB = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
+            margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
+            height = crate.sel.actual_height,
+            min_y = (-height + margin_bottom) + margin_top,
+            max_y = margin_bottom;
 
-    let start_x = parseFloat(system.window.getComputedStyle(element)["border-right-width"]),
-        width = parseFloat(system.window.getComputedStyle(element)["width"]),
-        excess_x = 0,
-        excess_x_extra = 0;
+        return { min_y, max_y };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINBOTTOM.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    if (dx > 0 && width - dx < 0) {
-        excess_x_extra = -(width - dx);
-        dx = width;
-    }
+export const RESIZEMARGINL = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_left = parseFloat(crate.css_cache.computed.marginLeft) || 0,
+            width = crate.sel.actual_width,
+            min_x = -margin_left,
+            max_x = width;
 
-    if (ratio > 0)
-        excess_x = SETBORDERRIGHT(system, component, element, start_x + dx / ratio, true).excess_x;
-    else
-        excess_x = getRatio(system, component, element, SETBORDERRIGHT, start_x, dx, "border-right-width").excess;
+        return { min_x, max_x };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINLEFT.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};
 
-    prepRebuild(system, component, element, LINKED);
+export const RESIZEMARGINR = <Action>{
+    type: ActionType.SET_CSS,
+    priority: 0,
+    sealFN: sealCSS,
+    initFN: noop,
+    setLimits: (sys, crate) => {
+        const
+            margin_right = parseFloat(crate.css_cache.computed.marginRight) || 0,
+            width = crate.sel.actual_width,
+            min_x = -width,
+            max_x = margin_right;
 
-    SETDELTAWIDTH(system, component, element, -dx + excess_x, 0, true);
-
-    excess_x += excess_x_extra;
-
-    return { excess_x };
-}
-
-
-
-
-export function SETDELTABORDERTOP(system, component, element, dy, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["border-top-width"]),
-        height = parseFloat(system.window.getComputedStyle(element)["height"]),
-        excess_y = 0,
-        excess_y_extra = 0;
-
-    if (dy > 0 && height - dy < 0) {
-        excess_y_extra = (height - dy);
-        dy = height;
-    }
-
-    if (ratio > 0)
-        excess_y = -SETBORDERTOP(system, component, element, start_x + dy / ratio, true).excess_y;
-    else
-        excess_y = -getRatio(system, component, element, SETBORDERTOP, start_x, dy, "border-top-width").excess;
-
-    prepRebuild(system, component, element, LINKED);
-
-    SETDELTAHEIGHT(system, component, element, -dy - excess_y, 0, true);
-
-    excess_y += excess_y_extra;
-
-    return { excess_y };
-}
-
-
-export function SETDELTABORDERBOTTOM(system, component, element, dy, ratio = 0, LINKED = false) {
-    let start_x = parseFloat(system.window.getComputedStyle(element)["border-bottom-width"]),
-        height = parseFloat(system.window.getComputedStyle(element)["height"]),
-        excess_y = 0,
-        excess_y_extra = 0;
-
-    if (dy > 0 && height - dy < 0) {
-        excess_y_extra = -(height - dy);
-        dy = height;
-    }
-
-    if (ratio > 0)
-        excess_y = SETBORDERBOTTOM(system, component, element, start_x + dy / ratio, true).excess_y;
-    else
-        excess_y = getRatio(system, component, element, SETBORDERBOTTOM, start_x, dy, "border-bottom-width").excess;
-
-    prepRebuild(system, component, element, LINKED);
-
-    SETDELTAHEIGHT(system, component, element, -dy + excess_y, 0, true);
-
-    excess_y += excess_y_extra;
-
-    return { excess_y };
-}
-
-export function RESIZEBORDERT(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTABORDERTOP(system, component, element, dy, 0, true);
-    prepRebuild(element);
-}
-
-export function RESIZEBORDERR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
-    prepRebuild(element);
-}
-
-export function RESIZEBORDERL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTABORDERLEFT(system, component, element, dx, 0, true);
-    prepRebuild(element);
-}
-
-export function RESIZEBORDERB(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
-    prepRebuild(element);
-}
-
-export function RESIZEBORDERTL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    let { excess_x } = SETDELTABORDERLEFT(system, component, element, dx, 0, true);
-    let { excess_y } = SETDELTABORDERTOP(system, component, element, dy, 0, true);
-
-    prepRebuild(element);
-
-    return { excess_x, excess_y };
-}
-
-export function RESIZEBORDERTR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    let { excess_x } = SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
-    let { excess_y } = SETDELTABORDERTOP(system, component, element, dy, 0, true);
-
-    prepRebuild(element);
-
-    return { excess_x, excess_y };
-}
-
-export function RESIZEBORDERBL(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    let { excess_x } = SETDELTABORDERLEFT(system, component, element, dx, 0, true);
-    let { excess_y } = SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
-
-    prepRebuild(element);
-
-    return { excess_x, excess_y };
-}
-
-export function RESIZEBORDERBR(system, component, element, dx, dy, IS_COMPONENT) {
-    if (IS_COMPONENT) return;
-    let { excess_x } = SETDELTABORDERRIGHT(system, component, element, -dx, 0, true);
-    let { excess_y } = SETDELTABORDERBOTTOM(system, component, element, -dy, 0, true);
-
-    prepRebuild(element);
-
-    return { excess_x, excess_y };
-}
-
-export function BORDERRADIUSTL(system, component, element, d) {
-    setValue(system, component, element, "border_top_left_radius", new types.length(d, "px"));
-    prepRebuild(element);
-}
-
-export function BORDERRADIUSTR(system, component, element, d) {
-
-    setValue(system, component, element, "border_top_right_radius", new types.length(d, "px"));
-    prepRebuild(element);
-}
-
-export function BORDERRADIUSBL(system, component, element, d) {
-    setValue(system, component, element, "border_bottom_left_radius", new types.length(d, "px"));
-    prepRebuild(element);
-}
-
-export function BORDERRADIUSBR(system, component, element, d) {
-    setValue(system, component, element, "border_bottom_right_radius", new types.length(d, "px"));
-    prepRebuild(element);
-}
+        return { min_x, max_x };
+    },
+    setRatio: (sys, crate) => ({ max_level: 1 }),
+    updateFN: (sys, crate, ratio) => {
+        if (ratio.adjusted_delta == 0) return;
+        SETDELTAMARGINRIGHT.updateFN(sys, crate, ratio, false);
+    },
+    historyProgress: updateCSS,
+    historyRegress: updateCSS
+};

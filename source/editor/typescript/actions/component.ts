@@ -20,11 +20,35 @@ import {
     addComponentImport
 } from "../common_functions.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
-import { ObjectCrate } from "../types/object_crate.js";
+import { DrawObject } from "../editor_model.js";
+import { conflagrate, url } from "../env.js";
+import { FlameSystem } from "../types/flame_system.js";
+
+const { copy } = conflagrate;
+
+
+
+function cloneComponent(comp: ComponentData, name: string, sys: FlameSystem): ComponentData {
+
+    const { edit_wick } = sys;
+
+    return <ComponentData>{
+        CSS: comp.CSS ? comp.CSS.map(copy) : [],
+        HAS_ERRORS: comp.HAS_ERRORS,
+        HTML: comp.HTML ? copy(comp.HTML) : null,
+        bindings: comp.bindings,
+        children: comp.children.slice(),
+        container_count: comp.container_count,
+        errors: comp.errors.slice(),
+        frames: comp.frames.slice(),
+        root_frame: comp.root_frame,
+        name: edit_wick.utils.createNameHash(name)
+    };
+}
 
 
 /**
- * Creates a new and places the component at the root of the editor. 
+ * Creates a new component and places the component into the root of the editor. 
  * The new component will have a unique identifier to separate if from other 
  * components. 
  */
@@ -33,24 +57,44 @@ export const CREATE_ROOT_COMPONENT = <Action>{
     priority: -500001,
     initFN: (sys, crate) => {
 
-        /*
-         * The existing node needs to be modified with a new component that has the element replaced with 
-         * a component entry.
-         */
-        const { comp, ele, data: { px1, py1, px2, py2 } } = crate;
+
+        const { px1, py1, px2, py2 } = (<DrawObject>crate.data),
+            { edit_wick: { rt: { presets }, utils: { componentDataToClass } }, edited_components } = sys;
+
+        //retrieve default component
+        const DEFAULT = presets.named_components.get("DEFAULT");
+
+        //Copy it and insert mew component into component repo
+        const new_component = cloneComponent(DEFAULT, "test", sys);
+
+        new_component.location = new url("/components/unorganized/set.js");
+
+        presets.components.set(new_component.name, new_component);
+        presets.component_class.set(new_component.name, componentDataToClass(new_component, presets, true, true));
+
+        const
+            min_x = Math.min(px1, px2), min_y = Math.min(py1, py2),
+            max_x = Math.max(px1, px2), max_y = Math.max(py1, py2);
+
+        //mount the component to the harness
+        edited_components.components.push({
+            comp: new_component.name,
+            frame: null,
+            px: min_x,
+            py: min_y,
+            width: max_x - min_x,
+            height: max_y - min_y
+        });
+
+        //Create new component in edit_wick space
 
         //create new iFrame for the component
-
-
-
-
-        console.log(px1, py1, px2, py2);
-
+        return [];
     },
     sealFN: noop,
     updateFN: noop,
-    historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
-    historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
+    historyProgress: (sys, history) => { },
+    historyRegress: (sys, history) => { }
 
 };
 
@@ -78,7 +122,7 @@ export const CREATE_COMPONENT = <Action>{
             old_comp_data = getComponentDataFromRTInstance(sys, comp),
             clone_comp_data = cloneComponentData(old_comp_data),
             new_comp_data = createComponentData(),
-            start_index = getIndexOfElementInRTInstance(comp, ele),
+            start_index = getIndexOfElementInRTInstance(comp, ele, sys),
             { cloned_root, removed_node } = removeDOMLiteralAtIndex(clone_comp_data, start_index),
             end_index = getLastIndexInDOMLiteralTree(removed_node) + start_index;
 
@@ -160,7 +204,7 @@ export const DELETE_COMPONENT = <Action>{
             old_comp_data = getComponentDataFromRTInstance(sys, comp),
             clone_comp_data = cloneComponentData(old_comp_data),
             new_comp_data = createComponentData(),
-            start_index = getIndexOfElementInRTInstance(comp, ele),
+            start_index = getIndexOfElementInRTInstance(comp, ele, sys),
             { cloned_root, removed_node } = removeDOMLiteralAtIndex(clone_comp_data, start_index),
             end_index = getLastIndexInDOMLiteralTree(removed_node) + start_index;
 

@@ -26,7 +26,7 @@ export const noop = () => { };
 
 export function getContentBox(ele, win: Window = window, system) {
     const
-        scale = system.ui.transform.scale,
+        scale = 1, // system.ui.transform.scale,
 
         rect = ele.getBoundingClientRect(),
         par_prop = win.getComputedStyle(ele),
@@ -53,7 +53,7 @@ export function getContentBox(ele, win: Window = window, system) {
     Handles the rebuild routine of wick elements 
 */
 export function prepRebuild(system, component, element, LINKED = true) {
-    prepUIUpdate(system, component, element, "STYLE");
+    // prepUIUpdate(system, component, element, "STYLE");
 }
 
 /** 
@@ -91,7 +91,6 @@ export function getFirstPositionedAncestor(ele) {
 
 function numericAdjust(ALLOW_NEGATIVE = false, RELATIVE = false, value = 0, denominator = 0, prop = null, cache) {
     let excess = 0;
-
     if (!ALLOW_NEGATIVE && value < 0) {
         excess = value;
         value = 0;
@@ -125,7 +124,7 @@ export function setNumericValue(
     ALLOW_NEGATIVE: boolean = false
 ): number {
 
-    const { css_cache: cache, ele, comp } = crate;
+    const { css_cache: cache, sel: { ele, comp } } = crate;
 
     let
         prop = cache.getProp(prop_name),

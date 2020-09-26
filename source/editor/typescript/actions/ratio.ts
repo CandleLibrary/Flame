@@ -58,8 +58,11 @@ let pointer = 0;
 
 export function startRatioMeasure(sys: FlameSystem, crate: ObjectCrate, delta: number = 0, measurement_key: string = "", max_level: number = 4): RatioMarker {
     const
-        { ele } = crate,
-        measure = (measurement_key) ? ele.getBoundingClientRect()[measurement_key] / sys.ui.transform.scale : 0,
+
+        { ele, IS_COMPONENT_FRAME } = crate.sel,
+
+        measure = (measurement_key) ? ele.getBoundingClientRect()[measurement_key] / (IS_COMPONENT_FRAME ? sys.ui.transform.scale : 1) : 0,
+
         marker = Object.assign(ratio_markers.pop(), <RatioMarker>{
             type: measurement_key,
             original_delta: delta,
@@ -83,7 +86,7 @@ export function startRatioMeasure(sys: FlameSystem, crate: ObjectCrate, delta: n
 export function markRatioMeasure(sys: FlameSystem, crate: ObjectCrate, marker: RatioMarker): RatioMarker {
 
     const
-        { ele } = crate,
+        { ele, IS_COMPONENT_FRAME } = crate.sel,
 
         {
             delta_value,
@@ -95,11 +98,12 @@ export function markRatioMeasure(sys: FlameSystem, crate: ObjectCrate, marker: R
             t1, t2, t3
         } = marker,
 
-        actual_value = ele.getBoundingClientRect()[type] / sys.ui.transform.scale,
+        actual_value = ele.getBoundingClientRect()[type] / (IS_COMPONENT_FRAME ? sys.ui.transform.scale : 1),
 
         actual_delta = actual_value - original_value,
 
         err = goal_value - actual_value;
+
 
 
     if (actual_delta == 0) //No change !?!
@@ -131,7 +135,8 @@ export function markRatioMeasure(sys: FlameSystem, crate: ObjectCrate, marker: R
 }
 
 export function clearRatioMeasure(marker: RatioMarker) {
-    ratio_markers.push(marker);
+    if (marker)
+        ratio_markers.push(marker);
 };
 
 export function getRatio(

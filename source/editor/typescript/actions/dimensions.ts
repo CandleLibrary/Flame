@@ -1,16 +1,20 @@
 import { setNumericValue, ensureBlocklike, prepRebuild } from "./common.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { FlameSystem } from "../types/flame_system.js";
-import { sealCSS, updateCSS } from "./position.js";
+import { sealCSS, updateCSS } from "./update_css.js";
 import { ActionType } from "../types/action_type.js";
 import { Action } from "../types/action.js";
+import { EditorSelection } from "../types/selection.js";
 
-function getContentBox(ele, win: Window = window, system) {
+function getContentBox(sel: EditorSelection, sys: FlameSystem) {
+
     const
-        scale = system.ui.transform.scale,
+        { IS_COMPONENT_FRAME, ele, frame_ele } = sel,
+
+        scale = IS_COMPONENT_FRAME ? sys.ui.transform.scale : 1,
 
         rect = ele.getBoundingClientRect(),
-        par_prop = win.getComputedStyle(ele),
+        par_prop = (IS_COMPONENT_FRAME ? sys.window : window).getComputedStyle(ele),
 
         border_l = parseFloat(par_prop.getPropertyValue("border-left")),
         border_r = parseFloat(par_prop.getPropertyValue("border-right")),
@@ -26,12 +30,12 @@ function getContentBox(ele, win: Window = window, system) {
         left = rect.left / scale + border_l,
         width = rect.width / scale - border_l - border_r - padding_l - padding_r,
         height = rect.height / scale - border_t - border_b - padding_t - padding_b;
+
     return { top, left, width, height };
 }
 
 function getNumericValue(sys: FlameSystem, crate: ObjectCrate, type: string): number {
-    const { ele } = crate;
-    return getContentBox(ele, sys.window, sys)[type];
+    return getContentBox(crate.sel, sys)[type];
 }
 
 export function SETWIDTH(system, crate: ObjectCrate, x: number) {

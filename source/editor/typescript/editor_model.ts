@@ -19,13 +19,13 @@ export enum EditorToolState {
 }
 
 export interface DrawObject {
-    type: "horizontal_line" | "vertical_line" | "infinite_line" | "box",
+    type: "horizontal_line" | "vertical_line" | "infinite_line" | "box" | "none",
     px1: number;
     px2: number;
     py1: number;
     py2: number;
 }
-export class EditorModel implements ObservableModel {
+export class EditorModel {
 
     selection_box: any;
     comp: RuntimeComponent;
@@ -36,10 +36,9 @@ export class EditorModel implements ObservableModel {
     selected_element: HTMLElement;
     ACTIONS: any;
     POINTER_DN: boolean;
+    selections: EditorSelection[];
     draw_objects: DrawObject[];
-    observers: ObservableWatcher[];
     state: EditorToolState;
-    OBSERVABLE: true;
     constructor() {
         this.comp = null;
         this.ele = null;
@@ -47,28 +46,44 @@ export class EditorModel implements ObservableModel {
         this.selected_comp = null;
         this.selected_element = null;
         this.selection_box = null;
+        this.selections = [<EditorSelection><unknown>{
+            model: new wick.objects.ObservableScheme<EditorSelection>({
+                frame_ele: null,
+                ACTIVE: false,
+                VALID: true,
+                IS_COMPONENT_FRAME: false,
+                comp: null,
+                ele: null,
+                width: 0,
+                height: 0,
+                left: 0,
+                top: 0,
+                max_x: 0,
+                max_y: 0,
+                min_x: 0,
+                min_y: 0,
+                px: 0,
+                py: 0,
+                pz: 0,
+                rx: 0,
+                ry: 0,
+                rz: 0,
+                sx: 0,
+                sy: 0,
+                sz: 0,
+            })
+        }];
         //this.ACTIONS = ACTIONS;
         this.POINTER_DN = false;
-        this.observers = [];
         this.state = EditorToolState.UNSET;
-        this.draw_objects = [];
-    }
-
-    update() {
-        for (const observer of this.observers)
-            observer.onModelUpdate(this);
-
-    }
-    subscribe(comp: ObservableWatcher) {
-        this.unsubscribe(comp);
-        this.observers.push(comp);
-        return true;
-    };
-
-    unsubscribe(comp: ObservableWatcher) {
-        let i = this.observers.indexOf(comp);
-        if (i >= 0)
-            return this.observers.splice(i, 1), true;
-        return false;
+        this.draw_objects = [<DrawObject><unknown>{
+            model: new wick.objects.ObservableScheme<DrawObject>({
+                px1: 0,
+                py1: 0,
+                px2: 0,
+                py2: 0,
+                type: "none"
+            })
+        }];
     }
 };

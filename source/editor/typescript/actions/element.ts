@@ -28,20 +28,34 @@ function histSetAttribute(sys: FlameSystem, history: HistoryArtifact, FOREWARD =
 
 	const { comp_data_name, ele_index, valueA, valueB } = FOREWARD ? history.progress : history.regress;
 
-	const component_data = getComponentDataFromName(sys, comp_data_name);
+	let ele = null;
 
-	const ele = getDOMLiteralAtIndex(component_data, ele_index);
+	if (sys.harness.name == comp_data_name) {
 
-	if (!ele) throw new ReferenceError("Missing element when trying to apply attribute information.");
+		const ele = sys.edited_components.components[ele_index].frame;
 
-	if (!valueA)
-		removeDOMLiteralAttribute(ele, <string>valueB);
-	else
-		setDOMLiteralAttribute(ele, <string>valueA, <string>valueB);
+		if (!ele) throw new ReferenceError("Missing frame element when trying to apply attribute information.");
 
-	//Apply value to all components of type;
-	getRTInstances(sys, history.progress.comp_data_name)
-		.forEach(comp => {
+		if (!valueA)
+			ele.removeAttribute(<string>valueB);
+		else
+			ele.setAttribute(<string>valueA, <string>valueB);
+
+	} else {
+
+		const component_data = getComponentDataFromName(sys, comp_data_name);
+
+		ele = getDOMLiteralAtIndex(component_data, ele_index);
+
+		if (!ele) throw new ReferenceError("Missing element when trying to apply attribute information.");
+
+		if (!valueA)
+			removeDOMLiteralAttribute(ele, <string>valueB);
+		else
+			setDOMLiteralAttribute(ele, <string>valueA, <string>valueB);
+
+		for (const comp of getRTInstances(sys, history.progress.comp_data_name)) {
+
 			const ele = getElementAtIndexInRTInstance(comp, ele_index);
 
 			if (!ele) throw new ReferenceError("Missing element when trying to apply attribute information.");
@@ -50,7 +64,8 @@ function histSetAttribute(sys: FlameSystem, history: HistoryArtifact, FOREWARD =
 				ele.removeAttribute(<string>valueB);
 			else
 				ele.setAttribute(<string>valueA, <string>valueB);
-		});
+		};
+	}
 
 	return [];
 }
@@ -62,8 +77,8 @@ export const SET_ATTRIBUTE = <Action>{
 	initFN: (sys, crate) => {
 		const
 			{ key, val } = crate.data,
-			{ ele, comp } = crate,
-			ele_index = getIndexOfElementInRTInstance(comp, ele),
+			{ ele, comp } = crate.sel,
+			ele_index = getIndexOfElementInRTInstance(comp, ele, sys),
 			data = ele.getAttribute(key),
 			old_key = data ? key : "",
 			old_val = data || key;
@@ -100,8 +115,8 @@ export const DELETE_ATTRIBUTE = <Action>{
 	initFN: (sys, crate) => {
 		const
 			{ key, val } = crate.data,
-			{ ele, comp } = crate,
-			ele_index = getIndexOfElementInRTInstance(comp, ele),
+			{ ele, comp } = crate.sel,
+			ele_index = getIndexOfElementInRTInstance(comp, ele, sys),
 			data = ele.getAttribute(key),
 			old_key = data ? key : "",
 			old_val = data || key;
@@ -144,14 +159,13 @@ export const DELETE_ELEMENT = <Action>{
 	priority: -500000, //Should always come first. except for delete element
 	sealFN: noop,
 	initFN: (sys, crate) => {
-		const { comp, ele } = crate;
-
+		const { comp, ele } = crate.sel;
 		if (comp.ele == ele) return;
 
 		const
 			old_comp_data = getComponentDataFromRTInstance(sys, comp),
 			clone_comp_data = cloneComponentData(old_comp_data),
-			start_index = getIndexOfElementInRTInstance(comp, ele),
+			start_index = getIndexOfElementInRTInstance(comp, ele, sys),
 			{ cloned_root: clone_root, removed_node: old_node } = removeDOMLiteralAtIndex(clone_comp_data, start_index),
 			end_index = getLastIndexInDOMLiteralTree(old_node) + start_index;
 
@@ -202,7 +216,7 @@ export const CREATE_ELEMENT = <Action>{
 
 		const
 			{ tag, data, target } = crate.data,
-			{ ele, comp } = crate;
+			{ ele, comp } = crate.sel;
 
 		let target_element = ele, target_parent = ele.parentElement, INSERT_IN_ELEMENT = false;
 
@@ -268,7 +282,7 @@ export const CREATE_ELEMENT = <Action>{
 		});
 
 		//find the element with existing index.
-		for (const comp of getRTInstances(sys, name,)) {
+		for (const comp of getRTInstances(sys, name)) {
 			const ele = sys.document.createElement(<string>tag);
 			ele.innerHTML = <string>inner_html;
 			insertElementAtIndexInRTInstance(comp, ele_index, ele, !!INSERT_INTO_COMPONENT);
@@ -287,7 +301,7 @@ export const CREATE_ELEMENT = <Action>{
 		removeDOMLiteralAtIndex(comp, ele_index);
 
 		//find the element with existing index.
-		for (const comp of getRTInstances(sys, name,))
+		for (const comp of getRTInstances(sys, name))
 			removeElementAtIndexInRTInstance(comp, ele_index);
 
 		return [history.regress.comp_data_name];

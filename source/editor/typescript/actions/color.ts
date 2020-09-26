@@ -1,7 +1,7 @@
 import { css } from "../env.js";
 import { setValue } from "./common.js";
 import { ActionType } from "../types/action_type.js";
-import { sealCSS, updateCSS } from "./position.js";
+import { sealCSS, updateCSS } from "./update_css.js";
 import { Action } from "../types/action.js";
 
 //set background color

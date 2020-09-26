@@ -1,6 +1,5 @@
 import { selected_ele, state } from "@model:flame-editor";
 
-
 //ToolBar Options
 import componentinfo from "./tools/component_info.wick";
 import position from "./tools/position_tool.wick";
@@ -52,6 +51,7 @@ export default <div>
 
     .tool {
         margin:auto;
+        color:#555555;
     }
 
     .tool h4 {

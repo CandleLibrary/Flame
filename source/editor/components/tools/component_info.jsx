@@ -11,7 +11,7 @@ watch(elementUpdate, sc);
 
 export default <div>
     <h4>component</h4>
-    <p>name: ((name))</p>
-    <p>location: ((loc))</p>
+    <p>name: ${name}</p>
+    <p>location: ${loc}</p>
 </div>;
 

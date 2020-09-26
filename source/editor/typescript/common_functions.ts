@@ -19,7 +19,7 @@ const {
         parse: {
             parser,
             render
-        }
+        },
     },
     types: {
         HTMLNodeType
@@ -569,7 +569,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
 
     // from this ast apply changes that need to occur, then render back to file.
 
-    return render(<WickLibrary["types"]["JSNode"]>out_node) || "";
+    return render(<WickCompiler["types"]["JSNode"]>out_node) || "";
 }
 
 export function createRootFrame(IS_ROOT: boolean): FunctionFrame {
@@ -612,7 +612,6 @@ export function addComponentImport(tag_name: string, importing_comp: Component, 
 export function createComponentData() {
     return <Component>{
         CSS: [],
-        HAS_ERRORS: false,
         HTML: null,
         bindings: [],
         children: [],
@@ -624,6 +623,10 @@ export function createComponentData() {
         name: "",
         names: [],
         root_frame: null,
+        HAS_ERRORS: false,
+        HTML_HEAD: [],
+        errors: [],
+        source: ""
     };
 }
 
@@ -631,7 +634,6 @@ export function createComponentData() {
 export function cloneComponentData(comp: Component) {
     const clone: Component = <Component>{
         CSS: comp.CSS,
-        HAS_ERRORS: comp.HAS_ERRORS,
         HTML: comp.HTML,
         bindings: [...comp.bindings],
         children: comp.children,
@@ -642,7 +644,11 @@ export function cloneComponentData(comp: Component) {
         location: comp.location,
         name: "",
         names: comp.names,
-        root_frame: comp.root_frame
+        root_frame: comp.root_frame,
+        HAS_ERRORS: false,
+        HTML_HEAD: [],
+        errors: [],
+        source: ""
     };
 
     return clone;

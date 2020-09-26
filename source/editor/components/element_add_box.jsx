@@ -96,7 +96,7 @@ watch(showBox, sc);
 </style>;
 
 export default <div id="main" class="main">
-    <div onclick="((insertNewElementBefore))" class="select-tab top">+</div>
-    <div onclick="((insertNewChildElement))" class="select-tab inner">+</div>
-    <div onclick="((insertNewElementAfter))" class="select-tab bottom">+</div>
+    <div onclick="${insertNewElementBefore}" class="select-tab top">+</div>
+    <div onclick="${insertNewChildElement}" class="select-tab inner">+</div>
+    <div onclick="${insertNewElementAfter}" class="select-tab bottom">+</div>
 </div>;

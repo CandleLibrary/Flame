@@ -17,13 +17,13 @@ var selected_tools = [{
 }];
 
 export default <div>
-    <p>current state: ((state)) </p>
+    <p>current state: ${state} </p>
     <img id="logo" src="./flame/editor/cfw.ts.svg" height=50>
-        <container data="((selected_tools))">
-        <componentinfo useif="((m1.type == 'component'))" class="tool" />
-        <position useif="((m1.type == 'position'))" class="tool" />
-        <css useif="((m1.type == 'css'))" class="tool" />
-        <color useif="((m1.type == 'color'))" class="tool" />
+        <container data="${selected_tools}">
+        <componentinfo useif="${m1.type == 'component'}" class="tool" />
+        <position useif="${m1.type == 'position'}" class="tool" />
+        <css useif="${m1.type == 'css'}" class="tool" />
+        <color useif="${m1.type == 'color'}" class="tool" />
     </container>
 </div >;
 

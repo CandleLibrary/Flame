@@ -61,5 +61,5 @@ function showBox() {
 watch(showBox, sc);
 
 export default <div id="main" class="main">
-    <canvas id="canvas" width=50 height=50 onclick="(( applyColor ))" />
+    <canvas id="canvas" width=50 height=50 onclick="${applyColor}" />
 </div >;

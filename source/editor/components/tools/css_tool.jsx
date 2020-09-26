@@ -61,17 +61,17 @@ watch(elementUpdate, sc);
 
 export default <div class="tool">
     <h4>style </h4>
-    <p>((prop_name)) ((CAN_USE_PROP))</p>
-    <p> <input type="text" value="((prop_name))" /> </p>
-    <p>primary selector <br /><span class="selector">((selector))</span></p>
-    <p>unique selector  <br /><span class="selector">((IS_UNIQUE))</span></p>
+    <p>${prop_name} ${CAN_USE_PROP}</p>
+    <p> <input type="text" value="${prop_name}" /> </p>
+    <p>primary selector <br /><span class="selector">${selector}</span></p>
+    <p>unique selector  <br /><span class="selector">${IS_UNIQUE}</span></p>
     <p>force unique selector <input type="checkbox" /></p>
     <p>use global selector <input type="checkbox" /></p>
     <p><button>choose primary selector</button></p>
     <p><button>make unique selector</button></p>
     <p><button>change unique selector</button></p>
-    <p>TODO - list applicable selectors <textarea readonly=true>((selectors))</textarea></p>
-    <p>TODO - list applicable selectors <textarea readonly=true>((unique_selectors))</textarea></p>
-    <p>TODO - list active styles <textarea readonly=true>((styles))</textarea></p>
-    <p>((all_rules))</p>
+    <p>TODO - list applicable selectors <textarea readonly=true>${selectors}</textarea></p>
+    <p>TODO - list applicable selectors <textarea readonly=true>${unique_selectors}</textarea></p>
+    <p>TODO - list active styles <textarea readonly=true>${styles}</textarea></p>
+    <p>${all_rules}</p>
 </div >;

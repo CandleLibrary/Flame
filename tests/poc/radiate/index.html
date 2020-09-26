@@ -12,16 +12,16 @@
 		<element>
 			<component>
 				<scope>
-				<input type=text value="((value)())"> 
-				<button onclick="((addTodo)())">ADD!</button>
+				<input type=text value="${value)(}"> 
+				<button onclick="${addTodo)(}">ADD!</button>
 				
 					<container>
-						((todos))
-						<scope style="((checked ? 'text-decoration: line-through' : 'text-decoration: none' ))" export="removeTodo"  pin="frame">	
+						${todos}
+						<scope style="${checked ? 'text-decoration: line-through' : 'text-decoration: none' }" export="removeTodo"  pin="frame">	
 							
- <input  type="checkbox" value="((checked))">  ((value)) <span onclick="((removeTodo)(this.id))">Remove</span>
+ <input  type="checkbox" value="${checked))">  ((value)) <span onclick="((removeTodo)(this.id}">Remove</span>
 							
-							<js on="((checked))">
+							<js on="${checked}">
 								checked 
 									?  
 										glow({obj:frame$, opacity:{v:0.1, duration:200} }).play()
@@ -32,12 +32,12 @@
 						</scope>
 					</container>
 
-					<js on="((removeTodo))">
+					<js on="${removeTodo}">
 						removeTodo
 						debugger;
 					</js>
 
-					<js on="((addTodo))">
+					<js on="${addTodo}">
 						if(!this.todos)
 							this.todos = [];
 
@@ -55,7 +55,7 @@
 			<component>
 				<scope>
 					<div>Footer</div>
-					<button>((test))</button>
+					<button>${test}</button>
 					<style>
 						div{
 							width:100%;

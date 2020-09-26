@@ -27,6 +27,8 @@ export interface DrawObject {
 }
 export class EditorModel {
 
+    data: any;
+
     selection_box: any;
     comp: RuntimeComponent;
     ele: any;

@@ -156,13 +156,13 @@ function handleClick(e) {
 }
 
 export default <div>
-    <canvas onpointermove="((handleClick))" width="((width))" height="((height))"></canvas>
-    <input type="number" step="0.01" value="((m))" />
-    <input type="number" step="0.01" value="((n))" />
+    <canvas onpointermove="${handleClick}" width="${width}" height="${height}"></canvas>
+    <input type="number" step="0.01" value="${m}" />
+    <input type="number" step="0.01" value="${n}" />
     <div id="sample"></div>
-    <p>((col))</p>
-    <p>((rgb))</p>
-    <p>((hsv))</p>
+    <p>${col}</p>
+    <p>${rgb}</p>
+    <p>${hsv}</p>
 </div>;
 <style>
     root{

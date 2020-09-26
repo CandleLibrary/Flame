@@ -13,12 +13,12 @@ watch(elementUpdate, sc);
 export default <div class="tool">
     <h4>position</h4>
 
-    <p>type ((type))</p>
+    <p>type ${type}</p>
     <p>top</p>
     <p>left </p>
     <p>right </p>
     <p>bottom </p>
-    <p>width ((w))px</p>
-    <p>height((h))px</p>
+    <p>width ${w}px</p>
+    <p>height${h}px</p>
 </div>;
 

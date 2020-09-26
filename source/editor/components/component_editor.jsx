@@ -6,7 +6,7 @@ function test() {
 }
 
 export default <div class="main">
-    <container data="((component_tabs))">
+    <container data="${component_tabs}">
         <component_editor export="close_wrapper" ></component_editor>
     </container>
 </div >;

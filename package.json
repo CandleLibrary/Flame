@@ -25,6 +25,7 @@
   "author": "Anthony C Weathersby",
   "license": "ISC",
   "dependencies": {
+    "@candlefw/cfw": "*",
     "@candlefw/lantern": "*",
     "@candlefw/wax": "*",
     "@candlefw/wick": "*",

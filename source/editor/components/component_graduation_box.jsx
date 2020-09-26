@@ -77,5 +77,5 @@ watch(showBox, sc);
 </style>;
 
 export default <div id="main" class="main">
-    <div onclick="((createComponent))" class="select-tab center">+</div>
+    <div onclick="${createComponent}" class="select-tab center">+</div>
 </div>;

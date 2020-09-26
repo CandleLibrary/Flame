@@ -1,7 +1,7 @@
 import edited_comp from "./edited_component.jsx";
 import { components } from "@model:edited-components";
 
-export default <container data="((components))">
+export default <container data="${components}">
     <edited_comp></edited_comp>
 </container>;
 

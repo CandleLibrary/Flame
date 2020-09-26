@@ -89,7 +89,7 @@ watch(showBox, sc);
 
 
 export default <div id="main" class="main">
-    <container data=((test))>
+    <container data=${test}>
         <handle />
     </container>
 </div >;

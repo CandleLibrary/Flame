@@ -1,43 +1,63 @@
-<sub>version 0.1.0-a</sub>
+
+
+<div align=center>
 
 # Flame
+version 0.0.15
 
-## THE WEB TECHNOLOGY EDITOR
+### Wick Dev Server + Component Editor 
 
-CandleFW flame is the lynchpin system that combines all of CandleFW libraries into a single, comprehensive website editing package.
+</div>
 
-Features
+## A Fancy Preview 
 
-- Integration with **wick** & **radiate** to provide on-demand editing capabilities for web components. 
+![fancy-wip-interface-image](./source/media/editor-preview.png)
 
--  - CSS - HTML - JS editing with a WYSIWYG in-browser editor. 
+>:warning: Preview image: current state may vary
 
--  - Customized Animation sequencer using **glow**. 
+> :warning: Currently very experimental - The editor works and breaks with gusto. Use with caution
 
-- Integration with **lantern** allows file saving, asset history, 
+## Features <sub><b>wip</b></sub>
+
+- Integration with [**wick**](https://github.com/candlefw/glow) to provide on-demand editing capabilities for wick components. 
+
+  - No-Code / Drop-Into-Code CSS - HTML editing with a WYSIWYG browser editor. 
+
+  - Animation sequencer utilizing [**glow**](https://github.com/candlefw/glow). 
+  
+  - Integration with [**lantern**](https://github.com/candlefw/lantern) allows file saving and GIT commits
 
 
-USAGE
+# USAGE
 
-Flame can be integrated with any existing **Radiate** or **Wick** project by passing the ``wick`` / ``radiate`` object to the ``flame`` function. 
+## Install
 
+###  yarn
+```bash
 
-```javascript
-
-wick(`<div> MY radiate object </div>`)
-
-flame(wick, options); // now we have a flaming wick!
+$ yarn add global @candlefw/flame
 
 ```
 
-```javascript
+###  npm
+```bash
 
-flame(radiate(), options); // now we are radiating flames!
+$ npm -g install @candlefw/flame 
 
 ```
-- 
-- Element Selection
-- Glow Animation Keyframe System
-- Per File Updating with git commits
-- Smart CSS Updating With lazy write back
-- Branching undo/redo tree. 
+
+## Dev server
+
+Run the flame server in any folder with wick components. 
+
+``` bash
+$ cd ./my-super-secret-wick-project/
+: flame
+```
+
+
+Flame will serve all files within the folder. It will render a folder as a webpage if that folder contains either a `index.wick` or `index.html` file. 
+
+### Editor
+
+To open the Flame editor, add `?flaming` to the url of the wick webpage. For example, if there is an `index.wick` page in `~/home/`, then in a browser navigate to `http://localhost:8080/home/?flaming` to open that page within the Flame editor. 

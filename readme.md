@@ -19,7 +19,7 @@ version 0.0.15
 
 ## Features <sub><b>wip</b></sub>
 
-- Integration with [**wick**](https://github.com/candlefw/glow) to provide on-demand editing capabilities for wick components. 
+- Integration with [**wick**](https://github.com/candlefw/wick) to provide on-demand editing capabilities for wick components. 
 
   - No-Code / Drop-Into-Code CSS - HTML editing with a WYSIWYG browser editor. 
 

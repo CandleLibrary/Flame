@@ -1,4 +1,4 @@
-import { CSSProperty, CSSRuleNode } from "@candlefw/css";
+import { CSSProperty, CSSRuleNode } from "@candlelib/css";
 
 
 export interface TrackedCSSProp {

@@ -1,4 +1,4 @@
-import WICK, { RuntimeComponent, Presets, WickRuntime, ExtendedComponent } from "@candlefw/wick";
+import WICK, { RuntimeComponent, Presets, WickRuntime, ExtendedComponent } from "@candlelib/wick";
 
 import * as ACTIONS from "./actions/action.js";
 

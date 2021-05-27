@@ -1,8 +1,8 @@
 import mongodb from "mongodb";
-import lantern from "@candlefw/lantern";
+import lantern from "@candlelib/lantern";
 
 
-function database(server) : Array<Disp> {
+function database(server): Array<Disp> {
 
     //Connect to database server
     const MongoClient = mongodb.MongoClient;

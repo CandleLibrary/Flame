@@ -1,4 +1,4 @@
-import WICK, { WickLibrary } from "@candlefw/wick";
+import WICK, { WickLibrary } from "@candlelib/wick";
 import { FlameSystem, EditedComponent } from "./types/flame_system.js";
 import { EditorModel } from "./editor_model.js";
 import { css } from "./env.js";

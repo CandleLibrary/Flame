@@ -5,9 +5,9 @@ import {
     componentDataToCSS,
     componentDataToHTML,
     WickLibrary
-} from "@candlefw/wick";
+} from "@candlelib/wick";
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 
 /**
  * Render provides the mechanism to turn wick components 
@@ -56,7 +56,7 @@ const
         const str = components.map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script id="wick-components" async type="module">
-    import "/@candlefw/wick/";
+    import "/@candlelib/wick/";
     const w = cfw.wick; 
     w.setPresets({});
     ${str}
@@ -67,7 +67,7 @@ const
         return addScript(file, `
 <script async type="module" id="wick-components">
     import flame from "/flame/editor/build/library/entry.js";
-    import "/@candlefw/wick/";
+    import "/@candlelib/wick/";
     const w = cfw.wick; 
     window.addEventListener("load", async () => {
    // w.rt.setPresets({});

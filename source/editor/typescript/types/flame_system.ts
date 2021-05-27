@@ -1,5 +1,5 @@
-import { WickLibrary, RuntimeComponent } from "@candlefw/wick";
-import { CSS_Transform2D } from "@candlefw/css";
+import { WickLibrary, RuntimeComponent } from "@candlelib/wick";
+import { CSS_Transform2D } from "@candlelib/css";
 
 import { HistoryState } from "./history_state";
 import { EditorModel } from "../editor_model";

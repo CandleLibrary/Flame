@@ -1,4 +1,4 @@
-import { RuntimeComponent, Component } from "@candlefw/wick";
+import { RuntimeComponent, Component } from "@candlelib/wick";
 import { FlameSystem } from "./flame_system.js";
 import { HistoryArtifact } from "./history_artifact";
 import { ObjectCrate } from "./object_crate.js";

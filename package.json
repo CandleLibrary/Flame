@@ -1,84 +1,85 @@
 {
-  "name": "@candlefw/flame",
-  "version": "0.0.15",
-  "description": "Server & Browser Wick Component Editor",
-  "main": "build/library/server/server.js",
-  "types": "build/types/server.d.ts",
-  "type": "module",
-  "bin": {
-    "flame": "bin/flame.js"
-  },
-  "scripts": {
-    "start": "node --experimental-modules ./main.mjs",
-    "build": "rollup --config ./source/config/rollup.config.js",
-    "build.watch": "rollup --watch --config ./source/config/rollup.config.js",
-    "build.flame.watch": "rollup --watch --config ./source/config/flame.config.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://www.gitlab.com/anthonycweathersby/flame"
-  },
-  "keywords": [
-    "wick",
-    "PWA"
-  ],
-  "author": "Anthony C Weathersby",
-  "license": "ISC",
-  "dependencies": {
-    "@candlefw/cfw": "*",
-    "@candlefw/lantern": "*",
-    "@candlefw/wax": "*",
-    "@candlefw/wick": "*",
-    "codemirror": "^5.54.0",
-    "paper": "^0.12.0"
-  },
-  "devDependencies": {
-    "rollup": "^1.16.2",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-string": "^3.0.0"
-  },
-  "eslintConfig": {
-    "parserOptions": {
-      "sourceType": "module",
-      "ecmaVersion": 2018
+    "name": "@candlelib/flame",
+    "version": "0.0.15",
+    "description": "Server & Browser Wick Component Editor",
+    "main": "build/library/cli.js",
+    "types": "build/types/server.d.ts",
+    "type": "module",
+    "bin": {
+        "flame": "bin/flame.js"
     },
-    "env": {
-      "es6": true,
-      "browser": true,
-      "node": true
+    "scripts": {
+        "start": "node --experimental-modules ./main.mjs",
+        "build": "rollup --config ./source/config/rollup.config.js",
+        "build.watch": "rollup --watch --config ./source/config/rollup.config.js",
+        "build.flame.watch": "rollup --watch --config ./source/config/flame.config.js"
     },
-    "extends": "eslint:recommended",
-    "rules": {
-      "no-fallthrough": [
-        "error",
-        {
-          "commentPattern": "[iI]ntentional( - [\\w\\W]*){0,1}"
+    "repository": {
+        "type": "git",
+        "url": "https://www.gitlab.com/anthonycweathersby/flame"
+    },
+    "keywords": [
+        "wick",
+        "PWA"
+    ],
+    "author": "Anthony C Weathersby",
+    "license": "MIT",
+    "dependencies": {
+        "@candlelib/library": "0.0.1",
+        "@candlelib/lantern": "0.1.0",
+        "@candlelib/taper": "0.0.1",
+        "@candlelib/wax": "0.1.0",
+        "@candlelib/wick": "0.12.7",
+        "codemirror": "^5.54.0",
+        "paper": "^0.12.0"
+    },
+    "devDependencies": {
+        "rollup": "^1.16.2",
+        "rollup-plugin-commonjs": "^9.2.0",
+        "rollup-plugin-node-resolve": "^4.0.0",
+        "rollup-plugin-string": "^3.0.0"
+    },
+    "eslintConfig": {
+        "parserOptions": {
+            "sourceType": "module",
+            "ecmaVersion": 2018
+        },
+        "env": {
+            "es6": true,
+            "browser": true,
+            "node": true
+        },
+        "extends": "eslint:recommended",
+        "rules": {
+            "no-fallthrough": [
+                "error",
+                {
+                    "commentPattern": "[iI]ntentional( - [\\w\\W]*){0,1}"
+                }
+            ],
+            "semi-style": [
+                "error",
+                "last"
+            ],
+            "semi": [
+                "warn",
+                "always",
+                {
+                    "omitLastInOneLineBlock": true
+                }
+            ],
+            "prefer-const": "warn",
+            "new-cap": [
+                "error"
+            ],
+            "padding-line-between-statements": [
+                "error",
+                {
+                    "blankLine": "always",
+                    "prev": "function",
+                    "next": "*"
+                }
+            ]
         }
-      ],
-      "semi-style": [
-        "error",
-        "last"
-      ],
-      "semi": [
-        "warn",
-        "always",
-        {
-          "omitLastInOneLineBlock": true
-        }
-      ],
-      "prefer-const": "warn",
-      "new-cap": [
-        "error"
-      ],
-      "padding-line-between-statements": [
-        "error",
-        {
-          "blankLine": "always",
-          "prev": "function",
-          "next": "*"
-        }
-      ]
     }
-  }
 }

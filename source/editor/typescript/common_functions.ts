@@ -7,8 +7,8 @@ import {
     FunctionFrame,
     JSNode,
     JSNodeType,
-} from "@candlefw/wick";
-import { CSSNodeType, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlefw/css";
+} from "@candlelib/wick";
+import { CSSNodeType, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlelib/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
 import { wick, js, conflagrate, css, url } from "./env.js";

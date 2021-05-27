@@ -1,11 +1,11 @@
 #! /usr/bin/node
-import lantern from "@candlefw/lantern";
-import wick from "@candlefw/wick";
+import lantern from "@candlelib/lantern";
+import wick from "@candlelib/wick";
 import {
     poller_dispatch,
     candlefw_dispatch,
     $404_dispatch,
-} from "@candlefw/lantern";
+} from "@candlelib/lantern";
 
 import { renderPage, SourceType } from "../renderer/render.js";
 //import database from "./database.js";

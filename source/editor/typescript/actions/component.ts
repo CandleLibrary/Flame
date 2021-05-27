@@ -1,5 +1,5 @@
 
-import { ComponentData } from "@candlefw/wick";
+import { ComponentData } from "@candlelib/wick";
 import { noop } from "./common.js";
 import { ActionType } from "../types/action_type";
 import { Action } from "../types/action";

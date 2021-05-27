@@ -1,5 +1,5 @@
-import { cfw, addModuleToCFW } from "@candlefw/cfw";
-import URL from "@candlefw/url";
+import { cfw, addModuleToCFW } from "@candlelib/candle";
+import URL from "@candlelib/url";
 
 import { PageView } from "./page";
 import { Element } from "./element";

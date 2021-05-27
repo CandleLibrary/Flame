@@ -1,4 +1,4 @@
-import { RuntimeComponent } from "@candlefw/wick";
+import { RuntimeComponent } from "@candlelib/wick";
 import { HTMLCache } from "../cache/html_cache.js";
 import { CSSCache } from "../cache/css_cache.js";
 import { Action } from "./action.js";

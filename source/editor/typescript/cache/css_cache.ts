@@ -1,5 +1,5 @@
-import { CSSProperty, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlefw/css";
-import { RuntimeComponent } from "@candlefw/wick";
+import { CSSProperty, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlelib/css";
+import { RuntimeComponent } from "@candlelib/wick";
 
 import { css, conflagrate } from "../env.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
@@ -8,7 +8,7 @@ import { SET_ATTRIBUTE } from "../actions/element.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { getRTInstances, getApplicableProps_, getMatchedRulesFromComponentData, getApplicableProps } from "../common_functions.js";
 import { EditorSelection } from "../types/selection.js";
-import { Lexer } from "@candlefw/wind";
+import { Lexer } from "@candlelib/wind";
 
 let global_cache = null;
 

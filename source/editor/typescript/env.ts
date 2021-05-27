@@ -1,15 +1,15 @@
-import * as $css from "@candlefw/css";
-import * as $js from "@candlefw/js";
-import * as $conflagrate from "@candlefw/conflagrate";
-import { WickLibrary } from "@candlefw/wick";
-import URL from "@candlefw/url";
-import $spark from "@candlefw/spark";
+import * as $css from "@candlelib/css";
+import * as $js from "@candlelib/js";
+import * as $conflagrate from "@candlelib/conflagrate";
+import { WickLibrary } from "@candlelib/wick";
+import URL from "@candlelib/url";
+import $spark from "@candlelib/spark";
 
 /**
  * Common CandleFW libraries.
  * 
  * Pulled in from the global object. Libraries assigned to 
- * global object by @candlefw/cfw utility library.
+ * global object by @candlelib/cfw utility library.
  */
 
 //@ts-ignore

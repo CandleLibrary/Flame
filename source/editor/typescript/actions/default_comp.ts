@@ -20,7 +20,7 @@ import {
 import { HistoryArtifact } from "../types/history_artifact.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { DrawObject } from "../editor_model.js";
-import wick from "@candlefw/wick";
+import wick from "@candlelib/wick";
 import { SETCSSPROP } from "./set_css.js";
 
 

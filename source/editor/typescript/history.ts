@@ -1,6 +1,6 @@
 import { setState } from "./actions/update.js";
 import { FlameSystem } from "./types/flame_system.js";
-import { Component } from "@candlefw/wick";
+import { Component } from "@candlelib/wick";
 import { HistoryState } from "./types/history_state";
 import { componentDataToSourceString } from "./common_functions.js";
 

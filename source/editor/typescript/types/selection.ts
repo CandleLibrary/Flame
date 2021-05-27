@@ -1,4 +1,4 @@
-import { RuntimeComponent } from "@candlefw/wick";
+import { RuntimeComponent } from "@candlelib/wick";
 
 /**
  * User selected edit element. Coordinate in screen space. 

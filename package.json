@@ -25,7 +25,6 @@
     "author": "Anthony C Weathersby",
     "license": "MIT",
     "dependencies": {
-        "@candlelib/library": "0.0.1",
         "@candlelib/lantern": "0.1.0",
         "@candlelib/taper": "0.0.1",
         "@candlelib/paraffin": "0.1.0",

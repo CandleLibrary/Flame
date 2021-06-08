@@ -1,4 +1,3 @@
-import { addModuleToCFW, cfw } from "@candlelib/candle";
 import URL from "@candlelib/uri";
 import { Presets } from "@candlelib/wick";
 
@@ -468,5 +467,3 @@ export default function radiate() {
     );
 
 }
-
-addModuleToCFW(radiate, "radiate");

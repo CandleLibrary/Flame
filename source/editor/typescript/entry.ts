@@ -1,12 +1,12 @@
-import WICK, { RuntimeComponent, Presets, WickRuntime, ExtendedComponent } from "@candlelib/wick";
-
+import WICK, { ExtendedComponent, Presets, RuntimeComponent, WickRuntime } from "@candlelib/wick";
 import * as ACTIONS from "./actions/action.js";
-
-import { initSystem, CreateTimeStamp, GetElapsedTimeSinceStamp } from "./system.js";
-import { START_ACTION, APPLY_ACTION } from "./action_initiators.js";
+import { APPLY_ACTION, START_ACTION } from "./action_initiators.js";
 import * as common from "./common_functions.js";
 import { initializeEvents } from "./event.js";
+import { CreateTimeStamp, GetElapsedTimeSinceStamp, initSystem } from "./system.js";
 import { FlameSystem } from "./types/flame_system.js";
+
+
 
 
 
@@ -29,7 +29,7 @@ function extractIFrameContentAndPlaceIntoHarness(
                 captive_window.document.querySelector("[w\\3A c]"))
                 .wick_component;
 
-    system.edited_components.components = [{ comp: root_component.name }];
+    system.edited_components.components.push({ comp: root_component.name }); //= [];
 
     const ele = document.querySelector("iframe");
     document.body.removeChild(ele);
@@ -64,7 +64,9 @@ export default async function initFlame(editor_cfw, edited_cfw, edited_window: W
         system = initSystem(edited_wick, editor_wick, edited_css, edited_window),
         { event_intercept_frame: event_intercept_ele } = system.ui;
 
-
+    //await new Promise((res) => {
+    //edited_window.addEventListener("load", () => res(true));
+    //});
 
     //Turn off cursor events for the edited elements
     edited_window.document.body.style.pointerEvents = "none";

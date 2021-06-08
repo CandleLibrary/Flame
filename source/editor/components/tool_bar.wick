@@ -1,5 +1,5 @@
-import { selected_comp as comp, selected_ele as ele, sc, ACTIONS } from "@model:flame-editor";
-import { APPLY_ACTION } from "@api";
+import { selected_comp as comp, selected_element as ele, sc, ACTIONS } from "@model:flame-editor";
+import { APPLY_ACTION, ACTIONS } from "@api";;
 
 var a = 0, b = 0, c = 0, d = 0, test = [],
     ctx = ("@#canvas").getContext("2d");
@@ -8,7 +8,9 @@ function applyColor() { APPLY_ACTION([ACTIONS.SETBACKGROUNDCOLOR], { r: 120, g: 
 
 function showBox() {
 
-    const div = "@#main", bb = ele.getBoundingClientRect();
+    debugger
+
+    const div = "$#main", bb = ele.getBoundingClientRect();
 
     div.style.opacity = 1;
 

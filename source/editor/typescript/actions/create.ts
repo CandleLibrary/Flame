@@ -1,11 +1,7 @@
-import { MOVE } from "./move.js";
-import { SETLEFT, SETTOP } from "./position.js";
-import { SETWIDTH, SETHEIGHT } from "./dimensions.js";
-import { TOPOSITIONABSOLUTE } from "./convert.js";
 import { prepRebuild } from "./common.js";
-import Component from "../../component/component.js";
-import { CSSComponent } from "../../component/css_component.js";
-import { Document } from "../../system/document/document.js";
+import { TOPOSITIONABSOLUTE } from "./convert.js";
+import { SETHEIGHT, SETWIDTH } from "./dimensions.js";
+import { SETLEFT, SETTOP } from "./position.js";
 
 export function TRANSFER_ELEMENT(env, target_component, target_element, child_element, px, py, COPY = false, LINKED = false) {
     let new_element = null,

@@ -251,6 +251,6 @@ export const DELETE_COMPONENT = <Action>{
     updateFN: noop,
     historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
     historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
-}
 };
+
 

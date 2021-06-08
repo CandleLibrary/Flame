@@ -1,4 +1,5 @@
-import { Component, CSSNode, CSSNodeType } from "@candlelib/wick";
+import { Component } from "@candlelib/wick";
+import { CSSNode, CSSNodeType } from "@candlelib/css";
 import { css, wick } from "../env.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { HistoryArtifact } from "../types/history_artifact.js";

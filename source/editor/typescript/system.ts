@@ -39,7 +39,7 @@ export function initSystem(
     edit_css?: typeof css,
     comp_window?: Window,
 ): FlameSystem {
-
+    
     if (active_system) return active_system;
 
     active_system = <FlameSystem>{

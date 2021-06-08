@@ -48,9 +48,6 @@ function elementUpdate() {
         IS_UNIQUE = false;
         CAN_USE_PROP = false;
     }
-
-
-
 };
 
 watch(elementUpdate, sc);
@@ -70,8 +67,8 @@ export default <div class="tool">
     <p><button>choose primary selector</button></p>
     <p><button>make unique selector</button></p>
     <p><button>change unique selector</button></p>
-    <p>TODO - list applicable selectors <textarea readonly=true>${selectors}</textarea></p>
-    <p>TODO - list applicable selectors <textarea readonly=true>${unique_selectors}</textarea></p>
-    <p>TODO - list active styles <textarea readonly=true>${styles}</textarea></p>
+    <p>TODO - list applicable selectors <textarea readonly=true value=${selectors}></textarea></p>
+    <p>TODO - list applicable selectors <textarea readonly=true value=${unique_selectors}></textarea></p>
+    <p>TODO - list active styles <textarea readonly=true value=${styles}></textarea></p>
     <p>${all_rules}</p>
 </div >;

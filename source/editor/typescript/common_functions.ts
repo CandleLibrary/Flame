@@ -3,15 +3,15 @@ import {
     Component,
     DOMLiteral,
     WickLibrary,
-    WickRTComponent, VARIABLE_REFERENCE_TYPE,
+    WickRTComponent, BINDING_VARIABLE_TYPE,
     FunctionFrame,
-    JSNode,
-    JSNodeType,
+    JSNode
 } from "@candlelib/wick";
+import { JSNodeType } from "@candlelib/js";
 import { CSSNodeType, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlelib/css";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 import { FlameSystem } from "./types/flame_system";
-import { wick, js, conflagrate, css, url } from "./env.js";
+import { js, conflagrate, css, url, wick } from "./env.js";
 import { EditorSelection } from "./types/selection";
 
 const {
@@ -495,10 +495,10 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
 
         const
             types = [...component_data.root_frame.binding_type.values()],
-            api_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.API_VARIABLE),
-            method_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.METHOD_VARIABLE),
-            model_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.MODEL_VARIABLE),
-            parent_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.PARENT_VARIABLE);
+            api_bindings = types.filter(b => b.type == BINDING_VARIABLE_TYPE.API_VARIABLE),
+            method_bindings = types.filter(b => b.type == BINDING_VARIABLE_TYPE.METHOD_VARIABLE),
+            model_bindings = types.filter(b => b.type == BINDING_VARIABLE_TYPE.MODEL_VARIABLE),
+            parent_bindings = types.filter(b => b.type == BINDING_VARIABLE_TYPE.PARENT_VARIABLE);
 
 
         /**
@@ -537,7 +537,7 @@ export function componentDataToSourceString(sys: FlameSystem, component_data: Co
         }
 
 
-        const var_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.INTERNAL_VARIABLE);
+        const var_bindings = types.filter(b => b.type == BINDING_VARIABLE_TYPE.INTERNAL_VARIABLE);
         //const global_bindings = types.filter(b => b.type == VARIABLE_REFERENCE_TYPE.GLOBAL_VARIABLE);
         if (var_bindings.length > 0) {
             const
@@ -873,7 +873,7 @@ export function updateSelectionCoords(sel: EditorSelection, sys: FlameSystem): E
 }
 
 
-function getElementInHTMLNamespace(ele: Node) {
+function getElementInHTMLNamespace(ele: HTMLElement) {
     if (ele.parentNode) {
         const par = ele.parentNode;
 
@@ -894,7 +894,7 @@ export function getSelectionFromPoint(x: number, y: number, sys: FlameSystem): E
 
 
 
-    if (ele.tagName == "IFRAME") // is edited component 
+    if (ele?.tagName == "IFRAME") // is edited component 
     {
 
         const

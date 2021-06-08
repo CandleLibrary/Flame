@@ -1,10 +1,10 @@
-import { cfw, addModuleToCFW } from "@candlelib/candle";
+import { addModuleToCFW, cfw } from "@candlelib/candle";
 import URL from "@candlelib/url";
+import { Presets } from "@candlelib/wick";
 
-import { PageView } from "./page";
-import { Element } from "./element";
 import { Component } from "./component";
-
+import { Element } from "./element";
+import { PageView } from "./page";
 
 const URL_HOST = { wurl: null };
 
@@ -13,7 +13,6 @@ export {
     Element,
     Component
 };
-
 
 /** @namespace Router */
 
@@ -54,10 +53,14 @@ function getModalContainer() {
  */
 export class Router {
 
+    pages: any;
+    elements: any;
+    component_constructors: any;
+
     /**
      * Constructs the object.
      */
-    constructor(presets) {
+    constructor(presets: Presets) {
         this.pages = {};
         this.elements = {};
         this.component_constructors = presets.custom_sources;
@@ -83,7 +86,7 @@ export class Router {
             };
         };
 
-        //Adding CandleFW URL to the presets object for use by wick components. 
+        //Adding CandleLibrary URL to the presets object for use by wick components. 
         presets.url = URL;
 
         /* */

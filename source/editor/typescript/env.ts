@@ -1,19 +1,26 @@
+import { cfw } from "@candlelib/candle";
+import * as $conflagrate from "@candlelib/conflagrate";
 import * as $css from "@candlelib/css";
 import * as $js from "@candlelib/js";
-import * as $conflagrate from "@candlelib/conflagrate";
-import { WickLibrary } from "@candlelib/wick";
-import URL from "@candlelib/url";
 import $spark from "@candlelib/spark";
+import URL from "@candlelib/url";
+import wick from "@candlelib/wick";
 
 /**
- * Common CandleFW libraries.
+ * Common CandleLibrary libraries.
  * 
  * Pulled in from the global object. Libraries assigned to 
- * global object by @candlelib/cfw utility library.
+ * global object by @candlelib/candle utility library.
  */
 
 //@ts-ignore
-const url: typeof URL = cfw.url, wick: WickLibrary = cfw.wick, glow = cfw.glow, css: typeof $css = cfw.css, js: typeof $js = cfw.js, conflagrate: typeof $conflagrate = cfw.conflagrate, spark: typeof $spark = cfw.spark;
+const
+    url: typeof URL = cfw.url,
+    glow = cfw.glow,
+    css: typeof $css = cfw.css,
+    js: typeof $js = cfw.js,
+    conflagrate: typeof $conflagrate = cfw.conflagrate,
+    spark: typeof $spark = cfw.spark;
 
 export {
     spark,

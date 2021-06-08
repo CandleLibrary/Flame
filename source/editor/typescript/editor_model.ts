@@ -34,7 +34,7 @@ export class EditorModel {
     ele: any;
     sc: number;
     selected_comp: RuntimeComponent;
-    selected_ele: HTMLElement;
+    //selected_ele: HTMLElement;
     selected_element: HTMLElement;
     ACTIONS: any;
     POINTER_DN: boolean;
@@ -75,7 +75,7 @@ export class EditorModel {
                 sz: 0,
             })
         }];
-        //this.ACTIONS = ACTIONS;
+        this.ACTIONS = ACTIONS;
         this.POINTER_DN = false;
         this.state = EditorToolState.UNSET;
         this.draw_objects = [<DrawObject><unknown>{

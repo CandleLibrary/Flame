@@ -127,6 +127,7 @@ const draw_box_handler: InputHandler = <InputHandler>{
             );
             draw_box = null;
         }
+
         sys.editor_model.sc++;
         return default_handler;
     },

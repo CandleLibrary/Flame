@@ -1,9 +1,9 @@
 import {
     selected_comp as comp,
-    selected_ele as ele,
-    sc,
-    ACTIONS
+    selected_element as ele,
+    sc
 } from "@model:flame-editor";
+import { APPLY_ACTION, ACTIONS } from "@api";
 
 import handle from "./handle.wick";
 

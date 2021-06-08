@@ -1,0 +1,51 @@
+import {
+    input_dir,
+    output_dir,
+    RADIATE
+} from "@model";
+
+<style>
+    root{
+        padding:2;
+        width: 100%;
+    }
+
+    input{
+        padding-left:2; 
+        color:darkgoldenrod;
+    }
+    
+</style>
+
+export default <div> 
+
+    <div>Welcome to CandleLibrary Flame</div>
+
+    <p class="msg">
+        Looks like this is the first time this tool has been used in this 
+        repo. 
+    </p>
+
+    <p class="msg">
+        Please take a moment to fill in the information bellow and you'll soon
+        be on your way to making the static site of your dreams!
+    </p>
+
+    <div>
+        <div> 
+            Public files and folders.
+        </div>
+        <input type=text placeholder="source/public" value=${input_dir}>
+
+        <div> 
+            Build output dir.
+        </div>
+        <input type=text placeholder="build/public" value=${output_dir}>
+
+        <div> 
+            Enable radiate: <input type="checkbox" checked=${RADIATE}>
+        </div>
+        
+        
+    </div>
+</div>

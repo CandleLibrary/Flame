@@ -1,13 +1,13 @@
-import {
+import URL from "@candlelib/url";
+import wick, {
     Component,
     Presets,
-    componentDataToClassString,
-    componentDataToCSS,
-    componentDataToHTML,
     WickLibrary
 } from "@candlelib/wick";
 
-import URL from "@candlelib/url";
+import path from "path";
+import fs from "fs";
+const fsp = fs.promises;
 
 /**
  * Render provides the mechanism to turn wick components 
@@ -20,10 +20,6 @@ import URL from "@candlelib/url";
  * or it can be URL to wick component source file. A template can be defined 
  * that describes the form of the compiled wick pages. 
  */
-function isWickComponent(obj) {
-    console.error("Replace with logic to test the object argument");
-    return true;
-}
 
 export enum SourceType {
     SPLIT,
@@ -38,6 +34,11 @@ export interface RenderOptions {
     css_page_template?: string;
     USE_RADIATE_RUNTIME?: boolean;
     USE_FLAME_RUNTIME?: boolean;
+
+    sources?: {
+        wick?: string;
+        glow?: string;
+    };
 }
 
 const FILE = {
@@ -47,28 +48,45 @@ const FILE = {
     scripts: "",
 };
 
+function getComponentGroup(
+    comp: Component,
+    presets: Presets,
+    comp_name_set: Set<string> = new Set,
+    out_array: Array<Component> = [comp]
+): Array<Component> {
+
+
+    if (comp && (comp.hooks.length > 0 || comp.local_component_names.size > 0)) {
+
+        for (const name of comp.local_component_names.values()) {
+
+            if (comp_name_set.has(name)) continue;
+
+            comp_name_set.add(name);
+
+            const comp = presets.components.get(name);
+
+            out_array.push(comp);
+
+            getComponentGroup(comp, presets, comp_name_set, out_array);
+        }
+    }
+
+    return out_array;
+};
+
 const
     addHeader = (file, header_data) => Object.assign({}, file, { header: file.header + "\n" + header_data }),
     addBody = (file, body_data) => Object.assign({}, file, { body_html: file.body_html + "\n" + body_data }),
-    addTemplate = (file, template_data) => Object.assign({}, file, { templates: file.templates + "\n" + template_data }),
     addScript = (file, script_data) => Object.assign({}, file, { scripts: file.scripts + "\n" + script_data }),
-    createComponentScript = (file, components, fn, after = "") => {
-        const str = components.map(fn).join("\n\t") + "\n" + after;
-        return addScript(file, `
-<script id="wick-components" async type="module">
-    import "/@candlelib/wick/";
-    const w = cfw.wick; 
-    w.setPresets({});
-    ${str}
-</script>`);
-    },
     createModuleComponentScript = (file, components, fn, after = "") => {
-        const str = components.map(fn).join("\n\t") + "\n" + after;
+        console.log(components);
+        const str = components.filter(c => c.location.toString() != "auto_generated").map(fn).join("\n\t") + "\n" + after;
         return addScript(file, `
 <script async type="module" id="wick-components">
     import flame from "/flame/editor/build/library/entry.js";
-    import "/@candlelib/wick/";
-    const w = cfw.wick; 
+    import * as cfw from "/flame/editor/build/library/env.js";
+    import w from "/@cl/wick/";
     window.addEventListener("load", async () => {
    // w.rt.setPresets({});
     
@@ -103,89 +121,46 @@ const
     //const w = wick.default;
     ${str}})
 </script>`);
-    },
-    createComponentStyle = (file, components, fn) => {
-        const str = components.map(fn).join("\n");
-        return addHeader(file, `<style id="wick-css">${str}\n</style>`);
     };
 export const renderPage = async (
-    source: String | Component,
-    wick: WickLibrary,
-    options: RenderOptions
-): Promise<{ html?: string, js?: string, css?: string; }> => {
+    source: string,
+    request_url: URL
+): Promise<string> => {
 
-    await wick.server();
-
-    const {
-        USE_RADIATE_RUNTIME = false,
-        USE_FLAME_RUNTIME = false,
-        source_url
-    } = options;
-
-    let component: Component = null, presets = await wick.setPresets({
-        options: {
-            url: {
-                wickrt: "/cfw/wick/build/library/wick.runtime.js",
-                glow: "/cfw/glow/"
-            }
-        }
-    });
-
-    if (typeof (source) == "string") {
-        component = await wick(source, presets);
-    } else if (isWickComponent(source))
-        component = <Component>source;
+    let
+        presets = wick.setPresets(),
+        component: Component = await wick(source, presets);
 
     if (!component) throw new Error("source is not a wick component!");
-
 
     let file = Object.assign({}, FILE);
 
     const components = getComponentGroup(component, presets);
 
-    if (!USE_FLAME_RUNTIME) {
+    file = addHeader(file, `<script type="module" src="/@cl/wick/"></script>`);
+    file = addHeader(file, `<script type="module" src="/@cl/css/"></script>`);
+    file = addHeader(file, `<script type="module" async src="/@cl/glow/"></script>`);
+    file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
+    file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
+    file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
 
-        if (USE_RADIATE_RUNTIME) {
-            file = addHeader(file, `<script src="/flame/router/radiate"></script>`);
-            file = addScript(file, `<script>{const w = wick.default; cfw.radiate("${component.name}");}</script>`);
-        }
+    const unflamed_url = new URL(request_url);
 
-        const html = wick.utils.RenderPage(component).page;
+    unflamed_url.setData({ flaming: false });
 
-        return { html };
+    file = addBody(file, `<iframe cors="* default-src 'self'" sandbox="allow-same-origin allow-scripts" id="composition" style="border:none;margin:0;position:absolute;width:100vw;height:100vh;top:0;left:0;" src="${unflamed_url}"></iframe>`);
 
-    } else {
+    file = createModuleComponentScript(file, components, comp => {
 
-        file = addHeader(file, `<script type="module" src="/cfw/wick/"></script>`);
-        file = addHeader(file, `<script type="module" src="/cfw/css/"></script>`);
-        file = addHeader(file, `<script type="module" async src="/cfw/glow/"></script>`);
+        return (`await w( "${comp.location.toString().replace(process.cwd(), "")}");`);
 
-        file = addHeader(file, `<script src="/cm/codemirror.js"></script>`);
-        file = addHeader(file, `<link href="/cm/codemirror.css" rel="stylesheet"/>`);
+    }, `const composition = document.getElementById("composition");
 
-        //file = addHeader(file, `<script type="module" src="/flame/editor/build/library/main.js"></script>`);
-        file = addHeader(file, `<link href="/flame/editor/flame.css" rel="stylesheet"/>`);
-        const unflamed_url = new URL(source_url);
+        const comp_cfw = composition.contentWindow.cfw;
 
-        unflamed_url.setData({ flaming: false });
+        flame(cfw, comp_cfw, composition.contentWindow);`);
 
-        file = addBody(file, `<iframe cors="* default-src 'self'" sandbox="allow-same-origin allow-scripts" id="composition" style="border:none;margin:0;position:absolute;width:100vw;height:100vh;top:0;left:0;" src="${unflamed_url}"></iframe>`);
-
-        file = createModuleComponentScript(file, components, comp => {
-
-            const comp_class_string = wick.utils.componentToClassString(comp, presets, false, false);
-
-            return (`await w( "${comp.location.toString().replace(process.cwd(), "")}");`);
-        }, `const composition = document.getElementById("composition");
-            const comp_cfw = composition.contentWindow.cfw;
-
-            flame(cfw, comp_cfw, composition.contentWindow);
-        `);
-    }
-
-
-    return {
-        html: `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html>
     <head>
         ${file.header.trim().split("\n").join("\n\t\t")}
@@ -195,33 +170,59 @@ export const renderPage = async (
         ${file.templates.trim().split("\n").join("\n\t\t")}
         ${file.scripts.trim().split("\n").join("\n\t\t")}
     </body>
-</html>`
-    };
+</html>`;
 };
 
-function getComponentGroup(
-    comp: Component,
-    presets: Presets,
-    comp_name_set: Set<string> = new Set,
-    out_array: Array<Component> = [comp]
-): Array<Component> {
+export const flame_page_editor_initializer = (server, cwd) => ({
+    name: "FLAME_RUNTIME_EDITOR",
+    description:
+        `This systems provides an ad hoc editing environment to wick components. It will dynamically build a wick 
+     component based page and inject server communication code to update these components as changes are made 
+     client side.`,
+    MIME: "text/html",
+    respond: async function (tools) {
+
+        //load wick data 
+        if ("" == tools.ext && tools.url.getData().flaming) {
+
+            if (tools.url.path.slice(-1) !== "/") {
+                //redirect to path with end delimiter added. Prevents errors with relative links.
+                const new_path = tools.url;
+
+                new_path.path += "/";
+
+                return tools.redirect(new_path.path);
+            }
+
+            let url = "";
+
+            try {
+                if (await fsp.stat(path.join(cwd, tools.dir, "index.wick")))
+                    url = path.join(cwd, tools.dir, "index.wick");
+            } catch (e) { }
 
 
-    if (comp && (comp.bindings.length > 0 || comp.local_component_names.size > 0)) {
+            try {
+                if (await fsp.stat(path.join(cwd, tools.dir, "index.html")))
+                    url = path.join(cwd, tools.dir, "index.html");
+            } catch (e) { }
 
-        for (const name of comp.local_component_names.values()) {
+            if (!url) return false;
 
-            if (comp_name_set.has(name)) continue;
+            tools.setHeader("Access-Control-Allow-Origin", "*");
 
-            comp_name_set.add(name);
+            const html = await renderPage(url, tools.url);
 
-            const comp = presets.components.get(name);
+            tools.setMIMEBasedOnExt("html");
 
-            out_array.push(comp);
+            return tools.sendUTF8String(html);
 
-            getComponentGroup(comp, presets, comp_name_set, out_array);
         }
-    }
 
-    return out_array;
-}; 
+        return false;
+    },
+
+    keys: [
+        { ext: server.ext.all, dir: "/*" },
+    ]
+});

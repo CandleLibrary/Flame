@@ -1,26 +1,18 @@
-import { noop } from "./common.js";
-import { ActionType } from "../types/action_type";
-import { Action } from "../types/action";
 import {
-    getComponentDataFromRTInstance,
-    cloneComponentData,
+    addComponentImport, cloneComponentData,
+    componentDataToSourceString, createComponentData,
+    createNewFileURL, createRTComponentFromComponentData, getComponentDataFromRTInstance,
     getIndexOfElementInRTInstance,
     getLastIndexInDOMLiteralTree,
-    removeDOMLiteralAtIndex,
-    createComponentData,
-    removeBindingsWithinDOMLiteralIndexRange,
+    insertDOMLiteralAtIndex, removeBindingsWithinDOMLiteralIndexRange, removeDOMLiteralAtIndex,
     removeUnmatchedRulesMatchingElement,
-    createRTComponentFromComponentData,
-    insertDOMLiteralAtIndex,
-    replaceRTInstances,
-    componentDataToSourceString,
-    createNewFileURL,
-    addComponentImport
+    replaceRTInstances
 } from "../common_functions.js";
-import { HistoryArtifact } from "../types/history_artifact.js";
-import { ObjectCrate } from "../types/object_crate.js";
 import { DrawObject } from "../editor_model.js";
-import wick from "@candlelib/wick";
+import { Action } from "../types/action";
+import { ActionType } from "../types/action_type";
+import { HistoryArtifact } from "../types/history_artifact.js";
+import { noop } from "./common.js";
 import { SETCSSPROP } from "./set_css.js";
 
 
@@ -228,6 +220,6 @@ export const DELETE_COMPONENT = <Action>{
     updateFN: noop,
     historyProgress: (sys, history) => { replaceRTInstances(sys, history.progress.comp_data_name, <string>history.progress.valueA); },
     historyRegress: (sys, history) => { replaceRTInstances(sys, history.regress.comp_data_name, <string>history.regress.valueA); }
-}
+
 };
 

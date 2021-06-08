@@ -18,12 +18,16 @@ var selected_tools = [{
 
 export default <div>
     <p>current state: ${state} </p>
-    <img id="logo" src="./flame/editor/cfw.ts.svg" height=50>
+    <img id="logo" src="./flame/editor/cfw.svg" height=50>
         <container data="${selected_tools}">
-        <componentinfo useif="${m1.type == 'component'}" class="tool" />
-        <position useif="${m1.type == 'position'}" class="tool" />
-        <css useif="${m1.type == 'css'}" class="tool" />
-        <color useif="${m1.type == 'color'}" class="tool" />
+
+            <componentinfo useif="${m1.type == 'component'}" class="tool" />
+
+            <position useif="${m1.type == 'position'}" class="tool" />
+
+            <css useif="${m1.type == 'css'}" class="tool" />
+            
+            <color useif="${m1.type == 'color'}" class="tool" />
     </container>
 </div >;
 
@@ -33,7 +37,7 @@ export default <div>
         font-weight:400;
         top:0;
         right:0;
-        width:250px;
+        width:300px;
         height:100vh;
         color:#c0c0c0;
         background-color:#16141e;

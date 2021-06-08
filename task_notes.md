@@ -87,7 +87,7 @@ Environment Object
 				elements - list of active elements [todo]
 				component - the active component
 					local_css - list of all css objects that affect elements of the component
-						see candlefw css style sheets.
+						see CandleLibrary css style sheets.
 
 
 

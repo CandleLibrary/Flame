@@ -1,4 +1,4 @@
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 
 /**
  * The base class for all components

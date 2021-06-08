@@ -12,7 +12,7 @@
   resolved "https://registry.yarnpkg.com/@candlelib/conflagrate/-/conflagrate-0.1.1.tgz#736ac21a8eb2ca45239ff194fc386318fb1595eb"
   integrity sha512-rP3xi4x41+Uthfe81uubyZ39yqe6R9JFg+tNsGXeyJHz3C/SkYbhKOIWlQjj+MhrNvFIwsQHTsgNbDOggNVfqw==
   dependencies:
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
 "@candlelib/css@*":
@@ -37,7 +37,7 @@
   resolved "https://registry.yarnpkg.com/@candlelib/html/-/html-0.1.1.tgz#be350fafa7f4afba11f0888554c1244cb3ff0906"
   integrity sha512-Au96qlELJ39q3TAcRjoTX2w/WQTFX+bLdfqKHN2DjW746lV72VQd2cuj55w5eNImEiga9QTvGsJZPLEnUa9ONA==
   dependencies:
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
 "@candlelib/hydrocarbon@*":
@@ -47,7 +47,7 @@
   dependencies:
     "@candlelib/conflagrate" "*"
     "@candlelib/js" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
     commander "^5.0.0"
     terser "^4.6.3"
@@ -59,7 +59,7 @@
   dependencies:
     "@candlelib/conflagrate" "*"
     "@candlelib/hydrocarbon" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
 "@candlelib/lantern@*":
@@ -74,7 +74,7 @@
     "@candlelib/hydrocarbon" "*"
     "@candlelib/js" "*"
     "@candlelib/spark" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wick" "*"
     "@candlelib/wind" "*"
     node-watch "^0.6.3"
@@ -91,7 +91,7 @@
   dependencies:
     "@candlelib/js" "*"
     "@candlelib/ts" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/paraffin" "*"
     "@candlelib/wick" "*"
 
@@ -103,12 +103,12 @@
     "@candlelib/conflagrate" "*"
     "@candlelib/hydrocarbon" "*"
     "@candlelib/js" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
-"@candlelib/url@*":
+"@candlelib/uri@*":
   version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@candlelib/url/-/url-0.1.5.tgz#7576b5333727bd163f9059b1eb05d5060d2cfc63"
+  resolved "https://registry.yarnpkg.com/@candlelib/uri/-/url-0.1.5.tgz#7576b5333727bd163f9059b1eb05d5060d2cfc63"
   integrity sha512-9clZEfNC0MuVU83Mpns6KUfp+OYKxWDhHTOkZbTIOj3Tl/RzjFhS2jPPwwkpLXtcmJcB/2efxAaqRGdOLJmFbQ==
   dependencies:
     "@candlelib/candle" "*"
@@ -120,7 +120,7 @@
   dependencies:
     "@candlelib/conflagrate" "*"
     "@candlelib/hydrocarbon" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
 "@candlelib/wick@*":
@@ -135,7 +135,7 @@
     "@candlelib/hydrocarbon" "*"
     "@candlelib/js" "*"
     "@candlelib/spark" "*"
-    "@candlelib/url" "*"
+    "@candlelib/uri" "*"
     "@candlelib/wind" "*"
 
 "@candlelib/wind@*":

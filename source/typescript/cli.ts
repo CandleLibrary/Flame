@@ -8,7 +8,7 @@
  */
 
 import { initWickCLI, getPackageJsonObject, savePackageJSON, getProcessArgs } from "@candlelib/paraffin";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { FlameCLISettings } from "./FlameSettings";
 import { startServer } from "./server/server.js";
 import node_path from "path";

@@ -3,7 +3,7 @@ import * as $conflagrate from "@candlelib/conflagrate";
 import * as $css from "@candlelib/css";
 import * as $js from "@candlelib/js";
 import $spark from "@candlelib/spark";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import wick from "@candlelib/wick";
 
 /**

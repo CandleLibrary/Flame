@@ -1,5 +1,5 @@
 import { addModuleToCFW, cfw } from "@candlelib/candle";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { Presets } from "@candlelib/wick";
 
 import { Component } from "./component";

@@ -5,6 +5,11 @@
 # Flame
 version 0.0.15
 
+[![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg?style=for-the-badge)](http://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/github/v/release/CandleLibrary/flame.svg?style=for-the-badge)](https://github.com/CandleLibrary/flame/releases)
+[![GitHub](https://img.shields.io/github/issues/CandleLibrary/flame.svg?style=for-the-badge)](https://github.com/CandleLibrary/flame/issues)
+
+
 ### Wick Dev Server + Component Editor 
 
 </div>
@@ -19,13 +24,13 @@ version 0.0.15
 
 ## Features <sub><b>wip</b></sub>
 
-- Integration with [**wick**](https://github.com/candlefw/wick) to provide on-demand editing capabilities for wick components. 
+- Integration with [**wick**](https://github.com/CandleLibrary/glow) to provide on-demand editing capabilities for wick components. 
 
   - No-Code / Drop-Into-Code CSS - HTML editing with a WYSIWYG browser editor. 
 
-  - Animation sequencer utilizing [**glow**](https://github.com/candlefw/glow). 
+  - Animation sequencer utilizing [**glow**](https://github.com/CandleLibrary/glow). 
   
-  - Integration with [**lantern**](https://github.com/candlefw/lantern) allows file saving and GIT commits
+  - Integration with [**lantern**](https://github.com/CandleLibrary/lantern) allows file saving and GIT commits
 
 
 # USAGE
@@ -35,14 +40,14 @@ version 0.0.15
 ###  yarn
 ```bash
 
-$ yarn add global @candlefw/flame
+$ yarn add global @candlelib/flame
 
 ```
 
 ###  npm
 ```bash
 
-$ npm -g install @candlefw/flame 
+$ npm -g install @candlelib/flame 
 
 ```
 

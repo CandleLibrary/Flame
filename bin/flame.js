@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-import "@candlefw/flame";
+import "@candlelib/flame";

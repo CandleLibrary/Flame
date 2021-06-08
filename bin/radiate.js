@@ -311,7 +311,7 @@ var radiate = (function (exports) {
                 map.set(data_name, value);
                 let str = [];
                 for (const [key, value] of map.entries()) {
-                    if (!value) ;
+                    if (!value);
                     else if (value === true)
                         str.push(`${key}`);
                     else
@@ -441,9 +441,9 @@ var radiate = (function (exports) {
     URL.polyfill = async function () {
         if (typeof (global) !== "undefined" && !POLLYFILLED) {
             POLLYFILLED = true;
-            const fsr = (await import('fs')), fs = fsr.promises, path = (await import('path')), http = (await import('http')), 
-            //@ts-ignore
-            g = global;
+            const fsr = (await import('fs')), fs = fsr.promises, path = (await import('path')), http = (await import('http')),
+                //@ts-ignore
+                g = global;
             URL.GLOBAL = new URL(process.cwd() + "/");
             g.document = g.document || {};
             g.document.location = URL.GLOBAL;
@@ -1048,7 +1048,7 @@ var radiate = (function (exports) {
                         window.onpopstate();
                     };
             };
-            //Adding CandleFW URL to the presets object for use by wick components. 
+            //Adding CandleLibrary URL to the presets object for use by wick components. 
             presets.url = URL;
             /* */
             this.modal_stack = [];

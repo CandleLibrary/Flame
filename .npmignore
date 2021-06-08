@@ -5,5 +5,5 @@ tests/
 doc/
 docs/
 .git/
-
-
+source/
+!source/wick-templates

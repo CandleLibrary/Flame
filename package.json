@@ -2,11 +2,11 @@
     "name": "@candlelib/flame",
     "version": "0.0.15",
     "description": "Server & Browser Wick Component Editor",
-    "main": "build/library/cli.js",
+    "main": "build/library/entry/flame.js",
     "types": "build/types/server.d.ts",
     "type": "module",
     "bin": {
-        "flame": "bin/flame.js"
+        "candle.flame": "index.js"
     },
     "scripts": {
         "start": "node --experimental-modules ./main.mjs",
@@ -26,17 +26,15 @@
     "license": "MIT",
     "dependencies": {
         "@candlelib/lantern": "0.1.0",
-        "@candlelib/taper": "0.0.1",
         "@candlelib/paraffin": "0.1.0",
+        "@candlelib/glow": "0.1.0",
+        "@candlelib/css": "0.1.0",
         "@candlelib/wick": "0.12.7",
-        "codemirror": "^5.54.0",
-        "paper": "^0.12.0"
+        "@candlelib/log": "*",
+        "ws": "^8.2.3"
     },
     "devDependencies": {
-        "rollup": "^1.16.2",
-        "rollup-plugin-commonjs": "^9.2.0",
-        "rollup-plugin-node-resolve": "^4.0.0",
-        "rollup-plugin-string": "^3.0.0"
+        "@types/node": "^16.10.2"
     },
     "eslintConfig": {
         "parserOptions": {

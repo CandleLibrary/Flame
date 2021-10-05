@@ -1,3 +1,7 @@
+/**
+ * Copyright (C) 2021 Anthony Weathersby - Flame Language Server & Dev Server
+ */
+
 import lantern, { $404_dispatch, candle_library_dispatch, Dispatcher, ext_map, filesystem_dispatch, LanternServer } from "@candlelib/lantern";
 import { Logger } from "@candlelib/log";
 import URI from '@candlelib/uri';
@@ -13,8 +17,18 @@ logger.activate();
 URI.server();
 function initializeWebSocketServer(lantern: LanternServer<any>) {
 
+    logger.get("WebSocket").log("Initializing WebSocket server");
+
     const ws_server = new WebSocketServer({
         server: lantern.server
+    });
+
+    ws_server.on("listening", () => {
+        logger.get("WebSocket").log(`WebSocket server initialized and listening at [${
+            /**/
+            //@ts-ignore
+            (ws_server.address()?.address + ":" + ws_server.address()?.port)
+            }]`);
     });
 
     ws_server.on("connection", (connection) => {
@@ -113,8 +127,11 @@ const flaming_wick_dispatch = <Dispatcher>{
 };
 export async function initDevServer(port: number = 8082) {
 
-    wick.rt.setPresets();
+    Logger.get("lantern").deactivate().activate(
+        Logger.LogLevel.ERROR | Logger.LogLevel.CRITICAL | Logger.LogLevel.INFO
+    );
 
+    wick.rt.setPresets();
 
     const working_directory = new URI(process.cwd());
 

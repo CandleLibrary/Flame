@@ -1,7 +1,6 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
+/**
+ * Copyright (C) 2021 Anthony Weathersby - Flame Language Server & Dev Server
+ */
 import {
     createConnection,
     TextDocuments,

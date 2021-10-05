@@ -1,0 +1,28 @@
+import clbdy from "./tack.wick";
+import diego from "./test.wick";
+
+var value = "";
+var placeholder = "mango";
+
+export default <div>
+
+    <h1>Kanbans s</h1>
+
+    <p>
+        This code I'm working on allows me to edit code dynamically 
+        and update websites extremely easily! 
+        
+        <br/> Trial and error my friend
+    </p>
+
+    <clbdy/>
+    test
+    <diego/>
+</div>;
+
+<style>
+    root{color:#008080;font-family:Times-new-roman;width:980px;margin:auto;padding:30px;border-radius:20px}
+    p{color:#ff0000}
+    h1{color:#ff0000}
+
+</style>;

@@ -1,0 +1,14 @@
+var value = "";
+
+
+export default <div>
+    I can even edit stuff in other files and it all comes together nicely
+
+    <input placeholder="rainbow" type="text" {value}>
+</div>;
+
+<style>
+    root{color:#008000;font-family:arial;width:980px;margin:auto;padding:30px;border-radius:20px}
+    div{color:#ff0000}
+    input{color:#ff0000}
+</style>;

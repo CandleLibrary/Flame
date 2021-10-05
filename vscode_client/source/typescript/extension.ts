@@ -1,5 +1,6 @@
 
 import * as path from 'path';
+
 import { workspace, ExtensionContext } from 'vscode';
 
 import {
@@ -11,34 +12,31 @@ import {
 
 let client = null;
 
-export function activate(context) {
-    console.log("ONby");
+export function activate(context: ExtensionContext) {
 
     const serverModule = context.asAbsolutePath(
         path.join('index.js')
     );
-
-    console.log(serverModule);
 
     const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
 
     const serverOptions: ServerOptions = {
         run: {
             module: serverModule,
-            transport: TransportKind.pipe/* , runtime: "^16.0.0" */,
-            args: ["lsif"]
+            transport: TransportKind.pipe,
+            args: ["vscode-language-server"]
         },
         debug: {
             module: serverModule,
             transport: TransportKind.pipe,
             options: debugOptions,
-            args: ["lsif"]
+            args: ["vscode-language-server"]
         }
     };
 
     // Options to control the language client
     const clientOptions: LanguageClientOptions = {
-        // Register the server for plain text documents
+        // Register the server for Wick Components and Hydrocarbon Grammar Files
         documentSelector: [{ scheme: 'file', language: 'wick-component' }],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace
@@ -53,9 +51,7 @@ export function activate(context) {
         clientOptions
     );
 
-    const d = client.start();
-
-    console.log();
+    client.start();
 };
 
 export function deactivate() {

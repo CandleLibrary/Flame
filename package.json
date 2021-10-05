@@ -1,7 +1,7 @@
 {
     "name": "@candlelib/flame",
     "version": "0.0.15",
-    "description": "Server & Browser Wick Component Editor",
+    "description": "Wick Component Editor & Language Server",
     "main": "build/library/entry/flame.js",
     "types": "build/types/server.d.ts",
     "type": "module",
@@ -20,7 +20,7 @@
     },
     "keywords": [
         "wick",
-        "PWA"
+        "language server"
     ],
     "author": "Anthony C Weathersby",
     "license": "MIT",
@@ -34,49 +34,7 @@
         "ws": "^8.2.3"
     },
     "devDependencies": {
-        "@types/node": "^16.10.2"
-    },
-    "eslintConfig": {
-        "parserOptions": {
-            "sourceType": "module",
-            "ecmaVersion": 2018
-        },
-        "env": {
-            "es6": true,
-            "browser": true,
-            "node": true
-        },
-        "extends": "eslint:recommended",
-        "rules": {
-            "no-fallthrough": [
-                "error",
-                {
-                    "commentPattern": "[iI]ntentional( - [\\w\\W]*){0,1}"
-                }
-            ],
-            "semi-style": [
-                "error",
-                "last"
-            ],
-            "semi": [
-                "warn",
-                "always",
-                {
-                    "omitLastInOneLineBlock": true
-                }
-            ],
-            "prefer-const": "warn",
-            "new-cap": [
-                "error"
-            ],
-            "padding-line-between-statements": [
-                "error",
-                {
-                    "blankLine": "always",
-                    "prev": "function",
-                    "next": "*"
-                }
-            ]
-        }
+        "@types/node": "^16.10.2",
+        "@types/ws": "^8.2.0"
     }
 }

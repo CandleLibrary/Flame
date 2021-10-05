@@ -36,9 +36,28 @@ window.addEventListener("load", () => {
             css_handlers.set(target, new CSSHandler(target, session));
         }
         //Resolve target to a component 
-
     });
+
+    //Initialize Flame Editor Overlay
+    initializeEditorFrame();
+
 });
+
+function initializeEditorFrame() {
+    const editor_frame = document.createElement("iframe");
+    editor_frame.src = "/flame-editor/";
+    editor_frame.style.width = "100%";
+    editor_frame.style.height = "100%";
+    editor_frame.style.position = "fixed";
+    editor_frame.style.boxSizing = "border-box";
+    editor_frame.style.top = "0";
+    editor_frame.style.left = "0";
+    editor_frame.style.border = "1px solid black";
+    editor_frame.style.pointerEvents = "none";
+    editor_frame.style.zIndex = "1000000";
+    document.body.appendChild(editor_frame);
+    //TODO: Establish com. channels
+};
 
 /**
  * The client side counterpart of the server Session class
@@ -289,7 +308,6 @@ class CSSHandler {
         console.log({ component_name, styles });
     }
 }
-
 
 
 

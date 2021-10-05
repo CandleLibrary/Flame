@@ -16,15 +16,15 @@ const logger = Logger.createLogger("flame");
 logger.activate();
 URI.server();
 function initializeWebSocketServer(lantern: LanternServer<any>) {
-
-    logger.get("WebSocket").log("Initializing WebSocket server");
+    const ws_logger = logger.get("web-socket");
+    ws_logger.log("Initializing WebSocket server");
 
     const ws_server = new WebSocketServer({
         server: lantern.server
     });
 
     ws_server.on("listening", () => {
-        logger.get("WebSocket").log(`WebSocket server initialized and listening at [${
+        ws_logger.log(`WebSocket server initialized and listening at [${
             /**/
             //@ts-ignore
             (ws_server.address()?.address + ":" + ws_server.address()?.port)
@@ -32,16 +32,16 @@ function initializeWebSocketServer(lantern: LanternServer<any>) {
     });
 
     ws_server.on("connection", (connection) => {
-        logger.get("WebSocket").log("Connection Made");
+        ws_logger.log("Connection Made");
         new Session(connection);
     });
 
     ws_server.on("close", () => {
-        logger.get("WebSocket").log("Websocket Server Closed");
+        ws_logger.log("Websocket server closed");
     });
 
     ws_server.on("error", e => {
-        logger.get("Websocket Error").log(e);
+        ws_logger.get("error").error(e);
     });
 }
 
@@ -86,13 +86,12 @@ async function renderPage(
         )).page;
 
     } catch (e) {
-        console.log(e);
+        logger.error(e);
         throw e;
     }
-}
-;
+};
 const flaming_wick_dispatch = <Dispatcher>{
-    name: "FLAMING_WICK",
+    name: "Flaming Wick",
     MIME: "text/html",
     keys: [],
     init(lantern, dispatcher) {
@@ -125,11 +124,29 @@ const flaming_wick_dispatch = <Dispatcher>{
         return false;
     }
 };
+
+const flame_editor_presets = new wick.objects.Presets();
+const flame_editor_dispatch = <Dispatcher>{
+    name: "Flame Editor",
+    MIME: "text/html",
+    keys: [],
+    init(lantern, dispatcher) {
+        dispatcher.keys = [{ ext: ext_map.none, dir: "/flame-editor" }];
+    },
+    respond: async function (tools) {
+
+        const editor_path = URI.resolveRelative("@candlelib/flame/source/components/editor.wick");
+
+        const comp = await wick(editor_path, flame_editor_presets);
+
+        const { page } = await wick.utils.RenderPage(comp, flame_editor_presets);
+
+        return tools.sendUTF8String(page);
+    }
+};
 export async function initDevServer(port: number = 8082) {
 
-    Logger.get("lantern").deactivate().activate(
-        Logger.LogLevel.ERROR | Logger.LogLevel.CRITICAL | Logger.LogLevel.INFO
-    );
+    Logger.get("lantern").activate();
 
     wick.rt.setPresets();
 
@@ -143,8 +160,8 @@ export async function initDevServer(port: number = 8082) {
         //secure: lantern.mock_certificate
     });
 
+    server.addDispatch(flame_editor_dispatch);
     server.addDispatch(flaming_wick_dispatch);
-
     server.addDispatch(candle_library_dispatch);
     server.addDispatch(filesystem_dispatch);
     server.addDispatch($404_dispatch);

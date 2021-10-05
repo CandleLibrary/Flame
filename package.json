@@ -2,17 +2,16 @@
     "name": "@candlelib/flame",
     "version": "0.0.15",
     "description": "Wick Component Editor & Language Server",
-    "main": "build/library/entry/flame.js",
+    "displayName": "flame",
+    "main": "vscode_client/bin/extension.js",
     "types": "build/types/server.d.ts",
     "type": "module",
+    "publisher": "candle-smith",
     "bin": {
         "candle.flame": "index.js"
     },
     "scripts": {
-        "start": "node --experimental-modules ./main.mjs",
-        "build": "rollup --config ./source/config/rollup.config.js",
-        "build.watch": "rollup --watch --config ./source/config/rollup.config.js",
-        "build.flame.watch": "rollup --watch --config ./source/config/flame.config.js"
+        "vscode:prepublish": "npm run compile"
     },
     "repository": {
         "type": "git",
@@ -24,6 +23,10 @@
     ],
     "author": "Anthony C Weathersby",
     "license": "MIT",
+    "engines": {
+        "vscode": "^1.40.0",
+        "node": "*"
+    },
     "dependencies": {
         "@candlelib/lantern": "0.1.0",
         "@candlelib/paraffin": "0.1.0",
@@ -36,5 +39,58 @@
     "devDependencies": {
         "@types/node": "^16.10.2",
         "@types/ws": "^8.2.0"
+    },
+    "languages": [
+        {
+            "id": "wick-component",
+            "extensions": [
+                ".wick",
+                "wick"
+            ],
+            "aliases": [
+                "Wick",
+                "wick"
+            ]
+        },
+        {
+            "id": "hydrocarbon-grammar",
+            "aliases": [
+                "Hydrocarbon Grammar",
+                "hydrocarbon-grammar"
+            ],
+            "extensions": [
+                "hcg",
+                ".hcg"
+            ]
+        }
+    ],
+    "activationEvents": [
+        "onLanguage:wick-component",
+        "onLanguage:hydrocarbon-grammar"
+    ],
+    "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Flame Language Server",
+            "properties": {
+                "languageServerExample.maxNumberOfProblems": {
+                    "scope": "resource",
+                    "type": "number",
+                    "default": 100,
+                    "description": "Controls the maximum number of problems produced by the server."
+                },
+                "languageServerExample.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
+                }
+            }
+        }
     }
 }

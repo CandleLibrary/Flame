@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2021 Anthony Weathersby - Wick Component Compiler
+ * Copyright (C) 2021 Anthony Weathersby - Flame Language Server & Dev Server
  */
 
 import lantern, {
@@ -21,9 +21,6 @@ Logger.createLogger("lantern").deactivate();
 Logger.createLogger("wick").activate();
 const logger = Logger.createLogger("flame");
 logger.activate();
-
-
-
 
 
 URI.server();
@@ -161,6 +158,22 @@ Starts a wick component server with integrated editing systems.
             server.addDispatch($404_dispatch);
 
             initializeWebSocketServer(server);
+        }
+    );
+
+addCLIConfig("lsif",
+    {
+        key: "lsif",
+        help_brief:
+            `
+Starts flame in language server mode
+`
+    }
+).callback = (
+        async (args) => {
+
+            await import("@candlelib/flame/vscode_server/bin/server.js");
+
         }
     );
 

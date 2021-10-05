@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es2019",
+        "lib": [
+            "ES2019"
+        ],
+        "outDir": "bin",
+        "rootDir": "source/typescript",
+        "sourceMap": true
+    },
+    "include": [
+        "source/typescript"
+    ],
+    "exclude": [
+        "node_modules",
+        ".vscode-test"
+    ]
+}

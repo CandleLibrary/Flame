@@ -9,7 +9,8 @@
         "candle.flame": "index.js"
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile"
+        "vscode:prepublish": "npm run compile",
+        "buildsite": "npm install && candle.wick compile --output ./www ./site"
     },
     "repository": {
         "type": "git",
@@ -23,12 +24,14 @@
     ],
     "license": "MIT",
     "dependencies": {
-        "@candlelib/lantern": "0.1.0",
-        "@candlelib/paraffin": "0.1.0",
-        "@candlelib/glow": "0.1.0",
-        "@candlelib/css": "0.1.0",
-        "@candlelib/wick": "0.12.7",
-        "@candlelib/log": "*",
+        "@candlelib/paraffin": "*",
+        "@candlelib/css": "^0.3.15",
+        "@candlelib/js": "^0.5.15",
+        "@candlelib/lantern": "^0.2.6",
+        "@candlelib/log": "^0.1.2",
+        "@candlelib/wick": "^0.15.16",
+        "vscode-languageserver": "^7.0.0",
+        "vscode-languageserver-textdocument": "^1.0.1",
         "ws": "^8.2.3"
     },
     "devDependencies": {

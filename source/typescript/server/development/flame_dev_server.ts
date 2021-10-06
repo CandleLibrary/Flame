@@ -24,11 +24,11 @@ function initializeWebSocketServer(lantern: LanternServer<any>) {
     });
 
     ws_server.on("listening", () => {
-        ws_logger.log(`WebSocket server initialized and listening at [${
+        ws_logger.log(`WebSocket server initialized and listening at [ ${
             /**/
             //@ts-ignore
             (ws_server.address()?.address + ":" + ws_server.address()?.port)
-            }]`);
+            } ]`);
     });
 
     ws_server.on("connection", (connection) => {
@@ -155,6 +155,8 @@ export async function initDevServer(port: number = 8082) {
 
     await loadComponents(working_directory, wick.rt.context);
 
+    logger.log(`Initializing HTTP server`);
+
     const server = await lantern({
         port,
         //type: "http",
@@ -166,6 +168,9 @@ export async function initDevServer(port: number = 8082) {
     server.addDispatch(candle_library_dispatch);
     server.addDispatch(filesystem_dispatch);
     server.addDispatch($404_dispatch);
+
+
+    logger.log(`HTTP Server initialized and listening at [ ${port} ] `);
 
     initializeWebSocketServer(server);
 }

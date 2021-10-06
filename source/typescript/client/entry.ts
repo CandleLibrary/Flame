@@ -7,9 +7,6 @@ import { CreateTimeStamp, GetElapsedTimeSinceStamp, initSystem } from "./system.
 import { FlameSystem } from "./types/flame_system.js";
 
 
-
-
-
 async function initializeHarness(wick: typeof WICK): Promise<ExtendedComponent> {
     return await wick("/flame/editor/components/harness.wick");
 }

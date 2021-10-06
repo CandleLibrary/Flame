@@ -136,8 +136,6 @@ export class Session {
                     patch: createStubPatch(comp, new_comp)
                 }, nonce);
 
-                console.log(component_name, style, CSS, CSS[0].data.pos.slice());
-
             } break;
 
 

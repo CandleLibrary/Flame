@@ -1,8 +1,8 @@
-import { RuntimeComponent, ObservableModel, ObservableWatcher } from "@candlelib/wick";
-import * as ACTIONS from "./actions/action.js";
+import { WickLibrary, WickRTComponent } from "@candlelib/wick";
+//import * as ACTIONS from "./actions/action.js";
 import { EditorSelection } from "./types/selection.js";
-import { wick } from "./env.js";
 
+const ACTIONS = [];
 
 export enum EditorToolState {
 
@@ -26,14 +26,12 @@ export interface DrawObject {
     py2: number;
 }
 export class EditorModel {
-
     data: any;
-
     selection_box: any;
-    comp: RuntimeComponent;
+    comp: WickRTComponent;
     ele: any;
     sc: number;
-    selected_comp: RuntimeComponent;
+    selected_comp: WickRTComponent;
     //selected_ele: HTMLElement;
     selected_element: HTMLElement;
     ACTIONS: any;
@@ -41,7 +39,7 @@ export class EditorModel {
     selections: EditorSelection[];
     draw_objects: DrawObject[];
     state: EditorToolState;
-    constructor() {
+    constructor(wick: WickLibrary) {
         this.comp = null;
         this.ele = null;
         this.sc = 0;

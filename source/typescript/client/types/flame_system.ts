@@ -1,8 +1,8 @@
-import { WickLibrary, RuntimeComponent } from "@candlelib/wick";
 import { CSS_Transform2D } from "@candlelib/css";
-
-import { HistoryState } from "./history_state";
+import { WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { EditorModel } from "../editor_model";
+import { HistoryState } from "./history_state";
+
 
 
 export interface EditedComponent {
@@ -106,7 +106,7 @@ export interface FlameSystem {
     /**
      * Root component handling all other components edited within 
      * flame */
-    harness: RuntimeComponent;
+    harness: WickRTComponent;
 
     /**
      * Root element containing the actively edited

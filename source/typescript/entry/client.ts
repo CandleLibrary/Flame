@@ -1,16 +1,22 @@
+import * as css from "@candlelib/css";
 import { Logger } from "@candlelib/log";
-import { WickLibrary, WickRTComponent } from '@candlelib/wick';
-import { parse } from "@candlelib/css";
-import { CommandsMap, EditMessage, EditorCommand, Patch, PatchType } from '../server/development/component_tools';
-
+import { UserPresets, WickLibrary, WickRTComponent } from '@candlelib/wick';
+import { DrawObject } from '../client/editor_model.js';
+import { initSystem } from '../client/system.js';
+import { FlameSystem } from '../client/types/flame_system.js';
+import { CommandsMap, EditMessage, EditorCommand, PatchType } from '../server/development/component_tools';
 
 const wick: WickLibrary = <any>window["wick"];
 
 const logger = Logger.createLogger("flame-client");
 
+let system: FlameSystem = null;
+
 logger.activate();
 
-window.addEventListener("load", () => {
+async function init() {
+    //Initialize Flame Editor Overlay
+    await initializeEditorFrame();
 
     document.title = "FLAMMING WICK";
 
@@ -24,6 +30,17 @@ window.addEventListener("load", () => {
     const session = new Session(new WebSocket(uri));
 
     let css_handlers = new WeakMap();
+
+    const box: DrawObject = {
+        type: "box",
+        px1: 50, px2: 500,
+        py1: 80, py2: 500
+    };
+
+    system.editor_model.draw_objects.push(box);
+
+
+    system.editor_model.sc++;
 
     document.addEventListener("click", e => {
 
@@ -39,12 +56,10 @@ window.addEventListener("load", () => {
         //Resolve target to a component 
     });
 
-    //Initialize Flame Editor Overlay
-    initializeEditorFrame();
-
-});
+}
 
 function initializeEditorFrame() {
+
     const editor_frame = document.createElement("iframe");
     editor_frame.src = "/flame-editor/";
     editor_frame.style.width = "100%";
@@ -56,11 +71,38 @@ function initializeEditorFrame() {
     editor_frame.style.border = "1px solid black";
     editor_frame.style.pointerEvents = "none";
     editor_frame.style.zIndex = "1000000";
+    editor_frame.style.display = "none";
     document.body.appendChild(editor_frame);
-    //TODO: Establish com. channels
+    return new Promise((res, rej) => {
+        editor_frame.contentWindow.addEventListener("load", async () => {
+
+            const window = editor_frame.contentWindow;
+
+            const editor_wick: WickLibrary = window["wick"];
+
+            system = initSystem(editor_wick, wick, css, window);
+            /*
+                editor_rt.presets.api.APPLY_ACTION = APPLY_ACTION;
+                editor_rt.presets.api.START_ACTION = START_ACTION;
+                editor_rt.presets.api.ACTIONS = ACTIONS;
+                editor_rt.presets.api.sys = system;
+            */
+            editor_wick.appendPresets(<UserPresets>{
+                models: {
+                    "flame-editor": system.editor_model,
+                    "edited-components": system.editor_model
+                },
+                api: { sys: system }
+            });
+
+            editor_frame.style.display = "block";
+
+
+
+            res(true);
+        });
+    });
 };
-
-
 
 /**
  * The client side counterpart of the server Session class
@@ -143,7 +185,7 @@ class Session {
 
         if (this.awaitable_callback.has(nonce)) {
 
-            logger.get("session").debug(`Received command [ ${EditorCommand[data.command]} ] with nonce [ ${nonce} ]`);
+            logger.get("session").debug(`Received command [ ${[data.command]} ] with nonce [ ${nonce} ]`);
 
             const callback = this.awaitable_callback.get(nonce);
 
@@ -175,13 +217,17 @@ class Session {
 
                     case PatchType.STUB: {
 
+
                         const { to, from } = patch;
 
                         const matches = getRootMatchingComponents(from);
 
+                        logger.debug(`Applying stub patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+
                         for (const match of matches) {
 
                             match.name = to;
+                            match.ele.setAttribute("wrt:c", to);
                         }
                     } break;
 
@@ -344,13 +390,13 @@ class CSSHandler {
                 component_name: component
             });
 
-        const styles = style_strings.map(s => parse(s));
+        const styles = style_strings.map(s => css.parse(s));
 
         this.ele.style.color = "red";
 
         const rule_string = `${this.ele.tagName.toLocaleLowerCase()}{color:red}`;
 
-        const rule = parse(rule_string);
+        const rule = css.parse(rule_string);
 
         console.log(rule);
 
@@ -401,3 +447,5 @@ function addRootComponent(comp: WickRTComponent) {
 
     wick.rt.root_components.push(comp);
 }
+
+init();

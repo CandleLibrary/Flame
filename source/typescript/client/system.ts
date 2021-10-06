@@ -1,7 +1,7 @@
-import WICK, { WickLibrary } from "@candlelib/wick";
-import { FlameSystem, EditedComponent } from "./types/flame_system.js";
+import { WickLibrary } from "@candlelib/wick";
 import { EditorModel } from "./editor_model.js";
-import { css } from "./env.js";
+import { EditedComponent, FlameSystem } from "./types/flame_system.js";
+
 
 
 const event_intercept = document.createElement("div");
@@ -36,10 +36,10 @@ export function GetElapsedTimeSinceStampInNanoSeconds(stamp: number): number { r
 export function initSystem(
     w?: WickLibrary,
     edit_wick?: WickLibrary,
-    edit_css?: typeof css,
+    edit_css?: any,
     comp_window?: Window,
 ): FlameSystem {
-    
+
     if (active_system) return active_system;
 
     active_system = <FlameSystem>{
@@ -52,7 +52,7 @@ export function initSystem(
 
         edit_view: null,
 
-        editor_model: edit_wick.objects.Observable<EditorModel>(new EditorModel),
+        editor_model: edit_wick.objects.Observable<EditorModel>(new EditorModel(w)),
         text_info: "",
         file_dir: ".",
         comp_ext: ".wick",
@@ -88,13 +88,13 @@ export function initSystem(
             }]
         }),
         wick: w,
-        css,
+        css: edit_css,
         flags: { CSS_SELECTOR_KEEP_UNIQUE: true },
         global: { default_pos_unit: "px" },
         ui: {
             event_intercept_frame: null,
             transform: new Proxy(
-                new css.CSS_Transform2D, {
+                new edit_css.CSS_Transform2D, {
                 set: (obj, prop, val) => {
                     obj[prop] = val;
                     if (active_system.edit_view)

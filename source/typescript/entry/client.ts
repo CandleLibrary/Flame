@@ -4,7 +4,7 @@ import { UserPresets, WickLibrary, WickRTComponent } from '@candlelib/wick';
 import { DrawObject } from '../client/editor_model.js';
 import { initSystem } from '../client/system.js';
 import { FlameSystem } from '../client/types/flame_system.js';
-import { CommandsMap, EditMessage, EditorCommand, PatchType } from '../server/development/component_tools';
+import { CommandsMap, EditMessage, EditorCommand, PatchType } from "../common/editor_types.js";
 
 const wick: WickLibrary = <any>window["wick"];
 
@@ -185,7 +185,7 @@ class Session {
 
         if (this.awaitable_callback.has(nonce)) {
 
-            logger.get("session").debug(`Received command [ ${[data.command]} ] with nonce [ ${nonce} ]`);
+            logger.get("session").debug(`Received command [ ${EditorCommand[data.command]} ] with nonce [ ${nonce} ]`);
 
             const callback = this.awaitable_callback.get(nonce);
 

@@ -8,7 +8,8 @@ import wick, {
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
 import fs from "fs";
 import { WebSocket } from "ws";
-import { addStyle, CommandsMap, createStubPatch, EditMessage, EditorCommand, getComponentDependencies, getPatch } from './component_tools.js';
+import { addStyle, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
+import { CommandsMap, EditMessage, EditorCommand } from "../../common/editor_types.js";
 import { store } from './store.js';
 const logger = Logger.createLogger("flame");
 const fsp = fs.promises;
@@ -112,6 +113,21 @@ export class Session {
 
         switch (data?.command) {
 
+            case EditorCommand.REGISTER_CLIENT_ENDPOINT: {
+
+                const { endpoint } = data;
+
+                const { comp } = store.endpoints.get(endpoint) ?? {};
+
+                if (comp) {
+                    logger.log(`Registering client with endpoint [ ${endpoint} ]`);
+                    this.connect_file_watchers(comp);
+                } else {
+                    logger.warn(`Failed to register client with endpoint [ ${endpoint} ]`);
+                }
+
+            } break;
+
             case EditorCommand.SET_COMPONENT_STYLE: {
                 const { component_name, rules } = data;
 
@@ -174,21 +190,6 @@ export class Session {
                         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
                         style_strings: []
                     }, nonce);
-                }
-
-            } break;
-
-            case EditorCommand.REGISTER_CLIENT_ENDPOINT: {
-
-                const { endpoint } = data;
-
-                const { comp } = store.endpoints.get(endpoint) ?? {};
-
-                if (comp) {
-                    logger.log(`Registering client with endpoint [ ${endpoint} ]`);
-                    this.connect_file_watchers(comp);
-                } else {
-                    logger.warn(`Failed to register client with endpoint [ ${endpoint} ]`);
                 }
 
             } break;

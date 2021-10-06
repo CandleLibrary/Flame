@@ -1,4 +1,4 @@
-import { RuntimeComponent } from "@candlelib/wick";
+import { WickRTComponent } from '@candlelib/wick';
 
 /**
  * User selected edit element. Coordinate in screen space. 
@@ -11,7 +11,7 @@ export interface EditorSelection {
      */
     frame_ele: HTMLElement;
 
-    comp: RuntimeComponent;
+    comp: WickRTComponent;
 
 
     /**
@@ -73,18 +73,19 @@ export interface EditorSelection {
     actual_height: number;
 
     //transform information
-    pz: number;
 
     rx: number;
-
     ry: number;
-
     rz: number;
-
     sx: number;
-
     sy: number;
-
     sz: number;
+    px: number;
+    py: number;
+    pz: number;
+    max_x: number;
+    max_y: number;
+    min_x: number;
+    min_y: number;
 
 }

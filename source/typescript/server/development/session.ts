@@ -11,7 +11,7 @@ import { WebSocket } from "ws";
 import { addStyle, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
 import { CommandsMap, EditMessage, EditorCommand } from "../../common/editor_types.js";
 import { store } from './store.js';
-const logger = Logger.createLogger("flame");
+const logger = Logger.createLogger("flame").activate();
 const fsp = fs.promises;
 
 
@@ -109,7 +109,7 @@ export class Session {
 
         const { nonce, data } = <EditMessage>JSON.parse(buffer.toString());
 
-        logger.get("session").debug(`Received command [ ${data.command} ] with nonce [ ${nonce} ]`);
+        logger.get("session").log(`Received command [ ${EditorCommand[data.command]} ] with nonce [ ${nonce} ]`);
 
         switch (data?.command) {
 

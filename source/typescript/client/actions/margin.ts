@@ -1,16 +1,14 @@
-import {
-    setNumericValue, getContentBox, noop
-} from "./common.js";
-
+import { Action } from "../types/action.js";
+import { ActionType } from "../types/action_type.js";
+import { FlameSystem } from "../types/flame_system.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { getContentBox, noop, setNumericValue } from "./common.js";
 import {
     SETDELTAHEIGHT,
     SETDELTAWIDTH
 } from "./dimensions.js";
-import { ActionType } from "../types/action_type.js";
 import { sealCSS, updateCSS } from "./update_css.js";
-import { FlameSystem } from "../types/flame_system.js";
-import { ObjectCrate } from "../types/object_crate.js";
-import { Action } from "../types/action.js";
+
 
 export function SETMARGINTOP(sys: FlameSystem, crate: ObjectCrate, x: number) {
     setNumericValue(sys, crate, "margin_top", x, setNumericValue.parent_height);

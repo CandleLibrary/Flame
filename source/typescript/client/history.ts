@@ -1,8 +1,6 @@
 import { setState } from "./actions/update.js";
 import { FlameSystem } from "./types/flame_system.js";
-import { Component } from "@candlelib/wick";
 import { HistoryState } from "./types/history_state";
-import { componentDataToSourceString } from "./common_functions.js";
 
 export default (function HISTORY() {
 
@@ -65,33 +63,6 @@ export default (function HISTORY() {
 
         WriteBack(system: FlameSystem) {
             return;
-            //Write current changes back to file. 
-            const components = <Map<string, Component>>system.edit_wick.rt.presets.components;
-
-            for (const component of components.values()) {
-
-                const changes = stack.slice(0, pointer + 1)
-                    .flatMap(s => s.actions)
-                    .filter(s => s.progress.comp_data_name == component.name);
-
-                if (changes.length > 0) {
-
-                    const str = componentDataToSourceString(component);
-
-                    // from this ast apply changes that need to occur, then render back to file.
-
-                    //@ts-ignore
-                    const url_ = <typeof component.location>new component.location.constructor("/component_sys/t");
-
-                    //@ts-ignore
-                    url_.submitJSON({
-                        location: component.location + "",
-                        source: str,
-                        action: "update"
-                    });
-
-                }
-            }
         }
     };
 })();

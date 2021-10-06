@@ -1,16 +1,10 @@
-import { css } from "../env.js";
-
-
+import { CSS_Length } from '@candlelib/css';
 import { CSSCacheFactory } from "../cache/css_cache.js";
 import { getFirstPositionedAncestor, prepRebuild } from "./common.js";
 import {
-    SETDELTALEFT,
-    SETDELTATOP,
-    SETDELTARIGHT,
-    SETDELTABOTTOM
+    SETDELTABOTTOM, SETDELTALEFT, SETDELTARIGHT, SETDELTATOP
 } from "./position.js";
 
-const types = css.types;
 
 /**
  * Actions provide mechanisms for updating an element, document, and component through user input. 
@@ -82,8 +76,8 @@ export function CENTER(system, component, element, HORIZONTAL = true, VERTICAL =
     switch (cache.move_hori_type) {
         case "left right":
             //get the width of the parent element
-            css.props.left = new types.length(diff, "px");
-            css.props.right = new types.length(diff, "px");
+            css.props.left = new CSS_Length(diff, "px");
+            css.props.right = new CSS_Length(diff, "px");
             cache.setPropFromString(`margin-left:auto; margin-right:auto`);
             break;
         case "left":

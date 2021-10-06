@@ -1,28 +1,13 @@
-import { InputHandler, ButtonType } from "./types/input";
-import { FlameSystem } from "./types/flame_system";
-
 import {
-    getListOfRTInstanceAndAncestors,
-    getListOfComponentData,
-    getRTInstanceFromEvent,
-    getElementFromEvent,
-    getSelectionFromPoint,
-    updateSelections,
-    invalidateInactiveSelections,
-    invalidateAllSelections
-} from "./common_functions.js";
-
-import { EditorToolState, DrawObject } from "./editor_model.js";
-
-import history from "./history.js";
-
-import {
-    UPDATE_ACTION,
-    END_ACTION,
-    areActionsRunning
+    areActionsRunning, END_ACTION, UPDATE_ACTION
 } from "./action_initiators.js";
-
-let prev: HTMLElement = null;
+import {
+    getSelectionFromPoint, invalidateAllSelections, invalidateInactiveSelections, updateSelections
+} from "./common_functions.js";
+import { DrawObject, EditorToolState } from "./editor_model.js";
+import history from "./history.js";
+import { FlameSystem } from "./types/flame_system";
+import { ButtonType, InputHandler } from "./types/input";
 
 function ISElementUI(ele, sys: FlameSystem) {
 
@@ -314,6 +299,8 @@ export function initializeEvents(
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
 
     //document.body.appendChild(event_intercept_ele);
+
+    console.log({ editor_window, event_intercept_ele });
 
     editor_window.document.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
 

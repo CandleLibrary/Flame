@@ -1,8 +1,6 @@
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
-//import * as ACTIONS from "./actions/action.js";
+import * as ACTIONS from "./actions/action.js";
 import { EditorSelection } from "./types/selection.js";
-
-const ACTIONS = [];
 
 export enum EditorToolState {
 
@@ -39,7 +37,7 @@ export class EditorModel {
     selections: EditorSelection[];
     draw_objects: DrawObject[];
     state: EditorToolState;
-    constructor(wick: WickLibrary) {
+    constructor(editor_wick: WickLibrary) {
         this.comp = null;
         this.ele = null;
         this.sc = 0;
@@ -47,11 +45,15 @@ export class EditorModel {
         this.selected_element = null;
         this.selection_box = null;
         this.selections = [<EditorSelection><unknown>{
-            model: new wick.objects.ObservableScheme<EditorSelection>({
+            model: new editor_wick.objects.ObservableScheme<EditorSelection>({
                 frame_ele: null,
                 ACTIVE: false,
                 VALID: true,
                 IS_COMPONENT_FRAME: false,
+                actual_height: 0,
+                actual_left: 0,
+                actual_top: 0,
+                actual_width: 0,
                 comp: null,
                 ele: null,
                 width: 0,
@@ -77,7 +79,7 @@ export class EditorModel {
         this.POINTER_DN = false;
         this.state = EditorToolState.UNSET;
         this.draw_objects = [<DrawObject><unknown>{
-            model: new wick.objects.ObservableScheme<DrawObject>({
+            model: new editor_wick.objects.ObservableScheme<DrawObject>({
                 px1: 0,
                 py1: 0,
                 px2: 0,

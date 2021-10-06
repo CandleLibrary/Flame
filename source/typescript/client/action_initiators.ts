@@ -9,7 +9,6 @@ import { ObjectCrate } from "./types/object_crate.js";
 import { revealEventIntercept, active_system as system, activeSys, hideEventIntercept } from "./system.js";
 import { getActiveSelections, getActiveSelectionsCount } from "./common_functions.js";
 import { FlameSystem } from "./types/flame_system.js";
-import { css } from "./env.js";
 
 /**
  * Collection of functions that can be called by

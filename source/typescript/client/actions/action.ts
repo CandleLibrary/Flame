@@ -1,4 +1,3 @@
-export { TEXTEDITOR } from "./text.js";
 export { MOVE, CENTER } from "./move.js";
 export { COMPLETE } from "./complete.js";
 //export { CREATE_ELEMENT, CREATE_VIEW_COMPONENT, CREATE_COMPONENT, TRANSFER_ELEMENT, CREATE_CSS_DOC, REMOVE_COMPONENT } from "./create.js";
@@ -12,6 +11,4 @@ export * from "./convert.js";
 export * from "./border.js";
 export * from "./grid.js";
 export * from "./flex.js";
-export * from "./element.js";
 export * from "./set_css.js";
-export * from "./component.js";

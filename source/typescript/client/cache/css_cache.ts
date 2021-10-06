@@ -1,18 +1,29 @@
-import { CSSProperty, CSSNode, CSSRuleNode, PrecedenceFlags } from "@candlelib/css";
-import { RuntimeComponent } from "@candlelib/wick";
-
-import { css, conflagrate } from "../env.js";
-import { TrackedCSSProp } from "../types/tracked_css_prop.js";
-import { FlameSystem } from "../types/flame_system.js";
-import { SET_ATTRIBUTE } from "../actions/element.js";
-import { ObjectCrate } from "../types/object_crate.js";
-import { getRTInstances, getApplicableProps_, getMatchedRulesFromComponentData, getApplicableProps } from "../common_functions.js";
-import { EditorSelection } from "../types/selection.js";
+import { copy, renderCompressed, traverse } from '@candlelib/conflagrate';
+import {
+    CSSNode,
+    CSSNodeType,
+    CSSProperty,
+    CSSRuleNode,
+    CSS_String,
+    getLastRuleWithMatchingSelector,
+    getMatchedElements,
+    parseProperty,
+    PrecedenceFlags,
+    property,
+    selector
+} from "@candlelib/css";
+import { WickRTComponent } from "@candlelib/wick";
 import { Lexer } from "@candlelib/wind";
+import { getApplicableProps, getMatchedRulesFromComponentData, getRTInstances } from "../common_functions.js";
+import { FlameSystem } from "../types/flame_system.js";
+import { ObjectCrate } from "../types/object_crate.js";
+import { EditorSelection } from "../types/selection.js";
+import { TrackedCSSProp } from "../types/tracked_css_prop.js";
+
 
 let global_cache = null;
 
-const unset_string = new css.CSS_String("unset"), unset_pos = {
+const unset_string = new CSS_String("unset"), unset_pos = {
     slice() { return "unset"; }
 };
 
@@ -23,7 +34,7 @@ class ComputedStyle {
 
     constructor(
         system: FlameSystem,
-        component: RuntimeComponent,
+        component: WickRTComponent,
         element: HTMLElement,
         cache: CSSCache,
     ) {
@@ -173,7 +184,7 @@ export class CSSCache {
     original_props: Map<string, TrackedCSSProp>;
     _computed: any;
 
-    component: RuntimeComponent;
+    component: WickRTComponent;
 
     rules: any;
 
@@ -237,7 +248,7 @@ export class CSSCache {
         this.setupStyle();
     }
 
-    setUniqueSelector(sys: FlameSystem, comp: RuntimeComponent, ele: HTMLElement, crate: ObjectCrate) {
+    setUniqueSelector(sys: FlameSystem, comp: WickRTComponent, ele: HTMLElement, crate: ObjectCrate) {
 
         //get all rules that match selector
         //for all rules that have a single selector 
@@ -251,11 +262,10 @@ export class CSSCache {
         for (const rule of rules) {
             if (rule.selectors.length == 1) {
                 const [sel] = rule.selectors;
-                const { CSSNodeType } = css;
 
                 let count = -1;
 
-                for (const { node, meta } of conflagrate.traverse(sel, "nodes")) {
+                for (const { node, meta } of traverse(sel, "nodes")) {
                     switch (node.type) {
                         case CSSNodeType.CompoundSelector:
                         case CSSNodeType.ComplexSelector:
@@ -269,27 +279,28 @@ export class CSSCache {
                     }
                 }
 
-                if (count == 1 && Array.from(css.getMatchedElements(comp.ele, rule)).length == 1)
+                if (count == 1 && Array.from(getMatchedElements(comp.ele, rule)).length == 1)
                     return this.unique_selector = sel;
             }
         }
 
         if (ele.id) {
-            this.unique_selector = css.selector(`#${ele.id}`);
+            this.unique_selector = selector(`#${ele.id}`);
         } else {
 
             //if at this point there is no suitable rule,
             //create a new ID, assign to ele and
             //use the id for the selector for the element.
+            debugger;
             const id = "A" + ((Math.random() * 12565845322) + "").slice(0, 5);
 
-            crate.action_list.unshift(SET_ATTRIBUTE);
+            //crate.action_list.unshift(SET_ATTRIBUTE);
 
             crate.data.key = "id";
 
             crate.data.val = id;
 
-            this.unique_selector = css.selector(`#${id}`);
+            this.unique_selector = selector(`#${id}`);
         }
     }
 
@@ -522,7 +533,7 @@ export class CSSCache {
                 }
             }
         return this.box_model_flags;
-    } unique;
+    };
 
     isPropSet(prop_name: string): boolean {
         const prop = this.getProp(prop_name, false);
@@ -785,11 +796,11 @@ export class CSSCache {
             prop = this.unique.get(name).prop;
         else if (this.original_props.has(name))
             prop = this.original_props.get(name).prop;
-        else if (this.element.style[css.CSSProperty.camelName(name)]) {
+        else if (this.element.style[CSSProperty.camelName(name)]) {
 
             const
-                prop_value = this.element.style[css.CSSProperty.camelName(name)] + "",
-                prop = css.parseProperty(name, prop_value, false);
+                prop_value = this.element.style[CSSProperty.camelName(name)] + "",
+                prop = parseProperty(name, prop_value, false);
 
             prop.precedence |= PrecedenceFlags.A_BIT_SET;
 
@@ -802,7 +813,7 @@ export class CSSCache {
 
             const
                 prop_value = this.computed[name] + "",
-                prop = css.parseProperty(name, prop_value, false);
+                prop = parseProperty(name, prop_value, false);
 
             this.original_props.set(name, { prop, sel: null, unique: false });
 
@@ -834,13 +845,13 @@ export class CSSCache {
             this.changed.add(prop_name);
             this.unique.set(prop_name, {
                 sel: this.unique_selector,
-                prop: new css.CSSProperty(prop_name, "unset", [unset_string], true, <Lexer>unset_pos)
+                prop: new CSSProperty(prop_name, "unset", [unset_string], true, <Lexer>unset_pos)
             });
         }
     }
 
     createProp(prop_string: string): CSSProperty {
-        return css.property(prop_string);
+        return property(prop_string);
     }
 
     setPropFromString(string: string) {
@@ -862,7 +873,7 @@ export class CSSCache {
 
             for (const c of getRTInstances(system, this.component.name)) {
 
-                for (const e of css.getMatchedElements(c.ele, this.unique_selector)) {
+                for (const e of getMatchedElements(c.ele, this.unique_selector)) {
                     for (const prop of props)
                         e.style[prop.camelName] = "";
                 }
@@ -886,7 +897,7 @@ export class CSSCache {
 
             for (const c of getRTInstances(system, this.component.name)) {
 
-                for (const e of css.getMatchedElements(c.ele, this.unique_selector)) {
+                for (const e of getMatchedElements(c.ele, this.unique_selector)) {
                     for (const prop of props)
                         e.style[prop.camelName] = prop.value_string;
                 }
@@ -897,11 +908,11 @@ export class CSSCache {
 
 export function updateLastOccurrenceOfRuleInStyleSheet(stylesheet: any, rule: CSSRuleNode) {
 
-    const selector_string = css.renderCompressed(rule.selectors[0]);
-    let matching_rule = css.getLastRuleWithMatchingSelector(stylesheet, rule.selectors[0]);
+    const selector_string = renderCompressed(rule.selectors[0]);
+    let matching_rule = getLastRuleWithMatchingSelector(stylesheet, rule.selectors[0]);
 
     if (!matching_rule) {
-        matching_rule = conflagrate.copy(rule);
+        matching_rule = copy(rule);
         stylesheet.nodes.push(matching_rule);
     } else {
         for (const [name, prop] of rule.props.entries()) {
@@ -918,7 +929,7 @@ const cache_array: { e: HTMLElement, cache: CSSCache; }[] = [];
 
 export function CSSCacheFactory(
     sys: FlameSystem,
-    comp: RuntimeComponent,
+    comp: WickRTComponent,
     ele: HTMLElement,
     crate: ObjectCrate
 ): CSSCache {

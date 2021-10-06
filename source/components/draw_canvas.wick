@@ -52,6 +52,6 @@ export default <canvas id="canvas"></canvas>;
         left:0;
         width:100vw;
         height:100vh;
-        z-index:997;
+        z-index:-1;
     }
 </style>;

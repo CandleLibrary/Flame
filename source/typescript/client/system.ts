@@ -1,12 +1,10 @@
-import { WickLibrary } from "@candlelib/wick";
+import { WickLibrary, WickRTComponent } from "@candlelib/wick";
+import { EditorCommand, PatchType } from "../common/editor_types.js";
 import { EditorModel } from "./editor_model.js";
+import { Session } from './session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
 
-
-
 const event_intercept = document.createElement("div");
-
-
 export function revealEventIntercept(sys: FlameSystem) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
     event_intercept_ele.style.zIndex = "100000";
@@ -16,9 +14,7 @@ export function hideEventIntercept(sys: FlameSystem) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
     event_intercept_ele.style.zIndex = "";
 }
-
 export var active_system: FlameSystem = null;
-
 export function activeSys() { return active_system; }
 
 export function CreateTimeStamp(): number { return window.performance.now(); }
@@ -34,8 +30,9 @@ export function GetElapsedTimeSinceStampInMicroSeconds(stamp: number): number { 
 export function GetElapsedTimeSinceStampInNanoSeconds(stamp: number): number { return GetElapsedTimeSinceStamp(stamp) * 1000000; };
 
 export function initSystem(
-    w?: WickLibrary,
-    edit_wick?: WickLibrary,
+    ws_uri: string,
+    page_wick?: WickLibrary,
+    editor_wick?: WickLibrary,
     edit_css?: any,
     comp_window?: Window,
 ): FlameSystem {
@@ -43,16 +40,20 @@ export function initSystem(
     if (active_system) return active_system;
 
     active_system = <FlameSystem>{
+
+        session: new Session(ws_uri),
+
         metrics: {
             startup_time: 0,
             ui_components_error_count: 0,
             ui_components_load_time: 0
         },
+
         comp_name_counter: 0,
 
         edit_view: null,
 
-        editor_model: edit_wick.objects.Observable<EditorModel>(new EditorModel(w)),
+        editor_model: editor_wick.objects.Observable<EditorModel>(new EditorModel(editor_wick)),
         text_info: "",
         file_dir: ".",
         comp_ext: ".wick",
@@ -75,9 +76,9 @@ export function initSystem(
         document: comp_window.document,
         body: comp_window.document.body,
         head: comp_window.document.head,
-        edited_components: edit_wick.objects.Observable({
+        edited_components: editor_wick.objects.Observable({
             components: [<EditedComponent><unknown>{
-                model: new edit_wick.objects.ObservableScheme<EditedComponent>({
+                model: new editor_wick.objects.ObservableScheme<EditedComponent>({
                     comp: "",
                     frame: null,
                     height: 0,
@@ -87,7 +88,7 @@ export function initSystem(
                 })
             }]
         }),
-        wick: w,
+        page_wick,
         css: edit_css,
         flags: { CSS_SELECTOR_KEEP_UNIQUE: true },
         global: { default_pos_unit: "px" },
@@ -104,8 +105,173 @@ export function initSystem(
             })
         },
         edit_css,
-        edit_wick
+        editor_wick
     };
 
+    initializeDefualtSessionDispatchHandlers(active_system.session, page_wick);
+
     return active_system;
+}
+
+function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: WickLibrary) {
+
+    session.setHandler(EditorCommand.UPDATED_COMPONENT, (command, session) => {
+        const { new_name, old_name, path } = command;
+
+        // Identify all top_level components that need to be update. 
+        const matches = getRootMatchingComponents(old_name, page_wick);
+
+        if (matches.length > 0)
+            session.send_command({ command: EditorCommand.GET_COMPONENT_PATCH, to: new_name, from: old_name });
+    });
+
+
+    session.setHandler(EditorCommand.APPLY_COMPONENT_PATCH, (command, session) => {
+
+        const patch = command.patch;
+
+        switch (patch.type) {
+
+            case PatchType.STUB: {
+
+
+                const { to, from } = patch;
+
+                const matches = getRootMatchingComponents(from, page_wick);
+
+                session.logger.debug(`Applying stub patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+
+                for (const match of matches) {
+
+                    match.name = to;
+                    match.ele.setAttribute("wrt:c", to);
+                }
+            } break;
+
+            case PatchType.TEXT: {
+
+                const { to, from, patches } = patch;
+
+                const matches = getRootMatchingComponents(from, page_wick);
+
+                for (const match of matches) {
+
+                    const ele = match.ele;
+
+                    match.name = to;
+
+                    let eles = [ele];
+
+                    for (const patch of patches) {
+
+
+                        for (const ele of eles) {
+                            if (ele instanceof Text) {
+                                if (ele.data.trim() == patch.from.trim()) {
+                                    ele.data = patch.to;
+                                    break;
+                                }
+                            }
+
+                            for (const child of Array.from(ele.childNodes)) {
+                                eles.push(child);
+                            }
+                        }
+                    }
+                }
+            } break;
+
+            case PatchType.REPLACE: {
+
+                const { to, from, patch_scripts } = patch;
+
+                //Install the patches
+                const classes: typeof WickRTComponent[] = patch_scripts.map(
+                    patch => Function("wick", patch)(page_wick)
+                );
+
+                const class_ = classes[0];
+
+                const matches = getRootMatchingComponents(from, page_wick);
+
+                for (const match of matches) {
+
+                    // Do some patching magic to replace the old component 
+                    // with the new one. 
+                    const ele = match.ele;
+                    const par_ele = ele.parentElement;
+                    const par_comp = match.par;
+
+                    const new_component = new class_(
+                        match.model,
+                        undefined,
+                        undefined,
+                        [],
+                        undefined,
+                        page_wick.rt.context
+                    );
+
+                    if (par_ele)
+                        par_ele.replaceChild(new_component.ele, ele);
+
+                    if (par_comp) {
+
+                        const index = par_comp.ch.indexOf(match);
+
+                        if (index >= 0) {
+                            par_comp.ch.splice(index, 1, new_component);
+                            new_component.par = par_comp;
+                        }
+
+                        match.par = null;
+                    }
+
+                    new_component.initialize(match.model);
+
+                    match.disconnect();
+                    match.destructor();
+
+                    if (removeRootComponent(match, page_wick)) {
+                        addRootComponent(new_component, page_wick);
+                    }
+                }
+            }
+        }
+    });
+}
+
+export function getRootMatchingComponents(name: string, wick: WickLibrary): WickRTComponent[] {
+
+    //Traverse dom structure and identify all components
+
+
+    const candidates = wick.rt.root_components.slice();
+
+    const output = [];
+
+    for (const candidate of candidates) {
+        if (candidate.name == name)
+            output.push(candidate);
+        else
+            candidates.push(...candidate.ch);
+    }
+
+    return output;
+}
+
+
+export function removeRootComponent(comp: WickRTComponent, wick: WickLibrary): boolean {
+
+    const index = wick.rt.root_components.indexOf(comp);
+
+    if (index >= 0)
+        wick.rt.root_components.splice(index, 1);
+
+    return index >= 0;
+
+}
+
+export function addRootComponent(comp: WickRTComponent, wick: WickLibrary) {
+
+    wick.rt.root_components.push(comp);
 }

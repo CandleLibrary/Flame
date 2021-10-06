@@ -1,11 +1,11 @@
-import wick, { ComponentData, ComponentStyle, Context } from '@candlelib/wick';
+import { parse, renderCompressed } from '@candlelib/css';
+import { JSNodeType } from '@candlelib/js';
+import wick, { ComponentData, Context } from '@candlelib/wick';
 import { createCompiledComponentClass } from '@candlelib/wick/build/library/compiler/ast-build/build.js';
 import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
 import { parse_component } from '@candlelib/wick/build/library/compiler/source-code-parse/parse.js';
 import { renderNewFormatted } from '@candlelib/wick/build/library/compiler/source-code-render/render.js';
-import { JSNodeType } from '@candlelib/js';
-import { parse, renderCompressed } from '@candlelib/css';
-import { Patch, PatchType, TextPatch, StubPatch } from '../../common/editor_types.js';
+import { Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
 /**
  * Compares two components and issues an appropriate patch
  * object to update the component_from to component_to.
@@ -58,7 +58,7 @@ export async function getPatch(
         for (const [to, from] of elements) {
 
             if (!to.IS_BINDING) {
-                console.log(to);
+
                 if (!to.tag_name)
                     patches.push({ index: 0, to: to.data, from: from.data });
 

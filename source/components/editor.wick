@@ -1,30 +1,42 @@
-import css_selector from "./css_selection_dialogue.wick";
-
 import { state } from "@model:flame-editor";
+import { sys } from "@api";
 
 import draw_canvas from "./draw_canvas.wick";
 
-export default <div>
+function onload(){
 
-    
+    sys.ui.event_intercept_frame = "@.event-intercept";
+}
+
+export default <div>
 
     <style>
         root {
+            font-family:Arial;
             background-color: rgba(255,25,25,0.08);
-            width:100%;
-            height:100%;
-            position:absolute;
+            position:fixed;
             top:0;
             left:0;
+            z-index:1000;
+        }
+        .event-intercept h1{
+            pointer-events:none;
+        }   
+        .event-intercept{
+            text-transform: uppercase;
+            text-align:center;
+            position: fixed;
+            background-color: rgba(255, 255, 256, 0.5);
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            color: #DDD;
         }
     </style>
 
-    Flame Editor
-
-    {state}
+    <div class="event-intercept"></div>
 
     <draw_canvas />
-
-    <css_selector/>
     
 </div>

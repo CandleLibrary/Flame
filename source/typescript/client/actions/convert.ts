@@ -4,7 +4,6 @@ import {
     CLEARLEFT,
     CLEARTOP
 } from "./clear.js";
-import { css } from "../env.js";
 import {
     CSSCacheFactory
 } from "../cache/css_cache.js";
@@ -20,7 +19,13 @@ import {
     SETMARGINLEFT,
     SETMARGINTOP
 } from "./margin.js";
-let types = css.types;
+
+import { CSS_Length, CSS_Percentage } from "@candlelib/css";
+let types = {
+    length: CSS_Length,
+    percentage: CSS_Percentage,
+
+};
 
 /**
  * Actions for converting position and layout to different forms. 

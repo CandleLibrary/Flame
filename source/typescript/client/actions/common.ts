@@ -1,28 +1,12 @@
-import { css } from "../env.js";
-
-let {
-    CSS_Color,
+import {
     CSS_Length,
-    CSS_Percentage,
-    CSS_URL,
-    CSS_Number,
-    CSS_Id,
-    CSS_String,
-    CSS_Shape,
-    CSS_Bezier,
-    CSS_Gradient,
-    CSS_Transform2D,
-    CSS_Path,
-    CSS_FontName
-} = css;
-
+    CSS_Percentage
+} from "@candlelib/css";
 import { CSSCacheFactory } from "../cache/css_cache.js";
-import { prepUIUpdate } from "./update.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 
 export const noop = () => { };
-
 
 export function getContentBox(ele, win: Window = window, system) {
     const

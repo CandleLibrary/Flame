@@ -140,6 +140,10 @@ const flame_editor_dispatch = <Dispatcher>{
 
         const comp = await wick(editor_path, flame_editor_presets);
 
+        if (comp.HAS_ERRORS)
+            for (const error of comp.errors)
+                Logger.get("flame").get("editor-dispatch").activate().log(error);
+
         const { page } = await wick.utils.RenderPage(comp, flame_editor_presets);
 
         return tools.sendUTF8String(page);

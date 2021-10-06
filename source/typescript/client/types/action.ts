@@ -1,10 +1,9 @@
-import { RuntimeComponent, Component } from "@candlelib/wick";
+import { noop } from "../actions/common.js";
+import { RatioMarker } from "../actions/ratio.js";
+import { ActionType } from "./action_type";
 import { FlameSystem } from "./flame_system.js";
 import { HistoryArtifact } from "./history_artifact";
 import { ObjectCrate } from "./object_crate.js";
-import { ActionType } from "./action_type";
-import { RatioMarker } from "../actions/ratio.js";
-import { noop } from "../actions/common.js";
 export interface Action {
     type: ActionType,
 

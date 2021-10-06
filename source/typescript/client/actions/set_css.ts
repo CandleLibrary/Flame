@@ -1,7 +1,6 @@
-import { css } from "../env.js";
-
 import { CSSCacheFactory } from "../cache/css_cache.js";
-import { getFirstPositionedAncestor, prepRebuild } from "./common.js";
+import { prepRebuild } from "./common.js";
+
 
 export function SETCSSPROP(system, component, element, value_string) {
 

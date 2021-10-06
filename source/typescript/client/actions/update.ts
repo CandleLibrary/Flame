@@ -1,12 +1,11 @@
+import { getRTInstances } from "../common_functions.js";
 import history from "../history.js";
+import { Action } from "../types/action.js";
+import { ActionType } from "../types/action_type.js";
+import { FlameSystem } from "../types/flame_system.js";
 import { HistoryState } from "../types/history_state";
 import { ObjectCrate } from "../types/object_crate.js";
-import { Action } from "../types/action.js";
-import { FlameSystem } from "../types/flame_system.js";
-import { ActionType } from "../types/action_type.js";
-import { getComponentDataFromName, getRTInstances } from "../common_functions.js";
-import { startRatioMeasure, clearRatioMeasure, markRatioMeasure } from "./ratio.js";
-import { debug } from "console";
+import { clearRatioMeasure, markRatioMeasure, startRatioMeasure } from "./ratio.js";
 
 
 export function setState(FORWARD = true, history_state: HistoryState, sys: FlameSystem, POST_UPDATE: boolean = false) {
@@ -37,9 +36,11 @@ export function setState(FORWARD = true, history_state: HistoryState, sys: Flame
 
         const LU = new Set();
 
-        const
-            comp = getComponentDataFromName(sys, comp_name),
-            string = sys.edit_wick.utils.componentDataToCSS(comp);
+        debugger;
+        const css_string = "";
+        //const
+        //    comp = getComponentDataFromName(sys, comp_name),
+        //    css_string = sys.editor_wick.utils.componentDataToCSS(comp);
 
 
 
@@ -55,23 +56,23 @@ export function setState(FORWARD = true, history_state: HistoryState, sys: Flame
             const {
                 css_cache: { [comp_name]: { css_ele: ele } },
                 window: { document }
-            } = rt_comp.presets;
+            } = rt_comp.context;
 
             if (!ele) {
 
                 const ele = document.createElement("style");
 
-                rt_comp.presets.css_cache[comp_name] = ele;
+                rt_comp.context.css_cache[comp_name] = ele;
 
-                ele.innerHTML = string;
+                ele.innerHTML = css_string;
 
-                rt_comp.presets.window.head.appendChild(ele);
+                rt_comp.context.window.document.head.appendChild(ele);
 
                 LU.add(ele);
 
             } else if (!LU.has(ele)) {
 
-                ele.innerHTML = string;
+                ele.innerHTML = css_string;
 
                 LU.add(ele);
             }

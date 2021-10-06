@@ -1,5 +1,6 @@
 import { CSS_Transform2D } from "@candlelib/css";
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
+import { Session } from '../session.js';
 import { EditorModel } from "../editor_model";
 import { HistoryState } from "./history_state";
 
@@ -50,6 +51,11 @@ export interface EditedComponent {
  */
 export interface FlameSystem {
 
+    /**
+     * The websocket connection to the editor server
+     */
+    session: Session;
+
     metrics: {
         /**
          * Amount of time taken during the entire call to
@@ -76,6 +82,8 @@ export interface FlameSystem {
     /**
      * A Model containing a list of all components actively 
      * edited within the editor context. 
+     * 
+     * Observable
      */
     edited_components: {
         components: EditedComponent[];
@@ -96,7 +104,9 @@ export interface FlameSystem {
 
     /**
      * Primary model storing information used 
-     * by all UI runtime components. Is reactive.
+     * by all UI runtime components. 
+     * 
+     * Observable
      */
     editor_model: EditorModel;
 
@@ -128,7 +138,6 @@ export interface FlameSystem {
     document: Document,
     body: HTMLElement,
     head: HTMLElement,
-    wick: WickLibrary,
     flags: {
         CSS_SELECTOR_KEEP_UNIQUE?: boolean;
         DUBUG_DISPLAY_STARTUP_METRICS?: boolean;
@@ -141,5 +150,12 @@ export interface FlameSystem {
         transform: CSS_Transform2D;
     },
     edit_css: any,
-    edit_wick: WickLibrary;
+    /**
+     * The wick module instance for the Editor interface
+     */
+    editor_wick: WickLibrary;
+    /**
+     * The wick module instance for the edited page
+     */
+    page_wick: WickLibrary,
 }

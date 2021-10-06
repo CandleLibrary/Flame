@@ -1,8 +1,7 @@
-import { RuntimeComponent } from "@candlelib/wick";
-import { HTMLCache } from "../cache/html_cache.js";
-import { CSSCache } from "../cache/css_cache.js";
-import { Action } from "./action.js";
 import { RatioMarker } from "../actions/ratio.js";
+import { CSSCache } from "../cache/css_cache.js";
+import { HTMLCache } from "../cache/html_cache.js";
+import { Action } from "./action.js";
 import { EditorSelection } from "./selection.js";
 
 /**

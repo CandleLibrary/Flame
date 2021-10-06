@@ -338,8 +338,8 @@ export function getNewCSSArrayWithRulesThatMatchElement(comp: Component, ele: DO
 
 
 export function setRTInstanceClass(sys: FlameSystem, comp_name: string, comp_class: typeof RuntimeComponent) {
-    sys.edit_wick.rt.presets.component_class.set(comp_name, comp_class);
-    sys.wick.rt.presets.component_class.set(comp_name, comp_class);
+    sys.edit_wick.rt.context.component_class.set(comp_name, comp_class);
+    sys.wick.rt.context.component_class.set(comp_name, comp_class);
 }
 
 export function getListOfRTInstanceAndAncestors(comp: RuntimeComponent): RuntimeComponent[] {
@@ -386,7 +386,7 @@ export function replaceRTInstances(sys: FlameSystem, old_comp_name: string, new_
     const cstr: typeof WickRTComponent = sys.edit_wick.rt.gC(new_comp_name);
 
     for (const old_comp of getRTInstances(sys, old_comp_name)) {
-        const new_comp = new cstr(old_comp.model, null, null, old_comp.par, null, sys.wick.rt.presets);
+        const new_comp = new cstr(old_comp.model, null, null, old_comp.par, null, sys.wick.rt.context);
         old_comp.ele.parentElement.replaceChild(new_comp.ele, old_comp.ele);
         old_comp.destructor();
     }
@@ -419,15 +419,15 @@ export function getComponentDataFromRTInstance(sys: FlameSystem, comp: RuntimeCo
 
     if (!comp) return null;
 
-    return sys.edit_wick.rt.presets.components.get(comp.name);
+    return sys.edit_wick.rt.context.components.get(comp.name);
 }
 export function getComponentDataFromName(sys: FlameSystem, name: string): Component {
-    return sys.edit_wick.rt.presets.components.get(name);
+    return sys.edit_wick.rt.context.components.get(name);
 }
 
 export function setComponentData(sys: FlameSystem, comp: Component) {
-    sys.edit_wick.rt.presets.components.set(comp.name, comp);
-    sys.wick.rt.presets.components.set(comp.name, comp);
+    sys.edit_wick.rt.context.components.set(comp.name, comp);
+    sys.wick.rt.context.components.set(comp.name, comp);
 }
 
 export function createImportName(b: WickLibrary["types"]["BindingVariable"]) {
@@ -673,7 +673,7 @@ export function createRTComponentFromComponentData(sys: FlameSystem, comp: Compo
     if (!comp.name)
         comp.name = sys.edit_wick.parse.createNameHash(componentDataToSourceString(sys, comp));
 
-    const new_comp_class = sys.edit_wick.componentDataToJSCached(comp, sys.edit_wick.rt.presets);
+    const new_comp_class = sys.edit_wick.componentDataToJSCached(comp, sys.edit_wick.rt.context);
 
     setComponentData(sys, comp);
     setRTInstanceClass(sys, comp.name, new_comp_class);

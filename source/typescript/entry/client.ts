@@ -1,6 +1,7 @@
 import { Logger } from "@candlelib/log";
 import { WickLibrary, WickRTComponent } from '@candlelib/wick';
 import { parse } from "@candlelib/css";
+import { CommandsMap, EditMessage, EditorCommand, Patch, PatchType } from '../server/development/component_tools';
 
 
 const wick: WickLibrary = <any>window["wick"];
@@ -59,6 +60,8 @@ function initializeEditorFrame() {
     //TODO: Establish com. channels
 };
 
+
+
 /**
  * The client side counterpart of the server Session class
  */
@@ -99,11 +102,21 @@ class Session {
        * Convert an object to JSON and send to
        * client.
        */
-    send_object(object: any, nonce: number = Infinity) {
-
+    send_command<T extends keyof CommandsMap>(
+        object: CommandsMap[T],
+        nonce: number = Infinity
+    ) {
         const json = JSON.stringify({ data: object, nonce });
-
         this.connection.send(json);
+    }
+    send_awaitable_command<T extends keyof CommandsMap, R extends keyof CommandsMap>(
+        obj: CommandsMap[T]
+    ): Promise<CommandsMap[R]> {
+        return new Promise(res => {
+            const nonce = this.nonce++;
+            this.awaitable_callback.set(nonce, res);
+            this.send_command(obj, nonce);
+        });
     }
 
     open_handler() {
@@ -112,7 +125,7 @@ class Session {
 
         logger.log(`Connection to [ ${this.connection.url} ] established`);
 
-        this.send_object({ command: "register_client_endpoint", endpoint: path });
+        this.send_command({ command: EditorCommand.REGISTER_CLIENT_ENDPOINT, endpoint: path });
 
         this.ACTIVE = true;
     }
@@ -126,13 +139,11 @@ class Session {
 
     async command_handler(msg: MessageEvent) {
 
-        const { nonce, data } = JSON.parse(msg.data);
-
-        console.log({ nonce });
+        const { nonce, data } = <EditMessage>JSON.parse(msg.data);
 
         if (this.awaitable_callback.has(nonce)) {
 
-            logger.get("session").debug(`Received command with nonce [ ${nonce} ]`);
+            logger.get("session").debug(`Received command [ ${EditorCommand[data.command]} ] with nonce [ ${nonce} ]`);
 
             const callback = this.awaitable_callback.get(nonce);
 
@@ -141,9 +152,9 @@ class Session {
             return callback(data);
         }
 
-        switch (data?.command) {
+        switch (data.command) {
 
-            case "updated_component": {
+            case EditorCommand.UPDATED_COMPONENT: {
                 //Proceed to replace all components
 
                 const { new_name, old_name, path } = data;
@@ -152,79 +163,122 @@ class Session {
                 const matches = getRootMatchingComponents(old_name);
 
                 if (matches.length > 0)
-                    this.send_object({ command: "get_component_patch", new_name, old_name });
+                    this.send_command({ command: EditorCommand.GET_COMPONENT_PATCH, to: new_name, from: old_name });
 
             } break;
 
-            case "get_component_patch": {
+            case EditorCommand.APPLY_COMPONENT_PATCH: {
 
-                const { new_name, old_name, patches } = data;
+                const patch = data.patch;
 
-                //Install the patches
-                const classes: typeof WickRTComponent[] = patches.map(
-                    patch => Function("wick", patch)(wick)
-                );
+                switch (patch.type) {
 
-                //The first class is always the changed component
+                    case PatchType.STUB: {
 
-                const class_ = classes[0];
+                        const { to, from } = patch;
 
-                const matches = getRootMatchingComponents(old_name);
+                        const matches = getRootMatchingComponents(from);
 
-                for (const match of matches) {
+                        for (const match of matches) {
 
-                    // Do some patching magic to replace the old component 
-                    // with the new one. 
-
-                    const ele = match.ele;
-                    const par_ele = ele.parentElement;
-                    const par_comp = match.par;
-
-                    const new_component = new class_(
-                        match.model,
-                        undefined,
-                        undefined,
-                        [],
-                        undefined,
-                        wick.rt.presets,
-                    );
-
-                    if (par_ele)
-
-                        par_ele.replaceChild(new_component.ele, ele);
-
-                    if (par_comp) {
-
-                        const index = par_comp.ch.indexOf(match);
-
-                        if (index >= 0) {
-                            par_comp.ch.splice(index, 1, new_component);
-                            new_component.par = par_comp;
+                            match.name = to;
                         }
+                    } break;
 
-                        match.par = null;
-                    }
+                    case PatchType.TEXT: {
 
-                    new_component.initialize(match.model);
+                        const { to, from, patches } = patch;
 
-                    match.disconnect();
-                    match.destructor();
+                        const matches = getRootMatchingComponents(from);
 
-                    if (removeRootComponent(match)) {
-                        addRootComponent(new_component);
-                    }
+                        for (const match of matches) {
+
+                            const ele = match.ele;
+
+                            match.name = to;
+
+                            let eles = [ele];
+
+                            for (const patch of patches) {
+
+
+                                for (const ele of eles) {
+                                    if (ele instanceof Text) {
+                                        if (ele.data.trim() == patch.from.trim()) {
+                                            ele.data = patch.to;
+                                            break;
+                                        }
+                                    }
+
+                                    for (const child of Array.from(ele.childNodes)) {
+                                        eles.push(child);
+                                    }
+                                }
+                            }
+                        }
+                    } break;
+
+                    case PatchType.REPLACE: {
+
+                        const { to, from, patch_scripts } = patch;
+
+                        //Install the patches
+                        const classes: typeof WickRTComponent[] = patch_scripts.map(
+                            patch => Function("wick", patch)(wick)
+                        );
+
+                        const class_ = classes[0];
+
+                        const matches = getRootMatchingComponents(from);
+
+                        for (const match of matches) {
+
+                            // Do some patching magic to replace the old component 
+                            // with the new one. 
+
+                            const ele = match.ele;
+                            const par_ele = ele.parentElement;
+                            const par_comp = match.par;
+
+                            const new_component = new class_(
+                                match.model,
+                                undefined,
+                                undefined,
+                                [],
+                                undefined,
+                                wick.rt.context,
+                            );
+
+                            if (par_ele)
+
+                                par_ele.replaceChild(new_component.ele, ele);
+
+                            if (par_comp) {
+
+                                const index = par_comp.ch.indexOf(match);
+
+                                if (index >= 0) {
+                                    par_comp.ch.splice(index, 1, new_component);
+                                    new_component.par = par_comp;
+                                }
+
+                                match.par = null;
+                            }
+
+                            new_component.initialize(match.model);
+
+                            match.disconnect();
+                            match.destructor();
+
+                            if (removeRootComponent(match)) {
+                                addRootComponent(new_component);
+                            }
+                        }
+                    } break;
                 }
 
             } break;
         }
-    }
-
-    send_awaitable_command<T>(obj: any): Promise<T> {
-        return new Promise(res => {
-            const nonce = this.nonce++;
-            this.awaitable_callback.set(nonce, res);
-            this.send_object(obj, nonce);
-        });
     }
 
 }
@@ -276,18 +330,19 @@ class CSSHandler {
     }
 
     getActiveComponent(): WickRTComponent {
+        return null;
     }
 
     async getComponentCSS(component: string) {
 
-        const { component_name, style_strings }: {
-            command: "get_component_style",
-            component_name: string,
-            style_strings: string[];
-        } = await this.session.send_awaitable_command({
-            command: "get_component_style",
-            component_name: component
-        });
+        const { component_name, style_strings }
+            = await this.session.send_awaitable_command<
+                EditorCommand.GET_COMPONENT_STYLE,
+                EditorCommand.GET_COMPONENT_STYLE_RESPONSE
+            >({
+                command: EditorCommand.GET_COMPONENT_STYLE,
+                component_name: component
+            });
 
         const styles = style_strings.map(s => parse(s));
 
@@ -299,8 +354,8 @@ class CSSHandler {
 
         console.log(rule);
 
-        this.session.send_object({
-            command: "set_component_style",
+        this.session.send_command({
+            command: EditorCommand.SET_COMPONENT_STYLE,
             component_name,
             rules: rule_string
         });

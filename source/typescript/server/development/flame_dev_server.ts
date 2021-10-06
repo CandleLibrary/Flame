@@ -81,7 +81,7 @@ async function renderPage(
 
         return (await wick.utils.RenderPage(
             component,
-            wick.rt.presets,
+            wick.rt.context,
             hooks
         )).page;
 
@@ -125,7 +125,7 @@ const flaming_wick_dispatch = <Dispatcher>{
     }
 };
 
-const flame_editor_presets = new wick.objects.Presets();
+
 const flame_editor_dispatch = <Dispatcher>{
     name: "Flame Editor",
     MIME: "text/html",
@@ -134,6 +134,7 @@ const flame_editor_dispatch = <Dispatcher>{
         dispatcher.keys = [{ ext: ext_map.none, dir: "/flame-editor" }];
     },
     respond: async function (tools) {
+        const flame_editor_presets = new wick.objects.Context();
 
         const editor_path = URI.resolveRelative("@candlelib/flame/source/components/editor.wick");
 
@@ -146,13 +147,13 @@ const flame_editor_dispatch = <Dispatcher>{
 };
 export async function initDevServer(port: number = 8082) {
 
-    Logger.get("lantern").activate();
+    //Logger.get("lantern").activate();
 
     wick.rt.setPresets();
 
     const working_directory = new URI(process.cwd());
 
-    await loadComponents(working_directory, wick.rt.presets);
+    await loadComponents(working_directory, wick.rt.context);
 
     const server = await lantern({
         port,

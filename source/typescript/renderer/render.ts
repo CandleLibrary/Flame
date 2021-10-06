@@ -50,7 +50,7 @@ const FILE = {
 
 function getComponentGroup(
     comp: Component,
-    presets: Presets,
+    context: Presets,
     comp_name_set: Set<string> = new Set,
     out_array: Array<Component> = [comp]
 ): Array<Component> {
@@ -64,11 +64,11 @@ function getComponentGroup(
 
             comp_name_set.add(name);
 
-            const comp = presets.components.get(name);
+            const comp = context.components.get(name);
 
             out_array.push(comp);
 
-            getComponentGroup(comp, presets, comp_name_set, out_array);
+            getComponentGroup(comp, context, comp_name_set, out_array);
         }
     }
 

@@ -1,13 +1,12 @@
+import { Logger } from '@candlelib/log';
 import URI from '@candlelib/uri';
-import { loadComponentsFromDirectory, Presets } from "@candlelib/wick";
-import { ComponentDataClass } from '@candlelib/wick/build/types/compiler/common/component';
+import { ComponentData, loadComponentsFromDirectory, Context } from "@candlelib/wick";
 import {
     Components,
     EndPoints,
     PageComponents
 } from "@candlelib/wick/build/types/entry-point/wick-server";
 
-import { Logger } from '@candlelib/log';
 
 const logger = Logger.createLogger("Flame");
 
@@ -15,7 +14,7 @@ export const store: {
     components: Components;
     endpoints: EndPoints;
     page_components: PageComponents;
-    updated_components: Map<string, ComponentDataClass>;
+    updated_components: Map<string, ComponentData>;
 } = {
     components: null,
     endpoints: null,
@@ -24,14 +23,14 @@ export const store: {
 };
 
 
-export async function loadComponents(working_directory: URI, presets: Presets) {
+export async function loadComponents(working_directory: URI, context: Context) {
 
     logger.debug(`Loading components within [ ${working_directory} ]`);
 
     const { endpoints, page_components, components }
         = await loadComponentsFromDirectory(
             working_directory,
-            presets,
+            context,
             function (uri: URI) {
 
                 // If this an index.wick component

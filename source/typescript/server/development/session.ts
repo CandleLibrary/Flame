@@ -1,16 +1,16 @@
+import { parse, renderCompressed } from '@candlelib/css';
 import { Logger } from '@candlelib/log';
 import spark, { Sparky } from '@candlelib/spark';
-import wick, {
-    ComponentData, Presets
-} from "@candlelib/wick";
-import { ComponentDataClass } from '@candlelib/wick/build/types/compiler/common/component';
-import { WebSocket } from "ws";
 import URI from '@candlelib/uri';
-import { store } from './store.js';
+import wick, {
+    ComponentData
+} from "@candlelib/wick";
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
-import { parse, renderCompressed } from '@candlelib/css';
-const logger = Logger.createLogger("flame");
 import fs from "fs";
+import { WebSocket } from "ws";
+import { addStyle, CommandsMap, createStubPatch, EditMessage, EditorCommand, getComponentDependencies, getPatch } from './component_tools.js';
+import { store } from './store.js';
+const logger = Logger.createLogger("flame");
 const fsp = fs.promises;
 
 
@@ -66,7 +66,8 @@ export class Session {
      * Convert an object to JSON and send to
      * client.
      */
-    send_object(object: any, nonce: number = Infinity) {
+    send_object<T extends keyof CommandsMap>(
+        object: CommandsMap[T], nonce: number = Infinity) {
         const json = JSON.stringify({ nonce, data: object });
         this.connection.send(json);
     }
@@ -96,7 +97,7 @@ export class Session {
     ) {
 
         this.send_object({
-            command: "updated_component",
+            command: EditorCommand.UPDATED_COMPONENT,
             path: component_path,
             old_name: old_component_name,
             new_name: new_component_name
@@ -105,75 +106,81 @@ export class Session {
 
     async command_handler(buffer: Buffer, isBinary: boolean) {
 
-        const { nonce, data } = JSON.parse(buffer.toString());
+        const { nonce, data } = <EditMessage>JSON.parse(buffer.toString());
 
         logger.get("session").debug(`Received command [ ${data.command} ] with nonce [ ${nonce} ]`);
 
         switch (data?.command) {
 
-            case "set_component_style": {
+            case EditorCommand.SET_COMPONENT_STYLE: {
                 const { component_name, rules } = data;
+
                 const style = parse(rules);
-                const comp = wick.rt.presets.components.get(component_name);
-                const CSS = comp.CSS;
 
-                CSS[0].data.nodes.push(...style.nodes);
+                const comp = wick.rt.context.components.get(component_name);
 
-                const location = comp.location;
+                const new_comp = await addStyle(
+                    comp,
+                    wick.rt.context,
+                    rules
+                );
+
+                const location = new_comp.location;
 
                 const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
 
-                fsp.writeFile(path + "", CSS[0].data.pos.replace(
-                    renderCompressed(CSS[0].data)
-                ));
+                await fsp.writeFile(path + "", new_comp.source);
+
+                this.send_object({
+                    command: EditorCommand.APPLY_COMPONENT_PATCH,
+                    patch: createStubPatch(comp, new_comp)
+                }, nonce);
 
                 console.log(component_name, style, CSS, CSS[0].data.pos.slice());
+
             } break;
 
 
-            case "get_component_source": {
+            case EditorCommand.GET_COMPONENT_SOURCE: {
                 const { component_name } = data;
 
-                const comp = wick.rt.presets.components.get(component_name);
+                const comp = wick.rt.context.components.get(component_name);
 
                 if (comp) {
                     this.send_object({
-                        command: "get_component_source",
+                        command: EditorCommand.GET_COMPONENT_SOURCE_RESPONSE,
+                        component_name,
                         source: comp.source
                     }, nonce);
                 }
             } break;
 
-            case "get_component_style": {
+            case EditorCommand.GET_COMPONENT_STYLE: {
 
                 const { component_name } = data;
 
-                const comp = wick.rt.presets.components.get(component_name);
+                const comp = wick.rt.context.components.get(component_name);
 
                 if (comp) {
 
                     const CSS = comp.CSS;
 
                     this.send_object({
-                        command: "get_component_style",
+                        command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
                         component_name,
                         style_strings: CSS.map(i => getCSSStringFromComponentStyle(i, comp))
                     }, nonce);
                 } else {
                     this.send_object({
                         component_name,
-                        command: "get_component_style",
-                        source: []
+                        command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
+                        style_strings: []
                     }, nonce);
                 }
 
             } break;
 
-            case "set_component_style": {
-
-            } break;
-
-            case "register_client_endpoint": {
+            case EditorCommand.REGISTER_CLIENT_ENDPOINT: {
 
                 const { endpoint } = data;
 
@@ -188,29 +195,21 @@ export class Session {
 
             } break;
 
-            case "get_component_patch": {
+            case EditorCommand.GET_COMPONENT_PATCH: {
+
                 // Need to receive the class data necessary to 
                 // do an in place replacement of component data
-                const { old_name, new_name } = data;
-
-                const patches = [];
-
-                const root_component: ComponentDataClass = store.updated_components.get(new_name);
-
-                for (const comp of getComponentDependencies(root_component)) {
-
-                    const code_patch = await comp.createPatch(wick.rt.presets, old_name);
-
-                    patches.push(code_patch);
-                }
+                const { from, to } = data;
 
                 this.send_object({
-                    nonce,
-                    command: "get_component_patch",
-                    old_name,
-                    new_name,
-                    patches
+                    command: EditorCommand.APPLY_COMPONENT_PATCH,
+                    patch: await getPatch(
+                        wick.rt.context.components.get(from),
+                        wick.rt.context.components.get(to),
+                        wick.rt.context
+                    )
                 }, nonce);
+
             } break;
         }
     }
@@ -230,29 +229,7 @@ export class Session {
 let watchers: Map<string, FileWatcherHandler> = new Map();
 let sessions = [];
 
-/**
- * Returns a list of all components that are required to
- * properly render the givin root component, 
- * including the root component
- * @param root_component 
- * @returns 
- */
-function getComponentDependencies(root_component: ComponentData): Array<ComponentData> {
 
-    const seen_components: Set<string> = new Set();
-    const output = [root_component];
-
-    for (const component of output) {
-
-        seen_components.add(component.name);
-
-        for (const [, comp_name] of component.local_component_names)
-            if (!seen_components.has(comp_name))
-                output.push(wick.rt.presets.components.get(comp_name));
-    }
-
-    return output;
-}
 
 export function getPageWatcher(location: string) {
 
@@ -307,7 +284,7 @@ class FileWatcherHandler implements Sparky {
 
         this.type = "";
 
-        const comp = await wick(new URI(this.path), wick.rt.presets);
+        const comp = await wick(new URI(this.path), wick.rt.context);
 
         if (comp.HAS_ERRORS) {
 
@@ -318,7 +295,7 @@ class FileWatcherHandler implements Sparky {
             // Though shalt remove this offending component from 
             // the system
 
-            wick.rt.presets.components.delete(comp.name);
+            wick.rt.context.components.delete(comp.name);
 
         } else {
 

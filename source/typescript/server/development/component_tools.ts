@@ -472,8 +472,6 @@ export async function addStyle(
         new_source = renderNewFormatted(ast);
     }
 
-    console.log(new_source);
-
     const comp = await wick(new_source, context);
 
     comp.location = component.location;

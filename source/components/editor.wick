@@ -1,4 +1,13 @@
-<div>
+import css_selector from "./css_selection_dialogue.wick";
+
+import { state } from "@model:flame-editor";
+
+import draw_canvas from "./draw_canvas.wick";
+
+export default <div>
+
+    
+
     <style>
         root {
             background-color: rgba(255,25,25,0.08);
@@ -9,5 +18,13 @@
             left:0;
         }
     </style>
+
     Flame Editor
+
+    {state}
+
+    <draw_canvas />
+
+    <css_selector/>
+    
 </div>

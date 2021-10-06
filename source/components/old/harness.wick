@@ -1,7 +1,7 @@
 import edited_comp from "./edited_component.wick";
-import { components } from "@model:edited-components";
+import { components as data } from "@model:edited-components";
 
-export default <container data="${components}">
+export default <container {data}>
     <edited_comp></edited_comp>
 </container>;
 

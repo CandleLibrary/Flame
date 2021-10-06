@@ -3,7 +3,7 @@ import { sys } from "@api";
 
 var canvas = "@#canvas", ctx = canvas.getContext("2d");
 
-function updateDraw() {
+function $updateDraw(sc) {
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -41,8 +41,6 @@ function updateDraw() {
 
     ctx.restore();
 }
-
-watch(updateDraw, sc);
 
 export default <canvas id="canvas"></canvas>;
 

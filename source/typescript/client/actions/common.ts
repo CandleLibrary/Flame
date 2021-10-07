@@ -144,25 +144,25 @@ export function setNumericValue(
         switch (relative_type) {
             case setNumericValue.parent_width:
                 ref_ele = ele.parentElement;
-                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).width;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.editor_window, sys).width;
                 break;
             case setNumericValue.parent_height:
                 ref_ele = ele.parentElement;
-                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).height;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.editor_window, sys).height;
                 break;
             case setNumericValue.positioned_ancestor_width:
                 ref_ele = getFirstPositionedAncestor(ele);
-                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).width;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.editor_window, sys).width;
                 break;
             case setNumericValue.positioned_ancestor_height:
                 ref_ele = getFirstPositionedAncestor(ele);
-                if (ref_ele) denominator = getContentBox(ref_ele, sys.window, sys).height;
+                if (ref_ele) denominator = getContentBox(ref_ele, sys.editor_window, sys).height;
                 break;
             case setNumericValue.height:
-                denominator = getContentBox(comp, sys.window, sys).width;
+                denominator = getContentBox(comp, sys.editor_window, sys).width;
                 break;
             case setNumericValue.width:
-                denominator = getContentBox(comp, sys.window, sys).width;
+                denominator = getContentBox(comp, sys.editor_window, sys).width;
                 break;
         }
 

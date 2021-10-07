@@ -9,12 +9,12 @@ import { sealCSS, updateCSS } from "./update_css.js";
 function getContentBox(sel: EditorSelection, sys: FlameSystem) {
 
     const
-        { IS_COMPONENT_FRAME, ele, frame_ele } = sel,
+        { ele } = sel,
 
-        scale = IS_COMPONENT_FRAME ? sys.ui.transform.scale : 1,
+        scale = sys.ui.transform.scale,
 
         rect = ele.getBoundingClientRect(),
-        par_prop = (IS_COMPONENT_FRAME ? sys.window : window).getComputedStyle(ele),
+        par_prop = window.getComputedStyle(ele),
 
         border_l = parseFloat(par_prop.getPropertyValue("border-left")),
         border_r = parseFloat(par_prop.getPropertyValue("border-right")),

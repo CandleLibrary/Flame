@@ -46,10 +46,8 @@ export class EditorModel {
         this.selection_box = null;
         this.selections = [<EditorSelection><unknown>{
             model: new editor_wick.objects.ObservableScheme<EditorSelection>({
-                frame_ele: null,
                 ACTIVE: false,
                 VALID: true,
-                IS_COMPONENT_FRAME: false,
                 actual_height: 0,
                 actual_left: 0,
                 actual_top: 0,

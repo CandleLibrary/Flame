@@ -2,9 +2,10 @@ import { state } from "@model:flame-editor";
 import { sys } from "@api";
 
 import draw_canvas from "./draw_canvas.wick";
+import adjust_box from "./element_adjust_box.wick";
+import hover_box from "./element_hover_box.wick";
 
 function onload(){
-
     sys.ui.event_intercept_frame = "@.event-intercept";
 }
 
@@ -18,11 +19,11 @@ export default <div>
             top:0;
             left:0;
             z-index:1000;
-        }
-        .event-intercept h1{
             pointer-events:none;
-        }   
+        }
+
         .event-intercept{
+            pointer-events:all;
             text-transform: uppercase;
             text-align:center;
             position: fixed;
@@ -36,7 +37,11 @@ export default <div>
     </style>
 
     <div class="event-intercept"></div>
+    
+    <adjust_box />
 
+    <hover_box />
+    
     <draw_canvas />
     
 </div>

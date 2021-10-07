@@ -9,7 +9,7 @@ import {
     PrecedenceFlags
 } from "@candlelib/css";
 import URI from '@candlelib/uri';
-import { WickRTComponent } from "@candlelib/wick";
+import { Context, WickRTComponent } from "@candlelib/wick";
 import { FlameSystem } from "./types/flame_system";
 import { EditorSelection } from "./types/selection";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
@@ -156,18 +156,22 @@ export function getListOfRTInstanceAndAncestors(comp: WickRTComponent): WickRTCo
     return list.reverse();
 }
 
-export function getRTInstanceFromElement(ele): WickRTComponent {
-    if (ele) {
-        do {
-            if (ele.wick_component && !ele.hasAttribute("w:o"))
-                /* Presence of "w:o" indicates the element belongs to a component that has integrated its 
-                * element into the tree of another component.  */
-                return ele.wick_component;
+export function getRootComponentName(ele: HTMLElement) {
 
-            ele = ele.parentNode;
-        } while (ele);
+    while (ele) {
+
+        if (ele.hasAttribute("wrt:c")) {
+
+            return ele.getAttribute("wrt:c");
+        }
+
+        ele = ele.parentElement;
     }
-    return null;
+
+    return "";
+}
+export function getComponentNameFromElement(ele: HTMLElement): string {
+    return getRootComponentName(ele);
 }
 
 export function* getRTInstances(sys: FlameSystem, component_name: string): Generator<WickRTComponent> {
@@ -181,10 +185,6 @@ export function* getRTInstances(sys: FlameSystem, component_name: string): Gener
         for (const ele of document.getElementsByClassName(component_name))
             yield ele.wick_component;
     }
-}
-
-export function getRTInstanceFromEvent(event, sys: FlameSystem) {
-    return getRTInstanceFromElement(getElementFromEvent(event, sys));
 }
 
 
@@ -256,17 +256,18 @@ export function invalidateSelection(sel: EditorSelection, sys: FlameSystem) {
         i = selections.indexOf(sel);
 
     if (i >= 0) {
-
-        sel.ele.style.textDecoration = "";
-
+        if (sel.ele)
+            sel.ele.style.textDecoration = "";
         sel.VALID = false;
         sel.ACTIVE = false;
         sel.ele = null;
         sel.comp = null;
-        //selections.scheduleUpdate();
+
     } else {
         throw ReferenceError("This selection is out of scope!");
     }
+
+
 
 }
 
@@ -276,17 +277,15 @@ export function invalidateInactiveSelections(sys: FlameSystem) {
     for (const sel of selections)
         if (!sel.ACTIVE && sel.VALID)
             invalidateSelection(sel, sys);
+
+
 }
 
 export function invalidateAllSelections(sys: FlameSystem) {
     const selections = sys.editor_model.selections;
 
-    for (const sel of selections) {
-        sel.VALID = false;
-        sel.ACTIVE = false;
-        sel.ele = null;
-        sel.comp = null;
-    }// invalidateSelection(sel, sys);
+    for (const sel of selections)
+        invalidateSelection(sel, sys);
 }
 
 export function updateSelections(sys: FlameSystem) {
@@ -294,9 +293,14 @@ export function updateSelections(sys: FlameSystem) {
 
     for (const sel of selections)
         updateSelectionCoords(sel, sys);
+
+    selections.scheduleUpdate();
 }
 
-export function getASelection(sys: FlameSystem, ele: HTMLElement, frame_ele: HTMLElement, IS_COMPONENT_FRAME: boolean = false): EditorSelection {
+export function getSelection(
+    sys: FlameSystem,
+    ele: HTMLElement
+): EditorSelection {
 
     const selections = sys.editor_model.selections;
     let selection_candidate: EditorSelection = null;
@@ -310,27 +314,23 @@ export function getASelection(sys: FlameSystem, ele: HTMLElement, frame_ele: HTM
     }
 
     if (selection_candidate) {
+
         selection_candidate.VALID = true;
-        selection_candidate.IS_COMPONENT_FRAME = IS_COMPONENT_FRAME;
         selection_candidate.ele = ele;
-        selection_candidate.frame_ele = frame_ele;
 
-        if (!IS_COMPONENT_FRAME)
-            selection_candidate.comp = getRTInstanceFromElement(ele);
-        else selection_candidate.comp = sys.harness;
+        selection_candidate.comp = getComponentNameFromElement(ele);
 
-        ele.style.textDecoration = "underline";
+        //  ele.style.textDecoration = "underline";
 
         return selection_candidate;
     }
 
-    const sel = <EditorSelection>{
+
+    const sel = new sys.editor_wick.objects.ObservableScheme<EditorSelection>({
         ACTIVE: false,
         VALID: false,
-        IS_COMPONENT_FRAME,
         comp: null,
         ele: null,
-        frame_ele: null,
         width: 0,
         height: 0,
         left: 0,
@@ -348,32 +348,36 @@ export function getASelection(sys: FlameSystem, ele: HTMLElement, frame_ele: HTM
         sx: 0,
         sy: 0,
         sz: 0,
-    };
+        max_x: 0,
+        max_y: 0,
+        min_x: 0,
+        min_y: 0,
+    });
 
-    selections.push(sel);
+    selections.push(<EditorSelection><any>sel);
 
-    return getASelection(sys, ele, frame_ele, IS_COMPONENT_FRAME);
+    return getSelection(sys, ele);
 }
 export function updateSelectionCoords(sel: EditorSelection, sys: FlameSystem): EditorSelection {
 
     if (!sel.VALID) return sel;
 
     const { ui: { transform: { px, py, scale } } } = sys,
-        { ele, frame_ele, IS_COMPONENT_FRAME } = sel,
+        { ele } = sel,
         bb = ele.getBoundingClientRect();
 
     let min_x = bb.left, min_y = bb.top, max_x = min_x + bb.width, max_y = min_y + bb.height;
 
-    if (!IS_COMPONENT_FRAME) {
-        const style = window.getComputedStyle(frame_ele),
-            top = parseFloat(style.top) || 0,
-            left = parseFloat(style.left) || 0;
-        min_x = (min_x + left) * scale + px;
-        min_y = (min_y + top) * scale + py;
-        max_x = (max_x + left) * scale + px;
-        max_y = (max_y + top) * scale + py;
-    }
-
+    /*   if (!IS_COMPONENT_FRAME) {
+          const style = window.getComputedStyle(frame_ele),
+              top = parseFloat(style.top) || 0,
+              left = parseFloat(style.left) || 0;
+          min_x = (min_x + left) * scale + px;
+          min_y = (min_y + top) * scale + py;
+          max_x = (max_x + left) * scale + px;
+          max_y = (max_y + top) * scale + py;
+      }
+   */
     sel.px = min_x;
     sel.py = min_y;
     sel.left = min_x;
@@ -404,13 +408,11 @@ function getElementInHTMLNamespace(ele: HTMLElement) {
 
 export function getSelectionFromPoint(x: number, y: number, sys: FlameSystem): EditorSelection {
 
-    let selection = null;
+    sys.ui.event_intercept_frame.style.pointerEvents = "none";
 
     let ele = window.document.elementFromPoint(x, y);
 
-
-
-    if (ele?.tagName == "IFRAME") // is edited component 
+    if (ele?.tagName != "IFRAME") // is edited component 
     {
 
         const
@@ -425,22 +427,16 @@ export function getSelectionFromPoint(x: number, y: number, sys: FlameSystem): E
         x = (x - px) / scale - left;
         y = (y - py) / scale - top;
 
-        //select from the frame's document
-        let selected_ele: HTMLElement = (<any>ele).contentWindow.document.elementFromPoint(x, y);
 
-        //the element may be the frame's window box.
-        if (!selected_ele) {
-            selected_ele = <HTMLElement>ele;
-            IS_FRAME_SELECTED = true;
-        }// else
-        //   selected_ele = getElementInHTMLNamespace(selected_ele);
+        sys.ui.event_intercept_frame.style.pointerEvents = "all";
 
-        return updateSelectionCoords(getASelection(sys, selected_ele, <HTMLElement>ele, IS_FRAME_SELECTED), sys);
-    } else
-        return null;
+        return updateSelectionCoords(getSelection(sys, ele, <HTMLElement>ele, IS_FRAME_SELECTED), sys);
+    }
+
+    sys.ui.event_intercept_frame.style.pointerEvents = "all";
 
 
-    return selection;
+    return null;
 }
 
 

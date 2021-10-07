@@ -6,22 +6,11 @@ import { WickRTComponent } from '@candlelib/wick';
 export interface EditorSelection {
     ele: HTMLElement;
 
-    /**
-     * Top most element within the frame component.
-     */
-    frame_ele: HTMLElement;
-
-    comp: WickRTComponent;
-
 
     /**
-     * If true, the selection is represent the frame
-     * within the root document that houses the component.
-     * 
-     * This could either be a shadow DOM, or an Iframe.
+     * The component name associated with the selected element
      */
-
-    IS_COMPONENT_FRAME: boolean;
+    comp: string;
 
     /**
      * True if the selection represents a selection locked to a single object.

@@ -57,6 +57,11 @@ export enum EditorCommand {
     GET_COMPONENT_SOURCE_RESPONSE
 }
 
+export const enum StyleSourceType {
+    INLINE,
+    CSS_FILE
+}
+
 export interface CommandsMap {
 
     [EditorCommand.UNDEFINED]: {
@@ -89,7 +94,10 @@ export interface CommandsMap {
     [EditorCommand.GET_COMPONENT_STYLE_RESPONSE]: {
         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE;
         component_name: string;
-        style_strings: string[];
+        styles: {
+            type: StyleSourceType,
+            string: string,
+        }[];
     };
 
     [EditorCommand.SET_COMPONENT_STYLE]: {

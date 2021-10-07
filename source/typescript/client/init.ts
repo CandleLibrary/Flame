@@ -42,7 +42,7 @@ export function init() {
             const protocol = "ws";
             const uri = `${protocol}://${host}:${port}`;
 
-            const system = await initSystem(uri, page_wick, editor_wick, css, editor_window);
+            const system = await initSystem(uri, page_wick, editor_wick, css, editor_window, editor_frame);
 
             const session = system.session;
 

@@ -34,7 +34,8 @@ export function initSystem(
     page_wick?: WickLibrary,
     editor_wick?: WickLibrary,
     edit_css?: any,
-    comp_window?: Window,
+    editor_window?: Window,
+    editor_frame?: HTMLElement
 ): FlameSystem {
 
     if (active_system) return active_system;
@@ -72,10 +73,11 @@ export function initSystem(
 
 
         pending_history_state: null,
-        window: comp_window,
-        document: comp_window.document,
-        body: comp_window.document.body,
-        head: comp_window.document.head,
+        editor_window: editor_window,
+        editor_document: editor_window.document,
+        editor_body: editor_window.document.body,
+        editor_head: editor_window.document.head,
+        editor_iframe: editor_frame,
         edited_components: editor_wick.objects.Observable({
             components: [<EditedComponent><unknown>{
                 model: new editor_wick.objects.ObservableScheme<EditedComponent>({

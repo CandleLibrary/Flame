@@ -109,7 +109,7 @@ export const RESIZEMARGINT = <Action>{
         const
             margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
             margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
-            height = getContentBox(crate.sel.ele, sys.window, sys).height,
+            height = getContentBox(crate.sel.ele, sys.editor_window, sys).height,
             min_y = -margin_top,
             max_y = height - margin_top - margin_bottom;
 
@@ -135,7 +135,7 @@ export const RESIZEMARGINB = <Action>{
         const
             margin_bottom = parseFloat(crate.css_cache.computed.marginBottom) || 0,
             margin_top = parseFloat(crate.css_cache.computed.marginTop) || 0,
-            height = getContentBox(crate.sel.ele, sys.window, sys).height,
+            height = getContentBox(crate.sel.ele, sys.editor_window, sys).height,
             min_y = (-height + margin_bottom) + margin_top,
             max_y = margin_bottom;
 
@@ -158,7 +158,7 @@ export const RESIZEMARGINL = <Action>{
     setLimits: (sys, crate) => {
         const
             margin_left = parseFloat(crate.css_cache.computed.marginLeft) || 0,
-            width = getContentBox(crate.sel.ele, sys.window, sys).width,
+            width = getContentBox(crate.sel.ele, sys.editor_window, sys).width,
             min_x = -margin_left,
             max_x = width;
 
@@ -181,7 +181,7 @@ export const RESIZEMARGINR = <Action>{
     setLimits: (sys, crate) => {
         const
             margin_right = parseFloat(crate.css_cache.computed.marginRight) || 0,
-            width = getContentBox(crate.sel.ele, sys.window, sys).width,
+            width = getContentBox(crate.sel.ele, sys.editor_window, sys).width,
             min_x = -width,
             max_x = margin_right;
 

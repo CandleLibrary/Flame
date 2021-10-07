@@ -14,7 +14,9 @@ import {
 } from "@candlelib/css";
 import { WickRTComponent } from "@candlelib/wick";
 import { Lexer } from "@candlelib/wind";
+import { EditorCommand } from '../../common/editor_types.js';
 import { getApplicableProps, getMatchedRulesFromComponentData, getRTInstances } from "../common_functions.js";
+import { getRootMatchingComponents } from '../system.js';
 import { FlameSystem } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { EditorSelection } from "../types/selection.js";
@@ -236,7 +238,7 @@ export class CSSCache {
     init(system: FlameSystem, crate: ObjectCrate) {
         this.setup();
 
-        const { ele, comp, frame_ele } = crate.sel;
+        const { ele, comp } = crate.sel;
 
         this.sel = crate.sel;
         this.crate = crate;
@@ -927,16 +929,39 @@ CSSCache.absolute = 2;
 
 const cache_array: { e: HTMLElement, cache: CSSCache; }[] = [];
 
-export function CSSCacheFactory(
+export async function CSSCacheFactory(
     sys: FlameSystem,
-    comp: WickRTComponent,
+    comp: string,
     ele: HTMLElement,
     crate: ObjectCrate
-): CSSCache {
+): Promise<CSSCache> {
 
     let eligible: { e: HTMLElement, cache: CSSCache; } = null;
 
+    const names = getComponentHierarchyNames(sys, comp);
+
+    const styles = [];
+
+    for (const { name, depth } of names) {
+        const response = await sys.session.send_awaitable_command<
+            EditorCommand.GET_COMPONENT_STYLE,
+            EditorCommand.GET_COMPONENT_STYLE_RESPONSE
+        >({
+            command: EditorCommand.GET_COMPONENT_STYLE,
+            component_name: name
+        });
+
+        styles.push({
+            name,
+            depth,
+            styles: response.styles
+        });
+    }
+
+    debugger;
+
     for (const cache of cache_array) {
+
         const { e, cache: c } = cache;
 
         if (ele == e) return c;
@@ -948,6 +973,8 @@ export function CSSCacheFactory(
         eligible = { e: ele, cache: new CSSCache };
         cache_array.push(eligible);
     }
+
+    //
 
     eligible.cache.init(sys, crate);
 
@@ -961,3 +988,38 @@ CSSCacheFactory.destroy = function (cache: CSSCache) {
             return;
         }
 };
+
+function getComponentHierarchyNames(
+    sys: FlameSystem,
+    name: string
+) {
+    const components = getRootMatchingComponents(name, sys.page_wick);
+    const list = [{
+        name,
+        depth: 0
+    }], seen = new Set();
+
+    for (let comp of components) {
+
+        let depth = 1;
+
+        while (comp.par) {
+            if (!seen.has(comp.par.name)) {
+                list.push({
+                    name: comp.par.name,
+                    depth
+                });
+            }
+
+            depth++;
+
+            seen.add(comp.par.name);
+
+            comp = comp.par;
+        }
+
+    }
+
+    return list;
+
+}

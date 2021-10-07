@@ -9,7 +9,7 @@ import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/co
 import fs from "fs";
 import { WebSocket } from "ws";
 import { addStyle, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
-import { CommandsMap, EditMessage, EditorCommand } from "../../common/editor_types.js";
+import { CommandsMap, EditMessage, EditorCommand, StyleSourceType } from "../../common/editor_types.js";
 import { store } from './store.js';
 const logger = Logger.createLogger("flame").activate();
 const fsp = fs.promises;
@@ -182,13 +182,18 @@ export class Session {
                     this.send_object({
                         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
                         component_name,
-                        style_strings: CSS.map(i => getCSSStringFromComponentStyle(i, comp))
+                        styles: CSS.map(i => ({
+                            type: i.location.ext == "css"
+                                ? StyleSourceType.CSS_FILE
+                                : StyleSourceType.INLINE,
+                            string: getCSSStringFromComponentStyle(i, comp)
+                        }))
                     }, nonce);
                 } else {
                     this.send_object({
                         component_name,
                         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
-                        style_strings: []
+                        styles: []
                     }, nonce);
                 }
 

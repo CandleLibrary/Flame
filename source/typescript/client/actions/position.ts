@@ -71,12 +71,7 @@ export function SETBOTTOM(sys: FlameSystem, crate: ObjectCrate, val: number = 0)
 /***************************************************************************************/
 
 function getComputedStyle(sel: EditorSelection) {
-    const { ele, IS_COMPONENT_FRAME, frame_ele } = sel;
-
-    if (IS_COMPONENT_FRAME)
-        return window.getComputedStyle(ele);
-    else
-        return frame_ele.contentWindow.getComputedStyle(ele);
+    return window.getComputedStyle(sel.ele);
 }
 
 export const SETDELTALEFT = <Action>{
@@ -103,7 +98,7 @@ export const SETDELTARIGHT = <Action>{
     initFN: (sys, crate) => { },
     setRatio: (sys, crate) => ({ delta: crate.data.dx, type: "right" }),
     updateFN: (sys, crate, ratio, INVERSE = false) => {
-        const { ele, frame_ele } = crate.sel,
+        const
             value = parseFloat(getComputedStyle(crate.sel).right),
             delta = INVERSE ? -ratio.adjusted_delta : ratio.adjusted_delta;
 

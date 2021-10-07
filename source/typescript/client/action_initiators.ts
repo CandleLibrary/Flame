@@ -4,11 +4,11 @@ import {
 } from "./actions/update.js";
 import { CSSCacheFactory } from "./cache/css_cache.js";
 import { HTMLCacheFactory } from "./cache/html_cache.js";
-import { Action } from "./types/action.js";
-import { ObjectCrate } from "./types/object_crate.js";
-import { revealEventIntercept, active_system as system, activeSys, hideEventIntercept } from "./system.js";
 import { getActiveSelections, getActiveSelectionsCount } from "./common_functions.js";
+import { activeSys, active_system as system, hideEventIntercept, revealEventIntercept } from "./system.js";
+import { Action } from "./types/action.js";
 import { FlameSystem } from "./types/flame_system.js";
+import { ObjectCrate } from "./types/object_crate.js";
 
 /**
  * Collection of functions that can be called by
@@ -18,7 +18,11 @@ import { FlameSystem } from "./types/flame_system.js";
 
 let ACTIVE_ACTIONS: Action[] = [], crates: ObjectCrate[];
 
-export function START_ACTION(sys: FlameSystem, actions: Action[], data?: ObjectCrate["data"]) {
+export async function START_ACTION(
+    sys: FlameSystem,
+    actions: Action[],
+    data?: ObjectCrate["data"]
+) {
     //Enable event intercept object.
     revealEventIntercept(sys);
 
@@ -42,18 +46,11 @@ export function START_ACTION(sys: FlameSystem, actions: Action[], data?: ObjectC
         for (const action of sabot)
             ACTIVE_ACTIONS[i++] = action;
     }
-
+    await INIT_CRATES(sys, data);
     UPDATE_ACTION(sys, true, data);
 }
 
-export function areActionsRunning() { return (ACTIVE_ACTIONS.length > 0); }
-
-export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: ObjectCrate["data"]): boolean {
-
-    if (!areActionsRunning()) return false;
-
-    const { dx, dy, ui: { transform: { scale } } } = sys;
-
+async function INIT_CRATES(sys: FlameSystem, data: ObjectCrate["data"]) {
     if (!crates) { //TODO Setup crate information for each selected object.
 
         crates = [];
@@ -82,37 +79,46 @@ export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: Obj
             crates.push(crate);
         } else {
 
-
             for (const sel of getActiveSelections(sys)) {
 
-                const { comp, ele } = sel,
-                    crate = <ObjectCrate>{
-                        sel,
-                        css_cache: null,
-                        html_cache: null,
-                        limits: {
-                            min_x: -Infinity,
-                            max_x: Infinity,
-                            min_y: -Infinity,
-                            max_y: Infinity,
-                        },
-                        data: Object.assign({
-                            abs_x: 0,
-                            abs_y: 0,
-                            curr_comp: comp?.name ?? "",
-                            data: "",
-                        }, data || {}),
-                        action_list: ACTIVE_ACTIONS.slice(),
-                        ratio_list: []
-                    };
+                const { comp, ele } = sel, crate = <ObjectCrate>{
+                    sel,
+                    css_cache: null,
+                    html_cache: null,
+                    limits: {
+                        min_x: -Infinity,
+                        max_x: Infinity,
+                        min_y: -Infinity,
+                        max_y: Infinity,
+                    },
+                    data: Object.assign({
+                        abs_x: 0,
+                        abs_y: 0,
+                        curr_comp: comp?.name ?? "",
+                        data: "",
+                    }, data || {}),
+                    action_list: ACTIVE_ACTIONS.slice(),
+                    ratio_list: []
+                };
 
-                crate.css_cache = CSSCacheFactory(system, comp, ele, crate);
+                crate.css_cache = await CSSCacheFactory(system, comp, ele, crate);
                 crate.html_cache = HTMLCacheFactory(system, comp, ele);
 
                 crates.push(crate);
             }
         }
     }
+}
+export function areActionsRunning() { return (ACTIVE_ACTIONS.length > 0); }
+
+
+export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: ObjectCrate["data"]): boolean {
+
+    if (!areActionsRunning()) return false;
+
+    const { dx, dy, ui: { transform: { scale } } } = sys;
+
+    INIT_CRATES(sys, data);
 
     let adx = dx / scale, ady = dy / scale;
 

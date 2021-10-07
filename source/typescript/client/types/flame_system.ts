@@ -134,10 +134,11 @@ export interface FlameSystem {
     cz: number,
     move_type: string,
     css: any,
-    window: Window,
-    document: Document,
-    body: HTMLElement,
-    head: HTMLElement,
+    editor_window: Window,
+    editor_document: Document,
+    editor_body: HTMLElement,
+    editor_head: HTMLElement,
+    editor_iframe: HTMLElement;
     flags: {
         CSS_SELECTOR_KEEP_UNIQUE?: boolean;
         DUBUG_DISPLAY_STARTUP_METRICS?: boolean;

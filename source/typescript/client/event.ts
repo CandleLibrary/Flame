@@ -9,17 +9,7 @@ import history from "./history.js";
 import { FlameSystem } from "./types/flame_system";
 import { ButtonType, InputHandler } from "./types/input";
 
-function ISElementUI(ele, sys: FlameSystem) {
 
-    while (ele) {
-
-        if (ele == sys.window.document.firstElementChild) { return true; }
-
-        ele = ele.parentNode;
-    }
-
-    return false;
-}
 
 const default_handler: InputHandler = <InputHandler>{
     down: (e, sys) => default_handler,
@@ -62,6 +52,8 @@ const default_handler: InputHandler = <InputHandler>{
         invalidateInactiveSelections(sys);
 
         getSelectionFromPoint(e.x, e.y, sys);
+
+        updateSelections(sys);
 
         event_intercept_ele.style.pointerEvents = "";
 
@@ -294,33 +286,47 @@ function windowResizeEventResponder(e: Event, sys: FlameSystem) {
 
 export function initializeEvents(
     sys: FlameSystem,
-    editor_window: Window,
+    edited_window: Window,
 ) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
 
-    //document.body.appendChild(event_intercept_ele);
+    //edited_window.document.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
 
-    console.log({ editor_window, event_intercept_ele });
+    event_intercept_ele.addEventListener("pointermove", e => {
 
-    editor_window.document.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
+        sys.editor_iframe.style.pointerEvents = "none";
 
-    event_intercept_ele.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
+        pointerMoveEventResponder(e, sys);
 
-    editor_window.addEventListener("pointermove", e => pointerMoveEventResponder(e, sys));
+        sys.editor_iframe.style.pointerEvents = "all";
+    });
+    event_intercept_ele.addEventListener("pointerdown", e => {
 
-    //editor_window.addEventListener("focusout", e => pointerUpEventResponder(<PointerEvent>e, sys));
+        sys.editor_iframe.style.pointerEvents = "none";
 
-    editor_window.addEventListener("contextmenu", e => contextMenuEventResponder(e, sys));
+        event_intercept_ele.setPointerCapture(e.pointerId);
 
-    event_intercept_ele.addEventListener("pointerdown", e => pointerDownEventResponder(e, sys));
+        pointerDownEventResponder(e, sys);
 
-    event_intercept_ele.addEventListener("pointerup", e => pointerUpEventResponder(e, sys));
+        sys.editor_iframe.style.pointerEvents = "all";
 
-    editor_window.document.addEventListener("pointerup", e => pointerUpEventResponder(e, sys));
+    });
 
-    editor_window.document.addEventListener("wheel", e => wheelScrollEventResponder(e, sys));
+    event_intercept_ele.addEventListener("pointerup", e => {
 
-    editor_window.addEventListener("resize", e => windowResizeEventResponder(e, sys));
+        sys.editor_iframe.style.pointerEvents = "none";
+
+        pointerUpEventResponder(e, sys);
+
+        event_intercept_ele.releasePointerCapture(e.pointerId);
+
+        sys.editor_iframe.style.pointerEvents = "all";
+
+    });
+
+    edited_window.document.addEventListener("wheel", e => wheelScrollEventResponder(e, sys));
+
+    edited_window.addEventListener("resize", e => windowResizeEventResponder(e, sys));
 
     window.addEventListener("keydown", e => { });
 

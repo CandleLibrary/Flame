@@ -1,4 +1,4 @@
-import { WickLibrary, WickRTComponent } from "@candlelib/wick";
+import { Context, WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { EditorCommand, PatchType } from "../common/editor_types.js";
 import ActionQueueRunner from './action_initiators.js';
 import { getRuntimeComponentsFromName } from './common_functions.js';
@@ -151,37 +151,18 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
                 const { to, from, style } = patch;
 
-                const context =
-                    page_wick.rt.context;
-
-                const old_css = context.css_cache.get(from);
-
                 const matches = getRuntimeComponentsFromName(from, page_wick);
+
+                updateCSSReferences(page_wick.rt.context, from, to, style, matches);
 
                 session.logger.debug(`Applying CSS patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
 
                 if (to != from)
                     for (const match of matches) {
-                        match.name = to;
+                        applyToPatchToRuntimeComp(match, to);
                         match.ele.classList.add(to);
-                        match.ele.setAttribute("wrt:c", to);
-                    }
-
-
-                if (old_css) {
-                    old_css.css_ele.innerHTML = style;
-                    context.css_cache.delete(from);
-                    context.css_cache.set(to, old_css);
-                } else {
-                    const css_ele = document.createElement("style");
-                    css_ele.innerHTML = style;
-                    document.head.appendChild(css_ele);
-                    context.css_cache.set(this.name, { css_ele, count: matches.length });
-                }
-
-                if (to != from)
-                    for (const match of matches)
                         match.ele.classList.remove(from);
+                    }
 
             } break;
 
@@ -195,29 +176,33 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
                 session.logger.debug(`Applying stub patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
 
-                for (const match of matches) {
+                if (to != from) {
 
-                    match.name = to;
-                    match.ele.setAttribute("wrt:c", to);
+                    updateCSSReferences(page_wick.rt.context, from, to);
+
+                    for (const match of matches)
+                        applyToPatchToRuntimeComp(match, to);
                 }
+
             } break;
 
             case PatchType.TEXT: {
 
                 const { to, from, patches } = patch;
 
+                updateCSSReferences(page_wick.rt.context, from, to);
+
                 const matches = getRuntimeComponentsFromName(from, page_wick);
 
                 for (const match of matches) {
+                    if (to != from)
+                        applyToPatchToRuntimeComp(match, to);
 
                     const ele = match.ele;
-
-                    match.name = to;
 
                     let eles = [ele];
 
                     for (const patch of patches) {
-
 
                         for (const ele of eles) {
                             if (ele instanceof Text) {
@@ -295,6 +280,34 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 }
 
 
+
+function applyToPatchToRuntimeComp(match: WickRTComponent, to: string) {
+    match.name = to;
+    match.ele.setAttribute("wrt:c", to);
+}
+
+function updateCSSReferences(
+    context: Context,
+    from: string,
+    to: string,
+    style: string = "",
+    matches: WickRTComponent[] = [],
+) {
+
+    const old_css = context.css_cache.get(from);
+
+    if (old_css) {
+        if (style)
+            old_css.css_ele.innerHTML = style;
+        context.css_cache.delete(from);
+        context.css_cache.set(to, old_css);
+    } else if (style) {
+        const css_ele = document.createElement("style");
+        css_ele.innerHTML = style;
+        document.head.appendChild(css_ele);
+        context.css_cache.set(this.name, { css_ele, count: matches.length });
+    }
+}
 
 export function removeRootComponent(comp: WickRTComponent, wick: WickLibrary): boolean {
 

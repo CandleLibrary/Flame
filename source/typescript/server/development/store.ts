@@ -57,7 +57,6 @@ export async function loadComponents(working_directory: URI, context: Context) {
 
     store.components = components;
 
-
     for (const [component, { endpoints }] of page_components) {
 
         for (const endpoint of endpoints)

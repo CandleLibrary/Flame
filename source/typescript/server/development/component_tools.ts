@@ -58,19 +58,16 @@ export async function getPatch(
 
         for (const [to, from] of elements) {
 
-            if (!to.IS_BINDING) {
-
-                if (!to.tag_name)
+            if (!("IS_BINDING" in to) && !("tag" in to) && "data" in to) {
+                if (to.data != from.data)
                     patches.push({ index: 0, to: to.data, from: from.data });
-
-                else if (to.nodes)
-                    for (let i = 0; i < to?.nodes.length; i++) {
-                        elements.push([
-                            to.nodes[i],
-                            from.nodes[i],
-                        ]);
-                    }
-            }
+            } else if (to.nodes)
+                for (let i = 0; i < to?.nodes.length; i++) {
+                    elements.push([
+                        to.nodes[i],
+                        from.nodes[i],
+                    ]);
+                }
         }
 
         return {
@@ -216,6 +213,11 @@ export async function addStyle(
         //Render source to string
         new_source = renderNewFormatted(ast);
     }
+
+    return await createNewComponentFromSourceString(new_source, context, component);
+}
+
+export async function createNewComponentFromSourceString(new_source: string, context: Context, component: ComponentData) {
 
     const comp = await wick(new_source, context);
 

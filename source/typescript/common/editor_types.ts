@@ -35,7 +35,7 @@ export enum EditorCommand {
      * message with a StubPatch configured with the new component's
      * hash name.
      * 
-     * This however will not work for synthetic elements of generated 
+     * This however will not work for synthetic elements generated 
      * from markdown markup. In such cases the server will respond with
      * a message an EditorCommand.NOT_ALLOWED command message.
      */
@@ -51,7 +51,7 @@ export enum EditorCommand {
      * message with a StubPatch configured with the new component's
      * hash name.
      * 
-     * This however will not work for synthetic elements of generated 
+     * This however will not work for synthetic elements generated 
      * from markdown markup. In such cases the server will respond with
      * a message an EditorCommand.NOT_ALLOWED command message.
      */
@@ -68,7 +68,7 @@ export enum EditorCommand {
      * message with a StubPatch configured with the new component's
      * hash name.
      * 
-     * This however will not work for synthetic elements of generated 
+     * This however will not work for synthetic elements generated 
      * from markdown markup. In such cases the server will respond with
      * a message an EditorCommand.NOT_ALLOWED command message.
      */
@@ -207,7 +207,7 @@ export interface CommandsMap {
         /**
          * The element id of the target element. 
          */
-        ele_id: number;
+        element_index: number;
 
         /**
          * class names to add to the element.
@@ -244,6 +244,13 @@ export interface CommandsMap {
         component_name: string;
     };
 
+    [EditorCommand.SET_COMPONENT_ELEMENT_ID]: {
+        command: EditorCommand.SET_COMPONENT_ELEMENT_ID;
+        component_name: string;
+        element_index: number;
+        id: string;
+    };
+
     [EditorCommand.GET_COMPONENT_SOURCE_RESPONSE]: {
         command: EditorCommand.GET_COMPONENT_SOURCE_RESPONSE;
         component_name: string;
@@ -251,16 +258,12 @@ export interface CommandsMap {
     };
 }
 
-export type Commands = EditorCommand.UNKNOWN |
-    EditorCommand.GET_COMPONENT_STYLE |
-    EditorCommand.GET_COMPONENT_STYLE_RESPONSE |
-    EditorCommand.SET_COMPONENT_STYLE |
-    EditorCommand.REGISTER_CLIENT_ENDPOINT |
-    EditorCommand.APPLY_COMPONENT_PATCH |
-    EditorCommand.GET_COMPONENT_PATCH |
-    EditorCommand.UPDATED_COMPONENT |
-    EditorCommand.GET_COMPONENT_SOURCE |
-    EditorCommand.GET_COMPONENT_SOURCE_RESPONSE;
+
+
+type test = {
+    [Property in keyof EditorCommand]: Property;
+};
+export type Commands = EditorCommand;
 
 export interface EditMessage<T extends keyof CommandsMap = Commands
 

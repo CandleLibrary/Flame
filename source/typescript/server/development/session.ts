@@ -1,4 +1,3 @@
-import { parse, renderCompressed } from '@candlelib/css';
 import { Logger } from '@candlelib/log';
 import spark, { Sparky } from '@candlelib/spark';
 import URI from '@candlelib/uri';
@@ -6,10 +5,11 @@ import wick, {
     ComponentData
 } from "@candlelib/wick";
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
+import { getElementAtIndex } from '@candlelib/wick/build/library/compiler/common/html.js';
 import fs from "fs";
 import { WebSocket } from "ws";
-import { addStyle, createCSSPatch, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
 import { CommandsMap, EditMessage, EditorCommand, StyleSourceType } from "../../common/editor_types.js";
+import { addStyle, createCSSPatch, createNewComponentFromSourceString, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
 import { store } from './store.js';
 const logger = Logger.createLogger("flame").activate();
 const fsp = fs.promises;
@@ -127,6 +127,99 @@ export class Session {
                 }
 
             } break;
+            /**
+             * Assumes the editor will automatically update its own 
+             * runtime components with the new ID value.
+             */
+            case EditorCommand.SET_COMPONENT_ELEMENT_ID: {
+
+                const { component_name, id, element_index } = data;
+
+                const comp = wick.rt.context.components.get(component_name);
+
+                const ele = getElementAtIndex(comp, element_index);
+
+                if (ele.attributes.some(s => s.name == "m:d")) {
+                    this.send_object({
+                        command: EditorCommand.NOT_ALLOWED,
+                    }, nonce);
+                } else {
+
+                    let new_source = "";
+
+                    for (const { name, value, pos } of ele.attributes) {
+                        if (name == "id" && typeof value == "string") {
+                            new_source = pos.replace(`"id"=${id}`);
+                            break;
+                        }
+                    }
+
+                    if (!new_source)
+                        new_source = ele.pos.token_slice(1 + ele.tag.length, 1 + ele.tag.length).replace(` id="${id}"`);
+
+                    const new_comp = await createNewComponentFromSourceString(
+                        new_source,
+                        wick.rt.context,
+                        comp
+                    );
+
+                    await writeComponent(new_comp);
+
+                    this.send_object({
+                        command: EditorCommand.APPLY_COMPONENT_PATCH,
+                        patch: createStubPatch(comp, new_comp)
+                    }, nonce);
+                }
+
+            }; break;
+
+            /**
+             * Assumes the editor will automatically update its own 
+             * runtime components with the new class values.
+             */
+            case EditorCommand.ADD_COMPONENT_ELEMENT_CLASS: {
+
+                const { component_name, element_index, class_names } = data;
+
+                const comp = wick.rt.context.components.get(component_name);
+
+                const ele = getElementAtIndex(comp, element_index);
+
+                if (ele.attributes.some(s => s.name == "m:d")) {
+                    this.send_object({
+                        command: EditorCommand.NOT_ALLOWED,
+                    }, nonce);
+                } else {
+
+                    let new_source = "";
+
+                    for (const { name, value, pos } of ele.attributes) {
+                        if (name == "class" && typeof value == "string") {
+                            const names = new Set([...value.split(" "), ...class_names]);
+                            new_source = pos.replace(`"class"="${[...names].join(" ")}"`);
+                            break;
+                        }
+                    }
+
+                    if (!new_source)
+                        new_source = ele.pos.token_slice(1 + ele.tag.length, 1 + ele.tag.length)
+                            .replace(`"class"="${[...class_names].join(" ")}"`);
+
+                    const new_comp = await createNewComponentFromSourceString(
+                        new_source,
+                        wick.rt.context,
+                        comp
+                    );
+
+                    await writeComponent(new_comp);
+
+                    this.send_object({
+                        command: EditorCommand.APPLY_COMPONENT_PATCH,
+                        patch: createStubPatch(comp, new_comp)
+                    }, nonce);
+                }
+
+            }; break;
 
             case EditorCommand.SET_COMPONENT_STYLE: {
 
@@ -140,11 +233,7 @@ export class Session {
                     rules
                 );
 
-                const location = new_comp.location;
-
-                const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
-
-                await fsp.writeFile(path + "", new_comp.source);
+                await writeComponent(new_comp);
 
                 this.send_object({
                     command: EditorCommand.APPLY_COMPONENT_PATCH,
@@ -241,7 +330,14 @@ export class Session {
 let watchers: Map<string, FileWatcherHandler> = new Map();
 let sessions = [];
 
+async function writeComponent(component: ComponentData) {
 
+    const location = component.location;
+
+    const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
+
+    await fsp.writeFile(path + "", component.source);
+}
 
 export function getPageWatcher(location: string) {
 

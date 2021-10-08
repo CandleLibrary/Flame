@@ -128,6 +128,22 @@ export async function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
 
     //Create change list.
 
+    {
+        const response = await sys.session.send_awaitable_command<
+            EditorCommand.SET_COMPONENT_ELEMENT_ID,
+            EditorCommand.APPLY_COMPONENT_PATCH
+        >({
+            command: EditorCommand.SET_COMPONENT_ELEMENT_ID,
+            component_name: cache.component,
+            element_index: parseInt(ele.getAttribute("w:u")),
+            id: "test"
+        });
+
+        sys.session.applyDefault(response);
+
+        cache.component = response.patch.to;
+    }
+
     const response = await sys.session.send_awaitable_command<
         EditorCommand.SET_COMPONENT_STYLE,
         EditorCommand.APPLY_COMPONENT_PATCH

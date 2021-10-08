@@ -1,10 +1,36 @@
-import { CSS_Transform2D } from "@candlelib/css";
+import { CSSNode, CSS_Transform2D } from "@candlelib/css";
+import URI from '@candlelib/uri';
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
-import { Session } from '../session.js';
+import ActionQueueRunner from '../action_initiators';
 import { EditorModel } from "../editor_model";
+import { Session } from '../session.js';
 import { HistoryState } from "./history_state";
 
+export interface StyleSheet {
 
+    /**
+     * The hash name of the component
+     * this stylesheet belongs to 
+     */
+    comp_name: string;
+
+    /**
+     * The path to the source file containing
+     * the CSS data
+     */
+    location: URI;
+
+    /**
+     * The style AST
+     */
+    styles: CSSNode;
+
+    /**
+     * The index of the stylesheet within the
+     * ComponentData~CSS array
+     */
+    index: number;
+}
 
 export interface EditedComponent {
     /**
@@ -134,6 +160,7 @@ export interface FlameSystem {
     cz: number,
     move_type: string,
     css: any,
+    scratch_stylesheet: CSSStyleSheet,
     editor_window: Window,
     editor_document: Document,
     editor_body: HTMLElement,
@@ -159,4 +186,6 @@ export interface FlameSystem {
      * The wick module instance for the edited page
      */
     page_wick: WickLibrary,
+
+    action_runner: ActionQueueRunner;
 }

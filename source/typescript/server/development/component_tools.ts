@@ -5,7 +5,8 @@ import { createCompiledComponentClass } from '@candlelib/wick/build/library/comp
 import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
 import { parse_component } from '@candlelib/wick/build/library/compiler/source-code-parse/parse.js';
 import { renderNewFormatted } from '@candlelib/wick/build/library/compiler/source-code-render/render.js';
-import { Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
+import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
+import { CSSPatch, Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
 /**
  * Compares two components and issues an appropriate patch
  * object to update the component_from to component_to.
@@ -91,6 +92,19 @@ export function createStubPatch(
         from: component_from.name
     };
 }
+
+export function createCSSPatch(
+    component_from: ComponentData,
+    component_to: ComponentData,
+): CSSPatch {
+    return {
+        type: PatchType.CSS,
+        to: component_to.name,
+        from: component_from.name,
+        style: component_to.CSS.map(s => getCSSStringFromComponentStyle(s, component_to)).join("\n")
+    };
+}
+
 
 async function createReplacePatch(
     comp: ComponentData,

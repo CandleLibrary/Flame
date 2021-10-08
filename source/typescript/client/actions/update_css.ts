@@ -1,5 +1,6 @@
-import { CSSNode, CSSNodeType } from "@candlelib/css";
-import { WickRTComponent } from "@candlelib/wick";
+import { renderCompressed } from "@candlelib/css";
+import { Logger } from '@candlelib/log';
+import { EditorCommand } from '../../common/editor_types.js';
 import { ActionType } from "../types/action_type.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { HistoryArtifact } from "../types/history_artifact.js";
@@ -21,7 +22,7 @@ export function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = 
         //Mode Updated data stylesheets.
         // Setup css object in the environment and in the wick component
 
-        debugger;
+        // debugger;
 
         //TODO: Need to link with the server to update the style of the component
 
@@ -62,7 +63,7 @@ export function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = 
 
             const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = active;
 
-            debugger;
+            //debugger;
 
             /* // Setup css object in the environment and in the wick component
             const comp_data = <WickRTComponent>sys.editor_wick.rt.context.components.get(name);
@@ -83,7 +84,7 @@ export function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = 
         else {
             const { comp_data_name: name, valueA: prop_name, valueB: prop_string, valueC: selector_string } = opposite;
 
-            debugger;
+            //debugger;
             /*  // Setup css object in the environment and in the wick component
              const comp_data = <WickRTComponent>sys.editor_wick.rt.context.components.get(name);
  
@@ -109,9 +110,12 @@ export function updateCSS(sys: FlameSystem, history: HistoryArtifact, FORWARD = 
 }
 
 
-export function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
+export async function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
 
     const { sel: { comp, ele }, data: { }, css_cache: cache } = crate;
+
+    // Connect to backend and get a patch for the updated CSS.
+    // Apply patch to the affected components.
 
     /**
      * Prevent reapplying css information for actions
@@ -120,17 +124,31 @@ export function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
     if (cache.lock())
         return;
 
+    cache.lock(true);
+
     //Create change list.
+
+    const response = await sys.session.send_awaitable_command<
+        EditorCommand.SET_COMPONENT_STYLE,
+        EditorCommand.APPLY_COMPONENT_PATCH
+    >({
+        command: EditorCommand.SET_COMPONENT_STYLE,
+        component_name: cache.component,
+        rules: cache.generateRuleString(false)
+    });
+
+    if (response.command == EditorCommand.APPLY_COMPONENT_PATCH) {
+        sys.session.applyDefault(response);
+        //Update the style of the target component
+    } else
+        Logger.get("flame").get("css").error(`Unable to update style of component ${cache.component}`);
+
+
     const
         original = cache.original_props,
         unique = cache.unique,
         selector = cache.unique_selector,
         history: HistoryArtifact[] = [];
-
-
-
-    const names = [];
-
 
     for (const name of cache.changed.values()) {
 
@@ -149,29 +167,29 @@ export function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
             if (unique) {
                 //do something
                 hist.regress = {
-                    comp_data_name: comp.name,
+                    comp_data_name: comp,
                     ele_index: -1,
                     valueA: prop.name,
                     valueB: prop + "",
-                    valueC: sys.page_wick.utils.parse.render(selector),
+                    valueC: renderCompressed(selector),
                     pos: prop.pos,
                 };
             }
         }
 
         hist.progress = {
-            comp_data_name: comp.name,
+            comp_data_name: comp,
             ele_index: -1,
             valueA: prop.name,
             valueB: prop + "",
-            valueC: sys.page_wick.utils.parse.render(selector),
+            valueC: renderCompressed(selector),
             pos: prop.pos,
         };
 
         history.push(hist);
     }
 
-    cache.lock(true);
+
 
     return history;
 }

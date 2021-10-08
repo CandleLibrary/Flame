@@ -8,11 +8,14 @@ import { EditorSelection } from "./selection.js";
  * Stores information on object that needs to be updated.
  */
 export interface ObjectCrate {
+    /**
+     * The hash_name of the component that owns
+     * the selected element.
+     */
+    comp: string,
     sel: EditorSelection;
     css_cache: CSSCache;
     html_cache: HTMLCache;
-
-    // 
 
     /**
      * Max Limits for delta values with the start value being [0,0] 

@@ -1,5 +1,7 @@
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { EditorCommand, PatchType } from "../common/editor_types.js";
+import ActionQueueRunner from './action_initiators.js';
+import { getRuntimeComponentsFromName } from './common_functions.js';
 import { EditorModel } from "./editor_model.js";
 import { Session } from './session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
@@ -71,8 +73,9 @@ export function initSystem(
         move_type: "relative",
         //End move
 
-
+        action_runner: null,
         pending_history_state: null,
+        scratch_stylesheet: null,
         editor_window: editor_window,
         editor_document: editor_window.document,
         editor_body: editor_window.document.body,
@@ -110,6 +113,16 @@ export function initSystem(
         editor_wick
     };
 
+    active_system.action_runner = new ActionQueueRunner(active_system);
+
+    const scratch_sheet = document.createElement("style");
+
+    scratch_sheet.id = "flame-scratch-sheet";
+
+    document.body.appendChild(scratch_sheet);
+
+    active_system.scratch_stylesheet = scratch_sheet.sheet;
+
     initializeDefualtSessionDispatchHandlers(active_system.session, page_wick);
 
     return active_system;
@@ -121,7 +134,7 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
         const { new_name, old_name, path } = command;
 
         // Identify all top_level components that need to be update. 
-        const matches = getRootMatchingComponents(old_name, page_wick);
+        const matches = getRuntimeComponentsFromName(old_name, page_wick);
 
         if (matches.length > 0)
             session.send_command({ command: EditorCommand.GET_COMPONENT_PATCH, to: new_name, from: old_name });
@@ -134,12 +147,51 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
         switch (patch.type) {
 
+            case PatchType.CSS: {
+
+                const { to, from, style } = patch;
+
+                const context =
+                    page_wick.rt.context;
+
+                const old_css = context.css_cache.get(from);
+
+                const matches = getRuntimeComponentsFromName(from, page_wick);
+
+                session.logger.debug(`Applying CSS patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+
+                if (to != from)
+                    for (const match of matches) {
+                        match.name = to;
+                        match.ele.classList.add(to);
+                        match.ele.setAttribute("wrt:c", to);
+                    }
+
+
+                if (old_css) {
+                    old_css.css_ele.innerHTML = style;
+                    context.css_cache.delete(from);
+                    context.css_cache.set(to, old_css);
+                } else {
+                    const css_ele = document.createElement("style");
+                    css_ele.innerHTML = style;
+                    document.head.appendChild(css_ele);
+                    context.css_cache.set(this.name, { css_ele, count: matches.length });
+                }
+
+                if (to != from)
+                    for (const match of matches)
+                        match.ele.classList.remove(from);
+
+            } break;
+
+
             case PatchType.STUB: {
 
 
                 const { to, from } = patch;
 
-                const matches = getRootMatchingComponents(from, page_wick);
+                const matches = getRuntimeComponentsFromName(from, page_wick);
 
                 session.logger.debug(`Applying stub patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
 
@@ -154,7 +206,7 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
                 const { to, from, patches } = patch;
 
-                const matches = getRootMatchingComponents(from, page_wick);
+                const matches = getRuntimeComponentsFromName(from, page_wick);
 
                 for (const match of matches) {
 
@@ -194,7 +246,7 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
                 const class_ = classes[0];
 
-                const matches = getRootMatchingComponents(from, page_wick);
+                const matches = getRuntimeComponentsFromName(from, page_wick);
 
                 for (const match of matches) {
 
@@ -242,24 +294,6 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
     });
 }
 
-export function getRootMatchingComponents(name: string, wick: WickLibrary): WickRTComponent[] {
-
-    //Traverse dom structure and identify all components
-
-
-    const candidates = wick.rt.root_components.slice();
-
-    const output = [];
-
-    for (const candidate of candidates) {
-        if (candidate.name == name)
-            output.push(candidate);
-        else
-            candidates.push(...candidate.ch);
-    }
-
-    return output;
-}
 
 
 export function removeRootComponent(comp: WickRTComponent, wick: WickLibrary): boolean {

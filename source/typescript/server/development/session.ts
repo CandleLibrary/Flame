@@ -8,7 +8,7 @@ import wick, {
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
 import fs from "fs";
 import { WebSocket } from "ws";
-import { addStyle, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
+import { addStyle, createCSSPatch, createStubPatch, getComponentDependencies, getPatch } from './component_tools.js';
 import { CommandsMap, EditMessage, EditorCommand, StyleSourceType } from "../../common/editor_types.js";
 import { store } from './store.js';
 const logger = Logger.createLogger("flame").activate();
@@ -129,9 +129,8 @@ export class Session {
             } break;
 
             case EditorCommand.SET_COMPONENT_STYLE: {
-                const { component_name, rules } = data;
 
-                const style = parse(rules);
+                const { component_name, rules } = data;
 
                 const comp = wick.rt.context.components.get(component_name);
 
@@ -149,7 +148,7 @@ export class Session {
 
                 this.send_object({
                     command: EditorCommand.APPLY_COMPONENT_PATCH,
-                    patch: createStubPatch(comp, new_comp)
+                    patch: createCSSPatch(comp, new_comp)
                 }, nonce);
 
             } break;
@@ -175,14 +174,19 @@ export class Session {
 
                 const comp = wick.rt.context.components.get(component_name);
 
+
                 if (comp) {
 
                     const CSS = comp.CSS;
+                    logger.get("session").get("style")
+                        .debug(`Replying to command [ ${EditorCommand[data.command]}[${nonce}] ] with ${CSS.length} stylesheets from component [ ${component_name} ]`);
+
 
                     this.send_object({
                         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,
                         component_name,
                         styles: CSS.map(i => ({
+                            location: i.location + "",
                             type: i.location.ext == "css"
                                 ? StyleSourceType.CSS_FILE
                                 : StyleSourceType.INLINE,
@@ -190,6 +194,10 @@ export class Session {
                         }))
                     }, nonce);
                 } else {
+
+                    logger.get("session").get("style")
+                        .debug(`Replying to command [ ${EditorCommand[data.command]}[${nonce}] ] without style data from component [ ${component_name} ]`);
+
                     this.send_object({
                         component_name,
                         command: EditorCommand.GET_COMPONENT_STYLE_RESPONSE,

@@ -28,7 +28,7 @@ export class HTMLCache {
     }
 }
 
-export function HTMLCacheFactory(sys: FlameSystem, comp: WickRTComponent, ele: HTMLElement): HTMLCache {
+export function HTMLCacheFactory(sys: FlameSystem, ele: HTMLElement): HTMLCache {
 
     let cache: HTMLCache = null;
 

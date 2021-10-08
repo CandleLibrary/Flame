@@ -1,16 +1,15 @@
 import { traverse } from '@candlelib/conflagrate';
 import {
     CSSNode,
-    CSSNodeType,
+    CSSNodeType, CSSRuleNode,
+    getArrayOfMatchedRules,
     getFirstMatchedSelector,
-    getMatchedElements,
-    getMatchedSelectors,
-    getSelectorPrecedence,
+    getMatchedElements, getSelectorPrecedence,
     PrecedenceFlags
 } from "@candlelib/css";
 import URI from '@candlelib/uri';
-import { Context, WickRTComponent } from "@candlelib/wick";
-import { FlameSystem } from "./types/flame_system";
+import { WickLibrary, WickRTComponent } from "@candlelib/wick";
+import { FlameSystem, StyleSheet } from "./types/flame_system";
 import { EditorSelection } from "./types/selection";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 
@@ -29,44 +28,24 @@ export function createNewFileURL(sys: FlameSystem, name: string) {
 
 export function getMatchedRulesFromComponentData(
     sys: FlameSystem,
-    comp: WickRTComponent,
-    ele: HTMLElement
-) {
-    debugger;
-    return null;
-    /*     return [comp]
-            .map(c => getComponentDataFromRTInstance(sys, c))
-            .filter(c => !!c)
-            .flatMap(c => c.CSS || [])
-            .flatMap(e => css.getArrayOfMatchedRules(ele, e)); */
-};
+    ele: HTMLElement,
+    styles_array: StyleSheet[]
+): CSSRuleNode[] {
+    const rules = [];
 
-export function getMatchedRulesFromFullHierarchy(
-    sys: FlameSystem,
-    comp: WickRTComponent,
-    ele: HTMLElement
-) {
-    debugger;
-    return null;
-    /*     return getListOfRTInstanceAndAncestors(comp)
-            .map(c => getComponentDataFromRTInstance(sys, c))
-            .flatMap(c => c.CSS || [])
-            .flatMap(e => css.getArrayOfMatchedRules(ele, e)); */
-};
+    for (const { styles } of styles_array) {
+        rules.push(...getArrayOfMatchedRules(
+            ele, styles
+        ));
+    }
 
-export function getListOfApplicableSelectors(
-    sys: FlameSystem,
-    comp: WickRTComponent,
-    ele: HTMLElement
-) {
-    return getMatchedRulesFromComponentData(sys, comp, ele)
-        .flatMap(r => getMatchedSelectors(r, ele));
-}
+    return rules;
+};
 
 export function getApplicableProps(
     sys: FlameSystem,
-    comp: WickRTComponent,
-    ele: HTMLElement
+    ele: HTMLElement,
+    styles_array: StyleSheet[]
 ): Map<string, TrackedCSSProp> {
 
 
@@ -81,7 +60,7 @@ export function getApplicableProps(
 
     //TODO, setup cache clone
 
-    return getMatchedRulesFromFullHierarchy(sys, comp, ele)
+    return getMatchedRulesFromComponentData(sys, ele, styles_array)
         .reverse()
         .reduce((m, r) => {
 
@@ -142,11 +121,76 @@ export function isSelectorCapableOfBeingUnique(comp: WickRTComponent, selector: 
  *  ██████  ██████  ██      ██ ██       ██████  ██   ████ ███████ ██   ████    ██    
  */
 
+/**
+ * Retrieve a list of elements that are contemporary 
+ * between instances of the same component.
+ */
+export function getContemporaryElements(
+    ele: HTMLElement, wick: WickLibrary
+): HTMLElement[] {
 
+    const comp_name = getComponentNameFromElement(ele);
+
+    const element_id = ele.getAttribute("w:u");
+
+    const runtime_components = getRuntimeComponentsFromName(comp_name, wick);
+
+    const elements = [];
+
+    for (const comp of runtime_components)
+        elements.push(...getMatchingElementsFromCompID(comp, element_id));
+
+    return elements;
+}
+
+
+function getMatchingElementsFromCompID(
+    comp: WickRTComponent, element_id: string
+): HTMLElement[] {
+    let eles = [comp.ele];
+    let out_elements = [];
+    let root = true;
+
+    for (const ele of eles) {
+
+        if (ele.getAttribute("w:u") == element_id) {
+            out_elements.push(ele);
+        }
+
+        if (root || !ele.getAttribute("w:c")) {
+            //@ts-ignore
+            eles.push(...(Array.from(ele.children) || []));
+
+        }
+
+        root = false;
+    }
+
+    return out_elements;
+}
 
 export function setRTInstanceClass(sys: FlameSystem, comp_name: string, comp_class: typeof WickRTComponent) {
     sys.editor_wick.rt.context.component_class.set(comp_name, comp_class);
     sys.page_wick.rt.context.component_class.set(comp_name, comp_class);
+}
+
+export function getRuntimeComponentsFromName(name: string, wick: WickLibrary): WickRTComponent[] {
+
+    //Traverse dom structure and identify all components
+
+
+    const candidates = wick.rt.root_components.slice();
+
+    const output = [];
+
+    for (const candidate of candidates) {
+        if (candidate.name == name)
+            output.push(candidate);
+        else
+            candidates.push(...candidate.ch);
+    }
+
+    return output;
 }
 
 export function getListOfRTInstanceAndAncestors(comp: WickRTComponent): WickRTComponent[] {
@@ -318,10 +362,6 @@ export function getSelection(
         selection_candidate.VALID = true;
         selection_candidate.ele = ele;
 
-        selection_candidate.comp = getComponentNameFromElement(ele);
-
-        //  ele.style.textDecoration = "underline";
-
         return selection_candidate;
     }
 
@@ -329,7 +369,6 @@ export function getSelection(
     const sel = new sys.editor_wick.objects.ObservableScheme<EditorSelection>({
         ACTIVE: false,
         VALID: false,
-        comp: null,
         ele: null,
         width: 0,
         height: 0,

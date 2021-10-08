@@ -6,12 +6,6 @@ import { WickRTComponent } from '@candlelib/wick';
 export interface EditorSelection {
     ele: HTMLElement;
 
-
-    /**
-     * The component name associated with the selected element
-     */
-    comp: string;
-
     /**
      * True if the selection represents a selection locked to a single object.
      */

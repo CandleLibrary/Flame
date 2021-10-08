@@ -4,11 +4,12 @@ import {
 } from "./actions/update.js";
 import { CSSCacheFactory } from "./cache/css_cache.js";
 import { HTMLCacheFactory } from "./cache/html_cache.js";
-import { getActiveSelections, getActiveSelectionsCount } from "./common_functions.js";
+import { getActiveSelections, getActiveSelectionsCount, getComponentNameFromElement } from "./common_functions.js";
 import { activeSys, active_system as system, hideEventIntercept, revealEventIntercept } from "./system.js";
 import { Action } from "./types/action.js";
 import { FlameSystem } from "./types/flame_system.js";
 import { ObjectCrate } from "./types/object_crate.js";
+import spark, { Sparky } from "@candlelib/spark";
 
 /**
  * Collection of functions that can be called by
@@ -18,11 +19,213 @@ import { ObjectCrate } from "./types/object_crate.js";
 
 let ACTIVE_ACTIONS: Action[] = [], crates: ObjectCrate[];
 
-export async function START_ACTION(
+const action_queue: ActionRef[] = [];
+
+export const enum ActionRefType {
+    INIT,
+
+    INIT_UPDATE,
+    UPDATE,
+    APPLY,
+    END,
+    START,
+
+}
+
+interface Deltas {
+    dx: number;
+    dy: number;
+    scale: number;
+}
+
+interface ActionRef {
+
+    deltas?: Deltas;
+    type: ActionRefType;
+    actions?: Action[];
+    data?: ObjectCrate["data"];
+}
+
+
+export default class ActionQueueRunner implements Sparky {
+
+    sys: FlameSystem;
+    queue: ActionRef[];
+    _SCHD_: number;
+    PENDING: number;
+
+    constructor(sys: FlameSystem) {
+        this.sys = sys;
+        this._SCHD_ = 0;
+        this.queue = [];
+        this.PENDING = 0;
+    }
+
+    promise_handler() {
+        this.PENDING--;
+    }
+
+    scheduledUpdate() {
+        return this.update();
+    }
+
+    update(ref?: ActionRef) {
+
+
+        if (!ref && this.PENDING > 0)
+            return spark.queueUpdate(this);
+
+        ref = ref ?? this.queue.pop();
+
+        if (ref) {
+
+            switch (ref.type) {
+                case ActionRefType.INIT:
+
+                    this.PENDING++;
+
+                    INIT_CRATES(this.sys, ref)
+                        .finally(this.promise_handler.bind(this));
+
+                    break;
+                case ActionRefType.START:
+
+                    __START_ACTION__(this.sys, ref);
+
+                    break;
+                case ActionRefType.INIT_UPDATE:
+
+                    UPDATE_ACTION(this.sys, ref, true);
+
+                    break;
+                case ActionRefType.UPDATE:
+
+                    UPDATE_ACTION(this.sys, ref, false);
+
+                    break;
+                case ActionRefType.APPLY:
+
+                    __APPLY_ACTION__(this.sys, ref);
+
+                    break;
+                case ActionRefType.END:
+
+                    this.PENDING++;
+
+                    END_ACTION(this.sys, ref)
+                        .finally(this.promise_handler.bind(this));
+
+                    break;
+            }
+
+            if (this.PENDING)
+                spark.queueUpdate(this);
+            else if (this.queue.length > 0)
+                return this.scheduledUpdate();
+        }
+
+    }
+
+    addAction(
+        type: ActionRefType,
+        actions?: Action[],
+        data?: ObjectCrate["data"]
+    ) {
+
+        const ref = {
+            type,
+            data,
+            actions,
+            deltas: {
+                dx: this.sys.dx,
+                dy: this.sys.dy,
+                scale: this.sys.ui.transform.scale
+            }
+        };
+        if (
+            type == ActionRefType.START
+            ||
+            type == ActionRefType.APPLY
+            ||
+            (this.queue.length == 0 && this.PENDING < 1)
+        ) {
+            this.update(ref);
+        } else {
+            this.queue.unshift(ref);
+            spark.queueUpdate(this);
+        }
+    }
+};
+
+
+/**
+ * Calls actions and seals it in one step. Use when elements values need to updated
+ * without continuous user input (such as with a click-&-drag action).
+ * @param actions 
+ * @param data 
+ */
+export function APPLY_ACTION(sys: FlameSystem, actions: Action[], data: ObjectCrate["data"]) {
+    sys.action_runner.addAction(ActionRefType.APPLY, actions, data);
+}
+export function __APPLY_ACTION__(
     sys: FlameSystem,
-    actions: Action[],
+    ref: ActionRef,
+) {
+
+    const { actions, data } = ref;
+
+    const { editor_model } = sys;
+
+    editor_model.POINTER_DN = true;
+
+    //Make sure all actions in slug are actions.
+    //arrange the actions based on their ordering precedence
+
+    const sabot = actions
+        .filter(a => typeof a == "object"
+            && typeof a.type == "number"
+            && typeof a.priority == "number")
+        .sort((a, b) => a.priority > b.priority ? -1 : 1);
+
+    if (sabot.length !== actions.length) {
+        ACTIVE_ACTIONS = [];
+    } else {
+        ACTIVE_ACTIONS = sabot;
+    }
+
+    sys.action_runner.addAction(
+        ActionRefType.INIT_UPDATE,
+        undefined,
+        data
+    );
+
+    sys.action_runner.addAction(
+        ActionRefType.END
+    );
+}
+
+export function START_ACTION(
+    sys,
+    actions?: Action[],
     data?: ObjectCrate["data"]
 ) {
+    sys.action_runner.addAction(
+        ActionRefType.START,
+        actions,
+        data
+    );
+}
+
+export function __START_ACTION__(
+    sys: FlameSystem,
+    ref: ActionRef,
+) {
+
+    const {
+        actions,
+        data
+    } = ref;
+
     //Enable event intercept object.
     revealEventIntercept(sys);
 
@@ -46,17 +249,41 @@ export async function START_ACTION(
         for (const action of sabot)
             ACTIVE_ACTIONS[i++] = action;
     }
-    await INIT_CRATES(sys, data);
-    UPDATE_ACTION(sys, true, data);
+
+    action_queue.push({
+        type: ActionRefType.INIT,
+        data,
+    }, {
+        type: ActionRefType.INIT_UPDATE,
+        data
+    });
+
+    sys.action_runner.addAction(
+        ActionRefType.INIT,
+        undefined,
+        data
+    );
+
+    sys.action_runner.addAction(
+        ActionRefType.INIT_UPDATE,
+        undefined,
+        data
+    );
 }
 
-async function INIT_CRATES(sys: FlameSystem, data: ObjectCrate["data"]) {
+async function INIT_CRATES(
+    sys: FlameSystem,
+    ref: ActionRef
+) {
+    const { data } = ref;
+
     if (!crates) { //TODO Setup crate information for each selected object.
 
         crates = [];
 
         if (getActiveSelectionsCount(sys) == 0) {
-            const crate = <ObjectCrate>{
+            const crate: ObjectCrate = {
+                comp: "",
                 sel: null,
                 css_cache: null,
                 html_cache: null,
@@ -81,28 +308,34 @@ async function INIT_CRATES(sys: FlameSystem, data: ObjectCrate["data"]) {
 
             for (const sel of getActiveSelections(sys)) {
 
-                const { comp, ele } = sel, crate = <ObjectCrate>{
-                    sel,
-                    css_cache: null,
-                    html_cache: null,
-                    limits: {
-                        min_x: -Infinity,
-                        max_x: Infinity,
-                        min_y: -Infinity,
-                        max_y: Infinity,
-                    },
-                    data: Object.assign({
-                        abs_x: 0,
-                        abs_y: 0,
-                        curr_comp: comp?.name ?? "",
-                        data: "",
-                    }, data || {}),
-                    action_list: ACTIVE_ACTIONS.slice(),
-                    ratio_list: []
-                };
+                const { ele } = sel,
 
-                crate.css_cache = await CSSCacheFactory(system, comp, ele, crate);
-                crate.html_cache = HTMLCacheFactory(system, comp, ele);
+                    comp = getComponentNameFromElement(ele),
+
+                    crate: ObjectCrate = {
+                        sel,
+                        comp,
+                        css_cache: null,
+                        html_cache: null,
+                        limits: {
+                            min_x: -Infinity,
+                            max_x: Infinity,
+                            min_y: -Infinity,
+                            max_y: Infinity,
+                        },
+                        data: Object.assign({
+                            abs_x: 0,
+                            abs_y: 0,
+                            curr_comp: comp,
+                            data: "",
+                        }, data || {}),
+                        action_list: ACTIVE_ACTIONS.slice(),
+                        ratio_list: []
+                    };
+
+                crate.css_cache = await CSSCacheFactory(system, ele, crate);
+
+                crate.html_cache = null;
 
                 crates.push(crate);
             }
@@ -111,14 +344,17 @@ async function INIT_CRATES(sys: FlameSystem, data: ObjectCrate["data"]) {
 }
 export function areActionsRunning() { return (ACTIVE_ACTIONS.length > 0); }
 
-
-export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: ObjectCrate["data"]): boolean {
+export function UPDATE_ACTION(
+    sys: FlameSystem,
+    ref: ActionRef,
+    INITIAL_PASS = false
+): boolean {
 
     if (!areActionsRunning()) return false;
 
-    const { dx, dy, ui: { transform: { scale } } } = sys;
+    const scale = 1;
 
-    INIT_CRATES(sys, data);
+    const { dx, dy } = ref.deltas;
 
     let adx = dx / scale, ady = dy / scale;
 
@@ -137,17 +373,21 @@ export function UPDATE_ACTION(sys: FlameSystem, INITIAL_PASS = false, data?: Obj
     return true;
 }
 
-export function END_ACTION(sys: FlameSystem, event?): boolean {
+export async function END_ACTION(
+    sys: FlameSystem,
+    ref: ActionRef,
+    INITIAL_PASS = false
+) {
 
     if (!areActionsRunning()) return false;
 
-    hideEventIntercept(sys);
+    //hideEventIntercept(sys);
 
     const { editor_model } = activeSys();
 
     editor_model.POINTER_DN = false;
 
-    sealAction(sys, crates);
+    await sealAction(sys, crates);
 
     ACTIVE_ACTIONS.length = 0;
 
@@ -169,33 +409,3 @@ export function END_ACTION(sys: FlameSystem, event?): boolean {
     return true;
 }
 
-/**
- * Calls actions and seals it in one step. Use when elements values need to updated
- * without continuous user input (such as with a click-&-drag action).
- * @param act 
- * @param data 
- */
-export function APPLY_ACTION(sys: FlameSystem, act: Action[], data: ObjectCrate["data"]) {
-
-    const { editor_model } = sys;
-
-    editor_model.POINTER_DN = true;
-
-    //Make sure all actions in slug are actions.
-    //arrange the actions based on their ordering precedence
-
-    const sabot = act
-        .filter(a => typeof a == "object"
-            && typeof a.type == "number"
-            && typeof a.priority == "number")
-        .sort((a, b) => a.priority > b.priority ? -1 : 1);
-
-    if (sabot.length !== act.length) {
-        ACTIVE_ACTIONS = [];
-    } else {
-        ACTIVE_ACTIONS = sabot;
-    }
-
-    UPDATE_ACTION(sys, true, data);
-    END_ACTION(sys);
-}

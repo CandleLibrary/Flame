@@ -114,4 +114,9 @@ export class Session {
         else
             this.logger.warn(`No handler set for command [ ${EditorCommand[data.command]} ]`);
     }
+
+    applyDefault(data: EditMessage["data"]) {
+        if (this.dispatches.has(data.command))
+            this.dispatches.get(data.command)(data, this);
+    }
 }

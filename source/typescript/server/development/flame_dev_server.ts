@@ -82,6 +82,10 @@ async function renderPage(
         return (await wick.utils.RenderPage(
             component,
             wick.rt.context,
+            {
+                VERBOSE_ANNOTATION_ATTRIBUTES: true,
+                INTEGRATED_CSS: true,
+            },
             hooks
         )).page;
 

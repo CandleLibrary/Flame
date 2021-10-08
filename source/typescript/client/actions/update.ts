@@ -1,4 +1,3 @@
-import { getRTInstances } from "../common_functions.js";
 import history from "../history.js";
 import { Action } from "../types/action.js";
 import { ActionType } from "../types/action_type.js";
@@ -36,47 +35,46 @@ export function setState(FORWARD = true, history_state: HistoryState, sys: Flame
 
         const LU = new Set();
 
-        debugger;
         const css_string = "";
         //const
         //    comp = getComponentDataFromName(sys, comp_name),
         //    css_string = sys.editor_wick.utils.componentDataToCSS(comp);
 
 
-
-        for (const rt_comp of
-            (
-                sys.harness.name == comp_name
-                    ? [sys.harness]
-                    : getRTInstances(sys, comp_name)
-            )
-        ) {
-
-
-            const {
-                css_cache: { [comp_name]: { css_ele: ele } },
-                window: { document }
-            } = rt_comp.context;
-
-            if (!ele) {
-
-                const ele = document.createElement("style");
-
-                rt_comp.context.css_cache[comp_name] = ele;
-
-                ele.innerHTML = css_string;
-
-                rt_comp.context.window.document.head.appendChild(ele);
-
-                LU.add(ele);
-
-            } else if (!LU.has(ele)) {
-
-                ele.innerHTML = css_string;
-
-                LU.add(ele);
-            }
-        }
+        /* 
+                for (const rt_comp of
+                    (
+                        sys.harness.name == comp_name
+                            ? [sys.harness]
+                            : getRTInstances(sys, comp_name)
+                    )
+                ) {
+        
+        
+                    const {
+                        css_cache: { [comp_name]: { css_ele: ele } },
+                        window: { document }
+                    } = rt_comp.context;
+        
+                    if (!ele) {
+        
+                        const ele = document.createElement("style");
+        
+                        rt_comp.context.css_cache[comp_name] = ele;
+        
+                        ele.innerHTML = css_string;
+        
+                        rt_comp.context.window.document.head.appendChild(ele);
+        
+                        LU.add(ele);
+        
+                    } else if (!LU.has(ele)) {
+        
+                        ele.innerHTML = css_string;
+        
+                        LU.add(ele);
+                    }
+                } */
     }
 
     //*/
@@ -183,23 +181,20 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
     change_nonce++;
 }
 
-export function sealAction(sys: FlameSystem, crates: ObjectCrate[]) {
+export async function sealAction(sys: FlameSystem, crates: ObjectCrate[]) {
 
     for (const crate of crates) {
 
-        if (crate.css_cache) {
-            crate.css_cache.clearChanges(sys);
-        };
-
-
         for (const action of crate.action_list.sort((a, b) => a < b ? -1 : 1)) {
-            const history_artifact = action.sealFN(sys, crate);
+            const history_artifact = await action.sealFN(sys, crate);
 
             if (history_artifact) {
                 if (Array.isArray(history_artifact))
                     sys.pending_history_state.actions.push(...history_artifact);
             }
         }
+
+        if (crate.css_cache) { crate.css_cache.clearChanges(sys); };
     }
 
 

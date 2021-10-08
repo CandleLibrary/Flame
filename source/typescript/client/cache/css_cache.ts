@@ -6,18 +6,24 @@ import {
     CSSRuleNode,
     CSS_String,
     getLastRuleWithMatchingSelector,
-    getMatchedElements,
+    parse,
     parseProperty,
     PrecedenceFlags,
     property,
     selector
 } from "@candlelib/css";
+import URI from '@candlelib/uri';
 import { WickRTComponent } from "@candlelib/wick";
 import { Lexer } from "@candlelib/wind";
 import { EditorCommand } from '../../common/editor_types.js';
-import { getApplicableProps, getMatchedRulesFromComponentData, getRTInstances } from "../common_functions.js";
-import { getRootMatchingComponents } from '../system.js';
-import { FlameSystem } from "../types/flame_system.js";
+import {
+    getApplicableProps,
+    getComponentNameFromElement,
+    getContemporaryElements,
+    getMatchedRulesFromComponentData,
+    getRuntimeComponentsFromName
+} from "../common_functions.js";
+import { FlameSystem, StyleSheet } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 import { EditorSelection } from "../types/selection.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
@@ -41,7 +47,7 @@ class ComputedStyle {
         cache: CSSCache,
     ) {
         this.cache = cache;
-        this._computed = system.window.getComputedStyle(element);
+        this._computed = window.getComputedStyle(element);
         this.brect = element.getBoundingClientRect();
     }
 
@@ -164,8 +170,7 @@ export const enum CSSFlags {
 }
 /**  
  * Cache collects info about the CSS state of an element and provides methods to create new properties.
- * It maintains a connection to the Component Data of an element, and directly manipulates CSS values
- * within the Component DATA. 
+ * It maintains a connection to the Component Data of an element.
 */
 
 export class CSSCache {
@@ -186,7 +191,7 @@ export class CSSCache {
     original_props: Map<string, TrackedCSSProp>;
     _computed: any;
 
-    component: WickRTComponent;
+    component: string;
 
     rules: any;
 
@@ -202,10 +207,15 @@ export class CSSCache {
 
     computed: CSSStyleDeclaration;
 
+    styles: StyleSheet[];
+
+    rule_ref: CSSRule;
+
+    CREATED_ID: boolean;
+
     constructor() {
         this.setup();
     }
-
     destroy() {
         this.LOCKED = false;
         this.changed = null;
@@ -217,6 +227,8 @@ export class CSSCache {
         this.cssflagsB = 0;
         this.move_type = "";
         this.computed = null;
+        this.styles = null;
+        this.rule_ref = null;
         global_cache = this;
     }
 
@@ -232,25 +244,28 @@ export class CSSCache {
         this.unique = null;
         this._computed = null;
         this.changed = null;
+        this.styles = null;
         this.LOCKED = false;
+        this.rule_ref = null;
     }
 
-    init(system: FlameSystem, crate: ObjectCrate) {
+    init(system: FlameSystem, crate: ObjectCrate, styles: StyleSheet[]) {
         this.setup();
 
-        const { ele, comp } = crate.sel;
+        const { ele } = crate.sel;
 
         this.sel = crate.sel;
         this.crate = crate;
         this.element = ele;
         this.system = system;
-        this.component = comp;
+        this.component = crate.comp;
         this.computed = window.getComputedStyle(ele);
+        this.styles = styles;
         //calculate horizontal and vertical rations. also width and height ratios.  
         this.setupStyle();
     }
 
-    setUniqueSelector(sys: FlameSystem, comp: WickRTComponent, ele: HTMLElement, crate: ObjectCrate) {
+    setUniqueSelector(sys: FlameSystem, comp_name: string, ele: HTMLElement, crate: ObjectCrate) {
 
         //get all rules that match selector
         //for all rules that have a single selector 
@@ -259,7 +274,7 @@ export class CSSCache {
         //      if this number is 1, then select this rule to be 
         //      unique rule for this element.
 
-        const rules = getMatchedRulesFromComponentData(sys, comp, ele).reverse();
+        const rules = getMatchedRulesFromComponentData(sys, ele, this.styles).reverse();
 
         for (const rule of rules) {
             if (rule.selectors.length == 1) {
@@ -281,8 +296,8 @@ export class CSSCache {
                     }
                 }
 
-                if (count == 1 && Array.from(getMatchedElements(comp.ele, rule)).length == 1)
-                    return this.unique_selector = sel;
+                //if (count == 1 && Array.from(getMatchedElements(comp_name.ele, rule)).length == 1)
+                //    return this.unique_selector = sel;
             }
         }
 
@@ -293,7 +308,7 @@ export class CSSCache {
             //if at this point there is no suitable rule,
             //create a new ID, assign to ele and
             //use the id for the selector for the element.
-            debugger;
+
             const id = "A" + ((Math.random() * 12565845322) + "").slice(0, 5);
 
             //crate.action_list.unshift(SET_ATTRIBUTE);
@@ -303,6 +318,12 @@ export class CSSCache {
             crate.data.val = id;
 
             this.unique_selector = selector(`#${id}`);
+
+            const elements = getContemporaryElements(ele, sys.page_wick);
+
+            for (const ele of elements) {
+                ele.id = id;
+            }
         }
     }
 
@@ -323,171 +344,10 @@ export class CSSCache {
         // The unique rule either exists within the edit style sheet cache,
         // or a new one needs to be made.
         this.setUniqueSelector(system, component, element, this.crate);
-        this.original_props = getApplicableProps(system, component, element);
+        this.original_props = getApplicableProps(system, element, this.styles);
         this.changed = new Set();
         this.unique = new Map();
         this.rules = this.unique;
-
-        /*
-
-
-        for (const [name, val] of this.original_props.entries())
-            if (val.unique)
-                this.unique.set(name, { sel: val.sel, prop: val.prop.copy(), unique: true });
-
-
-        //test for presence of rules. 
-        let POS_R = 0,
-            POS_A = 0,
-            HT = 0,
-            HL = 0,
-            HB = 0,
-            HR = 0,
-            HM = 0,
-            HMR = 0,
-            HMT = 0,
-            HMB = 0,
-            HML = 0,
-            W = 0,
-            H = 0;
-
-
-
-        if (this.getProp("position").toString() == "relative")
-            POS_R = 1;
-        else
-            POS_A = 1;
-
-
-        if (this.getProp("left"))
-            HL = 1;
-        if (this.getProp("right"))
-            HR = 1;
-        if (this.getProp("top"))
-            HT = 1;
-        if (this.getProp("bottom"))
-            HB = 1;
-
-        if (this.getProp("margin-left"))
-            HML = 1;
-        if (this.getProp("margin-right"))
-            HMR = 1;
-        if (this.getProp("margin-top"))
-            HMT = 1;
-        if (this.getProp("margin-bottom"))
-            HMB = 1;
-        if (this.getProp("margin"))
-            HM = 1;
-
-        if (this.getProp("width"))
-            W = 1;
-        if (this.getProp("height"))
-            H = 1;
-
-        //      1                     2                   4                 8                 16                
-        let v = ((POS_R | 0) << 0) | ((POS_A | 0) << 1) | ((HT | 0) << 2) | ((HR | 0) << 3) | ((HB | 0) << 4) |
-            //32                64                 128                256                512                1024              2048            4096
-            ((HL | 0) << 5) | ((HMT | 0) << 6) | ((HMR | 0) << 7) | ((HMB | 0) << 8) | ((HML | 0) << 9) | ((W | 0) << 10) | ((H | 0) << 11) | ((HM | 0) << 12);
-
-        if ((60 & v) > 0) { //
-
-            if ((v & 40) == 0) { // HT + HL
-                //missing left / right position value.original_rules
-                //Add left
-                this.setPropFromString(`left:0px`);
-                v |= 1 << 5;
-            }
-
-            if ((v & 20) == 0) { // HT + HR
-                //missing top / bottom position value
-                //Add top
-                this.setPropFromString(`top:0px`);
-                v |= 1 << 2;
-            }
-        } else if ((960 & v) > 0) {
-            //using margin
-        } else {
-
-            //Create left and top positions or us margin depending on current user preferences.
-            this.setPropFromString(`left:0px;top:0px`);
-            v |= 4 | 32;
-        }
-
-        if ((v & 3) == 0) {
-
-            if (move_type == "absolute") {
-                v |= 2;
-                this.setPropFromString('position:absolute');
-            } else if (move_type == "relative") {
-                v |= 1;
-                this.setPropFromString('position:relative;');
-            }
-        }
-
-
-        //Setup move systems. 
-        while (true) {
-
-            let p = [];
-
-            if ((32 & v))
-                p.push("left");
-            if ((8 & v))
-                p.push("right");
-
-            if ((v & 1024)
-                && (this.getProp("width")
-                    &&
-                    this.getProp("width").prop + "" !== "auto"
-                )
-            ) {
-                if ((v & (128 + 512 + 4096))) {
-                    if ((
-                        this.getProp("margin-left").toString() == "auto"
-                        && this.getProp("margin-left").toString() == "auto")
-                        || this.getProp("margin").toString() == "auto")
-                        p.push("margin");
-                }
-            }
-
-            if (p.length > 0)
-                this.move_hori_type = p.join(" ");
-
-            p = [];
-
-
-            //vertical types
-            if (2 & v) {
-                let p = [];
-
-                if ((4 & v))
-                    p.push("top");
-                if ((16 & v) && (p.length < 1) || !(v & 2048))
-                    p.push("bottom");
-
-                if (p.length > 0)
-                    this.move_vert_type = p.join(" ");
-            }
-
-            if (1 & v) {
-                let p = [];
-
-                if ((4 & v))
-                    p.push("top");
-                if ((16 & v) && (p.length < 1))
-                    p.push("bottom");
-
-                if (p.length > 0)
-                    this.move_vert_type = p.join(" ");
-            }
-
-            break;
-        }
-
-        this.cssflagsA = v;
-
-        this.rules = this.unique;
-        */
     }
 
     getPositionType(): CSSFlags {
@@ -863,49 +723,51 @@ export class CSSCache {
     }
 
     clearChanges(system: FlameSystem) {
-        //Retrieve all components with that match the selector
-        const props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
-
-        if (this.sel.IS_COMPONENT_FRAME) {
-
-            for (const prop of props)
-                this.sel.ele.style[prop.camelName] = "";
-
-        } else {
-
-            for (const c of getRTInstances(system, this.component.name)) {
-
-                for (const e of getMatchedElements(c.ele, this.unique_selector)) {
-                    for (const prop of props)
-                        e.style[prop.camelName] = "";
-                }
-            }
-        }
-
-        return;
+        this.removeRule(system);
     }
 
     applyChanges(system: FlameSystem, nonce: number) {
 
-        //Retrieve all components with that match the selector
-        const props = [...this.unique.values()].filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
+        if (this.changed.size > 0 && this.component) {
 
-        if (this.sel.IS_COMPONENT_FRAME) {
+            const rule_string =
+                this.generateRuleString();
 
-            for (const prop of props)
-                this.sel.ele.style[prop.camelName] = prop.value_string;
+            const index = this.removeRule(system);
 
-        } else {
-
-            for (const c of getRTInstances(system, this.component.name)) {
-
-                for (const e of getMatchedElements(c.ele, this.unique_selector)) {
-                    for (const prop of props)
-                        e.style[prop.camelName] = prop.value_string;
-                }
-            }
+            this.rule_ref = system.scratch_stylesheet.rules[
+                system.scratch_stylesheet.insertRule(
+                    rule_string,
+                    index
+                )
+            ];
         }
     }
+
+    generateRuleString(USE_COMPONENT_CLASS: boolean = true): string {
+        //Retrieve all components with that match the selector
+        const props = [...this.unique.values()]
+            .filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
+
+        return `${USE_COMPONENT_CLASS ? "." + this.component + " " : ""}${this.unique_selector.pos.slice()} {\n  ${props.join(";\n  ")}\n}`;
+    }
+
+    private removeRule(system: FlameSystem) {
+
+        let index = undefined;
+
+        if (this.rule_ref) {
+
+            index = Array.prototype.indexOf.call(
+                system.scratch_stylesheet.rules,
+                this.rule_ref
+            );
+
+            system.scratch_stylesheet.removeRule(index);
+        }
+        return index;
+    }
+
 }
 
 export function updateLastOccurrenceOfRuleInStyleSheet(stylesheet: any, rule: CSSRuleNode) {
@@ -931,34 +793,11 @@ const cache_array: { e: HTMLElement, cache: CSSCache; }[] = [];
 
 export async function CSSCacheFactory(
     sys: FlameSystem,
-    comp: string,
     ele: HTMLElement,
-    crate: ObjectCrate
+    crate?: ObjectCrate
 ): Promise<CSSCache> {
 
     let eligible: { e: HTMLElement, cache: CSSCache; } = null;
-
-    const names = getComponentHierarchyNames(sys, comp);
-
-    const styles = [];
-
-    for (const { name, depth } of names) {
-        const response = await sys.session.send_awaitable_command<
-            EditorCommand.GET_COMPONENT_STYLE,
-            EditorCommand.GET_COMPONENT_STYLE_RESPONSE
-        >({
-            command: EditorCommand.GET_COMPONENT_STYLE,
-            component_name: name
-        });
-
-        styles.push({
-            name,
-            depth,
-            styles: response.styles
-        });
-    }
-
-    debugger;
 
     for (const cache of cache_array) {
 
@@ -969,14 +808,44 @@ export async function CSSCacheFactory(
         else if (!eligible && !e) eligible = cache;
     }
 
+    let comp = "";
+
+    if (crate)
+        ({ comp } = crate);
+    else
+        comp = getComponentNameFromElement(ele);
+
+    const names = getComponentHierarchyNames(sys, comp);
+
+    const styles: StyleSheet[] = [];
+
+    for (const { name, depth } of names) {
+        const response = await sys.session.send_awaitable_command<
+            EditorCommand.GET_COMPONENT_STYLE,
+            EditorCommand.GET_COMPONENT_STYLE_RESPONSE
+        >({
+            command: EditorCommand.GET_COMPONENT_STYLE,
+            component_name: name
+        });
+        let index = 0;
+        for (const style of response.styles) {
+            styles.push({
+                index: index++,
+                comp_name: name,
+                location: new URI(style.location),
+                styles: parse(style.string)
+            });
+        }
+    }
+
     if (!eligible) {
         eligible = { e: ele, cache: new CSSCache };
         cache_array.push(eligible);
     }
+    if (!crate)
+        throw new Error("Cannot initialize CSSCache without a Create object");
 
-    //
-
-    eligible.cache.init(sys, crate);
+    eligible.cache.init(sys, crate, styles);
 
     return eligible.cache;
 }
@@ -993,7 +862,7 @@ function getComponentHierarchyNames(
     sys: FlameSystem,
     name: string
 ) {
-    const components = getRootMatchingComponents(name, sys.page_wick);
+    const components = getRuntimeComponentsFromName(name, sys.page_wick);
     const list = [{
         name,
         depth: 0

@@ -2,7 +2,9 @@ export enum EditorCommand {
     /**
      * A null command that should be ignored
      */
-    UNDEFINED,
+    UNKNOWN,
+
+    NOT_ALLOWED,
 
     /**
      * A client instance request for the CSS strings
@@ -23,6 +25,56 @@ export enum EditorCommand {
      * hash name
      */
     SET_COMPONENT_STYLE,
+
+    /**
+     * A client instance request to update a given component
+     * element with a new ID attribute. This will result in a new 
+     * component that has the targeted element id set. 
+     * 
+     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
+     * message with a StubPatch configured with the new component's
+     * hash name.
+     * 
+     * This however will not work for synthetic elements of generated 
+     * from markdown markup. In such cases the server will respond with
+     * a message an EditorCommand.NOT_ALLOWED command message.
+     */
+    SET_COMPONENT_ELEMENT_ID,
+
+    /**
+     * A client instance request to update a given component
+     * element with a class name addition. This will result in a new 
+     * component that has the new class appended to the target component's 
+     * class attribute. 
+     * 
+     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
+     * message with a StubPatch configured with the new component's
+     * hash name.
+     * 
+     * This however will not work for synthetic elements of generated 
+     * from markdown markup. In such cases the server will respond with
+     * a message an EditorCommand.NOT_ALLOWED command message.
+     */
+    ADD_COMPONENT_ELEMENT_CLASS,
+
+
+    /**
+     * A client instance request to update a given component
+     * element a with class name removal. This will result in a new 
+     * component that has the class removed from the target component's 
+     * class attribute. 
+     * 
+     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
+     * message with a StubPatch configured with the new component's
+     * hash name.
+     * 
+     * This however will not work for synthetic elements of generated 
+     * from markdown markup. In such cases the server will respond with
+     * a message an EditorCommand.NOT_ALLOWED command message.
+     */
+    REMOVE_COMPONENT_ELEMENT_CLASS,
+
+
     /**
      * A message from a client instance indicating the
      * client has loaded and is ready to communicate with
@@ -64,8 +116,12 @@ export const enum StyleSourceType {
 
 export interface CommandsMap {
 
-    [EditorCommand.UNDEFINED]: {
-        command: EditorCommand.UNDEFINED;
+    [EditorCommand.UNKNOWN]: {
+        command: EditorCommand.UNKNOWN;
+    };
+
+    [EditorCommand.NOT_ALLOWED]: {
+        command: EditorCommand.NOT_ALLOWED;
     };
 
     [EditorCommand.REGISTER_CLIENT_ENDPOINT]: {
@@ -97,6 +153,11 @@ export interface CommandsMap {
         styles: {
             type: StyleSourceType,
             string: string,
+            /**
+             * The path to the source file containing
+             * the CSS data
+             */
+            location: string,
         }[];
     };
 
@@ -112,6 +173,46 @@ export interface CommandsMap {
          * the component
          */
         rules: string;
+    };
+
+    [EditorCommand.REMOVE_COMPONENT_ELEMENT_CLASS]: {
+        command: EditorCommand.REMOVE_COMPONENT_ELEMENT_CLASS;
+
+        /**
+         * The hash name of the component that the new
+         * style rules should be applied to.
+         */
+        component_name: string;
+
+        /**
+         * The element id of the target element. 
+         */
+        ele_id: number;
+
+        /**
+         * class names to remove from the element.
+         */
+        class_names: string[];
+    };
+
+    [EditorCommand.ADD_COMPONENT_ELEMENT_CLASS]: {
+        command: EditorCommand.ADD_COMPONENT_ELEMENT_CLASS;
+
+        /**
+         * The hash name of the component that the new
+         * style rules should be applied to.
+         */
+        component_name: string;
+
+        /**
+         * The element id of the target element. 
+         */
+        ele_id: number;
+
+        /**
+         * class names to add to the element.
+         */
+        class_names: string[];
     };
 
     [EditorCommand.GET_COMPONENT_PATCH]: {
@@ -150,7 +251,7 @@ export interface CommandsMap {
     };
 }
 
-export type Commands = EditorCommand.UNDEFINED |
+export type Commands = EditorCommand.UNKNOWN |
     EditorCommand.GET_COMPONENT_STYLE |
     EditorCommand.GET_COMPONENT_STYLE_RESPONSE |
     EditorCommand.SET_COMPONENT_STYLE |
@@ -190,19 +291,9 @@ export const enum PatchType {
      *
      * This patch can be issued as a set of style updates.
      *
-     * This WILL NOT change the component's hash
+     * This may or may not change the component's hash
      */
-    EXTERNAL_CSS,
-
-    /**
-     * A style defined within the component source file is changed.
-     *
-     * This patch can be issued as a set of style updates and
-     * hash name change.
-     *
-     * This WILL change the component's hash
-     */
-    INTERNAL_CSS,
+    CSS,
 
     /**
      * A text section defined within the component source file is changed.
@@ -256,4 +347,10 @@ export interface StubPatch extends ComponentPatch {
     type: PatchType.STUB;
 }
 
-export type Patch = ReplacePatch | TextPatch | StubPatch;
+export interface CSSPatch extends ComponentPatch {
+
+    type: PatchType.CSS;
+    style: string;
+}
+
+export type Patch = ReplacePatch | TextPatch | StubPatch | CSSPatch;

@@ -39,12 +39,10 @@ function getNumericValue(sys: FlameSystem, crate: ObjectCrate, type: string): nu
 }
 
 export function SETWIDTH(system, crate: ObjectCrate, x: number) {
-    //ensureBlocklike(system, component, element);
     setNumericValue(system, crate, "width", x, setNumericValue.parent_width);
 }
 
 export function SETHEIGHT(system, crate: ObjectCrate, y: number) {
-    //ensureBlocklike(system, component, element);
     setNumericValue(system, crate, "height", y, setNumericValue.parent_height);
 }
 

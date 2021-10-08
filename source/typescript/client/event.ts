@@ -1,5 +1,6 @@
 import {
-    areActionsRunning, END_ACTION, UPDATE_ACTION
+    ActionRefType,
+    areActionsRunning
 } from "./action_initiators.js";
 import {
     getSelectionFromPoint, invalidateAllSelections, invalidateInactiveSelections, updateSelections
@@ -163,24 +164,39 @@ const drag_handler: InputHandler = <InputHandler>{
 
 const action_input_handler: InputHandler = <InputHandler>{
     down(e, sys) {
+
         const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+
         event_intercept_ele.style.zIndex = "100000";
-        UPDATE_ACTION(sys, true);
+
+        sys.action_runner.addAction(ActionRefType.INIT_UPDATE);
+
         updateSelections(sys);
+
         return action_input_handler;
     },
     up(e, sys) {
+
         const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+
         event_intercept_ele.style.zIndex = "";
-        END_ACTION(sys);
+
+        sys.action_runner.addAction(ActionRefType.END);
+
         updateSelections(sys);
+
         return default_handler;
     },
     drag(e, b, sys) {
+
         const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
+
         event_intercept_ele.style.zIndex = "100000";
-        UPDATE_ACTION(sys);
+
+        sys.action_runner.addAction(ActionRefType.UPDATE);
+
         updateSelections(sys);
+
         return action_input_handler;
     },
     move(e, sys) { return action_input_handler.drag(e, 0, sys); },
@@ -296,32 +312,35 @@ export function initializeEvents(
 
         sys.editor_iframe.style.pointerEvents = "none";
 
-        pointerMoveEventResponder(e, sys);
+        try {
+            pointerMoveEventResponder(e, sys);
+        } finally {
+            sys.editor_iframe.style.pointerEvents = "all";
+        }
 
-        sys.editor_iframe.style.pointerEvents = "all";
     });
     event_intercept_ele.addEventListener("pointerdown", e => {
 
         sys.editor_iframe.style.pointerEvents = "none";
 
         event_intercept_ele.setPointerCapture(e.pointerId);
-
-        pointerDownEventResponder(e, sys);
-
-        sys.editor_iframe.style.pointerEvents = "all";
-
+        try {
+            pointerDownEventResponder(e, sys);
+        } finally {
+            sys.editor_iframe.style.pointerEvents = "all";
+        }
     });
 
     event_intercept_ele.addEventListener("pointerup", e => {
 
         sys.editor_iframe.style.pointerEvents = "none";
+        try {
+            pointerUpEventResponder(e, sys);
+        } finally {
+            event_intercept_ele.releasePointerCapture(e.pointerId);
 
-        pointerUpEventResponder(e, sys);
-
-        event_intercept_ele.releasePointerCapture(e.pointerId);
-
-        sys.editor_iframe.style.pointerEvents = "all";
-
+            sys.editor_iframe.style.pointerEvents = "all";
+        }
     });
 
     edited_window.document.addEventListener("wheel", e => wheelScrollEventResponder(e, sys));

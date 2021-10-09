@@ -10,7 +10,8 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
-        "buildsite": "npm install && candle.wick compile --output ./www ./site"
+        "buildsite": "npm install && candle.wick compile --output ./www ./site",
+        "test": "echo \"TODO: setup tests\""
     },
     "repository": {
         "type": "git",

@@ -149,7 +149,7 @@ export class Session {
 
                     for (const { name, value, pos } of ele.attributes) {
                         if (name == "id" && typeof value == "string") {
-                            new_source = pos.replace(`"id"=${id}`);
+                            new_source = pos.replace(`id="${id}"`);
                             break;
                         }
                     }

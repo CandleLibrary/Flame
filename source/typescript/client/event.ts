@@ -1,3 +1,4 @@
+import spark from '@candlelib/spark';
 import {
     ActionRefType,
     areActionsRunning
@@ -23,8 +24,6 @@ const default_handler: InputHandler = <InputHandler>{
             invalidateInactiveSelections(sys);
         else
             invalidateAllSelections(sys);
-
-        updateSelections(sys);
 
         const sel = getSelectionFromPoint(e.x, e.y, sys);
 
@@ -67,26 +66,35 @@ const default_handler: InputHandler = <InputHandler>{
             old_scale = scale,
             new_scale = Math.max(0.2, Math.min(1, old_scale + -deltaY * 0.0005));
 
-        transform.scale = new_scale;
-        transform.px -= ((((px - x) * old_scale) - ((px - x) * new_scale))) / (old_scale);
-        transform.py -= ((((py - y) * old_scale) - ((py - y) * new_scale))) / (old_scale);
+        // transform.scale = new_scale;
+        // transform.px -= ((((px - x) * old_scale) - ((px - x) * new_scale))) / (old_scale);
+        // transform.py -= ((((py - y) * old_scale) - ((py - y) * new_scale))) / (old_scale);
 
         const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
 
         event_intercept_ele.style.pointerEvents = "none";
 
-        invalidateInactiveSelections(sys);
+        //  invalidateInactiveSelections(sys);
 
-        getSelectionFromPoint(e.x, e.y, sys);
+        //getSelectionFromPoint(e.x, e.y, sys);
 
         updateSelections(sys);
 
         event_intercept_ele.style.pointerEvents = "";
 
-        sys.editor_model.sc++;
+        // sys.editor_model.sc++;
 
         e.stopPropagation();
         e.stopImmediatePropagation();
+
+        spark.queueUpdate({
+            scheduledUpdate: () => {
+                const d = document.body.style;
+                updateSelections(sys);
+                updateSelections(sys);
+                updateSelections(sys);
+            }
+        }, 100);
 
         return default_handler;
     }
@@ -343,7 +351,15 @@ export function initializeEvents(
         }
     });
 
-    edited_window.document.addEventListener("wheel", e => wheelScrollEventResponder(e, sys));
+    window.addEventListener("scroll", e => {
+        sys.editor_iframe.style.pointerEvents = "none";
+        try {
+            wheelScrollEventResponder(e, sys);
+        } finally {
+            sys.editor_iframe.style.pointerEvents = "all";
+        }
+
+    });
 
     edited_window.addEventListener("resize", e => windowResizeEventResponder(e, sys));
 

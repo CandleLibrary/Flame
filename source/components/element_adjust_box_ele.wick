@@ -1,8 +1,9 @@
 import { top, left, width, height, ele } from "@model";
-import { ACTIONS } from "@api";
+import { ACTIONS, getComponentNameFromElement } from "@api";
 import handle from "./handle.wick";
 
 export default <div id="main" class="main">
+    { ele && getComponentNameFromElement(ele) || "" }
     <container {data}>
         <handle />
     </container>
@@ -54,18 +55,19 @@ function $update(width, height, left, top) {
     
     const div = "@#main";
 
-    div.style.width = width-1 + "px";
-    div.style.height = height-1 + "px";
-    div.style.left = left-1 + "px";
-    div.style.top = top-1 + "px";
+    div.style.width = Math.max(width-1, 0) + "px";
+    div.style.height = Math.max(height-1, 0) + "px";
+    div.style.left = Math.max(left-1, 1) + "px";
+    div.style.top = Math.max(top-1, 1) + "px";
 };
 
 <style>
     root {
+        font-size:13px;
         position:fixed;
         width:150px;
         height:150px;
-        color:white;
+        color:black;
         z-index:10000;
         pointer-events:none;
         border:1px solid rgb(100,100,200);

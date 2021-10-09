@@ -24,6 +24,11 @@
     ],
     "license": "MIT",
     "dependencies": {
+        "@candlelib/uri": "*",
+        "@candlelib/conflagrate": "*",
+        "@candlelib/spark": "*",
+        "@candlelib/glow": "*",
+        "@candlelib/wind": "*",
         "@candlelib/paraffin": "*",
         "@candlelib/css": "^0.3.15",
         "@candlelib/js": "^0.5.15",
@@ -35,6 +40,7 @@
         "ws": "^8.2.3"
     },
     "devDependencies": {
+        "@candlelib/cure": "*",
         "@types/node": "^16.10.2",
         "@types/ws": "^8.2.0"
     },

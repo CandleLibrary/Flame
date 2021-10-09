@@ -259,6 +259,7 @@ export class CSSCache {
         this.element = ele;
         this.system = system;
         this.component = crate.comp;
+        this.COMPONENT_ELEMENT = ele.hasAttribute("w:c");
         this.computed = window.getComputedStyle(ele);
         this.styles = styles;
         //calculate horizontal and vertical rations. also width and height ratios.  
@@ -728,10 +729,11 @@ export class CSSCache {
 
     applyChanges(system: FlameSystem, nonce: number) {
 
+
         if (this.changed.size > 0 && this.component) {
 
             const rule_string =
-                this.generateRuleString();
+                this.generateRuleString(!this.COMPONENT_ELEMENT);
 
             const index = this.removeRule(system);
 

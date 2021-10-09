@@ -336,7 +336,7 @@ export function updateSelections(sys: FlameSystem) {
     const selections = sys.editor_model.selections;
 
     for (const sel of selections)
-        updateSelectionCoords(sel, sys);
+        updateSelectionCoords(sel, sys).scheduledUpdate();
 
     selections.scheduleUpdate();
 }

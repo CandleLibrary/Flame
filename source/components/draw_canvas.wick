@@ -12,6 +12,8 @@ function $updateDraw(sc) {
 
     ctx.fillStyle = "rgba(120,120,200,0.2)";
 
+    ctx.lineWidth = "0.5"
+
     sys.ui.transform.setCTX(ctx);
 
     if (draw_objects.length == 0) return;

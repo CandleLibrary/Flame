@@ -23,6 +23,41 @@
             "name": "Attach to Server",
             "port": 6009,
             "restart": true,
+        },
+        {
+            "name": "Launch Dev Server",
+            "program": "${workspaceRoot}/index.js",
+            "cwd": "${workspaceFolder}/site/",
+            "request": "launch",
+            "smartStep": true,
+            "showAsyncStacks": false,
+            "runtimeVersion": "16.7.0",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "stopOnEntry": false,
+            "type": "node",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "runtimeArgs": [
+                "--preserve-symlinks",
+                "--preserve-symlinks-main",
+                "--enable-source-maps"
+            ],
+            "args": [
+                "dev-server",
+                "--port",
+                "8088"
+            ]
+        },
+        {
+            "name": "Launch Edited Page",
+            "type": "pwa-chrome",
+            "request": "launch",
+            "url": "http://localhost:8088/",
+            "runtimeArgs": [
+                "--auto-open-devtools-for-tabs"
+            ]
         }
     ],
     "compounds": [
@@ -31,6 +66,13 @@
             "configurations": [
                 "Launch Client",
                 "Attach to Server"
+            ]
+        },
+        {
+            "name": "Web Client + Server",
+            "configurations": [
+                "Launch Edited Page",
+                "Launch Dev Server"
             ]
         }
     ]

@@ -1,4 +1,5 @@
 import { Context, WickLibrary, WickRTComponent } from "@candlelib/wick";
+import { Logger } from '@candlelib/log';
 import { EditorCommand, PatchType } from "../common/editor_types.js";
 import ActionQueueRunner from './action_initiators.js';
 import { getRuntimeComponentsFromName } from './common_functions.js';
@@ -6,7 +7,7 @@ import { EditorModel } from "./editor_model.js";
 import { Session } from './session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
 
-const event_intercept = document.createElement("div");
+const patch_logger = Logger.get("flame").get("patcher").activate();
 export function revealEventIntercept(sys: FlameSystem) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
     event_intercept_ele.style.zIndex = "100000";
@@ -145,136 +146,144 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
         const patch = command.patch;
 
-        switch (patch.type) {
+        if (patch == undefined)
+            patch_logger.error(`Could not respond to PATCH command. Patch object is undefined`);
+        else try {
+            switch (patch.type) {
 
-            case PatchType.CSS: {
+                case PatchType.CSS: {
 
-                const { to, from, style } = patch;
+                    const { to, from, style } = patch;
 
-                const matches = getRuntimeComponentsFromName(from, page_wick);
+                    const matches = getRuntimeComponentsFromName(from, page_wick);
 
-                updateCSSReferences(page_wick.rt.context, from, to, style, matches);
+                    updateCSSReferences(page_wick.rt.context, from, to, matches, style);
 
-                session.logger.debug(`Applying CSS patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+                    patch_logger.debug(`Applying CSS patch: [ ${from} ]->[ ${to} ] to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
 
-                if (to != from)
-                    for (const match of matches) {
-                        applyToPatchToRuntimeComp(match, to);
-                        match.ele.classList.add(to);
-                        match.ele.classList.remove(from);
+                    if (to != from)
+                        for (const match of matches) {
+                            applyToPatchToRuntimeComp(match, to);
+                        }
+
+                } break;
+
+
+                case PatchType.STUB: {
+
+                    const { to, from } = patch;
+
+                    const matches = getRuntimeComponentsFromName(from, page_wick);
+
+                    patch_logger.debug(`Applying STUB patch: [ ${from} ]->[ ${to} ] to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+
+                    if (to != from) {
+
+                        updateCSSReferences(page_wick.rt.context, from, to, matches);
+
+                        for (const match of matches)
+                            applyToPatchToRuntimeComp(match, to);
                     }
 
-            } break;
+                } break;
 
+                case PatchType.TEXT: {
 
-            case PatchType.STUB: {
+                    const { to, from, patches } = patch;
 
+                    const matches = getRuntimeComponentsFromName(from, page_wick);
 
-                const { to, from } = patch;
+                    updateCSSReferences(page_wick.rt.context, from, to, matches);
 
-                const matches = getRuntimeComponentsFromName(from, page_wick);
+                    patch_logger.debug(`Applying TEXT patch: [ ${from} ]->[ ${to} ] to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
 
-                session.logger.debug(`Applying stub patch: ${from}->${to} to ${matches.length} component${matches.length == 1 ? "" : "s"}`);
+                    for (const match of matches) {
+                        if (to != from)
+                            applyToPatchToRuntimeComp(match, to);
 
-                if (to != from) {
+                        const ele = match.ele;
 
-                    updateCSSReferences(page_wick.rt.context, from, to);
+                        let eles = [ele];
 
-                    for (const match of matches)
-                        applyToPatchToRuntimeComp(match, to);
-                }
+                        for (const patch of patches) {
 
-            } break;
+                            for (const ele of eles) {
+                                if (ele instanceof Text) {
+                                    if (ele.data.trim() == patch.from.trim()) {
+                                        ele.data = patch.to;
+                                        break;
+                                    }
+                                }
 
-            case PatchType.TEXT: {
-
-                const { to, from, patches } = patch;
-
-                updateCSSReferences(page_wick.rt.context, from, to);
-
-                const matches = getRuntimeComponentsFromName(from, page_wick);
-
-                for (const match of matches) {
-                    if (to != from)
-                        applyToPatchToRuntimeComp(match, to);
-
-                    const ele = match.ele;
-
-                    let eles = [ele];
-
-                    for (const patch of patches) {
-
-                        for (const ele of eles) {
-                            if (ele instanceof Text) {
-                                if (ele.data.trim() == patch.from.trim()) {
-                                    ele.data = patch.to;
-                                    break;
+                                for (const child of Array.from(ele.childNodes)) {
+                                    eles.push(<any>child);
                                 }
                             }
-
-                            for (const child of Array.from(ele.childNodes)) {
-                                eles.push(child);
-                            }
                         }
                     }
-                }
-            } break;
+                } break;
 
-            case PatchType.REPLACE: {
+                case PatchType.REPLACE: {
 
-                const { to, from, patch_scripts } = patch;
+                    const { to, from, patch_scripts } = patch;
 
-                //Install the patches
-                const classes: typeof WickRTComponent[] = patch_scripts.map(
-                    patch => Function("wick", patch)(page_wick)
-                );
 
-                const class_ = classes[0];
-
-                const matches = getRuntimeComponentsFromName(from, page_wick);
-
-                for (const match of matches) {
-
-                    // Do some patching magic to replace the old component 
-                    // with the new one. 
-                    const ele = match.ele;
-                    const par_ele = ele.parentElement;
-                    const par_comp = match.par;
-
-                    const new_component = new class_(
-                        match.model,
-                        undefined,
-                        undefined,
-                        [],
-                        undefined,
-                        page_wick.rt.context
+                    //Install the patches
+                    const classes: typeof WickRTComponent[] = patch_scripts.map(
+                        patch => Function("wick", patch)(page_wick)
                     );
 
-                    if (par_ele)
-                        par_ele.replaceChild(new_component.ele, ele);
+                    const class_ = classes[0];
+                    const matches = getRuntimeComponentsFromName(from, page_wick);
 
-                    if (par_comp) {
+                    patch_logger.debug(`Replacing [ ${from} ]->[ ${to} ]. ${matches.length} component${matches.length == 1 ? "" : "s"} will be replaced.`);
 
-                        const index = par_comp.ch.indexOf(match);
 
-                        if (index >= 0) {
-                            par_comp.ch.splice(index, 1, new_component);
-                            new_component.par = par_comp;
+                    for (const match of matches) {
+
+                        // Do some patching magic to replace the old component 
+                        // with the new one. 
+                        const ele = match.ele;
+                        const par_ele = ele.parentElement;
+                        const par_comp = match.par;
+
+                        const new_component = new class_(
+                            match.model,
+                            undefined,
+                            undefined,
+                            [],
+                            undefined,
+                            page_wick.rt.context
+                        );
+
+                        if (par_ele)
+                            par_ele.replaceChild(new_component.ele, ele);
+
+                        if (par_comp) {
+
+                            const index = par_comp.ch.indexOf(match);
+
+                            if (index >= 0) {
+                                par_comp.ch.splice(index, 1, new_component);
+                                new_component.par = par_comp;
+                            }
+
+                            match.par = null;
                         }
 
-                        match.par = null;
-                    }
+                        new_component.initialize(match.model);
 
-                    new_component.initialize(match.model);
+                        match.disconnect();
+                        match.destructor();
 
-                    match.disconnect();
-                    match.destructor();
-
-                    if (removeRootComponent(match, page_wick)) {
-                        addRootComponent(new_component, page_wick);
+                        if (removeRootComponent(match, page_wick)) {
+                            addRootComponent(new_component, page_wick);
+                        }
                     }
                 }
             }
+        } catch (e) {
+            patch_logger.error(e);
         }
     });
 }
@@ -290,23 +299,32 @@ function updateCSSReferences(
     context: Context,
     from: string,
     to: string,
+    matches: WickRTComponent[],
     style: string = "",
-    matches: WickRTComponent[] = [],
 ) {
+    if (matches) for (const match of matches)
+        match.ele.classList.add(to);
+
 
     const old_css = context.css_cache.get(from);
 
     if (old_css) {
         if (style)
             old_css.css_ele.innerHTML = style;
+        else
+            old_css.css_ele.innerHTML = old_css.css_ele.innerHTML.replace(new RegExp(from, "g"), to);
         context.css_cache.delete(from);
         context.css_cache.set(to, old_css);
     } else if (style) {
         const css_ele = document.createElement("style");
         css_ele.innerHTML = style;
         document.head.appendChild(css_ele);
-        context.css_cache.set(this.name, { css_ele, count: matches.length });
+        context.css_cache.set(to, { css_ele, count: matches.length });
     }
+
+    if (matches) for (const match of matches)
+        match.ele.classList.remove(from);
+
 }
 
 export function removeRootComponent(comp: WickRTComponent, wick: WickLibrary): boolean {

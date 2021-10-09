@@ -7,6 +7,7 @@ import { Logger } from "@candlelib/log";
 import spark from "@candlelib/spark";
 import { FlameSystem } from './types/flame_system.js';
 import { initializeEvents } from './event.js';
+import { getComponentNameFromElement } from './common_functions.js';
 
 export const logger = Logger.createLogger("flame-client").activate();
 
@@ -53,9 +54,11 @@ export function init() {
                 },
                 api: {
                     sys: system,
+                    getComponentNameFromElement,
                     APPLY_ACTION: APPLY_ACTION,
                     START_ACTION: START_ACTION,
-                    ACTIONS: ACTIONS
+                    ACTIONS: ACTIONS,
+
                 }
             });
 

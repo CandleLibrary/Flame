@@ -1,18 +1,8 @@
+<h1 align=center>CandleLibrary Flame</h1>
 
+<h3 align=center>Wick Component Dev Server | Language Server | VSCode CandleLib Extension </h3>
 
-<div align=center>
-
-# CandleLibrary Flame
-version 0.0.15
-
-Wick Component Dev Server | Language Server | VSCode CandleLib Extension 
-
-
-[![The MIT License](https://img.shields.io/badge/license-MIT-orange.svg?style=for-the-badge)](http://opensource.org/licenses/MIT)
-[![GitHub](https://img.shields.io/github/v/release/CandleLibrary/flame.svg?style=for-the-badge)](https://github.com/CandleLibrary/flame/releases)
-[![GitHub](https://img.shields.io/github/issues/CandleLibrary/flame.svg?style=for-the-badge)](https://github.com/CandleLibrary/flame/issues)
-
-</div>
+<p align=center> <img alt="npm (tag)" src="https://img.shields.io/npm/v/@candlelib/flame?style=for-the-badge&logo=appveyor"> </p>
 
 ## USAGE
 

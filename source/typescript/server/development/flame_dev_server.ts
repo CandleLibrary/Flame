@@ -2,19 +2,27 @@
  * Copyright (C) 2021 Anthony Weathersby - Flame Language Server & Dev Server
  */
 
-import lantern, { $404_dispatch, candle_library_dispatch, Dispatcher, ext_map, filesystem_dispatch, LanternServer } from "@candlelib/lantern";
+import lantern, {
+    $404_dispatch,
+    candle_library_dispatch,
+    Dispatcher,
+    ext_map,
+    filesystem_dispatch,
+    LanternServer
+} from "@candlelib/lantern";
 import { Logger } from "@candlelib/log";
 import URI from '@candlelib/uri';
 import wick, { ComponentData } from "@candlelib/wick";
+import { WickCompileConfig } from '@candlelib/wick/build/types/types/all';
 import { WebSocketServer } from "ws";
-import { Session } from './session.js';
+import { ServerSession } from './session.js';
+import { initializeDefualtSessionDispatchHandlers } from './session_handlers.js';
 import { loadComponents, store } from './store.js';
-
-Logger.createLogger("lantern").deactivate();
-Logger.createLogger("wick").activate();
-const logger = Logger.createLogger("flame");
-logger.activate();
+const logger = Logger.get("flame");
+Logger.get("lantern");
+Logger.get("wick");
 URI.server();
+
 function initializeWebSocketServer(lantern: LanternServer<any>) {
     const ws_logger = logger.get("web-socket");
     ws_logger.log("Initializing WebSocket server");
@@ -33,7 +41,7 @@ function initializeWebSocketServer(lantern: LanternServer<any>) {
 
     ws_server.on("connection", (connection) => {
         ws_logger.log("Connection Made");
-        new Session(connection);
+        initializeDefualtSessionDispatchHandlers(new ServerSession(connection));
     });
 
     ws_server.on("close", () => {
@@ -62,9 +70,9 @@ async function renderPage(
         if (component.RADIATE)
             hooks.init_script_render = function () {
                 return `
-				import init_router from "/@cl/wick-radiate/";
-				init_router();
-                import "/@cl/flame/";
+    import init_router from "/@cl/wick-radiate/";
+    init_router();
+    import "/@cl/flame/";
                 `;
             };
 
@@ -72,9 +80,9 @@ async function renderPage(
         else
             hooks.init_script_render = function () {
                 return `
-                import w from "/@cl/wick-rt/";
-			    w.hydrate();
-                import "/@cl/flame/";
+    import w from "/@cl/wick-rt/";
+    w.hydrate();
+    import "/@cl/flame/";
                 `;
             };
 
@@ -118,6 +126,9 @@ const flaming_wick_dispatch = <Dispatcher>{
 
                 const { comp } = store.endpoints.get(tools.dir);
 
+                for (const error of comp.errors)
+                    logger.error(error);
+
                 const page = await renderPage(comp);
 
                 return tools.sendUTF8String(page);
@@ -146,29 +157,35 @@ const flame_editor_dispatch = <Dispatcher>{
 
         if (comp.HAS_ERRORS)
             for (const error of comp.errors)
-                Logger.get("flame").get("editor-dispatch").activate().log(error);
+                Logger.get("flame").get("editor-dispatch").log(error);
 
         const { page } = await wick.utils.RenderPage(comp, flame_editor_presets);
 
         return tools.sendUTF8String(page);
     }
 };
-export async function initDevServer(port: number = 8082) {
-
-    //Logger.get("lantern").activate();
+export async function initDevServer(
+    port: number = 8082,
+    config: WickCompileConfig
+) {
 
     wick.rt.setPresets();
 
     const working_directory = new URI(process.cwd());
 
-    await loadComponents(working_directory, wick.rt.context);
+    await loadComponents(
+        working_directory,
+        wick.rt.context,
+        config
+    );
 
     logger.log(`Initializing HTTP server`);
 
     const server = await lantern({
         port,
-        //type: "http",
-        //secure: lantern.mock_certificate
+        host: "0.0.0.0",
+        secure: lantern.mock_certificate,
+        log: lantern.null_logger
     });
 
     server.addDispatch(flame_editor_dispatch);

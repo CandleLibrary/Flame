@@ -40,7 +40,7 @@ export function init() {
 
             const host = document.location.hostname;
             const port = document.location.port;
-            const protocol = "ws";
+            const protocol = "wss";
             const uri = `${protocol}://${host}:${port}`;
 
             const system = await initSystem(uri, page_wick, editor_wick, css, editor_window, editor_frame);

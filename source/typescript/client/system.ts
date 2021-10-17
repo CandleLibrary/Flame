@@ -4,10 +4,10 @@ import { EditorCommand, PatchType } from "../common/editor_types.js";
 import ActionQueueRunner from './action_initiators.js';
 import { getRuntimeComponentsFromName } from './common_functions.js';
 import { EditorModel } from "./editor_model.js";
-import { Session } from './session.js';
+import { Session } from '../common/session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
 
-const patch_logger = Logger.get("flame").get("patcher").activate();
+const patch_logger = Logger.get("flame").get("patcher");
 export function revealEventIntercept(sys: FlameSystem) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
     event_intercept_ele.style.zIndex = "100000";

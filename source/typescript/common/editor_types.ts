@@ -132,12 +132,6 @@ export interface CommandsMap {
         endpoint: string;
     };
 
-
-    [EditorCommand.GET_COMPONENT_STYLE]: {
-        command: EditorCommand.GET_COMPONENT_STYLE;
-        component_name: string;
-    };
-
     [EditorCommand.GET_COMPONENT_STYLE]: {
         command: EditorCommand.GET_COMPONENT_STYLE;
         /**
@@ -172,7 +166,12 @@ export interface CommandsMap {
          * A style sheet string of rules to apply to
          * the component
          */
-        rules: string;
+        rules: {
+            location: string,
+            selectors: string,
+            properties: string,
+            rule_path: string,
+        }[];
     };
 
     [EditorCommand.REMOVE_COMPONENT_ELEMENT_CLASS]: {

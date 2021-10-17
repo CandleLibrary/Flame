@@ -46,6 +46,8 @@
             ],
             "args": [
                 "dev-server",
+                "--loglevel",
+                "verbose",
                 "--port",
                 "8088"
             ]
@@ -54,7 +56,7 @@
             "name": "Launch Edited Page",
             "type": "pwa-chrome",
             "request": "launch",
-            "url": "http://localhost:8088/",
+            "url": "https://localhost:8088/",
             "runtimeArgs": [
                 "--auto-open-devtools-for-tabs"
             ]

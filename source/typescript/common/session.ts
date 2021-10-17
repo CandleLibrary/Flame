@@ -1,8 +1,9 @@
 import { Logger } from '@candlelib/log';
-import { Commands, CommandsMap, EditMessage, EditorCommand } from "../common/editor_types.js";
+import { WebSocket as WS } from "ws";
+import { Commands, CommandsMap, EditMessage, EditorCommand } from "./editor_types.js";
 
-interface CommandHandler<T extends keyof CommandsMap = Commands> {
-    (command: CommandsMap[T], session: Session): void;
+export interface CommandHandler<T extends keyof CommandsMap = Commands> {
+    (command: CommandsMap[T], session: Session): (void | CommandsMap[EditorCommand]) | Promise<(void | CommandsMap[EditorCommand])>;
 }
 
 /**
@@ -10,8 +11,15 @@ interface CommandHandler<T extends keyof CommandsMap = Commands> {
  */
 export class Session {
 
-    connection: WebSocket;
-
+    connection: WS;
+    /**
+ * Timestamp of the creation of this session
+ */
+    opened: number;
+    /**
+     * true if the current connection is available
+     * to send and receive data.
+     */
     ACTIVE: boolean;
 
     awaitable_callback: Map<number, (any) => void>;
@@ -22,14 +30,16 @@ export class Session {
 
     dispatches: Map<EditorCommand, CommandHandler>;
 
-    constructor(ws_uri: string) {
+    constructor(ws: WS | string, logger: Logger = Logger.get("flame-client").get("session").activate()) {
 
+        this.logger = logger;
 
-        this.logger = Logger.get("flame-client").get("session").activate();
+        if (typeof ws == "string") {
+            this.logger.log(`Creating WebSocket connection to [ ${ws} ]`);
+            this.connection = <any>new WebSocket(ws);
+        } else
+            this.connection = ws;
 
-        this.logger.log(`Creating WebSocket connection to [ ${ws_uri} ]`);
-
-        this.connection = new WebSocket(ws_uri);
 
         this.ACTIVE = true;
 
@@ -40,6 +50,8 @@ export class Session {
         this.set_callbacks();
 
         this.nonce = 0;
+
+        this.opened = Date.now();
     }
 
     setHandler<T extends keyof CommandsMap = Commands>(command: T, handler: CommandHandler<T>) {
@@ -96,9 +108,13 @@ export class Session {
         this.logger.error(error);
     }
 
+    get_message_string(msg) {
+        return msg.data;
+    }
+
     async command_handler(msg: MessageEvent) {
 
-        const { nonce, data } = <EditMessage>JSON.parse(msg.data);
+        const { nonce, data } = <EditMessage>JSON.parse(this.get_message_string(msg));
 
         this.logger.log(`Received command [ ${EditorCommand[data.command]} ] with nonce [ ${nonce} ]`);
 
@@ -109,8 +125,14 @@ export class Session {
             this.awaitable_callback.delete(nonce);
 
             return callback(data);
-        } else if (this.dispatches.has(data.command))
-            this.dispatches.get(data.command)(data, this);
+        } else if (this.dispatches.has(data.command)) {
+
+            const reply = await this.dispatches.get(data.command)(data, this);
+
+            if (reply) {
+                this.send_command<any>(reply, nonce);
+            }
+        }
         else
             this.logger.warn(`No handler set for command [ ${EditorCommand[data.command]} ]`);
     }

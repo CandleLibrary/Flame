@@ -2,7 +2,7 @@ import { pos_type, ACTION } from "@model";
 
 import { START_ACTION, sys } from "@api";
 
-const div = "@div"[0];
+let div = "@div"[0];
 
 switch (pos_type) {
     case "top-left":

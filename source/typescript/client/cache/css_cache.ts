@@ -15,7 +15,7 @@ import {
 import URI from '@candlelib/uri';
 import { WickRTComponent } from "@candlelib/wick";
 import { Lexer } from "@candlelib/wind";
-import { EditorCommand } from '../../common/editor_types.js';
+import { CommandsMap, EditorCommand } from '../../common/editor_types.js';
 import {
     getApplicableProps,
     getComponentNameFromElement,
@@ -211,7 +211,23 @@ export class CSSCache {
 
     rule_ref: CSSRule;
 
-    CREATED_ID: boolean;
+
+    /**
+     * The file location in which the active rule lives
+     */
+    location: string;
+
+    /**
+     * A string of the selectors from the remote target 
+     * rule which will be updated. 
+     */
+    source_selectors: string;
+
+    /**
+     * The hierarchy of @* rules within which the target rule
+     * lives.
+     */
+    at_path: string;
 
     constructor() {
         this.setup();
@@ -229,6 +245,12 @@ export class CSSCache {
         this.computed = null;
         this.styles = null;
         this.rule_ref = null;
+
+
+        this.source_selectors = "";
+        this.location = "";
+        this.at_path = "";
+
         global_cache = this;
     }
 
@@ -254,6 +276,10 @@ export class CSSCache {
 
         const { ele } = crate.sel;
 
+        this.source_selectors = "";
+        this.location = "";
+        this.at_path = "";
+
         this.sel = crate.sel;
         this.crate = crate;
         this.element = ele;
@@ -262,6 +288,7 @@ export class CSSCache {
         this.COMPONENT_ELEMENT = ele.hasAttribute("w:c");
         this.computed = window.getComputedStyle(ele);
         this.styles = styles;
+
         //calculate horizontal and vertical rations. also width and height ratios.  
         this.setupStyle();
     }
@@ -746,6 +773,23 @@ export class CSSCache {
         }
     }
 
+    generateClientPatch(USE_COMPONENT_CLASS: boolean = true):
+        CommandsMap[EditorCommand.SET_COMPONENT_STYLE]["rules"] {
+
+        this.location = "";
+
+        const patch: CommandsMap[EditorCommand.SET_COMPONENT_STYLE]["rules"] = [{
+            location: this.location,
+            selectors: (this.source_selectors || this.unique_selector.pos.slice()),
+            rule_path: "",
+            properties: [...this.unique.values()]
+                .filter(e => this.changed.has(e.prop.name))
+                .map(e => e.prop).join(";")
+        }];
+
+        return patch;
+    }
+
     generateRuleString(USE_COMPONENT_CLASS: boolean = true): string {
         //Retrieve all components with that match the selector
         const props = [...this.unique.values()]
@@ -822,6 +866,7 @@ export async function CSSCacheFactory(
     const styles: StyleSheet[] = [];
 
     for (const { name, depth } of names) {
+
         const response = await sys.session.send_awaitable_command<
             EditorCommand.GET_COMPONENT_STYLE,
             EditorCommand.GET_COMPONENT_STYLE_RESPONSE
@@ -829,7 +874,9 @@ export async function CSSCacheFactory(
             command: EditorCommand.GET_COMPONENT_STYLE,
             component_name: name
         });
+
         let index = 0;
+
         for (const style of response.styles) {
             styles.push({
                 index: index++,
@@ -894,3 +941,17 @@ function getComponentHierarchyNames(
     return list;
 
 }
+
+/**
+ * The CSSCache Class purpose is to provide a
+ * way to select desired CSS selectors for updates
+ *
+ * The favored selector will always be the one which
+ * effects the least number of elements, and one will
+ * be created that targets the specific element if such
+ * a selector does not exist.
+ *
+ * When creating a selector, CSSCache will always favor
+ * the style within a component that contains the effected
+ * element.
+ */

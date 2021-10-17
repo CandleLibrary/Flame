@@ -1,12 +1,78 @@
-import { parse, renderCompressed } from '@candlelib/css';
-import { JSNodeType } from '@candlelib/js';
-import wick, { ComponentData, Context } from '@candlelib/wick';
+import { CSSNode, CSSNodeType } from '@candlelib/css';
+import { Logger } from '@candlelib/log';
+import URI from '@candlelib/uri';
+import wick, { ComponentData, Context, renderNew } from '@candlelib/wick';
 import { createCompiledComponentClass } from '@candlelib/wick/build/library/compiler/ast-build/build.js';
-import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
-import { parse_component } from '@candlelib/wick/build/library/compiler/source-code-parse/parse.js';
-import { renderNewFormatted } from '@candlelib/wick/build/library/compiler/source-code-render/render.js';
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
-import { CSSPatch, Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
+import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
+import fs from "fs";
+import { CSSPatch, EditorCommand, Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
+import { Session } from '../../common/session.js';
+import { store, __sessions__ } from './store.js';
+
+const fsp = fs.promises;
+export const logger = Logger.createLogger("flame");
+
+export async function createNewComponentFromSourceString(new_source: string, context: Context, component: ComponentData) {
+
+    const comp = await wick(new_source, context);
+
+    comp.location = component.location;
+
+    return comp;
+}
+
+async function writeComponent(component: ComponentData) {
+
+    const location = component.location;
+
+    const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
+
+    logger.debug(`TODO: Writing temporary component [${path + ""}] instead of overwriting [${location + ""}]`);
+
+    await fsp.writeFile(path + "", component.source);
+}
+/**
+ * Swaps the old component with th enew component. Both components must 
+ * be from the same source file path
+ * @param new_comp 
+ * @param old_comp 
+ * @param sessions 
+ */
+export function swap_component_data(
+    new_comp: ComponentData,
+    old_comp: ComponentData,
+    sessions: Iterable<Session> = __sessions__
+) {
+
+    if (new_comp.location.toString() != old_comp.location.toString()) {
+        logger.critical(`        
+Attempt to swap component ${old_comp.name} with ${new_comp.name} failed:
+New Component location ${new_comp.location + ""} does not match Old Component
+location ${old_comp.location + ""}
+        `);
+    } else {
+
+        store.updated_components.set(new_comp.name, new_comp);
+
+        for (const endpoint of store.page_components.get(this.path)?.endpoints ?? [])
+            store.endpoints.set(endpoint, { comp: new_comp });
+
+        store.components.set(this.path, { comp: new_comp });
+
+        logger.log(`Created new component [ ${new_comp.name} ] from path [ ${this.path} ] `);
+
+        for (const session of sessions) {
+            session.send_command({
+                command: EditorCommand.UPDATED_COMPONENT,
+                path: old_comp.location + "",
+                old_name: old_comp.name,
+                new_name: new_comp.name
+            });
+        }
+    }
+}
+
 /**
  * Compares two components and issues an appropriate patch
  * object to update the component_from to component_to.
@@ -172,56 +238,104 @@ export function getComponentDependencies(
     return output;
 }
 
+
+
 /**
  * Creates a new component that has the given stylesheet 
  * attached. 
  */
-export async function addStyle(
-    component: ComponentData,
-    context: Context,
-    rules: string
-): Promise<ComponentData> {
+export async function updateStyle(
+    location: string,
+    rule_path: string,
+    selectors: string,
+    properties: string,
+    context: Context
+): Promise<CSSPatch> {
+
+
+    //Select the appropriate component
+    const uri = new URI(location);
+
+    let style_sheet: CSSNode = null;
+
+    let type: "stylesheet" | "styleeleement" = null;
+
+    let comp = null;
+
+    const create_component = null;
+
+    if (uri.ext == "css") {
+        debugger;
+        type = "stylesheet";
+    } else if (uri.ext == "wick") {
+        comp = store.components.get(uri + "").comp;
+        style_sheet = comp.CSS.slice(-1)[0].data;
+        type = "styleeleement";
+    }
 
     let new_source = "";
 
-    if (component.CSS.length > 0) {
-        // Update the style sheet within the component 
-        // then render out a new component;
-        const style = parse(rules);
-
-        //Merge Compatible rules instead of appending new rules.
-
-        const new_data = Object.assign(component.CSS[0].data);
-
-        new_data.nodes = new_data.nodes.concat(style.nodes);
-
-        new_source = new_data.pos.replace(
-            renderCompressed(new_data)
-        );
-    } else {
-        // Render the source as a new file with the given css attached 
-        const ast = parse_component(component.source).ast;
-
-        if (ast.type == JSNodeType.Module) {
-            //Append the style to the end of the document
-            ast.nodes.push(parse_component(`<style>${rules}</style>`).ast);
-        } else {
-            //Append the style within the root component
-            ast.nodes.unshift(parse_component(`<style>${rules}</style>`).ast);
+    for (const rule of style_sheet.nodes) {
+        if (
+            rule.type == CSSNodeType.Rule
+            &&
+            rule.selectors.map(renderNew).join("") == selectors
+        ) {
+            new_source = rule.pos.replace("Blah");
+            debugger;
         }
-
-        //Render source to string
-        new_source = renderNewFormatted(ast);
     }
 
-    return await createNewComponentFromSourceString(new_source, context, component);
-}
+    if (type == "styleeleement") {
 
-export async function createNewComponentFromSourceString(new_source: string, context: Context, component: ComponentData) {
+        const new_comp = await createNewComponentFromSourceString(new_source, context, comp);
 
-    const comp = await wick(new_source, context);
+        swap_component_data(new_comp, comp);
 
-    comp.location = component.location;
+        writeComponent(new_comp);
 
-    return comp;
+        return createCSSPatch(comp, new_comp);
+
+    } else if (type == "stylesheet") {
+        debugger;
+    }
+
+    //Add the rule to the LAST style sheet
+    /* 
+        if (component.CSS.length > 0) {
+            // Update the style sheet within the component 
+            // then render out a new component;
+            const style = parse(rules);
+    
+            //Merge Compatible rules instead of appending new rules.
+    
+            const new_data = Object.assign(component.CSS[0].data);
+    
+            // Find within the existing style sheet the node
+            // with the same selector string
+    
+            for (const node of )
+    
+                new_data.nodes = new_data.nodes.concat(style.nodes);
+    
+            new_source = new_data.pos.replace(
+                renderCompressed(new_data)
+            );
+        } else {
+            // Render the source as a new file with the given css attached 
+            const ast = parse_component(component.source).ast;
+    
+            if (ast.type == JSNodeType.Module) {
+                //Append the style to the end of the document
+                ast.nodes.push(parse_component(`<style>${rules}</style>`).ast);
+            } else {
+                //Append the style within the root component
+                ast.nodes.unshift(parse_component(`<style>${rules}</style>`).ast);
+            }
+    
+            //Render source to string
+            new_source = renderNewFormatted(ast);
+        }
+    
+        return await createNewComponentFromSourceString(new_source, context, component); */
 }

@@ -139,9 +139,12 @@ export async function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
             id: "test"
         });
 
-        sys.session.applyDefault(response);
+        if (response.command == EditorCommand.APPLY_COMPONENT_PATCH) {
 
-        cache.component = response.patch.to;
+            sys.session.applyDefault(response);
+
+            cache.component = response.patch.to;
+        }
     }
 
     const response = await sys.session.send_awaitable_command<
@@ -150,7 +153,7 @@ export async function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
     >({
         command: EditorCommand.SET_COMPONENT_STYLE,
         component_name: cache.component,
-        rules: cache.generateRuleString(false)
+        rules: cache.generateClientPatch(false)
     });
 
     if (response.command == EditorCommand.APPLY_COMPONENT_PATCH) {

@@ -5,6 +5,10 @@ export enum EditorCommand {
     UNKNOWN,
 
     NOT_ALLOWED,
+    /**
+     * Previous command received and processed normally
+     */
+    OK,
 
     /**
      * A client instance request for the CSS strings
@@ -37,7 +41,7 @@ export enum EditorCommand {
      * 
      * This however will not work for synthetic elements generated 
      * from markdown markup. In such cases the server will respond with
-     * a message an EditorCommand.NOT_ALLOWED command message.
+     * a an EditorCommand.NOT_ALLOWED command message.
      */
     SET_COMPONENT_ELEMENT_ID,
 
@@ -115,6 +119,10 @@ export const enum StyleSourceType {
 }
 
 export interface CommandsMap {
+
+    [EditorCommand.OK]: {
+        command: EditorCommand.OK;
+    };
 
     [EditorCommand.UNKNOWN]: {
         command: EditorCommand.UNKNOWN;

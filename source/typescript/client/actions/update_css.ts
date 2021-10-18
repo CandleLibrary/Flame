@@ -131,37 +131,27 @@ export async function sealCSS(sys: FlameSystem, crate: ObjectCrate) {
     {
         const response = await sys.session.send_awaitable_command<
             EditorCommand.SET_COMPONENT_ELEMENT_ID,
-            EditorCommand.APPLY_COMPONENT_PATCH
+            EditorCommand.OK
         >({
             command: EditorCommand.SET_COMPONENT_ELEMENT_ID,
             component_name: cache.component,
             element_index: parseInt(ele.getAttribute("w:u")),
-            id: "test"
+            id: ele.id
         });
 
-        if (response.command == EditorCommand.APPLY_COMPONENT_PATCH) {
-
-            sys.session.applyDefault(response);
-
-            cache.component = response.patch.to;
+        if (response.command != EditorCommand.OK) {
+            return;
         }
     }
 
-    const response = await sys.session.send_awaitable_command<
+    await sys.session.send_awaitable_command<
         EditorCommand.SET_COMPONENT_STYLE,
-        EditorCommand.APPLY_COMPONENT_PATCH
+        EditorCommand.OK
     >({
         command: EditorCommand.SET_COMPONENT_STYLE,
         component_name: cache.component,
         rules: cache.generateClientPatch(false)
     });
-
-    if (response.command == EditorCommand.APPLY_COMPONENT_PATCH) {
-        sys.session.applyDefault(response);
-        //Update the style of the target component
-    } else
-        Logger.get("flame").get("css").error(`Unable to update style of component ${cache.component}`);
-
 
     const
         original = cache.original_props,

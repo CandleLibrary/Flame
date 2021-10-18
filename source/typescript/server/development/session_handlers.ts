@@ -7,7 +7,7 @@ import { getElementAtIndex } from '@candlelib/wick/build/library/compiler/common
 import fs from "fs";
 import { EditorCommand, StyleSourceType } from '../../common/editor_types.js';
 import { CommandHandler } from '../../common/session.js';
-import { createNewComponentFromSourceString, createStubPatch, getPatch, updateStyle } from './component_tools.js';
+import { createNewComponentFromSourceString, createStubPatch, getPatch, swap_component_data, updateStyle } from './component_tools.js';
 import { ServerSession } from './session.js';
 import { store } from './store.js';
 const fsp = fs.promises;
@@ -85,11 +85,13 @@ const SET_COMPONENT_ELEMENT_ID: CommandHandler<EditorCommand.SET_COMPONENT_ELEME
                 comp
             );
 
+            swap_component_data(new_comp, comp);
+
             await writeComponent(new_comp);
 
             return {
-                command: EditorCommand.APPLY_COMPONENT_PATCH,
-                patch: createStubPatch(comp, new_comp)
+                command: EditorCommand.OK,
+                //patch: createStubPatch(comp, new_comp)
             };
         }
 
@@ -144,31 +146,6 @@ const ADD_COMPONENT_ELEMENT_CLASS: CommandHandler<EditorCommand.ADD_COMPONENT_EL
 
     };
 
-const SET_COMPONENT_STYLE: CommandHandler<EditorCommand.SET_COMPONENT_STYLE>
-    = async function (command, session: ServerSession) {
-
-        const { component_name, rules } = command;
-
-        const comp = wick.rt.context.components.get(component_name);
-
-        for (const rule of rules) {
-            const location = new URI(rule.location);
-            const css_patch = await updateStyle(
-                rule.location || comp.location + "",
-                rule.rule_path,
-                rule.selectors,
-                rule.properties,
-                wick.rt.context
-            );
-
-            session.send_command({
-                command: EditorCommand.APPLY_COMPONENT_PATCH,
-                patch: css_patch
-            });
-        }
-
-    };
-
 
 const GET_COMPONENT_SOURCE: CommandHandler<EditorCommand.GET_COMPONENT_SOURCE>
     = async function (command, session: ServerSession) {
@@ -187,6 +164,35 @@ const GET_COMPONENT_SOURCE: CommandHandler<EditorCommand.GET_COMPONENT_SOURCE>
                 command: EditorCommand.UNKNOWN
             };
         }
+    };
+
+const SET_COMPONENT_STYLE: CommandHandler<EditorCommand.SET_COMPONENT_STYLE>
+    = async function (command, session: ServerSession) {
+
+        const { component_name, rules } = command;
+
+        const comp = wick.rt.context.components.get(component_name);
+
+        for (const rule of rules) {
+            const location = new URI(rule.location);
+            const css_patch = await updateStyle(
+                rule.location || comp.location + "",
+                rule.rule_path,
+                rule.selectors,
+                rule.properties,
+                wick.rt.context
+            );
+
+            if (!css_patch) debugger;
+
+            session.send_command({
+                command: EditorCommand.APPLY_COMPONENT_PATCH,
+                patch: css_patch
+            });
+        }
+
+        return { command: EditorCommand.OK };
+
     };
 
 const GET_COMPONENT_STYLE: CommandHandler<EditorCommand.GET_COMPONENT_STYLE>
@@ -227,6 +233,11 @@ const GET_COMPONENT_PATCH: CommandHandler<EditorCommand.GET_COMPONENT_PATCH>
         // Need to receive the class data necessary to 
         // do an in place replacement of component data
         const { from, to } = command;
+
+        if (from == to)
+            return {
+                command: EditorCommand.NOT_ALLOWED
+            };
 
         return {
             command: EditorCommand.APPLY_COMPONENT_PATCH,

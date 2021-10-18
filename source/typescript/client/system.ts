@@ -7,7 +7,7 @@ import { EditorModel } from "./editor_model.js";
 import { Session } from '../common/session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
 
-const patch_logger = Logger.get("flame").get("patcher");
+const patch_logger = Logger.get("flame").get("patcher").activate();
 export function revealEventIntercept(sys: FlameSystem) {
     const { ui: { event_intercept_frame: event_intercept_ele } } = sys;
     event_intercept_ele.style.zIndex = "100000";
@@ -179,7 +179,7 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
 
                     if (to != from) {
 
-                        updateCSSReferences(page_wick.rt.context, from, to, matches);
+                        //updateCSSReferences(page_wick.rt.context, from, to, matches);
 
                         for (const match of matches)
                             applyToPatchToRuntimeComp(match, to);
@@ -305,7 +305,6 @@ function updateCSSReferences(
     if (matches) for (const match of matches)
         match.ele.classList.add(to);
 
-
     const old_css = context.css_cache.get(from);
 
     if (old_css) {
@@ -322,9 +321,19 @@ function updateCSSReferences(
         context.css_cache.set(to, { css_ele, count: matches.length });
     }
 
-    if (matches) for (const match of matches)
-        match.ele.classList.remove(from);
+    if (matches) for (const match of matches) {
+        const class_name = Array.from(match.ele.classList);
 
+        for (const css of class_name) {
+            if (css != to && String_Is_Wick_Hash_ID(css))
+                match.ele.classList.remove(css);
+        }
+    }
+}
+
+const comp_name_regex = /W[_\$a-zA-Z0-9]+/;
+export function String_Is_Wick_Hash_ID(str): boolean {
+    return !!str.match(comp_name_regex);
 }
 
 export function removeRootComponent(comp: WickRTComponent, wick: WickLibrary): boolean {

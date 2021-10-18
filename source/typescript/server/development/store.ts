@@ -13,7 +13,6 @@ import { Session } from '../../common/session';
 const logger = Logger.createLogger("Flame");
 
 export const store: {
-
     components: Components;
     endpoints: EndPoints;
     page_components: PageComponents;

@@ -3,7 +3,7 @@ import URI from '@candlelib/uri';
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
 import ActionQueueRunner from '../action_initiators';
 import { EditorModel } from "../editor_model";
-import { Session } from '../session.js';
+import { Session } from '../../common/session.js';
 import { HistoryState } from "./history_state";
 
 export interface StyleSheet {

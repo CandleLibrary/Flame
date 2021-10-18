@@ -1,10 +1,11 @@
-import { CSSNode, CSSNodeType } from '@candlelib/css';
+import { CSSNode, CSSNodeType, mergeRulesIntoOne, rule as parse_rule } from '@candlelib/css';
 import { Logger } from '@candlelib/log';
 import URI from '@candlelib/uri';
 import wick, { ComponentData, Context, renderNew } from '@candlelib/wick';
 import { createCompiledComponentClass } from '@candlelib/wick/build/library/compiler/ast-build/build.js';
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
 import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
+import { createComponent } from '@candlelib/wick/build/library/compiler/create_component.js';
 import fs from "fs";
 import { CSSPatch, EditorCommand, Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
 import { Session } from '../../common/session.js';
@@ -15,7 +16,7 @@ export const logger = Logger.createLogger("flame");
 
 export async function createNewComponentFromSourceString(new_source: string, context: Context, component: ComponentData) {
 
-    const comp = await wick(new_source, context);
+    const comp = await createComponent(new_source, context);
 
     comp.location = component.location;
 
@@ -26,11 +27,13 @@ async function writeComponent(component: ComponentData) {
 
     const location = component.location;
 
-    const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
+    // const path = URI.resolveRelative("./" + location.filename + ".temp." + location.ext, location);
+    //
+    // logger.debug(`TODO: Writing temporary component [${path + ""}] instead of overwriting [${location + ""}]`);
 
-    logger.debug(`TODO: Writing temporary component [${path + ""}] instead of overwriting [${location + ""}]`);
+    //await fsp.writeFile(path + "", component.source);
 
-    await fsp.writeFile(path + "", component.source);
+    await fsp.writeFile(location + "", component.source);
 }
 /**
  * Swaps the old component with th enew component. Both components must 
@@ -45,6 +48,8 @@ export function swap_component_data(
     sessions: Iterable<Session> = __sessions__
 ) {
 
+    const path = old_comp.location + "";
+
     if (new_comp.location.toString() != old_comp.location.toString()) {
         logger.critical(`        
 Attempt to swap component ${old_comp.name} with ${new_comp.name} failed:
@@ -55,12 +60,12 @@ location ${old_comp.location + ""}
 
         store.updated_components.set(new_comp.name, new_comp);
 
-        for (const endpoint of store.page_components.get(this.path)?.endpoints ?? [])
+        for (const endpoint of store.page_components.get(path)?.endpoints ?? [])
             store.endpoints.set(endpoint, { comp: new_comp });
 
-        store.components.set(this.path, { comp: new_comp });
+        store.components.set(path, { comp: new_comp });
 
-        logger.log(`Created new component [ ${new_comp.name} ] from path [ ${this.path} ] `);
+        logger.log(`Created new component [ ${new_comp.name} ] from path [ ${path} ] `);
 
         for (const session of sessions) {
             session.send_command({
@@ -111,7 +116,7 @@ export async function getPatch(
     }
 
     if (component_to.css_hash != component_from.css_hash) {
-
+        return createCSSPatch(component_from, component_to);
     }
 
     if (component_to.text_hash != component_from.text_hash) {
@@ -143,6 +148,8 @@ export async function getPatch(
             patches: patches
         };
     }
+
+    debugger;
 }
 
 export function createStubPatch(
@@ -252,7 +259,6 @@ export async function updateStyle(
     context: Context
 ): Promise<CSSPatch> {
 
-
     //Select the appropriate component
     const uri = new URI(location);
 
@@ -269,7 +275,13 @@ export async function updateStyle(
         type = "stylesheet";
     } else if (uri.ext == "wick") {
         comp = store.components.get(uri + "").comp;
-        style_sheet = comp.CSS.slice(-1)[0].data;
+        style_sheet = comp.CSS.slice(-1)[0]?.data;
+
+        if (!style_sheet) {
+            //TODO: Add a new style element to the component
+            debugger;
+        }
+
         type = "styleeleement";
     }
 
@@ -279,11 +291,25 @@ export async function updateStyle(
         if (
             rule.type == CSSNodeType.Rule
             &&
-            rule.selectors.map(renderNew).join("") == selectors
+            rule.selectors.map(renderNew).join(",") == selectors
         ) {
-            new_source = rule.pos.replace("Blah");
-            debugger;
+
+            const new_rule = parse_rule(`${selectors} { ${properties} }`);
+
+            const new_new_rule = mergeRulesIntoOne(rule, new_rule);
+
+            new_source = rule.pos.replace(renderNew(new_new_rule));
+
+            break;
+
         }
+    }
+
+    if (!new_source) {
+        //Add a new rule to the stylesheet
+        const insertion_point = style_sheet.pos.token_slice(style_sheet.pos.len);
+
+        new_source = insertion_point.replace(`${selectors} { ${properties} }`);
     }
 
     if (type == "styleeleement") {

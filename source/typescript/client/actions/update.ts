@@ -185,23 +185,22 @@ export async function sealAction(sys: FlameSystem, crates: ObjectCrate[]) {
 
     for (const crate of crates) {
 
-        for (const action of crate.action_list.sort((a, b) => a < b ? -1 : 1)) {
+        /* for (const action of crate.action_list.sort((a, b) => a < b ? -1 : 1)) {
             const history_artifact = await action.sealFN(sys, crate);
 
             if (history_artifact) {
                 if (Array.isArray(history_artifact))
                     sys.pending_history_state.actions.push(...history_artifact);
             }
-        }
+        } */
 
-        if (crate.css_cache) { crate.css_cache.clearChanges(sys); };
+        /*  if (crate.css_cache) { crate.css_cache.clearChanges(sys); }; */
     }
 
+/*  setState(true, sys.pending_history_state, sys, true); */
 
-    setState(true, sys.pending_history_state, sys, true);
-
-    sys.pending_history_state = null;
-}
+/* sys.pending_history_state = null;
+} */
 
 /**
  *- nth-child()

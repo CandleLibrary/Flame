@@ -1,21 +1,19 @@
-import { copy, renderCompressed, traverse } from '@candlelib/conflagrate';
+import { copy } from '@candlelib/conflagrate';
 import {
-    CSSNode,
-    CSSNodeType,
-    CSSProperty,
+    attachParents,
+    createRulePath, CSSProperty,
     CSSRuleNode,
     CSS_String,
     getLastRuleWithMatchingSelector,
     parse,
     parseProperty,
-    PrecedenceFlags,
-    property,
-    selector
+    PrecedenceFlags, property, renderCompressed
 } from "@candlelib/css";
+import { Logger } from '@candlelib/log';
 import URI from '@candlelib/uri';
-import { WickRTComponent } from "@candlelib/wick";
 import { Lexer } from "@candlelib/wind";
-import { CommandsMap, EditorCommand } from '../../common/editor_types.js';
+import { EditorCommand } from '../../types/editor_types.js';
+import { Change, ChangeType } from '../../types/transition.js';
 import {
     getApplicableProps,
     getComponentNameFromElement,
@@ -25,50 +23,15 @@ import {
 } from "../common_functions.js";
 import { FlameSystem, StyleSheet } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
-import { EditorSelection } from "../types/selection.js";
 import { TrackedCSSProp } from "../types/tracked_css_prop.js";
 
+const cache_logger = Logger.get("flame").get("css").activate();
 
 let global_cache = null;
 
 const unset_string = new CSS_String("unset"), unset_pos = {
     slice() { return "unset"; }
 };
-
-class ComputedStyle {
-    cache: CSSCache;
-    _computed: CSSStyleDeclaration;
-    brect: DOMRect;
-
-    constructor(
-        system: FlameSystem,
-        component: WickRTComponent,
-        element: HTMLElement,
-        cache: CSSCache,
-    ) {
-        this.cache = cache;
-        this._computed = window.getComputedStyle(element);
-        this.brect = element.getBoundingClientRect();
-    }
-
-    get width() {
-        return this.brect.width;
-    }
-
-    get hight() {
-        return this.brect.height;
-    }
-
-    get(value: string) {
-
-        const internal_value = this.cache.rules.props[value];
-
-        if (internal_value)
-            return internal_value.toString();
-
-        return this._computed.getPropertyValue(value);
-    }
-}
 
 export const enum CSSFlags {
     // Positioning
@@ -187,7 +150,7 @@ export class CSSCache {
     changed: Set<string>;
 
     unique: Map<string, TrackedCSSProp>;
-    unique_selector: CSSNode;
+    unique_selector: string;
     original_props: Map<string, TrackedCSSProp>;
     _computed: any;
 
@@ -202,8 +165,6 @@ export class CSSCache {
     LOCKED: boolean;
 
     system: FlameSystem;
-
-    sel: EditorSelection;
 
     computed: CSSStyleDeclaration;
 
@@ -223,38 +184,32 @@ export class CSSCache {
      */
     source_selectors: string;
 
-    /**
-     * The hierarchy of @* rules within which the target rule
-     * lives.
-     */
-    at_path: string;
+    target_rule: CSSRuleNode;
+
+    load: Promise<void>;
+
+    COMPONENT_ELEMENT: boolean;
+
+    DIRTY: boolean;
+
+    DIRTY_ID: boolean;
 
     constructor() {
         this.setup();
     }
+
     destroy() {
-        this.LOCKED = false;
-        this.changed = null;
-        this.rules = null;
-        this.element = null;
-        this._computed = null;
+        this.removeUniqueSelector();
+
+        this.setup();
+
         this.next = global_cache;
-        this.box_model_flags = 0;
-        this.cssflagsB = 0;
-        this.move_type = "";
-        this.computed = null;
-        this.styles = null;
-        this.rule_ref = null;
-
-
-        this.source_selectors = "";
-        this.location = "";
-        this.at_path = "";
 
         global_cache = this;
     }
 
     setup() {
+        this.DIRTY = false;
         this.rules = null;
         this.element = null;
         this.component = null;
@@ -269,91 +224,64 @@ export class CSSCache {
         this.styles = null;
         this.LOCKED = false;
         this.rule_ref = null;
+        this.target_rule = null;
+    }
+    createRule() {
+
     }
 
-    init(system: FlameSystem, crate: ObjectCrate, styles: StyleSheet[]) {
-        this.setup();
+    async loadStyles() {
 
-        const { ele } = crate.sel;
+        let comp = getComponentNameFromElement(this.element);
 
-        this.source_selectors = "";
-        this.location = "";
-        this.at_path = "";
+        const names = getComponentHierarchyNames(this.system, comp);
 
-        this.sel = crate.sel;
-        this.crate = crate;
-        this.element = ele;
-        this.system = system;
-        this.component = crate.comp;
-        this.COMPONENT_ELEMENT = ele.hasAttribute("w:c");
-        this.computed = window.getComputedStyle(ele);
+        const styles: StyleSheet[] = [];
+
+        for (const { name, depth } of names) {
+
+            const response = await this.system.session.send_awaitable_command<
+                EditorCommand.GET_COMPONENT_STYLE,
+                EditorCommand.GET_COMPONENT_STYLE_RESPONSE
+            >({
+                command: EditorCommand.GET_COMPONENT_STYLE,
+                component_name: name
+            });
+
+            let index = 0;
+
+            for (const style of response.styles) {
+                styles.push({
+                    index: index++,
+                    comp_name: name,
+                    location: new URI(style.location),
+                    styles: attachParents(parse(style.string))
+                });
+            }
+        }
+
+        this.component = comp;
+
+        this.COMPONENT_ELEMENT = this.element.hasAttribute("w:c");
+
+        this.computed = window.getComputedStyle(this.element);
+
         this.styles = styles;
 
-        //calculate horizontal and vertical rations. also width and height ratios.  
         this.setupStyle();
     }
 
-    setUniqueSelector(sys: FlameSystem, comp_name: string, ele: HTMLElement, crate: ObjectCrate) {
+    init(system: FlameSystem, ele: HTMLElement) {
+        this.setup();
 
-        //get all rules that match selector
-        //for all rules that have a single selector 
-        //  if the selector is a plain .class rule or @id rule
-        //      determine how many elements are affected by this rule
-        //      if this number is 1, then select this rule to be 
-        //      unique rule for this element.
+        this.element = ele;
+        this.system = system;
+        this.source_selectors = "";
+        this.location = "";
 
-        const rules = getMatchedRulesFromComponentData(sys, ele, this.styles).reverse();
-
-        for (const rule of rules) {
-            if (rule.selectors.length == 1) {
-                const [sel] = rule.selectors;
-
-                let count = -1;
-
-                for (const { node, meta } of traverse(sel, "nodes")) {
-                    switch (node.type) {
-                        case CSSNodeType.CompoundSelector:
-                        case CSSNodeType.ComplexSelector:
-                            break;
-                        case CSSNodeType.ClassSelector:
-                        case CSSNodeType.IdSelector:
-                            count++;
-                            break;
-                        default:
-                            count += 2;
-                    }
-                }
-
-                //if (count == 1 && Array.from(getMatchedElements(comp_name.ele, rule)).length == 1)
-                //    return this.unique_selector = sel;
-            }
-        }
-
-        if (ele.id) {
-            this.unique_selector = selector(`#${ele.id}`);
-        } else {
-
-            //if at this point there is no suitable rule,
-            //create a new ID, assign to ele and
-            //use the id for the selector for the element.
-
-            const id = "A" + ((Math.random() * 12565845322) + "").slice(0, 5);
-
-            //crate.action_list.unshift(SET_ATTRIBUTE);
-
-            crate.data.key = "id";
-
-            crate.data.val = id;
-
-            this.unique_selector = selector(`#${id}`);
-
-            const elements = getContemporaryElements(ele, sys.page_wick);
-
-            for (const ele of elements) {
-                ele.id = id;
-            }
-        }
+        this.load = this.loadStyles();
     }
+
 
     lock(lock: boolean = false) {
         if (lock)
@@ -364,18 +292,190 @@ export class CSSCache {
     setupStyle() {
         const
             element = this.element,
-            system = this.system,
-            component = this.component;
-
-        let move_type = system.move_type || "absolute";
+            system = this.system;
 
         // The unique rule either exists within the edit style sheet cache,
         // or a new one needs to be made.
-        this.setUniqueSelector(system, component, element, this.crate);
+
         this.original_props = getApplicableProps(system, element, this.styles);
         this.changed = new Set();
         this.unique = new Map();
         this.rules = this.unique;
+    }
+
+    getRuleList() {
+        const
+            ele = this.element,
+            sys = this.system;
+
+        const rules = getMatchedRulesFromComponentData(sys, ele, this.styles);
+
+        this.rule_list = rules.map((r, i) => ({
+
+            path: createRulePath(r),
+
+            index: i,
+
+            id: r.selectors.map(s => renderCompressed(s)).join(" "),
+
+            rule: r,
+        }));
+
+        return this.rule_list;
+    }
+
+    setTargetRule(index) {
+
+        this.uploadChanges();
+
+        this.target_rule = this.rule_list[index].rule;
+    }
+    setUniqueSelector() {
+
+        if (!this.unique_selector && this.target_rule) {
+
+            //if at this point there is no suitable rule,
+            //create a new ID, assign to ele and
+            //use the id for the selector for the element.
+
+            this.unique_selector = "A" + ((Math.random() * 12565845322) + "").slice(0, 5);
+
+            for (const ele of getContemporaryElements(
+                this.element,
+                this.system.page_wick)
+            ) {
+                ele.classList.add(this.unique_selector);
+            }
+        }
+
+        this.DIRTY = true;
+    }
+
+    removeUniqueSelector() {
+        if (this.unique_selector) {
+            console.log({
+                s: getContemporaryElements(
+                    this.element,
+                    this.system.page_wick)
+            });
+            for (const ele of getContemporaryElements(
+                this.element,
+                this.system.page_wick)
+            ) {
+                ele.classList.remove(this.unique_selector);
+            }
+        }
+        this.unique_selector = null;
+    }
+
+    clearChanges(system: FlameSystem) {
+        this.removeRule(system);
+    }
+
+    applyChanges(system: FlameSystem, nonce: number) {
+
+
+        if (this.changed.size > 0 && this.component) {
+
+            const rule_string =
+                this.generateRuleString(!this.COMPONENT_ELEMENT);
+
+            const index = this.removeRule(system);
+
+            this.rule_ref = system.scratch_stylesheet.rules[
+                system.scratch_stylesheet.insertRule(
+                    rule_string,
+                    index
+                )
+            ];
+        }
+    }
+
+    uploadChanges() {
+        if (this.DIRTY)
+            this.load = this.__uploadChanges__();
+
+    }
+
+    async __uploadChanges__() {
+
+        const changes: (Change[ChangeType.CSSRule] | Change[ChangeType.Attribute])[]
+            = this.generateClientCSSChanges();
+
+        /* if (this.DIRTY_ID) {
+            changes.push(<Change[ChangeType.Attribute]>{
+                type: ChangeType.Attribute,
+                attribute_index: 0,
+                ele_id: parseInt(this.element.getAttribute("w:u")),
+                name: "id",
+                new_value: this.element.id,
+                old_value: "",
+            });
+        } */
+
+        const response = await this.system.session.send_awaitable_command<
+            EditorCommand.APPLY_COMPONENT_CHANGES,
+            EditorCommand.OK
+        >({
+            command: EditorCommand.APPLY_COMPONENT_CHANGES,
+            component_changes: [{
+                old_component: this.component,
+                changes
+            }]
+        });
+
+        if (response.command != EditorCommand.OK) {
+            return;
+        }
+
+        this.DIRTY = false;
+        this.DIRTY_ID = false;
+    }
+
+    generateClientCSSChanges():
+        Change[ChangeType.CSSRule][] {
+
+        this.location = "";
+
+        const patch: Change[ChangeType.CSSRule][] = [{
+            type: ChangeType.CSSRule,
+            location: this.location,
+            CSS_index: 0,
+            new_selectors: this.target_rule.selectors.map(renderCompressed).join(","),
+            old_selectors: this.target_rule.selectors.map(renderCompressed).join(","),
+            old_rule_path: createRulePath(this.target_rule),
+            new_rule_path: createRulePath(this.target_rule),
+            new_properties: [...this.unique.values()]
+                .filter(e => this.changed.has(e.prop.name))
+                .map(e => ({ name: e.prop.name, val: e.prop.value_string }))
+        }];
+
+        return patch;
+    }
+
+    generateRuleString(USE_COMPONENT_CLASS: boolean = true): string {
+
+        //Retrieve all components with that match the selector
+        const props = [...this.unique.values()]
+            .filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
+
+        return `.${this.unique_selector} {\n  ${props.map(p => p.toString() + " !important").join(";\n  ")}\n}`;
+    }
+
+    private removeRule(system: FlameSystem) {
+
+        let index = undefined;
+
+        if (this.rule_ref) {
+
+            index = Array.prototype.indexOf.call(
+                system.scratch_stylesheet.rules,
+                this.rule_ref
+            );
+
+            system.scratch_stylesheet.removeRule(index);
+        }
+        return index;
     }
 
     getPositionType(): CSSFlags {
@@ -714,6 +814,9 @@ export class CSSCache {
     }
 
     setProp(prop: CSSProperty) {
+
+        this.setUniqueSelector();
+
         const name = prop.name;
 
         this.changed.add(name);
@@ -731,6 +834,9 @@ export class CSSCache {
      * the current cascade. Defaults to false
      */
     unsetProp(prop_name: string, FORCE: boolean = false) {
+
+        this.setUniqueSelector();
+
         if (this.original_props.has(prop_name) || FORCE) {
             this.changed.add(prop_name);
             this.unique.set(prop_name, {
@@ -745,73 +851,10 @@ export class CSSCache {
     }
 
     setPropFromString(string: string) {
+
         for (const str of string.split(";"))
             if (str)
                 this.setProp(this.createProp(str));
-    }
-
-    clearChanges(system: FlameSystem) {
-        this.removeRule(system);
-    }
-
-    applyChanges(system: FlameSystem, nonce: number) {
-
-
-        if (this.changed.size > 0 && this.component) {
-
-            const rule_string =
-                this.generateRuleString(!this.COMPONENT_ELEMENT);
-
-            const index = this.removeRule(system);
-
-            this.rule_ref = system.scratch_stylesheet.rules[
-                system.scratch_stylesheet.insertRule(
-                    rule_string,
-                    index
-                )
-            ];
-        }
-    }
-
-    generateClientPatch(USE_COMPONENT_CLASS: boolean = true):
-        CommandsMap[EditorCommand.SET_COMPONENT_STYLE]["rules"] {
-
-        this.location = "";
-
-        const patch: CommandsMap[EditorCommand.SET_COMPONENT_STYLE]["rules"] = [{
-            location: this.location,
-            selectors: (this.source_selectors || this.unique_selector.pos.slice()),
-            rule_path: "",
-            properties: [...this.unique.values()]
-                .filter(e => this.changed.has(e.prop.name))
-                .map(e => e.prop).join(";")
-        }];
-
-        return patch;
-    }
-
-    generateRuleString(USE_COMPONENT_CLASS: boolean = true): string {
-        //Retrieve all components with that match the selector
-        const props = [...this.unique.values()]
-            .filter(e => this.changed.has(e.prop.name)).map(e => e.prop);
-
-        return `${USE_COMPONENT_CLASS ? "." + this.component + " " : ""}${this.unique_selector.pos.slice()} {\n  ${props.join(";\n  ")}\n}`;
-    }
-
-    private removeRule(system: FlameSystem) {
-
-        let index = undefined;
-
-        if (this.rule_ref) {
-
-            index = Array.prototype.indexOf.call(
-                system.scratch_stylesheet.rules,
-                this.rule_ref
-            );
-
-            system.scratch_stylesheet.removeRule(index);
-        }
-        return index;
     }
 
 }
@@ -831,17 +874,12 @@ export function updateLastOccurrenceOfRuleInStyleSheet(stylesheet: any, rule: CS
     }
 }
 
-//Flags
-CSSCache.relative = 1;
-CSSCache.absolute = 2;
-
 const cache_array: { e: HTMLElement, cache: CSSCache; }[] = [];
 
-export async function CSSCacheFactory(
+export function getCSSCache(
     sys: FlameSystem,
-    ele: HTMLElement,
-    crate?: ObjectCrate
-): Promise<CSSCache> {
+    ele: HTMLElement
+): CSSCache {
 
     let eligible: { e: HTMLElement, cache: CSSCache; } = null;
 
@@ -851,55 +889,28 @@ export async function CSSCacheFactory(
 
         if (ele == e) return c;
 
+        if (c.load) continue;
+
         else if (!eligible && !e) eligible = cache;
-    }
-
-    let comp = "";
-
-    if (crate)
-        ({ comp } = crate);
-    else
-        comp = getComponentNameFromElement(ele);
-
-    const names = getComponentHierarchyNames(sys, comp);
-
-    const styles: StyleSheet[] = [];
-
-    for (const { name, depth } of names) {
-
-        const response = await sys.session.send_awaitable_command<
-            EditorCommand.GET_COMPONENT_STYLE,
-            EditorCommand.GET_COMPONENT_STYLE_RESPONSE
-        >({
-            command: EditorCommand.GET_COMPONENT_STYLE,
-            component_name: name
-        });
-
-        let index = 0;
-
-        for (const style of response.styles) {
-            styles.push({
-                index: index++,
-                comp_name: name,
-                location: new URI(style.location),
-                styles: parse(style.string)
-            });
-        }
     }
 
     if (!eligible) {
         eligible = { e: ele, cache: new CSSCache };
         cache_array.push(eligible);
     }
-    if (!crate)
-        throw new Error("Cannot initialize CSSCache without a Create object");
 
-    eligible.cache.init(sys, crate, styles);
+    eligible.cache.init(sys, ele);
 
     return eligible.cache;
 }
 
-CSSCacheFactory.destroy = function (cache: CSSCache) {
+export function releaseCSSCache(cache: CSSCache) {
+
+    cache_logger.debug(`Releasing css cache for ${cache.component} element:${cache.element.getAttribute("w:u")}`);
+
+    cache.uploadChanges();
+    cache.load.then(() => cache.destroy());
+
     for (const c of cache_array)
         if (c.cache == cache) {
             c.e = null;
@@ -939,19 +950,4 @@ function getComponentHierarchyNames(
     }
 
     return list;
-
 }
-
-/**
- * The CSSCache Class purpose is to provide a
- * way to select desired CSS selectors for updates
- *
- * The favored selector will always be the one which
- * effects the least number of elements, and one will
- * be created that targets the specific element if such
- * a selector does not exist.
- *
- * When creating a selector, CSSCache will always favor
- * the style within a component that contains the effected
- * element.
- */

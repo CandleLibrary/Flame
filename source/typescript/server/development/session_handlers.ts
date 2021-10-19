@@ -1,29 +1,33 @@
 import URI from '@candlelib/uri';
 import wick, {
-    ComponentData
+    ComponentData, componentDataToCSS
 } from "@candlelib/wick";
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
-import { getElementAtIndex } from '@candlelib/wick/build/library/compiler/common/html.js';
 import fs from "fs";
-import { EditorCommand, StyleSourceType } from '../../common/editor_types.js';
+import spark from '@candlelib/spark';
 import { CommandHandler } from '../../common/session.js';
-import { createNewComponentFromSourceString, createStubPatch, getPatch, swap_component_data, updateStyle } from './component_tools.js';
+import { EditorCommand, PatchType, StyleSourceType } from '../../types/editor_types.js';
+import { ChangeType } from '../../types/transition.js';
+import { ChangeToken, getAttributeChangeToken, getCSSChangeToken } from './change_token.js';
+import {
+    alertSessionsOfComponentTransition,
+    createNewComponentFromSourceString,
+    getSourceHash
+} from './component_tools.js';
 import { ServerSession } from './session.js';
-import { store } from './store.js';
+import { addBareComponent, addComponent, addTransition, getComponent, getTransition, store, __sessions__ } from './store.js';
 const fsp = fs.promises;
 
 export function initializeDefualtSessionDispatchHandlers(session: ServerSession) {
     session.setHandler(EditorCommand.REGISTER_CLIENT_ENDPOINT, REGISTER_CLIENT_ENDPOINT);
-    session.setHandler(EditorCommand.SET_COMPONENT_ELEMENT_ID, SET_COMPONENT_ELEMENT_ID);
-    session.setHandler(EditorCommand.ADD_COMPONENT_ELEMENT_CLASS, ADD_COMPONENT_ELEMENT_CLASS);
-    session.setHandler(EditorCommand.SET_COMPONENT_STYLE, SET_COMPONENT_STYLE);
     session.setHandler(EditorCommand.GET_COMPONENT_SOURCE, GET_COMPONENT_SOURCE);
     session.setHandler(EditorCommand.GET_COMPONENT_STYLE, GET_COMPONENT_STYLE);
     session.setHandler(EditorCommand.GET_COMPONENT_PATCH, GET_COMPONENT_PATCH);
+    session.setHandler(EditorCommand.APPLY_COMPONENT_CHANGES, APPLY_COMPONENT_CHANGES);
     return session;
 }
 
-async function writeComponent(component: ComponentData) {
+export async function writeComponent(component: ComponentData) {
 
     const location = component.location;
 
@@ -31,6 +35,63 @@ async function writeComponent(component: ComponentData) {
 
     await fsp.writeFile(path + "", component.source);
 }
+
+async function writeComponentSource(component_source: string, location: URI) {
+
+    const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
+
+    await fsp.writeFile(location + "", component_source);
+}
+
+const APPLY_COMPONENT_CHANGES: CommandHandler<EditorCommand.APPLY_COMPONENT_CHANGES>
+    = async function (command, session: ServerSession) {
+
+        for (const { old_component, changes } of command.component_changes) {
+
+            const change_tokens: ChangeToken[] = [];
+
+            const comp = await getComponent(old_component);
+
+            for (const change of changes) {
+
+                if (change.type == ChangeType.CSSRule) {
+                    change_tokens.push(await getCSSChangeToken(old_component, change));
+                } else if (change.type == ChangeType.Attribute) {
+                    change_tokens.push(await getAttributeChangeToken(old_component, change));
+                }
+            }
+            const new_source = change_tokens.sort((a, b) => a.token.off - b.token.off).reduce((source,
+                { token, string }) =>
+                token.setSource(source).replace(string), change_tokens[0].token.source);
+
+            const new_component = getSourceHash(new_source);
+
+            addBareComponent(new_component, new_source, comp.location);
+
+            addTransition({
+                new_id: new_component,
+                old_id: old_component,
+                new_location: comp.location + "",
+                old_location: comp.location + "",
+                changes: changes,
+                source: new_source
+            });
+
+            alertSessionsOfComponentTransition(
+                __sessions__,
+                new_component,
+                old_component,
+                comp.location
+            );
+
+            await writeComponentSource(new_source, comp.location);
+
+        }
+
+        await spark.sleep(100);
+
+        return { command: EditorCommand.OK };
+    };
 
 const REGISTER_CLIENT_ENDPOINT: CommandHandler<EditorCommand.REGISTER_CLIENT_ENDPOINT>
     = async function (command, session: ServerSession) {
@@ -47,111 +108,13 @@ const REGISTER_CLIENT_ENDPOINT: CommandHandler<EditorCommand.REGISTER_CLIENT_END
         }
 
     };
-/**
- * Assumes the editor will automatically update its own 
- * runtime components with the new ID value.
- */
-
-const SET_COMPONENT_ELEMENT_ID: CommandHandler<EditorCommand.SET_COMPONENT_ELEMENT_ID>
-    = async function (command, session: ServerSession) {
-
-        const { component_name, id, element_index } = command;
-
-        const comp = wick.rt.context.components.get(component_name);
-
-        const ele = getElementAtIndex(comp, element_index);
-
-        if (ele.attributes.some(s => s.name == "m:d")) {
-            return {
-                command: EditorCommand.NOT_ALLOWED,
-            };
-        } else {
-
-            let new_source = "";
-
-            for (const { name, value, pos } of ele.attributes) {
-                if (name == "id" && typeof value == "string") {
-                    new_source = pos.replace(`id="${id}"`);
-                    break;
-                }
-            }
-
-            if (!new_source)
-                new_source = ele.pos.token_slice(1 + ele.tag.length, 1 + ele.tag.length).replace(` id="${id}"`);
-
-            const new_comp = await createNewComponentFromSourceString(
-                new_source,
-                wick.rt.context,
-                comp
-            );
-
-            swap_component_data(new_comp, comp);
-
-            await writeComponent(new_comp);
-
-            return {
-                command: EditorCommand.OK,
-                //patch: createStubPatch(comp, new_comp)
-            };
-        }
-
-    };
-
-/**
- * Assumes the editor will automatically update its own 
- * runtime components with the new class values.
- */
-const ADD_COMPONENT_ELEMENT_CLASS: CommandHandler<EditorCommand.ADD_COMPONENT_ELEMENT_CLASS>
-    = async function (command, session: ServerSession) {
-
-        const { component_name, element_index, class_names } = command;
-
-        const comp = wick.rt.context.components.get(component_name);
-
-        const ele = getElementAtIndex(comp, element_index);
-
-        if (ele.attributes.some(s => s.name == "m:d")) {
-            return {
-                command: EditorCommand.NOT_ALLOWED,
-            };
-        } else {
-
-            let new_source = "";
-
-            for (const { name, value, pos } of ele.attributes) {
-                if (name == "class" && typeof value == "string") {
-                    const names = new Set([...value.split(" "), ...class_names]);
-                    new_source = pos.replace(`"class"="${[...names].join(" ")}"`);
-                    break;
-                }
-            }
-
-            if (!new_source)
-                new_source = ele.pos.token_slice(1 + ele.tag.length, 1 + ele.tag.length)
-                    .replace(`"class"="${[...class_names].join(" ")}"`);
-
-            const new_comp = await createNewComponentFromSourceString(
-                new_source,
-                wick.rt.context,
-                comp
-            );
-
-            await writeComponent(new_comp);
-
-            return {
-                command: EditorCommand.APPLY_COMPONENT_PATCH,
-                patch: createStubPatch(comp, new_comp)
-            };
-        }
-
-    };
 
 
 const GET_COMPONENT_SOURCE: CommandHandler<EditorCommand.GET_COMPONENT_SOURCE>
     = async function (command, session: ServerSession) {
         const { component_name } = command;
 
-        const comp = wick.rt.context.components.get(component_name);
+        const comp = await getComponent(component_name);
 
         if (comp) {
             return {
@@ -166,41 +129,12 @@ const GET_COMPONENT_SOURCE: CommandHandler<EditorCommand.GET_COMPONENT_SOURCE>
         }
     };
 
-const SET_COMPONENT_STYLE: CommandHandler<EditorCommand.SET_COMPONENT_STYLE>
-    = async function (command, session: ServerSession) {
-
-        const { component_name, rules } = command;
-
-        const comp = wick.rt.context.components.get(component_name);
-
-        for (const rule of rules) {
-            const location = new URI(rule.location);
-            const css_patch = await updateStyle(
-                rule.location || comp.location + "",
-                rule.rule_path,
-                rule.selectors,
-                rule.properties,
-                wick.rt.context
-            );
-
-            if (!css_patch) debugger;
-
-            session.send_command({
-                command: EditorCommand.APPLY_COMPONENT_PATCH,
-                patch: css_patch
-            });
-        }
-
-        return { command: EditorCommand.OK };
-
-    };
-
 const GET_COMPONENT_STYLE: CommandHandler<EditorCommand.GET_COMPONENT_STYLE>
     = async function (command, session: ServerSession) {
 
         const { component_name } = command;
 
-        const comp = wick.rt.context.components.get(component_name);
+        const comp = await getComponent(component_name);
 
 
         if (comp) {
@@ -215,7 +149,7 @@ const GET_COMPONENT_STYLE: CommandHandler<EditorCommand.GET_COMPONENT_STYLE>
                     type: i.location.ext == "css"
                         ? StyleSourceType.CSS_FILE
                         : StyleSourceType.INLINE,
-                    string: getCSSStringFromComponentStyle(i, comp)
+                    string: getCSSStringFromComponentStyle(i, comp, false)
                 }))
             };
         } else {
@@ -239,12 +173,30 @@ const GET_COMPONENT_PATCH: CommandHandler<EditorCommand.GET_COMPONENT_PATCH>
                 command: EditorCommand.NOT_ALLOWED
             };
 
-        return {
-            command: EditorCommand.APPLY_COMPONENT_PATCH,
-            patch: await getPatch(
-                wick.rt.context.components.get(from),
-                wick.rt.context.components.get(to),
-                wick.rt.context
-            )
-        };
+        const transition = getTransition(from, to);
+
+        if (!transition)
+            return {
+                command: EditorCommand.UNKNOWN
+            };
+
+        const changes = transition.changes;
+
+        if (changes.some(g => g.type == ChangeType.General)) {
+            // The general change type should cover all changes
+            // and cause a rerender patch to be issued
+        } else {
+
+            //Issue a CSS patch
+            return {
+                command: EditorCommand.APPLY_COMPONENT_PATCH,
+                patch: {
+                    type: PatchType.CSS,
+                    from: from,
+                    to: to,
+                    style: componentDataToCSS(await getComponent(to))
+                }
+            };
+        }
     };
+

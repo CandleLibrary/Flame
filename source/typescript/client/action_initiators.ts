@@ -1,15 +1,13 @@
+import spark, { Sparky } from "@candlelib/spark";
 import {
-    applyAction,
-    sealAction
+    applyAction
 } from "./actions/update.js";
-import { CSSCacheFactory } from "./cache/css_cache.js";
-import { HTMLCacheFactory } from "./cache/html_cache.js";
+import { getCSSCache } from "./cache/css_cache.js";
 import { getActiveSelections, getActiveSelectionsCount, getComponentNameFromElement } from "./common_functions.js";
-import { activeSys, active_system as system, hideEventIntercept, revealEventIntercept } from "./system.js";
+import { activeSys, active_system as system, revealEventIntercept } from "./system.js";
 import { Action } from "./types/action.js";
 import { FlameSystem } from "./types/flame_system.js";
 import { ObjectCrate } from "./types/object_crate.js";
-import spark, { Sparky } from "@candlelib/spark";
 
 /**
  * Collection of functions that can be called by
@@ -333,7 +331,9 @@ async function INIT_CRATES(
                         ratio_list: []
                     };
 
-                crate.css_cache = await CSSCacheFactory(system, ele, crate);
+                crate.css_cache = getCSSCache(system, ele);
+
+                await crate.css_cache.load;
 
                 crate.html_cache = null;
 
@@ -387,7 +387,7 @@ export async function END_ACTION(
 
     editor_model.POINTER_DN = false;
 
-    await sealAction(sys, crates);
+    //await sealAction(sys, crates);
 
     ACTIVE_ACTIONS.length = 0;
 
@@ -397,11 +397,11 @@ export async function END_ACTION(
 
     for (const { sel, css_cache, html_cache } of crates) {
 
-        if (css_cache)
-            CSSCacheFactory.destroy(css_cache);
+        //if (css_cache)
+        //    releaseCSSCache(css_cache);
 
-        if (html_cache)
-            html_cache.destroy();
+        //if (html_cache)
+        //    html_cache.destroy();
     }
 
     crates = null;

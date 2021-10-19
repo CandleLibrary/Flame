@@ -1,7 +1,7 @@
-import { CSSCacheFactory } from "../cache/css_cache.js";
+import { getCSSCache } from "../cache/css_cache.js";
 
 export function CLEARLEFT(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.left) {
@@ -12,7 +12,7 @@ export function CLEARLEFT(system, component, element, LINKED = false) {
 }
 //clear top
 export function CLEARTOP(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.top) {
@@ -23,7 +23,7 @@ export function CLEARTOP(system, component, element, LINKED = false) {
 }
 //clear right
 export function CLEARIGHT(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.right) {
@@ -34,7 +34,7 @@ export function CLEARIGHT(system, component, element, LINKED = false) {
 }
 //clear bottom
 export function CLEABOTTOM(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.bottom) {
@@ -46,7 +46,7 @@ export function CLEABOTTOM(system, component, element, LINKED = false) {
 
 //clear margin-top
 export function CLEARMARGINTOP(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.margin_left) {
@@ -57,7 +57,7 @@ export function CLEARMARGINTOP(system, component, element, LINKED = false) {
 }
 //clear margin-left
 export function CLEARMARGINLEFT(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.margin_left) {
@@ -69,7 +69,7 @@ export function CLEARMARGINLEFT(system, component, element, LINKED = false) {
 
 //clear margin-right
 export function CLEARMARGINRIGHT(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     if (css.props.margin_right) {

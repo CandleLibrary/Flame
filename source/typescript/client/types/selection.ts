@@ -1,4 +1,6 @@
-import { WickRTComponent } from '@candlelib/wick';
+import { ObservableModel } from '@candlelib/wick';
+import { ObservableScheme } from '../../../../../wick/build/types/runtime/observable/observable_prototyped';
+import { CSSCache } from '../cache/css_cache';
 
 /**
  * User selected edit element. Coordinate in screen space. 
@@ -15,8 +17,6 @@ export interface EditorSelection {
      * True if the selection is actually accessible to the user.
      */
     VALID: boolean;
-
-
 
     /**
      * Position of top edge of the selection box in screen coords.
@@ -54,6 +54,11 @@ export interface EditorSelection {
      * Height of selection box in element in element local coords.
      */
     actual_height: number;
+
+    /**
+     * Style Information for the selected element
+     */
+    css: CSSCache;
 
     //transform information
 

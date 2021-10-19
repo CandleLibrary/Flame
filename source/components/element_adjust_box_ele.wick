@@ -1,12 +1,30 @@
-import { top, left, width, height, ele } from "@model";
+import { top, left, width, height, ele, css } from "@model";
 import { ACTIONS, getComponentNameFromElement } from "@api";
 import handle from "./handle.wick";
+
+
+let selectors = null;
+
+async function $styleHandle(css){
+    if(!css) return;
+    
+    await css.load;
+
+    selectors = css.getRuleList();
+}
 
 export default <div id="main" class="main">
     { ele && getComponentNameFromElement(ele) || "" }
     <container {data}>
         <handle />
     </container>
+    <div class="css_data">
+        <container data={selectors}>
+            <div class="css_selector" onclick={ (e, this.par.model.css.setTargetRule(index)) }>
+                {id}
+            </div>
+        </container>
+    </div>
 </div>;
 
 var data = [{
@@ -71,6 +89,23 @@ function $update(width, height, left, top) {
         z-index:10000;
         pointer-events:none;
         border:1px solid rgb(100,100,200);
+    }
+
+    .css_selector {
+        margin:10px auto;
+        width:90%;
+        color:white;
+        background-color:rgb(60,60,180);
+        height: 20px;
+    }
+
+    .css_data {
+        position:absolute;
+        pointer-events:all;
+        width:200px;
+        height:200px;
+        background-color:white;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
     }
 
     #test, .lower-data {

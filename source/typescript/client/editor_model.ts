@@ -45,7 +45,7 @@ export class EditorModel {
         this.selected_element = null;
         this.selection_box = null;
         this.selections = [<EditorSelection><unknown>{
-            model: new editor_wick.objects.ObservableScheme<EditorSelection>({
+            model: editor_wick.objects.ObservableScheme<EditorSelection>({
                 ACTIVE: false,
                 VALID: true,
                 actual_height: 0,
@@ -77,7 +77,7 @@ export class EditorModel {
         this.POINTER_DN = false;
         this.state = EditorToolState.UNSET;
         this.draw_objects = [<DrawObject><unknown>{
-            model: new editor_wick.objects.ObservableScheme<DrawObject>({
+            model: editor_wick.objects.ObservableScheme<DrawObject>({
                 px1: 0,
                 py1: 0,
                 px2: 0,

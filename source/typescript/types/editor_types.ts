@@ -1,3 +1,5 @@
+import { Change, ChangeType } from './transition';
+
 export enum EditorCommand {
     /**
      * A null command that should be ignored
@@ -20,64 +22,6 @@ export enum EditorCommand {
      * with a list of style strings registered to the component
      */
     GET_COMPONENT_STYLE_RESPONSE,
-    /**
-     * A client instance request to update a given component
-     * with new style rules. This will result in a new component
-     * that has the applied rules. The server should respond
-     * with a EditorCommand.APPLY_COMPONENT_PATCH message
-     * with StubPatch configure with the new components
-     * hash name
-     */
-    SET_COMPONENT_STYLE,
-
-    /**
-     * A client instance request to update a given component
-     * element with a new ID attribute. This will result in a new 
-     * component that has the targeted element id set. 
-     * 
-     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
-     * message with a StubPatch configured with the new component's
-     * hash name.
-     * 
-     * This however will not work for synthetic elements generated 
-     * from markdown markup. In such cases the server will respond with
-     * a an EditorCommand.NOT_ALLOWED command message.
-     */
-    SET_COMPONENT_ELEMENT_ID,
-
-    /**
-     * A client instance request to update a given component
-     * element with a class name addition. This will result in a new 
-     * component that has the new class appended to the target component's 
-     * class attribute. 
-     * 
-     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
-     * message with a StubPatch configured with the new component's
-     * hash name.
-     * 
-     * This however will not work for synthetic elements generated 
-     * from markdown markup. In such cases the server will respond with
-     * a message an EditorCommand.NOT_ALLOWED command message.
-     */
-    ADD_COMPONENT_ELEMENT_CLASS,
-
-
-    /**
-     * A client instance request to update a given component
-     * element a with class name removal. This will result in a new 
-     * component that has the class removed from the target component's 
-     * class attribute. 
-     * 
-     * The server should respond with a EditorCommand.APPLY_COMPONENT_PATCH 
-     * message with a StubPatch configured with the new component's
-     * hash name.
-     * 
-     * This however will not work for synthetic elements generated 
-     * from markdown markup. In such cases the server will respond with
-     * a message an EditorCommand.NOT_ALLOWED command message.
-     */
-    REMOVE_COMPONENT_ELEMENT_CLASS,
-
 
     /**
      * A message from a client instance indicating the
@@ -87,6 +31,7 @@ export enum EditorCommand {
      * to render the endpoint.
      */
     REGISTER_CLIENT_ENDPOINT,
+
     /**
     * A server response to a EditorCommand.GET_COMPONENT_PATCH
     * request. Client instances should use the ComponentPatch
@@ -94,6 +39,7 @@ export enum EditorCommand {
     * modifications made to the latest version.
     */
     APPLY_COMPONENT_PATCH,
+
     /**
      * A client request to update a givin component to
      * a newer version. Both `to` and `from` must match
@@ -110,7 +56,13 @@ export enum EditorCommand {
      */
     UPDATED_COMPONENT,
     GET_COMPONENT_SOURCE,
-    GET_COMPONENT_SOURCE_RESPONSE
+    GET_COMPONENT_SOURCE_RESPONSE,
+
+    /**
+     * Apply a set of changes to affected components, allowing
+     * a batch change operation to take place.
+     */
+    APPLY_COMPONENT_CHANGES
 }
 
 export const enum StyleSourceType {
@@ -163,65 +115,6 @@ export interface CommandsMap {
         }[];
     };
 
-    [EditorCommand.SET_COMPONENT_STYLE]: {
-        command: EditorCommand.SET_COMPONENT_STYLE;
-        /**
-         * The hash name of the component that the new
-         * style rules should be applied to.
-         */
-        component_name: string;
-        /**
-         * A style sheet string of rules to apply to
-         * the component
-         */
-        rules: {
-            location: string,
-            selectors: string,
-            properties: string,
-            rule_path: string,
-        }[];
-    };
-
-    [EditorCommand.REMOVE_COMPONENT_ELEMENT_CLASS]: {
-        command: EditorCommand.REMOVE_COMPONENT_ELEMENT_CLASS;
-
-        /**
-         * The hash name of the component that the new
-         * style rules should be applied to.
-         */
-        component_name: string;
-
-        /**
-         * The element id of the target element. 
-         */
-        ele_id: number;
-
-        /**
-         * class names to remove from the element.
-         */
-        class_names: string[];
-    };
-
-    [EditorCommand.ADD_COMPONENT_ELEMENT_CLASS]: {
-        command: EditorCommand.ADD_COMPONENT_ELEMENT_CLASS;
-
-        /**
-         * The hash name of the component that the new
-         * style rules should be applied to.
-         */
-        component_name: string;
-
-        /**
-         * The element id of the target element. 
-         */
-        element_index: number;
-
-        /**
-         * class names to add to the element.
-         */
-        class_names: string[];
-    };
-
     [EditorCommand.GET_COMPONENT_PATCH]: {
         command: EditorCommand.GET_COMPONENT_PATCH;
         /**
@@ -236,7 +129,7 @@ export interface CommandsMap {
 
     [EditorCommand.APPLY_COMPONENT_PATCH]: {
         command: EditorCommand.APPLY_COMPONENT_PATCH;
-        patch: Patch;
+        patch: Patch[PatchType];
     };
 
     [EditorCommand.UPDATED_COMPONENT]: {
@@ -251,25 +144,22 @@ export interface CommandsMap {
         component_name: string;
     };
 
-    [EditorCommand.SET_COMPONENT_ELEMENT_ID]: {
-        command: EditorCommand.SET_COMPONENT_ELEMENT_ID;
-        component_name: string;
-        element_index: number;
-        id: string;
-    };
-
     [EditorCommand.GET_COMPONENT_SOURCE_RESPONSE]: {
         command: EditorCommand.GET_COMPONENT_SOURCE_RESPONSE;
         component_name: string;
         source: string;
     };
+
+
+    [EditorCommand.APPLY_COMPONENT_CHANGES]: {
+        command: EditorCommand.APPLY_COMPONENT_CHANGES;
+        component_changes: {
+            old_component: string;
+            changes: (Change[ChangeType.CSSRule] | Change[ChangeType.Attribute])[];
+        }[];
+    };
 }
 
-
-
-type test = {
-    [Property in keyof EditorCommand]: Property;
-};
 export type Commands = EditorCommand;
 
 export interface EditMessage<T extends keyof CommandsMap = Commands
@@ -321,7 +211,7 @@ export const enum PatchType {
      *
      * This WILL change the component's hash
      */
-    ELEMENT,
+    //ELEMENT,
 
     /**
      * A binding or any JS code is changed within the source file.
@@ -330,9 +220,15 @@ export const enum PatchType {
      *
      * This WILL change the component's hash
      */
-    REPLACE
+    REPLACE,
+
+    /**
+     * Apply an attribute change to an element
+     */
+    Attribute
 }
-interface ComponentPatch {
+
+interface BasePatch {
     type: PatchType;
     /**
      * The hash name string of the two component
@@ -340,27 +236,35 @@ interface ComponentPatch {
     to: string;
     from: string;
 }
-interface ReplacePatch extends ComponentPatch {
-    type: PatchType.REPLACE;
-    patch_scripts: string[];
+interface Patch {
 
-}
-export interface TextPatch extends ComponentPatch {
-    type: PatchType.TEXT;
-    patches: {
-        index: number;
-        from: string;
-        to: string;
-    }[];
-}
-export interface StubPatch extends ComponentPatch {
-    type: PatchType.STUB;
-}
+    [PatchType.Attribute]: BasePatch & {
+        type: PatchType.Attribute,
+        name: string,
+        value: string;
+    };
 
-export interface CSSPatch extends ComponentPatch {
+    [PatchType.REPLACE]: BasePatch & {
+        type: PatchType.REPLACE;
+        patch_scripts: string[];
+    };
 
-    type: PatchType.CSS;
-    style: string;
+    [PatchType.TEXT]: BasePatch & {
+        type: PatchType.TEXT;
+        patches: {
+            index: number;
+            from: string;
+            to: string;
+        }[];
+    };
+
+    [PatchType.STUB]: BasePatch & {
+        type: PatchType.STUB;
+    };
+
+    [PatchType.CSS]: BasePatch & {
+        type: PatchType.CSS;
+        //The new style to apply to this component
+        style: string;
+    };
 }
-
-export type Patch = ReplacePatch | TextPatch | StubPatch | CSSPatch;

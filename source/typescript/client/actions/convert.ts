@@ -5,7 +5,7 @@ import {
     CLEARTOP
 } from "./clear.js";
 import {
-    CSSCacheFactory
+    getCSSCache
 } from "../cache/css_cache.js";
 import {
     getFirstPositionedAncestor,
@@ -78,7 +78,7 @@ function setToRelative(cache, KEEP_UNIQUE) {
  * Convert position to ```absolute```
  */
 export function TOPOSITIONABSOLUTE(system, component, element, LINKED = false) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
     switch (css.props.position) {
@@ -125,7 +125,7 @@ export function TOPOSITIONABSOLUTE(system, component, element, LINKED = false) {
  * Convert position to ```relative```
  */
 export function TOPOSITIONRELATIVE(system, component, element) {
-    const cache = CSSCacheFactory(system, component, element);
+    const cache = getCSSCache(system, element);
     const css = cache.rules;
     const KEEP_UNIQUE = system.flags.KEEP_UNIQUE;
 
@@ -231,7 +231,7 @@ export function TOPOSITIONRELATIVE(system, component, element) {
 
 
 export function CONVERT_TOP(system, component, element, type) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let position = parseFloat(system.window.getComputedStyle(element).top);
 
     switch (type) {
@@ -263,7 +263,7 @@ export function CONVERT_TOP(system, component, element, type) {
 }
 
 export function CONVERT_LEFT(system, component, element, type) {
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let position = parseFloat(system.window.getComputedStyle(element).left);
 
     switch (type) {
@@ -322,7 +322,7 @@ export function TOPOSITIONFIXED() { }
 export function TOPOSITIONSTICKY() { /* NO OP */ }
 export function TOGGLE_UNIT(system, component, element, horizontal, vertical) {
     // Get CSS information on element and update appropriate records
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
     let rect = getFirstPositionedAncestor(element).getBoundingClientRect();
     if (horizontal) {

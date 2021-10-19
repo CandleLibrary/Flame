@@ -6,10 +6,9 @@ import { WebSocket } from "ws";
 import { Session } from '../../common/session.js';
 import { getComponentDependencies } from './component_tools.js';
 import { getPageWatcher } from './file_watcher.js';
-import { __sessions__ } from './store.js';
+import { addReference, __sessions__ } from './store.js';
 
 export const logger = Logger.createLogger("flame");
-
 
 /**
  * This class binds to a WebSocket connection and
@@ -34,6 +33,8 @@ export class ServerSession extends Session {
         connection: WebSocket,
     ) {
         super(connection, logger);
+
+        this.nonce = 5000000;
 
         __sessions__.push(<any>this);
     };
@@ -61,13 +62,13 @@ export class ServerSession extends Session {
 
     connect_file_watchers(component: ComponentData) {
 
-        const to_watch_component_paths: Array<string>
-            = getComponentDependencies(component)
-                .map(comp => comp.location + "");
+        const component_dependencies
+            = getComponentDependencies(component);
 
-        for (const path of to_watch_component_paths)
-            getPageWatcher(path).addSession(<any>this);
-
+        for (const comp of component_dependencies) {
+            getPageWatcher(comp.location.toString()).addSession(<any>this);
+            addReference(comp);
+        }
     }
 };
 

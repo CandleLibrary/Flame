@@ -3,6 +3,7 @@ import {
     ActionRefType,
     areActionsRunning
 } from "./action_initiators.js";
+import { CSSCache, getCSSCache } from './cache/css_cache.js';
 import {
     getSelectionFromPoint, invalidateAllSelections, invalidateInactiveSelections, updateSelections
 } from "./common_functions.js";
@@ -27,7 +28,10 @@ const default_handler: InputHandler = <InputHandler>{
 
         const sel = getSelectionFromPoint(e.x, e.y, sys);
 
-        if (sel) sel.ACTIVE = true;
+        if (!sel.ACTIVE) {
+            sel.css = getCSSCache(sys, sel.ele);
+            sel.ACTIVE = true;
+        }
 
         event_intercept_ele.style.pointerEvents = "";
 

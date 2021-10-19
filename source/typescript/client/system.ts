@@ -1,6 +1,6 @@
 import { Context, WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { Logger } from '@candlelib/log';
-import { EditorCommand, PatchType } from "../common/editor_types.js";
+import { EditorCommand, PatchType } from "../types/editor_types.js";
 import ActionQueueRunner from './action_initiators.js';
 import { getRuntimeComponentsFromName } from './common_functions.js';
 import { EditorModel } from "./editor_model.js";
@@ -84,7 +84,7 @@ export function initSystem(
         editor_iframe: editor_frame,
         edited_components: editor_wick.objects.Observable({
             components: [<EditedComponent><unknown>{
-                model: new editor_wick.objects.ObservableScheme<EditedComponent>({
+                model: editor_wick.objects.ObservableScheme<EditedComponent>({
                     comp: "",
                     frame: null,
                     height: 0,

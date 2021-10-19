@@ -3,6 +3,6 @@ import { CSSProperty, CSSRuleNode } from "@candlelib/css";
 
 export interface TrackedCSSProp {
     prop: CSSProperty;
-    sel: CSSRuleNode;
+    sel: string;
     unique?: boolean;
 }

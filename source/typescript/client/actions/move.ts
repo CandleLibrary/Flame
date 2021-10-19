@@ -1,5 +1,5 @@
 import { CSS_Length } from '@candlelib/css';
-import { CSSCacheFactory } from "../cache/css_cache.js";
+import { getCSSCache } from "../cache/css_cache.js";
 import { getFirstPositionedAncestor, prepRebuild } from "./common.js";
 import {
     SETDELTABOTTOM, SETDELTALEFT, SETDELTARIGHT, SETDELTATOP
@@ -18,7 +18,7 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
     } else {
 
         // Get CSS information on element and update appropriate records
-        let cache = CSSCacheFactory(system, component, element);
+        let cache = getCSSCache(system, element);
 
         let css = cache.rules;
 
@@ -61,7 +61,7 @@ export function MOVE(system, component, element, dx, dy, IS_COMPONENT = false, L
 
 export function CENTER(system, component, element, HORIZONTAL = true, VERTICAL = true, LINKED = false) {
     // Get CSS information on element and update appropriate records
-    let cache = CSSCacheFactory(system, component, element);
+    let cache = getCSSCache(system, element);
     let css = cache.rules;
 
     let ancestor = getFirstPositionedAncestor(element);

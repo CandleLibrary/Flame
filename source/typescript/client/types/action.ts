@@ -32,7 +32,7 @@ export interface Action {
     initFN: ((sys: FlameSystem, crate: ObjectCrate) => HistoryArtifact[] | void) | typeof noop;
     updateFN: ((sys: FlameSystem, crate: ObjectCrate, adjust_marker: RatioMarker, val?: number | boolean) => any) | typeof noop;
     sealFN: ((sys: FlameSystem, crate: ObjectCrate) => Promise<HistoryArtifact[] | void>) | typeof noop;
-    historyProgress(sys: FlameSystem, history: HistoryArtifact, FORWARD: boolean): string[] | void;
-    historyRegress(sys: FlameSystem, history: HistoryArtifact, FORWARD: boolean): string[] | void;
+    //historyProgress(sys: FlameSystem, history: HistoryArtifact, FORWARD: boolean): string[] | void;
+    //historyRegress(sys: FlameSystem, history: HistoryArtifact, FORWARD: boolean): string[] | void;
 
 }

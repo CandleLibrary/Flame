@@ -1,6 +1,6 @@
 import { Logger } from '@candlelib/log';
 import { WebSocket as WS } from "ws";
-import { Commands, CommandsMap, EditMessage, EditorCommand } from "./editor_types.js";
+import { Commands, CommandsMap, EditMessage, EditorCommand } from "../types/editor_types.js";
 
 export interface CommandHandler<T extends keyof CommandsMap = Commands> {
     (command: CommandsMap[T], session: Session): (void | CommandsMap[EditorCommand]) | Promise<(void | CommandsMap[EditorCommand])>;
@@ -49,7 +49,7 @@ export class Session {
 
         this.set_callbacks();
 
-        this.nonce = 0;
+        this.nonce = 50;
 
         this.opened = Date.now();
     }
@@ -77,17 +77,22 @@ export class Session {
         object: CommandsMap[T],
         nonce: number = Infinity
     ) {
+
+        this.logger.log(`Sending command [ ${EditorCommand[object.command]} ] with nonce [ ${nonce} ]`);
+
         const json = JSON.stringify({ data: object, nonce });
         this.connection.send(json);
     }
     send_awaitable_command<T extends keyof CommandsMap, R extends keyof CommandsMap>(
         obj: CommandsMap[T]
     ): Promise<CommandsMap[R]> {
-        return new Promise(res => {
-            const nonce = this.nonce++;
-            this.awaitable_callback.set(nonce, res);
-            this.send_command(obj, nonce);
-        });
+
+        const nonce = this.nonce++;
+        const promise = new Promise(res => { this.awaitable_callback.set(nonce, res); });
+
+        this.send_command(obj, nonce);
+
+        return promise;
     }
 
     open_handler() {

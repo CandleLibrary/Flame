@@ -2,23 +2,24 @@ import { CSSNode, CSSNodeType, mergeRulesIntoOne, rule as parse_rule } from '@ca
 import { Logger } from '@candlelib/log';
 import URI from '@candlelib/uri';
 import wick, { ComponentData, Context, renderNew } from '@candlelib/wick';
+import { ComponentHash } from '@candlelib/wick/build/library//compiler/common/hash_name.js';
 import { createCompiledComponentClass } from '@candlelib/wick/build/library/compiler/ast-build/build.js';
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
 import { createClassStringObject } from '@candlelib/wick/build/library/compiler/ast-render/js.js';
 import { createComponent } from '@candlelib/wick/build/library/compiler/create_component.js';
 import fs from "fs";
-import { CSSPatch, EditorCommand, Patch, PatchType, StubPatch, TextPatch } from '../../common/editor_types.js';
 import { Session } from '../../common/session.js';
+import { CSSPatch, EditorCommand, Patch, PatchType, StubPatch, TextPatch } from '../../types/editor_types.js';
 import { store, __sessions__ } from './store.js';
 
 const fsp = fs.promises;
 export const logger = Logger.createLogger("flame");
 
-export async function createNewComponentFromSourceString(new_source: string, context: Context, component: ComponentData) {
+export async function createNewComponentFromSourceString(new_source: string, context: Context, location: URI) {
 
-    const comp = await createComponent(new_source, context);
+    const comp = await createComponent(new_source, context, location);
 
-    comp.location = component.location;
+    comp.location = location;
 
     return comp;
 }
@@ -67,15 +68,35 @@ location ${old_comp.location + ""}
 
         logger.log(`Created new component [ ${new_comp.name} ] from path [ ${path} ] `);
 
-        for (const session of sessions) {
-            session.send_command({
-                command: EditorCommand.UPDATED_COMPONENT,
-                path: old_comp.location + "",
-                old_name: old_comp.name,
-                new_name: new_comp.name
-            });
-        }
+        alertSessionsOfComponentTransition(
+            sessions,
+            old_comp.name,
+            new_comp.name,
+            old_comp.location
+        );
     }
+}
+
+
+export function alertSessionsOfComponentTransition(
+    sessions: Iterable<Session>,
+    old_comp_name: string,
+    new_comp_name: string,
+    location: URI
+) {
+
+    for (const session of sessions) {
+        session.send_command({
+            command: EditorCommand.UPDATED_COMPONENT,
+            path: location + "",
+            old_name: old_comp_name,
+            new_name: new_comp_name
+        });
+    }
+}
+
+export function getSourceHash(source: string) {
+    return ComponentHash(source);
 }
 
 /**
@@ -148,8 +169,6 @@ export async function getPatch(
             patches: patches
         };
     }
-
-    debugger;
 }
 
 export function createStubPatch(
@@ -314,7 +333,7 @@ export async function updateStyle(
 
     if (type == "styleeleement") {
 
-        const new_comp = await createNewComponentFromSourceString(new_source, context, comp);
+        const new_comp = await createNewComponentFromSourceString(new_source, context, comp.location);
 
         swap_component_data(new_comp, comp);
 

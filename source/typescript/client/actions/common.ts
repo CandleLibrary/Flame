@@ -2,7 +2,7 @@ import {
     CSS_Length,
     CSS_Percentage
 } from "@candlelib/css";
-import { CSSCacheFactory } from "../cache/css_cache.js";
+import { getCSSCache } from "../cache/css_cache.js";
 import { FlameSystem } from "../types/flame_system.js";
 import { ObjectCrate } from "../types/object_crate.js";
 
@@ -45,7 +45,7 @@ export function prepRebuild(system, component, element, LINKED = true) {
 */
 export function ensureBlocklike(system, component, element) {
     return;
-    const cache = CSSCacheFactory(system, component, element);
+    const cache = getCSSCache(system, element);
     const display = cache.computed.get("display");
     //Make sure we have an element that's prepared to change it's shape. If it's display type is inline, it needs to be changed to inline block.
     switch (display) {

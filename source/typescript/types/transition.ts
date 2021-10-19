@@ -47,10 +47,16 @@ export enum ChangeType {
 export interface Change {
 
     [ChangeType.Attribute]: {
+        type: ChangeType.Attribute,
         /**
          * The id of the element that received the change
          */
         ele_id: number;
+
+        /**
+         * The name of the attribute
+         */
+        name: string;
 
         /**
          * The index of the attribute if more than one attribute
@@ -72,6 +78,7 @@ export interface Change {
     };
 
     [ChangeType.CSSRule]: {
+        type: ChangeType.CSSRule,
 
         /**
          * The location of the source file that contains the CSS rule.
@@ -120,6 +127,9 @@ export interface Change {
          */
         new_rule_path: string;
 
+        new_selectors: string;
+        old_selectors: string;
+
         /**
          * A list of original property values that were removed/modified
          */
@@ -164,6 +174,7 @@ export interface Change {
      * its inverse.
      */
     [ChangeType.General]: {
+        type: ChangeType.General,
         /**
          * Additions and deletions needed to 
          * go from the old source to the new source. 

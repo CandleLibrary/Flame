@@ -33,6 +33,7 @@
         "@candlelib/paraffin": "0.1.18",
         "@candlelib/css": "0.3.18",
         "@candlelib/js": "0.5.18",
+        "@candlelib/hydrocarbon": "*",
         "@candlelib/lantern": "0.2.7",
         "@candlelib/log": "0.2.0",
         "@candlelib/wick": "0.16.1",

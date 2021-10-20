@@ -1,3 +1,5 @@
+import { Patch, PatchType } from "./patch";
+
 export interface Transition {
     /**
      * The file path of the old component
@@ -34,6 +36,8 @@ export interface Transition {
      * The source string of the old component.
      */
     source?: string;
+
+    patch?: Patch[PatchType];
 }
 
 
@@ -47,7 +51,15 @@ export enum ChangeType {
 export interface Change {
 
     [ChangeType.Attribute]: {
+
         type: ChangeType.Attribute,
+
+        /**
+         * The the name of the component that contains the element 
+         * which is being changed
+         */
+        component: string,
+
         /**
          * The id of the element that received the change
          */
@@ -79,6 +91,12 @@ export interface Change {
 
     [ChangeType.CSSRule]: {
         type: ChangeType.CSSRule,
+
+        /**
+         * The name of the component that references the rule.
+         */
+        component: string;
+
 
         /**
          * The location of the source file that contains the CSS rule.
@@ -174,7 +192,20 @@ export interface Change {
      * its inverse.
      */
     [ChangeType.General]: {
+
         type: ChangeType.General,
+
+        /**
+         * The name of the component that references the rule.
+         */
+        component: string;
+
+        /**
+         * The location of the source file that the diffs apply to
+         */
+        location: string;
+
+
         /**
          * Additions and deletions needed to 
          * go from the old source to the new source. 

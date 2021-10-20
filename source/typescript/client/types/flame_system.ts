@@ -6,7 +6,7 @@ import { EditorModel } from "../editor_model";
 import { Session } from '../../common/session.js';
 import { HistoryState } from "./history_state";
 
-export interface StyleSheet {
+export interface StyleData {
 
     /**
      * The hash name of the component
@@ -23,7 +23,7 @@ export interface StyleSheet {
     /**
      * The style AST
      */
-    styles: CSSNode;
+    stylesheet: CSSNode;
 
     /**
      * The index of the stylesheet within the

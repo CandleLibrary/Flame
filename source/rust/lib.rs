@@ -1,0 +1,3 @@
+/**
+ * Wick Component Compiler System
+ */

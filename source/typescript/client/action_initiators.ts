@@ -381,28 +381,11 @@ export async function END_ACTION(
 
     if (!areActionsRunning()) return false;
 
-    //hideEventIntercept(sys);
-
     const { editor_model } = activeSys();
 
     editor_model.POINTER_DN = false;
 
-    //await sealAction(sys, crates);
-
     ACTIVE_ACTIONS.length = 0;
-
-    /****************************************************** */
-    //history.WriteBack(system);
-    /****************************************************** */
-
-    for (const { sel, css_cache, html_cache } of crates) {
-
-        //if (css_cache)
-        //    releaseCSSCache(css_cache);
-
-        //if (html_cache)
-        //    html_cache.destroy();
-    }
 
     crates = null;
 

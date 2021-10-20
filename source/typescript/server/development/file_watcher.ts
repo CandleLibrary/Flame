@@ -4,8 +4,8 @@ import URI from '@candlelib/uri';
 import wick from "@candlelib/wick";
 import fs from "fs";
 import { Session } from '../../common/session.js';
-import { swap_component_data } from './component_tools.js';
-import { store } from './store.js';
+import { getSourceHash, swap_component_data } from './component_tools.js';
+import { addBareComponent, addComponent, store } from './store.js';
 export const logger = Logger.createLogger("flame");
 let watchers: Map<string, FileWatcherHandler> = new Map();
 
@@ -61,7 +61,9 @@ export class FileWatcherHandler implements Sparky {
 
         this.type = "";
 
-        const comp = await wick(new URI(this.path), wick.rt.context);
+        const location = new URI(this.path);
+
+        const comp = await wick(location, wick.rt.context);
 
         if (comp.HAS_ERRORS) {
 
@@ -74,6 +76,8 @@ export class FileWatcherHandler implements Sparky {
             wick.rt.context.components.delete(comp.name);
 
         } else {
+
+            addComponent(comp);
 
             const { comp: existing } = store.components.get(this.path);
 

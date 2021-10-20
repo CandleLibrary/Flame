@@ -8,6 +8,8 @@ import { CSSCache } from '../cache/css_cache';
 export interface EditorSelection {
     ele: HTMLElement;
 
+    component: string;
+
     /**
      * True if the selection represents a selection locked to a single object.
      */

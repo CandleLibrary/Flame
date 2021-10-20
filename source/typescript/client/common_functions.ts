@@ -2,17 +2,29 @@ import { traverse } from '@candlelib/conflagrate';
 import {
     CSSNode,
     CSSNodeType, CSSRuleNode,
-    getArrayOfMatchedRules,
-    getFirstMatchedSelector,
-    getMatchedElements, getSelectorPrecedence,
-    PrecedenceFlags
+
+    PrecedenceFlags,
+    tools
 } from "@candlelib/css";
 import { WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { releaseCSSCache } from './cache/css_cache.js';
-import { FlameSystem, StyleSheet } from "./types/flame_system";
+import { FlameSystem, StyleData } from "./types/flame_system";
 import { EditorSelection } from "./types/selection";
 import { TrackedCSSProp } from "./types/tracked_css_prop";
 
+
+const {
+    rules: {
+        getArrayOfMatchedRules,
+
+    },
+
+    selectors: {
+        getFirstMatchedSelector,
+        getMatchedElements,
+        getSelectorSpecificityValue,
+    }
+} = tools;
 
 /*
  *  ██████ ███████ ███████ 
@@ -26,13 +38,13 @@ import { TrackedCSSProp } from "./types/tracked_css_prop";
 export function getMatchedRulesFromComponentData(
     sys: FlameSystem,
     ele: HTMLElement,
-    styles_array: StyleSheet[]
+    styles_array: StyleData[]
 ): CSSRuleNode[] {
     const rules = [];
 
-    for (const { styles } of styles_array) {
+    for (const { stylesheet } of styles_array) {
         rules.push(...getArrayOfMatchedRules(
-            ele, styles
+            ele, stylesheet
         ));
     }
 
@@ -42,7 +54,7 @@ export function getMatchedRulesFromComponentData(
 export function getApplicableProps(
     sys: FlameSystem,
     ele: HTMLElement,
-    styles_array: StyleSheet[]
+    styles_array: StyleData[]
 ): Map<string, TrackedCSSProp> {
 
 
@@ -64,7 +76,7 @@ export function getApplicableProps(
             const
                 s = getFirstMatchedSelector(r, ele),
                 rp = r.precedence,
-                sp: PrecedenceFlags = getSelectorPrecedence(s);
+                sp: PrecedenceFlags = getSelectorSpecificityValue(s);
 
             for (const [name, val] of r.props.entries())
                 if (!m.has(name) || (m.get(name).prop.precedence) < (val.precedence | rp | sp))
@@ -140,6 +152,11 @@ export function getContemporaryElements(
     return elements;
 }
 
+export function getElementWIndex(ele: HTMLElement): number {
+    if (ele.hasAttribute("w:u"))
+        return parseInt(ele.getAttribute("w:u"));
+    return -1;
+}
 
 function getMatchingElementsFromCompID(
     comp: WickRTComponent, element_id: string
@@ -263,7 +280,6 @@ export function* getActiveSelections(sys: FlameSystem): Generator<EditorSelectio
     const selections = sys.editor_model.selections;
 
     for (const sel of selections) {
-
         if (sel.ACTIVE && sel.VALID)
             yield sel;
     }
@@ -325,8 +341,13 @@ export function updateActiveSelections(
     const selections = sys.editor_model.selections;
 
     for (const sel of selections.filter(s => s.ACTIVE)) {
-        debugger;
+
+        sel.component = getComponentNameFromElement(sel.ele);
+
+        updateSelectionCoords(sel, sys).scheduledUpdate();
     }
+    //@ts-ignore
+    selections.scheduleUpdate();
 }
 
 export function getSelection(
@@ -355,6 +376,7 @@ export function getSelection(
 
 
     const sel = sys.editor_wick.objects.ObservableScheme<EditorSelection>({
+        component: "",
         ACTIVE: false,
         VALID: false,
         ele: null,

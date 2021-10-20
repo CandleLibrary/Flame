@@ -27,7 +27,7 @@ export function SETLEFT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
     else
         setNumericValue(sys, crate, "left", pos, setNumericValue.positioned_ancestor_width, true);
 
-    css_cache.applyChanges(sys, 0);
+    css_cache.applyScratchRule(sys, 0);
 }
 
 export function SETRIGHT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
@@ -39,7 +39,7 @@ export function SETRIGHT(sys: FlameSystem, crate: ObjectCrate, val: number = 0) 
     else
         setNumericValue(sys, crate, "right", pos, setNumericValue.positioned_ancestor_width, true);
 
-    css_cache.applyChanges(sys, 0);
+    css_cache.applyScratchRule(sys, 0);
 }
 
 export function SETTOP(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
@@ -51,7 +51,7 @@ export function SETTOP(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
     else
         setNumericValue(sys, crate, "top", pos, setNumericValue.positioned_ancestor_height, true);
 
-    css_cache.applyChanges(sys, 0);
+    css_cache.applyScratchRule(sys, 0);
 }
 
 export function SETBOTTOM(sys: FlameSystem, crate: ObjectCrate, val: number = 0) {
@@ -63,7 +63,7 @@ export function SETBOTTOM(sys: FlameSystem, crate: ObjectCrate, val: number = 0)
     else
         setNumericValue(sys, crate, "bottom", pos, setNumericValue.positioned_ancestor_height, true);
 
-    css_cache.applyChanges(sys, 0);
+    css_cache.applyScratchRule(sys, 0);
 }
 
 /***************************************************************************************/

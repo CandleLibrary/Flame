@@ -1,9 +1,15 @@
-import { top, left, width, height, ele, css } from "@model";
+import { top, left, width, height, ele, css, component } from "@model";
 import { ACTIONS, getComponentNameFromElement } from "@api";
 import handle from "./handle.wick";
 
 
+
 let selectors = null;
+let rule = '.test { }';
+let err = null;
+
+const tooltip = 
+`A selector that matches the current element `;
 
 async function $styleHandle(css){
     if(!css) return;
@@ -14,15 +20,28 @@ async function $styleHandle(css){
 }
 
 export default <div id="main" class="main">
-    { ele && getComponentNameFromElement(ele) || "" }
+    { component }
     <container {data}>
         <handle />
     </container>
     <div class="css_data">
+        <input type="text" value={rule}/> 
+        <button onclick={ ()=>{ err = css.createRule(rule); rule = ""; selectors = css.getRuleList() } }>create rule</button>
+        <pre>{err}</pre>
         <container data={selectors}>
-            <div class="css_selector" onclick={ (e, this.par.model.css.setTargetRule(index)) }>
-                {id}
+
+            <div class="css_selector" 
+
+                title={source_location}
+
+            onclick={ ()=> {
+                this.par.model.css.setTargetRule(this.model);
+                selectors = this.par.model.css.getRuleList(); } }>
+
+                { SELECTED ? "!" : "" } {id}<br/> {source_location}
+
             </div>
+
         </container>
     </div>
 </div>;
@@ -73,16 +92,16 @@ function $update(width, height, left, top) {
     
     const div = "@#main";
 
-    div.style.width = Math.max(width-1, 0) + "px";
-    div.style.height = Math.max(height-1, 0) + "px";
-    div.style.left = Math.max(left-1, 1) + "px";
-    div.style.top = Math.max(top-1, 1) + "px";
+    div.style.width = (width-1) + "px";
+    div.style.height = (height-1) + "px";
+    div.style.left = (left-1) + "px";
+    div.style.top = (top-1) + "px";
 };
 
 <style>
     root {
         font-size:13px;
-        position:fixed;
+        position:absolute;
         width:150px;
         height:150px;
         color:black;
@@ -96,13 +115,19 @@ function $update(width, height, left, top) {
         width:90%;
         color:white;
         background-color:rgb(60,60,180);
-        height: 20px;
+        padding:2px;
+        border-radius:2px;
+        cursor:pointer;
     }
 
     .css_data {
-        position:absolute;
+        padding:10px;
+        border-radius:2px;
+        position:sticky;
+        top:0;
+        margin:auto;
         pointer-events:all;
-        width:200px;
+        width:350px;
         height:200px;
         background-color:white;
         box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
@@ -129,3 +154,16 @@ function $update(width, height, left, top) {
         font-weight:600;
     }
 </style>;
+
+import test from "@test"
+
+test: {
+    
+    selectors = [{
+        index: 0,
+        id: "thomas",
+
+    }];
+
+    assert(i, selectors.length == 0)
+}

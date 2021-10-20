@@ -14,6 +14,7 @@ export const logger = Logger.createLogger("flame-client").activate();
 export function init() {
 
     const editor_frame = document.createElement("iframe");
+    const edited_frame = document.createElement("iframe");
 
     editor_frame.src = "/flame-editor/";
     editor_frame.style.width = "100%";
@@ -35,7 +36,6 @@ export function init() {
         editor_frame.contentWindow.addEventListener("load", async () => {
 
             const editor_window = editor_frame.contentWindow;
-
             const editor_wick: WickLibrary = editor_window["wick"];
 
             const host = document.location.hostname;

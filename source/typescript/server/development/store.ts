@@ -123,6 +123,15 @@ export async function getComponent(name: string) {
     return null;
 }
 
+export function getComponentLocation(name: string) {
+
+    if (store.component_ref_map.has(name))
+
+        return store.component_ref_map.get(name).location;
+
+    return null;
+}
+
 export function addTransition(transition: Transition) {
 
     const from = transition.old_id;

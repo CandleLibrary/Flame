@@ -1,8 +1,9 @@
 import { Context, WickLibrary, WickRTComponent } from "@candlelib/wick";
 import { Logger } from '@candlelib/log';
-import { EditorCommand, PatchType } from "../types/editor_types.js";
+import { EditorCommand } from "../types/editor_types.js";
+import { PatchType } from "../types/patch";
 import ActionQueueRunner from './action_initiators.js';
-import { getRuntimeComponentsFromName } from './common_functions.js';
+import { getRuntimeComponentsFromName, updateActiveSelections } from './common_functions.js';
 import { EditorModel } from "./editor_model.js";
 import { Session } from '../common/session.js';
 import { EditedComponent, FlameSystem } from "./types/flame_system.js";
@@ -124,12 +125,16 @@ export function initSystem(
 
     active_system.scratch_stylesheet = scratch_sheet.sheet;
 
-    initializeDefualtSessionDispatchHandlers(active_system.session, page_wick);
+    initializeDefualtSessionDispatchHandlers(active_system.session, page_wick, active_system);
 
     return active_system;
 }
 
-function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: WickLibrary) {
+function initializeDefualtSessionDispatchHandlers(
+    session: Session,
+    page_wick: WickLibrary,
+    system: FlameSystem
+) {
 
     session.setHandler(EditorCommand.UPDATED_COMPONENT, (command, session) => {
         const { new_name, old_name, path } = command;
@@ -221,6 +226,8 @@ function initializeDefualtSessionDispatchHandlers(session: Session, page_wick: W
                             }
                         }
                     }
+
+                    updateActiveSelections(system);
                 } break;
 
                 case PatchType.REPLACE: {

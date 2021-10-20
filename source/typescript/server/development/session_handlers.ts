@@ -1,21 +1,20 @@
+import spark from '@candlelib/spark';
 import URI from '@candlelib/uri';
 import wick, {
     ComponentData, componentDataToCSS
-} from "@candlelib/wick";
+} from '@candlelib/wick';
 import { getCSSStringFromComponentStyle } from '@candlelib/wick/build/library/compiler/ast-render/css.js';
 import fs from "fs";
-import spark from '@candlelib/spark';
 import { CommandHandler } from '../../common/session.js';
-import { EditorCommand, PatchType, StyleSourceType } from '../../types/editor_types.js';
-import { ChangeType } from '../../types/transition.js';
+import { EditorCommand, StyleSourceType } from '../../types/editor_types.js';
+import { PatchType } from "../../types/patch";
+import { Change, ChangeType } from '../../types/transition.js';
 import { ChangeToken, getAttributeChangeToken, getCSSChangeToken } from './change_token.js';
 import {
-    alertSessionsOfComponentTransition,
-    createNewComponentFromSourceString,
-    getSourceHash
+    alertSessionsOfComponentTransition, getPatch, getSourceHash
 } from './component_tools.js';
 import { ServerSession } from './session.js';
-import { addBareComponent, addComponent, addTransition, getComponent, getTransition, store, __sessions__ } from './store.js';
+import { addBareComponent, addTransition, getComponent, getComponentLocation, getTransition, store, __sessions__ } from './store.js';
 const fsp = fs.promises;
 
 export function initializeDefualtSessionDispatchHandlers(session: ServerSession) {
@@ -36,37 +35,91 @@ export async function writeComponent(component: ComponentData) {
     await fsp.writeFile(path + "", component.source);
 }
 
-async function writeComponentSource(component_source: string, location: URI) {
+async function overwriteSourceFile(source: string, location: string) {
 
-    const path = URI.resolveRelative(location.filename + ".temp." + location.ext, location);
-
-    await fsp.writeFile(location + "", component_source);
+    await fsp.writeFile(location + "", source, { encoding: "utf8" });
 }
 
 const APPLY_COMPONENT_CHANGES: CommandHandler<EditorCommand.APPLY_COMPONENT_CHANGES>
-    = async function (command, session: ServerSession) {
+    = async function ({ changes }, session: ServerSession) {
 
-        for (const { old_component, changes } of command.component_changes) {
+        const location_changes: Map<string, Change[ChangeType][]> = new Map;
 
-            const change_tokens: ChangeToken[] = [];
+        const component_changes: Map<string, Change[ChangeType][]> = new Map;
 
-            const comp = await getComponent(old_component);
+        const old_to_new_source: Map<string, string> = new Map;
+
+        for (const change of changes) {
+
+            let location = getChangeLocation(change);
+
+            if (location) {
+                addObjectToMapArray(location_changes, change, location);
+            } else {
+                session.logger.warn("Unable to resolve change location");
+            }
+        }
+
+        for (const [location, changes] of location_changes) {
+
+            const change_tokens = [];
 
             for (const change of changes) {
-
+                let token: ChangeToken = null;
                 if (change.type == ChangeType.CSSRule) {
-                    change_tokens.push(await getCSSChangeToken(old_component, change));
+                    token = await getCSSChangeToken(change);
                 } else if (change.type == ChangeType.Attribute) {
-                    change_tokens.push(await getAttributeChangeToken(old_component, change));
+                    token = await getAttributeChangeToken(change);
+                }
+
+                if (token) {
+                    change_tokens.push(token);
+                } else {
+                    session.logger.warn("Unable to resolve change token");
                 }
             }
-            const new_source = change_tokens.sort((a, b) => a.token.off - b.token.off).reduce((source,
+
+            const new_source = change_tokens.sort((a, b) => b.token.off - a.token.off).reduce((source,
                 { token, string }) =>
                 token.setSource(source).replace(string), change_tokens[0].token.source);
 
-            const new_component = getSourceHash(new_source);
+            overwriteSourceFile(new_source, location);
 
-            addBareComponent(new_component, new_source, comp.location);
+            for (const change of changes) {
+
+                let comp = await getComponent(change.component);
+
+                if (
+                    !old_to_new_source.has(comp.name)
+                    &&
+                    location == comp.location + ""
+                ) {
+                    old_to_new_source.set(comp.name, new_source);
+                }
+
+                addObjectToMapArray(component_changes, change, change.component);
+            }
+        }
+
+        for (const [old_component, changes] of component_changes) {
+
+            let comp = await getComponent(old_component);
+
+            let new_source = old_to_new_source.get(old_component) ?? comp.source;
+
+            let new_component = old_to_new_source.has(old_component)
+                ? getSourceHash(new_source)
+                : old_component;
+
+            if (old_to_new_source.has(old_component))
+                addBareComponent(new_component, new_source, comp.location);
+
+            alertSessionsOfComponentTransition(
+                __sessions__,
+                new_component,
+                old_component,
+                comp.location
+            );
 
             addTransition({
                 new_id: new_component,
@@ -76,16 +129,6 @@ const APPLY_COMPONENT_CHANGES: CommandHandler<EditorCommand.APPLY_COMPONENT_CHAN
                 changes: changes,
                 source: new_source
             });
-
-            alertSessionsOfComponentTransition(
-                __sessions__,
-                new_component,
-                old_component,
-                comp.location
-            );
-
-            await writeComponentSource(new_source, comp.location);
-
         }
 
         await spark.sleep(100);
@@ -182,21 +225,41 @@ const GET_COMPONENT_PATCH: CommandHandler<EditorCommand.GET_COMPONENT_PATCH>
 
         const changes = transition.changes;
 
-        if (changes.some(g => g.type == ChangeType.General)) {
-            // The general change type should cover all changes
-            // and cause a rerender patch to be issued
-        } else {
+        const patch = await getPatch(
+            from,
+            to,
+            wick.rt.context
+        );
 
-            //Issue a CSS patch
-            return {
-                command: EditorCommand.APPLY_COMPONENT_PATCH,
-                patch: {
-                    type: PatchType.CSS,
-                    from: from,
-                    to: to,
-                    style: componentDataToCSS(await getComponent(to))
-                }
-            };
-        }
+        return {
+            command: EditorCommand.APPLY_COMPONENT_PATCH,
+            patch: patch
+        };
     };
+
+function getChangeLocation(change: { component: string; type: ChangeType.CSSRule; location: string; CSS_index?: number; old_rule_path: string; new_rule_path: string; new_selectors: string; old_selectors: string; old_properties?: { name: string; val: string; }[]; new_properties?: { name: string; val: string; }[]; } | { type: ChangeType.Attribute; component: string; ele_id: number; name: string; attribute_index: number; old_value: string; new_value: string; }) {
+    let location = "";
+
+    if (change.type == ChangeType.CSSRule) {
+        location = change.location;
+    } else if (change.type == ChangeType.Attribute) {
+        location = getComponentLocation(change.component) + "";
+    }
+    return location;
+}
+
+function addObjectToMapArray(
+    component_change_tokens: Map<string, any[]>, obj: any, key: any
+) {
+
+
+    let array = component_change_tokens.get(key);
+
+    if (!array) {
+        array = [];
+        component_change_tokens.set(key, array);
+    }
+
+    array.push(obj);
+}
 

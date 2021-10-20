@@ -166,7 +166,7 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
             if (ratio) {
                 while (ratio.adjusted_delta !== 0 && t++ < ratio.max_level) {
                     action.updateFN(sys, crate, ratio);
-                    crate.css_cache.applyChanges(sys, 0);
+                    crate.css_cache.applyScratchRule(sys, 0);
                     markRatioMeasure(sys, crate, ratio);
                 }
             } else action.updateFN(sys, crate, ratio);
@@ -176,7 +176,7 @@ export function applyAction(sys: FlameSystem, crates: ObjectCrate[], INITIAL_PAS
     }
 
     for (const { css_cache } of crates)
-        if (css_cache) css_cache.applyChanges(sys, change_nonce);
+        if (css_cache) css_cache.applyScratchRule(sys, change_nonce);
 
     change_nonce++;
 }
